@@ -8,13 +8,16 @@ import MatterSim
 from collections import defaultdict
 import time
 
+from semantic_persistence.matterport_adapter import load_viewpoint_bank_npz
+from semantic_persistence.utils import cosine_sim
+
 WIDTH = 800
 HEIGHT = 600
 VFOV = math.radians(60)
 HFOV = VFOV * WIDTH / HEIGHT
 TEXT_COLOR = [230, 40, 40]
 MP_ROOT = "/root/mount/Matterport3DSimulator"  # repo root inside container
-depth_enabled = False
+depth_enabled = True
 HORIZON_LEN = 48
 DELTA_HEADING_DEG = 360 / HORIZON_LEN
 DELTA_HEADING_RAD = math.radians(DELTA_HEADING_DEG)
@@ -83,20 +86,51 @@ def render_sim_state(state):
     cv2.waitKey(1)
 
 
-def horizon_scan_return(sim):
+def horizon_scan_return(
+    sim,
+    goal_text=None,
+    text_embedder=None,
+    image_embedder=None,
+    similarity_threshold=0.25,
+    distance_threshold=1.5,
+):
     """
-    Full 360 horizon scan (12 discrete headings) at current viewpoint,
-    but returns to the EXACT starting viewIndex at the end.
+    Perform a full 360 horizon scan at the current viewpoint, returning to the exact starting viewIndex at the end.
+
+    Args:
+        sim: initialized MatterSim.Simulator with an active episode.
+        goal_text: target text description (optional).
+        text_embedder: CLIPTextEmbedder instance (optional).
+        image_embedder: CLIPImageEmbedder instance (optional).
+        similarity_threshold: CLIP similarity threshold to consider object as found.
+        distance_threshold: maximum distance in meters to consider target reachable.
 
     Returns:
-      best_heading_for_vp: dict vp_id -> horizon_idx (0..11), where 0 means "starting heading"
-      start_state: the state at the beginning (for debugging)
+        best_heading_for_vp: dict mapping each reachable neighboring viewpoint ID to the best heading (in radians) that faces it during the horizon scan.
+        start_state: the initial simulator state before performing any rotations.
+        target_found: bool, True if target object found and within distance threshold.
+        best_heading: float, the heading (in radians) where target was best observed (or None).
+        best_distance: float, the minimum distance at which target was found (or None).
     """
     start_state = sim.getState()[0]
-    start_view_index = start_state.viewIndex  # absolute 0..35 in discretized mode
 
     best_heading_for_vp = {}
     best_score_for_vp = defaultdict(lambda: 1e18)
+
+    target_found = False
+    best_similarity = -1.0
+    best_distance = float("inf")
+    best_heading = None
+
+    enable_target_check = (
+        goal_text is not None
+        and text_embedder is not None
+        and image_embedder is not None
+    )
+    if enable_target_check:
+        target_text_emb = text_embedder.embed(goal_text)
+    else:
+        target_text_emb = None
 
     for horizon_idx in range(HORIZON_LEN):
         state = sim.getState()[0]
@@ -110,21 +144,68 @@ def horizon_scan_return(sim):
                 best_score_for_vp[loc.viewpointId] = score
                 best_heading_for_vp[loc.viewpointId] = cur_heading
 
+        # target check (optional)
+        if enable_target_check:
+            rgb = np.array(state.rgb, copy=False)
+            image_emb = image_embedder.embed(rgb)
+            similarity = cosine_sim(image_emb, target_text_emb)
+
+            if similarity >= similarity_threshold:
+                min_distance = float("inf")
+                if depth_enabled:
+                    depth = np.array(state.depth, copy=False)
+                    h, w = depth.shape
+                    center_y, center_x = h // 2, w // 2
+                    region_size = 5
+                    center_region = depth[
+                        max(0, center_y - region_size) : min(
+                            h, center_y + region_size + 1
+                        ),
+                        max(0, center_x - region_size) : min(
+                            w, center_x + region_size + 1
+                        ),
+                    ]
+                    if np.any(center_region > 0):
+                        min_distance = float(np.min(center_region[center_region > 0]))
+
+                print(
+                    f"  Heading {math.degrees(cur_heading):.1f}°: similarity={similarity:.3f}, distance={min_distance:.2f}m"
+                )
+
+                if similarity > best_similarity:
+                    best_similarity = similarity
+                    best_heading = cur_heading
+                    best_distance = min_distance
+
+                if min_distance < distance_threshold:
+                    target_found = True
+                    print(
+                        f"✓ Target found at distance {min_distance:.2f}m (< {distance_threshold}m threshold)"
+                    )
+
         # rotate right by one discrete step for next view (except after last)
         if horizon_idx != HORIZON_LEN - 1:
             sim.makeAction([0], [DELTA_HEADING_RAD], [0])
 
+        if enable_target_check:
+            time.sleep(pause_time / 4)
+
     # rotate back to the exact starting viewIndex
     sim.makeAction([0], [DELTA_HEADING_RAD], [0])
 
-    # sanity check (optional)
-    final_view_index = sim.getState()[0].viewIndex
-    if final_view_index != start_view_index:
-        print(
-            f"[WARN] viewIndex mismatch: start={start_view_index}, end={final_view_index}"
-        )
+    if enable_target_check:
+        if target_found:
+            print(
+                f"Target object reached! Best heading: {math.degrees(best_heading):.1f}°, Best distance: {best_distance:.2f}m"
+            )
+        elif best_heading is not None:
+            print(
+                f"Target visible but too far. Best heading: {math.degrees(best_heading):.1f}°, Best distance: {best_distance:.2f}m"
+            )
+        else:
+            print("Target object not detected at current viewpoint.")
 
-    return best_heading_for_vp, start_state
+    return best_heading_for_vp, start_state, target_found, best_heading, best_distance
 
 
 def compute_rotation(current_heading_deg, target_heading_deg, step_size_deg):
@@ -182,11 +263,51 @@ def rotate_to_target_heading_mov2vp(sim, selected_heading, target_vp_id):
     print(f"Selected_heading: {math.degrees(selected_heading):.2f} degrees")
     print(f"Current heading: {math.degrees(current_heading):.2f} degrees")
 
-    locations = current_state.navigableLocations
-    location_id = [i for i, x in enumerate(locations) if x.viewpointId == target_vp_id][
-        0
-    ]
     # move to the target viewpoint (after rotation, it should be in the current navigableLocations)
-    time.sleep(decision_pause)
-    sim.makeAction([location_id], [0], [0])
-    render_sim_state(sim.getState()[0])
+    if target_vp_id is not None:
+        locations = current_state.navigableLocations
+        location_id = [
+            i for i, x in enumerate(locations) if x.viewpointId == target_vp_id
+        ][0]
+        time.sleep(decision_pause)
+        sim.makeAction([location_id], [0], [0])
+        render_sim_state(sim.getState()[0])
+
+
+def select_next_viewpoint_by_retrieval(
+    candidate_vps,
+    goal_text,
+    vp_bank,
+    text_embedder,
+):
+    """
+    Choose the candidate viewpoint that best matches the goal text. The matching score is computed using the provided text_embedder and the pre-computed view embeddings in vp_bank. Specifically, for each candidate viewpoint v, we compute:
+    score(v) = max_k cosine( view_emb(v, k), text_emb(goal_text) ), where view_emb(v, k) is the embedding of the k-th view of viewpoint v, and text_emb(goal_text) is the embedding of the goal text. We return the viewpoint with the highest score.
+
+    Returns:
+      best_vp_id, best_score
+    """
+    q = text_embedder.embed(goal_text)
+
+    best_vp_id = None
+    best_score = -1e9
+
+    for vp_id in candidate_vps:
+        view_embs = vp_bank.vp_view_embs.get(vp_id)
+        if view_embs is None:
+            continue
+
+        # view_embs shape: (K, D)
+        s = -1e9
+        for k in range(view_embs.shape[0]):
+            s = max(s, cosine_sim(view_embs[k], q))
+
+        if s > best_score:
+            best_score = s
+            best_vp_id = vp_id
+
+    if best_vp_id is None:
+        # Fallback: deterministic first candidate (avoid randomness)
+        return candidate_vps[0], float("nan")
+
+    return best_vp_id, float(best_score)
