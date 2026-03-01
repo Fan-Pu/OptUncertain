@@ -1,23 +1,20 @@
 """
 grounding.py
 
-Ground a semantic label to a set of candidate viewpoints Omega_s.
+Ground a semantic label to candidate viewpoint sets.
 
-We use retrieval scoring:
+We score each viewpoint v by best-view retrieval:
   score(v, s) = max_k cosine( g(v,k), f(s) )
-
-Where:
-  - g(v,k) is the embedding for the k-th view of viewpoint v
-  - f(s) is the embedding for semantic text s
 
 Selection:
   - either TopK viewpoints by score, or all viewpoints above a threshold
 
-Optional:
-  - if coordinates exist, keep Omega compact using DBSCAN clustering
+Spatial clustering (recommended for region labels):
+  - if coordinates exist, we cluster the selected viewpoints with DBSCAN
+  - we return one or more clusters, each treated as a region instance
 """
 
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Literal
 import numpy as np
 
 from .interfaces import TextEmbedder
@@ -30,14 +27,20 @@ except Exception:
     DBSCAN = None
 
 
+ClusterMode = Literal["none", "all", "largest"]
+
+
 class RetrievalGrounder:
     def __init__(
         self,
         text_embedder: TextEmbedder,
         topk: int = 12,
         score_threshold: Optional[float] = None,
+        # spatial clustering
+        cluster_mode: ClusterMode = "all",
         spatial_cluster_eps: float = 2.0,
         spatial_cluster_min_samples: int = 2,
+        max_clusters: int = 3,
     ):
         """
         Parameters:
@@ -47,29 +50,51 @@ class RetrievalGrounder:
           score_threshold:
             If set, keep viewpoints with score >= threshold (overrides TopK).
 
+          cluster_mode:
+            "none"   : return a single set (no clustering)
+            "all"    : return up to max_clusters DBSCAN clusters (by size), dropping noise
+            "largest" : return only the largest DBSCAN cluster
+
           spatial_cluster_*:
-            If vp_xyz exists and sklearn is installed, keep Omega compact
-            by taking the largest spatial cluster.
+            DBSCAN parameters, only used when vp_xyz exists and sklearn is installed.
+
+          max_clusters:
+            Only used for cluster_mode="all". Keeps the largest max_clusters clusters.
         """
         self.text_embedder = text_embedder
         self.topk = int(topk)
         self.score_threshold = score_threshold
+
+        self.cluster_mode = cluster_mode
         self.spatial_cluster_eps = float(spatial_cluster_eps)
         self.spatial_cluster_min_samples = int(spatial_cluster_min_samples)
+        self.max_clusters = int(max_clusters)
 
     def ground(
         self, vp_bank: ViewpointBank, text: str
     ) -> Tuple[Set[str], Dict[str, float]]:
         """
+        Backward-compatible: returns a single Omega set.
+        Omega is the set of viewpoint ids whose view embeddings best match the text embedding.
+        """
+        clusters, scores = self.ground_clusters(vp_bank, text=text)
+        omega: Set[str] = set()
+        for c in clusters:
+            omega |= set(c)
+        return omega, scores
+
+    def ground_clusters(
+        self, vp_bank: ViewpointBank, text: str
+    ) -> Tuple[List[Set[str]], Dict[str, float]]:
+        """
         Returns:
-          - omega: set of viewpoint IDs
+          - clusters: list of viewpoint-id sets (each is one region instance)
           - scores: dict vp_id -> retrieval score
         """
         f = self.text_embedder.embed(text)
         scores: Dict[str, float] = {}
 
         for vp_id, view_embs in vp_bank.vp_view_embs.items():
-            # view_embs: (K, D)
             best = -1e9
             for k in range(view_embs.shape[0]):
                 best = max(best, cosine_sim(view_embs[k], f))
@@ -86,16 +111,32 @@ class RetrievalGrounder:
                 ]
             )
 
-        omega = self._compactify(vp_bank, omega)
-        return omega, scores
+        if self.cluster_mode == "none":
+            return [omega], scores
 
-    def _compactify(self, vp_bank: ViewpointBank, omega: Set[str]) -> Set[str]:
+        clusters = self._clusterize(vp_bank, omega)
+        if not clusters:
+            return [omega], scores
+
+        if self.cluster_mode == "largest":
+            clusters = [max(clusters, key=lambda s: len(s))]
+
+        elif self.cluster_mode == "all":
+            clusters = sorted(clusters, key=lambda s: len(s), reverse=True)[
+                : max(1, self.max_clusters)
+            ]
+
+        return clusters, scores
+
+    def _clusterize(self, vp_bank: ViewpointBank, omega: Set[str]) -> List[Set[str]]:
         """
-        Keep Omega spatially compact by selecting the largest DBSCAN cluster.
-        If conditions are not met, return Omega unchanged.
+        Cluster Omega spatially using DBSCAN.
+
+        Returns a list of clusters (each a set of vp_ids), excluding noise.
+        If conditions are not met, returns an empty list.
         """
         if not omega or vp_bank.vp_xyz is None or DBSCAN is None:
-            return omega
+            return []
 
         pts = []
         ids = []
@@ -107,7 +148,7 @@ class RetrievalGrounder:
             pts.append(xyz.astype(np.float32))
 
         if len(pts) < max(3, self.spatial_cluster_min_samples):
-            return omega
+            return []
 
         X = np.vstack(pts)
         clustering = DBSCAN(
@@ -115,18 +156,11 @@ class RetrievalGrounder:
         ).fit(X)
         labels = clustering.labels_
 
-        # Ignore noise label -1. Keep largest valid cluster.
-        unique = [lab for lab in set(labels.tolist()) if lab != -1]
-        if not unique:
-            return omega
+        lab_to_ids: Dict[int, Set[str]] = {}
+        for i, lab in enumerate(labels.tolist()):
+            lab = int(lab)
+            if lab == -1:
+                continue
+            lab_to_ids.setdefault(lab, set()).add(ids[i])
 
-        best_lab = None
-        best_count = -1
-        for lab in unique:
-            c = int(np.sum(labels == lab))
-            if c > best_count:
-                best_count = c
-                best_lab = lab
-
-        kept = {ids[i] for i in range(len(ids)) if int(labels[i]) == int(best_lab)}
-        return kept if kept else omega
+        return list(lab_to_ids.values())

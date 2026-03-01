@@ -16,7 +16,6 @@ Decision:
   - else -> create a new node
 """
 
-
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 import json
@@ -38,6 +37,7 @@ class MatchConfig:
     top_candidates: int = 3
     auto_merge_threshold: float = 0.80
     use_mllm_gray_zone: Tuple[float, float] = (0.55, 0.80)
+    min_iou_for_merge: float = 0.05
 
 
 class SemanticGraph:
@@ -130,13 +130,20 @@ class SemanticGraph:
             merge_node_id = None
 
         # Case 2: strong match
-        elif best_sim >= self.cfg.auto_merge_threshold:
+        elif (
+            best_sim >= self.cfg.auto_merge_threshold
+            and best[2] >= self.cfg.min_iou_for_merge
+        ):
             merge_node_id = best[3]
 
         # Case 3: ambiguous match, ask verifier if available
         else:
             gray_lo, gray_hi = self.cfg.use_mllm_gray_zone
-            if self.mllm is not None and gray_lo <= best_sim < gray_hi:
+            if (
+                self.mllm is not None
+                and gray_lo <= best_sim < gray_hi
+                and candidates[0][2] >= self.cfg.min_iou_for_merge
+            ):
                 node_id = candidates[0][3]
                 node = self.nodes[node_id]
                 evidence = self._format_equiv_evidence(

@@ -9,7 +9,6 @@ Key idea:
   We store semantics as tracked nodes, not raw strings, so the planner sees stable IDs.
 """
 
-
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 import time
@@ -76,6 +75,7 @@ class ViewpointBank:
     vp_view_embs:
       Map vp_id -> array of view embeddings with shape (K, D)
       K is the number of camera headings per viewpoint (for example 12).
+      D is the embedding dimension.
 
     vp_xyz:
       Optional map vp_id -> coordinates (x,y,z) or (x,y).

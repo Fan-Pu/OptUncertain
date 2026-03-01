@@ -11,7 +11,6 @@ High-level wrapper that runs the full loop per time step:
 Then, after a viewpoint is visited, you call update_after_visit to update beliefs.
 """
 
-
 from typing import Dict, List, Optional, Set
 import numpy as np
 
@@ -80,19 +79,21 @@ class SemanticPersistenceComponent:
             if not name:
                 continue
 
-            # Ground proposal label into a viewpoint set Omega_s
-            omega, scores = self.grounder.ground(vp_bank, text=name)
+            # Ground proposal label into one or more spatial clusters (region instances)
+            clusters, scores = self.grounder.ground_clusters(vp_bank, text=name)
 
-            # Merge into persistent graph (or create new node)
-            node_id = self.graph.match_and_merge(
-                proposal=p,
-                proposal_omega=omega,
-                t=t,
-                proposal_text_emb=None,
-                scores_hint=scores,
-            )
-            touched.append(node_id)
-
+            # Merge each cluster into persistent graph (or create new node)
+            for ci, omega in enumerate(clusters):
+                prop = dict(p)
+                prop["cluster_index"] = int(ci)
+                node_id = self.graph.match_and_merge(
+                    proposal=prop,
+                    proposal_omega=omega,
+                    t=t,
+                    proposal_text_emb=None,
+                    scores_hint=scores,
+                )
+                touched.append(node_id)
         return touched
 
     def update_after_visit(

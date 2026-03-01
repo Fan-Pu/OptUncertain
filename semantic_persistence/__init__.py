@@ -1,16 +1,12 @@
 """
-Package exports.
+semantic_persistence package
+
+This package implements a lightweight semantic persistence component:
+  - propose semantic regions (via an MLLM client)
+  - ground labels to Matterport viewpoint sets (retrieval)
+  - match/merge nodes over time (persistence)
 """
 
-from .matterport_adapter import (
-    ConnectivityInfo,
-    load_connectivity,
-    make_simulator,
-    make_render_fn,
-    build_viewpoint_bank_from_matterport,
-    save_viewpoint_bank_npz,
-    load_viewpoint_bank_npz,
-)
-
-from .siglip_encoder import SigLIPTextEmbedder, SigLIPImageEmbedder
-from .vpbank_manager import get_or_create_vp_bank
+from .component import SemanticPersistenceComponent
+from .mllm_client import LocalQwen2VLClient
+from .nav_graph import load_nav_graph, shortest_path_next_hop, argmin_distance_to_set
