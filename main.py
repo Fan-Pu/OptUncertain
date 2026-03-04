@@ -63,7 +63,7 @@ if __name__ == "__main__":
         dataset_path=dataset_path,
         connectivity_dir=connectivity_dir,
         image_embedder=image_embedder,
-        num_views=12,
+        num_views=Helper.HORIZON_LEN,
         elevation_degrees=0.0,
         image_width=640,
         image_height=480,
@@ -77,7 +77,16 @@ if __name__ == "__main__":
     # -------------------- MLLM + Grounder --------------------
     mllm = LocalQwen2VLClient(model_name="Qwen/Qwen2-VL-2B-Instruct", h_fov=Helper.HFOV)
     grounder = RetrievalGrounder(
-        text_embedder=text_embedder, topk=12, score_threshold=None
+        text_embedder=text_embedder,
+        topk=12,
+        score_threshold=None,
+        adjacency=adjacency,
+        smooth_alpha=0.65,
+        smooth_steps=2,
+        cluster_mode="all",
+        spatial_cluster_eps=2.0,
+        spatial_cluster_min_samples=2,
+        max_clusters=3,
     )
 
     # -------------------- OWL-ViT target deterctor --------------------
@@ -169,7 +178,6 @@ if __name__ == "__main__":
             ]
         else:
             support_views = None
-
         try:
             num_obs_images = int(num_obs_images) if num_obs_images is not None else None
         except Exception:
@@ -177,7 +185,6 @@ if __name__ == "__main__":
         print(
             f"[MLLM] Top semantic region: {semantic_label} (confidence={top_conf:.2f})"
         )
-
         if support_views is not None and num_obs_images is not None:
             print(
                 f"[MLLM] support_views={support_views} over num_obs_images={num_obs_images}"
@@ -199,7 +206,12 @@ if __name__ == "__main__":
         debugpy.breakpoint()  # inspect mllm_out and semantic_label here if you want
 
         # 3) Ground semantic label to viewpoint set Omega_s over the full known graph
-        omega, scores = grounder.ground(vp_bank=vp_bank, text=semantic_label)
+        omega, scores = grounder.ground(
+            vp_bank=vp_bank,
+            text=semantic_label,
+            support_views=support_views,
+            num_obs_images=num_obs_images,
+        )
         if not omega:
             print(
                 "[WARN] Grounding returned empty Omega. Using greedy neighbor selection."
