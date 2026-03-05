@@ -90,11 +90,10 @@ def render_sim_state(state):
 def horizon_scan_return(
     sim,
     goal_text=None,
-    text_embedder=None,
-    image_embedder=None,
     similarity_threshold=0.25,
     distance_threshold=1.5,
     owl_detector=None,
+    enable_target_check=False,
 ):
     """
     Perform a full 360 horizon scan at the current viewpoint, returning to the exact starting viewIndex at the end.
@@ -102,18 +101,20 @@ def horizon_scan_return(
     Args:
         sim: initialized MatterSim.Simulator with an active episode.
         goal_text: target text description (optional).
-        text_embedder: CLIPTextEmbedder instance (optional).
-        image_embedder: CLIPImageEmbedder instance (optional).
-        similarity_threshold: CLIP similarity threshold to consider object as found.
+        similarity_threshold: CLIP similarity threshold to consider object as found. Its value is between 0 and 1, where higher means more strict. You can adjust this based on the desired precision-recall tradeoff for target detection.
         distance_threshold: maximum distance in meters to consider target reachable.
+        owl_detector: OWL-ViT detector instance (optional).
+        enable_target_check: bool, whether to enable target object detection during the scan.
 
     Returns:
         best_heading_for_vp: dict mapping each reachable neighboring viewpoint ID to the best heading (in radians) that faces it during the horizon scan.
         start_state: the initial simulator state before performing any rotations.
         target_found: bool, True if target object found and within distance threshold.
-        best_heading: float, the heading (in radians) where target was best observed (or None).
-        best_distance: float, the minimum distance at which target was found (or None).
+        best_heading: float, the heading (in radians) where target box is best centered in the view (or None).
+        best_distance: float, the distance at that best-centered heading (or None).
+        target_box: (x1,y1,x2,y2) pixel coordinates of the detected box for the target (or None).
         horizon_images: list of RGB images (as numpy arrays) captured during the horizon scan, in order of increasing heading.
+        horizon_headings: list of headings (radians) corresponding to each image in horizon_images.
     """
     start_state = sim.getState()[0]
 
@@ -126,17 +127,12 @@ def horizon_scan_return(
     )  # key: neighboring vp_id, value: best score (lower is better)
     heading_info_list_contain_target = (
         []
-    )  # list of (heading, rgb, box, distance) for each heading where target is detected
+    )  # list of (heading, box, distance, center_score) for each heading where target is detected
 
     target_found = False
 
-    enable_target_check = (
-        goal_text is not None
-        and text_embedder is not None
-        and image_embedder is not None
-    )
-
     horizon_images = []  # for MLLM visual context (full 360 horizontal scan)
+    horizon_headings = []  # headings (radians) aligned with horizon_images
 
     # horizon scan loop
     for horizon_idx in range(HORIZON_LEN):
@@ -144,6 +140,7 @@ def horizon_scan_return(
         locations = state.navigableLocations
         cur_heading = state.heading
         horizon_images.append(np.array(state.rgb, copy=False))
+        horizon_headings.append(float(cur_heading))
 
         # record best "in-front" heading for each neighbor
         for loc in locations[1:]:
@@ -156,21 +153,45 @@ def horizon_scan_return(
         # target check
         if enable_target_check:
             rgb = np.array(state.rgb, copy=False)  # RGB
+            rgb_display = rgb.copy()
             depth = np.array(state.depth, copy=False)
-            target_found, dist_m, box, _ = owl_detector.detect_and_distance(
-                rgb,
-                depth,
-                text_query=goal_text,
-                score_thresh=similarity_threshold,
-                dist_thresh_m=distance_threshold,
-                percentile=10,
+            target_found_in_heading, dist_m, box, similarity_score = (
+                owl_detector.detect_and_distance(
+                    rgb,
+                    depth,
+                    text_query=goal_text,
+                    score_thresh=similarity_threshold,
+                    dist_thresh_m=distance_threshold,
+                    distance_method="median",
+                    percentile=10,
+                )
             )
 
-            if target_found:
+            if target_found_in_heading:
+                target_found = True
                 print(
-                    f"✓ Target found at heading {math.degrees(cur_heading):.1f}°, distance {dist_m:.2f}m, score {score:.3f}"
+                    f"✓ Target found at heading {math.degrees(cur_heading):.1f}°, distance {dist_m:.2f}m, similarity_score score {similarity_score:.3f}"
                 )
-                heading_info_list_contain_target.append((cur_heading, rgb, box, dist_m))
+                if box is not None:
+                    x1, y1, x2, y2 = box
+                    box_center_x = 0.5 * (x1 + x2)
+                    box_center_y = 0.5 * (y1 + y2)
+                    center_offset_score = math.hypot(
+                        (box_center_x - 0.5 * WIDTH) / (0.5 * WIDTH),
+                        (box_center_y - 0.5 * HEIGHT) / (0.5 * HEIGHT),
+                    )
+                else:
+                    center_offset_score = float("inf")
+
+                heading_info_list_contain_target.append(
+                    (cur_heading, box, dist_m, center_offset_score)
+                )
+                if box is not None:
+                    put_detect_box(rgb_display, box, goal_text, dist_m)
+
+            # cv2.imshow("MLLM RGB", rgb_display)
+            # cv2.waitKey(1)
+            # debugpy.breakpoint()  # for inspecting target detection results during the horizon scan --- IGNORE ---
 
         # rotate right by one discrete step for next view (except after last)
         if horizon_idx != HORIZON_LEN - 1:
@@ -182,14 +203,16 @@ def horizon_scan_return(
     # rotate back to the exact starting viewIndex
     sim.makeAction([0], [DELTA_HEADING_RAD], [0])
 
-    # determine the best heading where the target was observed (if any) based on the lowest distance (most reachable)
+    # determine best heading where target box is most centered in the current view
     if heading_info_list_contain_target:
-        target_heading, _, _, target_distance = min(
-            heading_info_list_contain_target, key=lambda x: x[3]
+        target_heading, target_box, target_distance, _ = min(
+            heading_info_list_contain_target,
+            key=lambda x: (x[3], x[2]),
         )
     else:
         target_heading = None
         target_distance = None
+        target_box = None
 
     return (
         best_heading_for_vp,
@@ -197,7 +220,9 @@ def horizon_scan_return(
         target_found,
         target_heading,
         target_distance,
+        target_box,
         horizon_images,
+        horizon_headings,
     )
 
 
@@ -355,3 +380,19 @@ def explore_world(sim, location=0, heading=0, elevation=0):
             heading = DELTA_HEADING_RAD
         elif k == 84 or k == ord("s"):
             elevation = -DELTA_HEADING_RAD
+
+
+def put_detect_box(rgb, box, goal_text, dist_m):
+    """Utility to put a detection box with optional text on an RGB image."""
+    if box is not None:
+        x1, y1, x2, y2 = box
+        cv2.rectangle(rgb, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(
+            rgb,
+            f"{goal_text}: {dist_m:.2f}m",
+            (x1, max(20, y1 - 8)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 255, 0),
+            2,
+        )

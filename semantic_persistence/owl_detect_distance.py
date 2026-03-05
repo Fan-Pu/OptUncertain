@@ -19,10 +19,22 @@ def _depth_to_meters(depth_raw: np.ndarray) -> np.ndarray:
     return depth / 4000.0
 
 
-def distance_from_box(depth_raw, box_xyxy, percentile=10.0) -> float:
+def distance_from_box(
+    depth_raw,
+    box_xyxy,
+    method="median",
+    percentile=10.0,
+) -> float:
     """
     Robust distance estimate from depth values inside the detected box.
-    Uses a percentile instead of min to reduce sensitivity to noisy pixels.
+
+    Args:
+        depth_raw: raw depth array from simulator
+        box_xyxy: (x1, y1, x2, y2) pixel box
+        method: aggregation method for valid depth pixels in box:
+            - "median" (default): most stable against outliers/noise
+            - "percentile": use the provided percentile
+        percentile: percentile value used only when method="percentile"
     """
     z = _depth_to_meters(depth_raw)
     x1, y1, x2, y2 = box_xyxy
@@ -30,7 +42,13 @@ def distance_from_box(depth_raw, box_xyxy, percentile=10.0) -> float:
     vals = region[~np.isnan(region)]
     if vals.size == 0:
         return float("inf")
-    return float(np.percentile(vals, percentile))
+
+    if method == "median":
+        return float(np.median(vals))
+    if method == "percentile":
+        return float(np.percentile(vals, percentile))
+
+    raise ValueError("method must be 'median' or 'percentile'")
 
 
 class OwlDetector:
@@ -118,6 +136,7 @@ class OwlDetector:
         text_query,
         score_thresh=0.2,
         dist_thresh_m=1.5,
+        distance_method="median",
         percentile=10.0,
     ):
         """
@@ -136,7 +155,12 @@ class OwlDetector:
         if box is None:
             return False, float("inf"), None, float(score)
 
-        dist_m = distance_from_box(depth_raw, box, percentile=percentile)
+        dist_m = distance_from_box(
+            depth_raw,
+            box,
+            method=distance_method,
+            percentile=percentile,
+        )
         found = (
             (score >= score_thresh) and np.isfinite(dist_m) and (dist_m < dist_thresh_m)
         )
