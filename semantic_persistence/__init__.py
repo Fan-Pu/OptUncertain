@@ -7,6 +7,5 @@ This package implements a lightweight semantic persistence component:
   - match/merge nodes over time (persistence)
 """
 
-from .component import SemanticPersistenceComponent
 from .mllm_client import LocalQwen2VLClient
 from .nav_graph import load_nav_graph, shortest_path_next_hop, argmin_distance_to_set

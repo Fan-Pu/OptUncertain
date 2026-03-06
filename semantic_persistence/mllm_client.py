@@ -46,15 +46,29 @@ class LocalQwen2VLClient:
         self.model.eval()
 
     def propose_semantic_nodes(
-        self, observation_images: list[np.ndarray], topk: int = 5
+        self,
+        observation_images: list[np.ndarray],
+        topk: int = 5,
+        target_object: str | None = None,
     ):
         """
         observation_images: list of RGB uint8 arrays (H,W,3), typically your horizon scan frames.
-        Returns a list of dicts like:
-          [{"label": "kitchen area", "confidence": 0.7, "type": "region"}, ...]
+
+        Returns a dict:
+          {
+            "regions": [{"label": "...", "confidence": 0.7, "support_views": [0,3]}],
+            "target": {"query": "...", "found": true/false, "views": [..]},
+            "num_obs_images": <int>,
+            "index_map": <list[int]>   # index_map[i] = original horizon index of image i shown to the MLLM
+          }
+
+        Notes:
+          - The MLLM may output fewer than topk regions.
+          - "views" indices refer to the images actually provided to the MLLM (after any downsampling),
+            so you can map them back to original horizon indices via index_map.
         """
 
-        # Convert to PIL
+        # -------------------- Convert to PIL --------------------
         pil_images = []
         for img in observation_images:
             if img is None:
@@ -63,9 +77,10 @@ class LocalQwen2VLClient:
                 img = img.astype(np.uint8)
             pil_images.append(Image.fromarray(img))
 
-        # Reduce load using HFOV in radians: pick the minimum number of
-        # non-overlapping views needed to cover the full 2*pi panorama.
-        # Example: HFOV = 0.5*pi -> ceil(2*pi / HFOV) = 4 images.
+        # -------------------- Optional downsample (keep mapping) --------------------
+        # We keep a mapping so the MLLM can reference view indices robustly.
+        index_map = list(range(len(pil_images)))
+
         if pil_images:
             if self.h_fov > 0:
                 target_count = int(np.ceil((2.0 * np.pi) / self.h_fov))
@@ -78,64 +93,137 @@ class LocalQwen2VLClient:
                         num=target_count,
                         endpoint=False,
                         dtype=int,
-                    )
-                    pil_images = [pil_images[i] for i in idx.tolist()]
+                    ).tolist()
+                    pil_images = [pil_images[i] for i in idx]
+                    index_map = [index_map[i] for i in idx]
             else:
-                pil_images = pil_images[::8]  # naive downsample if HFOV not set
+                # naive downsample if HFOV not set
+                idx = list(range(0, len(pil_images), 8))
+                pil_images = [pil_images[i] for i in idx]
+                index_map = [index_map[i] for i in idx]
+
+        # save pil_images to disk for debugging
+        for i, im in enumerate(pil_images):
+            im.save(f"debug_horizon_image_{i}.png")
+
+        num_obs_images = len(pil_images)
+
+        # -------------------- Prompt --------------------
+        target_object = (target_object or "").strip()
+
+        target_block = ""
+        if target_object:
+            target_block = f"""
+        Task C (target detection)
+
+        The target object is: "{target_object}".
+
+        Decide whether the target object is clearly visible in ANY image.
+
+        Output a "target" object with fields:
+        - found: boolean
+        - views: list of image indices where the target is visible
+        - confidence: a value in [0,1] indicating confidence that the detected object is the target
+
+        Rules:
+        - If there is clear visual evidence of the target in one or more images:
+            found = true
+            views = indices of those images
+            confidence in [0.6, 0.95]
+        - If evidence is weak, ambiguous, or absent:
+            found = false
+            views = []
+            confidence = 0.0
+        - Do NOT guess. If uncertain, output found=false.
+
+        Important:
+        - Do not use confidence > 0.95.
+        - Only include an index in views if the target itself is visible in that image.
+        """.rstrip()
 
         instruction = f"""
         You are given a 360-degree horizon scan (multiple images) from inside a house.
         Each image is one viewing direction from the SAME physical location.
+        Images are indexed from 0 to {max(0, num_obs_images - 1)}.
 
-        Task:
-        Propose BETWEEN 0 and {topk} HOUSE REGIONS/AREAS that are strongly supported by the images.
-        Return fewer labels if you are not sure. Do NOT guess. If no region is clearly supported, return an empty list.
+        Region labels describe functional areas or rooms in a house.
 
-        Definition of "supported":
-        A region label is supported ONLY if there is clear visual evidence in the images that the agent is currently located in or directly observing that region.
+        Common examples include (but are NOT limited to):
+        - kitchen area
+        - living room area
+        - bedroom area
+        - bathroom area
+        - hallway
+        - dining area
+        - entryway
+        - corridor
+        - stair area
+        - office area
+        - laundry area
+        - garage area
+        - storage area
 
-        A region is considered supported when:
-        - Multiple images show consistent visual cues of the same room/area, OR
-        - One image shows strong, unambiguous room-level structure.
+        You may generate other reasonable room/area labels if the images support them.
+        The region must be a ROOM or FUNCTIONAL AREA, not a single object.
+        INVALID labels: chair, table, sofa, cabinet, door, TV.
 
-        Examples of valid supporting cues:
-        - kitchen area: cabinets, countertops, sink layout, stove area, tiled kitchen structure
-        - living room area: sofa arrangement, TV area, open lounge layout
-        - bedroom area: bed layout, nightstands, bedroom furniture arrangement
-        - hallway: narrow corridor-like geometry, doors along a passage
-        - bathroom area: sink + mirror + bathroom layout
+        You must do THREE region tasks:
 
-        Important:
-        - Support must come from ROOM-LEVEL structure, not single objects.
-        - Seeing one object alone (for example a chair or table) is NOT enough evidence.
-        - If evidence is weak or ambiguous, do NOT output the label.
+        Task A: Current region
+        Infer the region/area the agent is currently in.
+        - Output EXACTLY 1 current region label.
+        - Provide:
+        - label
+        - confidence in [0,1] based ONLY on visible evidence
 
-        Allowed label style:
-        "<room/area> area" or "<room/area>".
+        Confidence calibration for Task A:
+        - Do NOT use confidence = 1.0.
+        - Use confidence in [0.6, 0.95].
+        - Use 0.9 to 0.95 only if there are multiple strong room-level cues across the scan.
+        - Use 0.6 to 0.8 if the evidence is partial or mixed.
 
-        Do NOT output object names (chair, table, sofa, TV, counter, cabinet, door).
-        Optional short descriptors are allowed, but the head noun must be a room/area.
+        Task B: Neighbor regions (hypotheses)
+        Propose up to {topk} additional region labels that are likely to be adjacent/nearby,
+        even if they are not directly visible.
+        These are HYPOTHESES.
 
-        Confidence definition:
-        - confidence is an evidence score in [0,1] based ONLY on the images.
-        - 1.0 = strong evidence visible in many views.
-        - 0.7 = clear evidence in a few views.
-        - 0.4 = weak or ambiguous evidence.
-        - Do NOT output labels with confidence < 0.6.
+        For each hypothesized neighbor region, provide:
+        - label: a room/area label (not an object name)
+        - existence_prob: a plausibility score in [0,1]
 
-        Also provide minimal evidence:
-        - support_views: indices of images that support the label (for example [0,3,4]).
-        Use at most 8 indices.
+        Rules for neighbor regions:
+        - Do not repeat the current region label.
+        - Do not output object names.
+        - neighbor_regions may be an empty list ONLY if current_region.confidence >= 0.9
+        AND there are no obvious transition cues (doorways, corridor openings) in the scan.
+        - Otherwise, output at least 1 neighbor region.
 
-        Return ONLY valid JSON (no markdown, no explanations):
+        existence_prob constraints:
+        - If you output a neighbor region item, existence_prob MUST be >= 0.5.
+        - Do NOT output any neighbor region with existence_prob < 0.5.
+
+        existence_prob meaning:
+        0.9 = very likely nearby (strong layout cues)
+        0.7 = likely nearby (some cues or common adjacency)
+        0.5 = plausible but weak evidence
+
+        {target_block}
+
+        Output the JSON object directly, starting with "{{" and ending with "}}".
+        Do NOT include markdown fences like ```json.
+        Do NOT include any text before or after the JSON.
+
+        Return ONLY valid JSON in this format:
         {{
-        "regions": [
-            {{"label": "...", "confidence": 0.0, "support_views": [0]}}
-        ]
+        "current_region": {{"label": "...", "confidence": 0.0}},
+        "neighbor_regions": [
+            {{"label": "...", "existence_prob": 0.0}}
+        ],
+        "target": {{"found": false, "views": [], "confidence": 0.0}}
         }}
-        """
+        """.strip()
 
-        # Build a chat-style prompt. Qwen2-VL uses messages with images.
+        # -------------------- Build chat-style prompt --------------------
         messages = [
             {
                 "role": "user",
@@ -147,44 +235,66 @@ class LocalQwen2VLClient:
         text = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
+
         inputs = self.processor(text=[text], images=pil_images, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.no_grad():
-            out = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens)
+            out = self.model.generate(
+                **inputs,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False,  # deterministic, helps JSON stability
+                temperature=0.0,  # keep consistent outputs
+                top_p=1.0,
+                repetition_penalty=1.05,  # small nudge to reduce loops
+            )
 
-        decoded = self.processor.batch_decode(out, skip_special_tokens=True)[0]
-        # Keep only the assistant part (last occurrence)
+        decoded = self.processor.batch_decode(out, skip_special_tokens=True)[0].strip()
+
+        debugpy.breakpoint()
+
+        # Keep only the last assistant segment if present
         marker = "assistant"
         if marker in decoded:
             decoded = decoded.split(marker)[-1].strip()
 
+        # Strip common markdown code fences (```json ... ```)
+        if decoded.startswith("```"):
+            parts = decoded.split("```")
+            if len(parts) >= 2:
+                decoded = parts[1].strip()
+            if decoded.startswith("json"):
+                decoded = decoded.split("\n", 1)[-1].strip()
+            if decoded.endswith("```"):
+                decoded = decoded[:-3].strip()
+
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
+        debugpy.breakpoint()
+
         # 1) Strip markdown code fences if present
-        text = decoded.strip()
-        if "```" in text:
-            lines = text.splitlines()
-            # remove leading ```json / ``` and trailing ```
+        raw = decoded.strip()
+        if "```" in raw:
+            lines = raw.splitlines()
             if lines and lines[0].strip().startswith("```"):
                 lines = lines[1:]
             if lines and lines[-1].strip().startswith("```"):
                 lines = lines[:-1]
-            text = "\n".join(lines).strip()
+            raw = "\n".join(lines).strip()
 
         # 2) Try direct JSON parse
         payload = None
         try:
-            payload = json.loads(text)
+            payload = json.loads(raw)
         except Exception:
             # 3) Fallback: extract the first valid {...} JSON object
-            for i in range(len(text)):
-                if text[i] != "{":
+            for i in range(len(raw)):
+                if raw[i] != "{":
                     continue
-                for j in range(len(text), i, -1):
-                    if text[j - 1] != "}":
+                for j in range(len(raw), i, -1):
+                    if raw[j - 1] != "}":
                         continue
-                    candidate = text[i:j]
+                    candidate = raw[i:j]
                     try:
                         payload = json.loads(candidate)
                         break
@@ -196,19 +306,25 @@ class LocalQwen2VLClient:
         if payload is None:
             print("[MLLM] Failed to parse JSON. Raw output:")
             print(decoded)
-            return []
+            return {
+                "regions": [],
+                "target": {"query": target_object, "found": False, "views": []},
+                "num_obs_images": num_obs_images,
+                "index_map": index_map,
+            }
 
-        regions = payload.get("regions", [])
+        # -------------------- Normalize output --------------------
+        regions_in = payload.get("regions", [])
+        target_in = payload.get("target", {}) or {}
 
-        result = []
-        num_obs_images = len(pil_images)
-        for r in regions[:topk]:
+        regions = []
+        for r in regions_in[:topk] if isinstance(regions_in, list) else []:
             label = str(r.get("label", "")).strip()
-            conf = float(r.get("confidence", 0.0))
-            sv = r.get("support_views", [])
-            if sv is None:
-                sv = []
-            # ensure list[int]
+            try:
+                conf = float(r.get("confidence", 0.0))
+            except Exception:
+                conf = 0.0
+            sv = r.get("support_views", []) or []
             support_views = []
             for x in sv if isinstance(sv, (list, tuple)) else []:
                 try:
@@ -217,13 +333,31 @@ class LocalQwen2VLClient:
                     continue
             if not label:
                 continue
-            result.append(
+            regions.append(
                 {
                     "label": label,
                     "confidence": conf,
                     "support_views": support_views,
-                    "num_obs_images": num_obs_images,
                     "type": "region",
                 }
             )
-        return result
+
+        found = bool(target_in.get("found", False))
+        views = target_in.get("views", []) or []
+        target_views = []
+        for x in views if isinstance(views, (list, tuple)) else []:
+            try:
+                target_views.append(int(x))
+            except Exception:
+                continue
+
+        return {
+            "regions": regions,
+            "target": {
+                "query": str(target_in.get("query", target_object)).strip(),
+                "found": found,
+                "views": target_views,
+            },
+            "num_obs_images": num_obs_images,
+            "index_map": index_map,
+        }

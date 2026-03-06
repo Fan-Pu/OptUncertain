@@ -8,8 +8,6 @@ import MatterSim
 from collections import defaultdict
 import time
 
-from semantic_persistence.utils import cosine_sim
-
 WIDTH = 800
 HEIGHT = 600
 VFOV = math.radians(
@@ -87,143 +85,58 @@ def render_sim_state(state):
     cv2.waitKey(1)
 
 
-def horizon_scan_return(
-    sim,
-    goal_text=None,
-    similarity_threshold=0.25,
-    distance_threshold=1.5,
-    owl_detector=None,
-    enable_target_check=False,
-):
+def horizon_scan_return(sim):
     """
-    Perform a full 360 horizon scan at the current viewpoint, returning to the exact starting viewIndex at the end.
+    Perform a full 360 horizon scan at the current viewpoint and return to the
+    exact starting heading at the end.
+
+    This function is intentionally "perception-only": it does NOT perform any
+    target detection. It only collects:
+      1) the locally observable moveable neighbors (from navigableLocations)
+      2) a list of RGB images for the full horizon scan
+      3) the heading (radians) associated with each image
 
     Args:
         sim: initialized MatterSim.Simulator with an active episode.
-        goal_text: target text description (optional).
-        similarity_threshold: CLIP similarity threshold to consider object as found. Its value is between 0 and 1, where higher means more strict. You can adjust this based on the desired precision-recall tradeoff for target detection.
-        distance_threshold: maximum distance in meters to consider target reachable.
-        owl_detector: OWL-ViT detector instance (optional).
-        enable_target_check: bool, whether to enable target object detection during the scan.
 
     Returns:
-        best_heading_for_vp: dict mapping each reachable neighboring viewpoint ID to the best heading (in radians) that faces it during the horizon scan.
+        best_heading_for_vp: dict mapping each reachable neighboring viewpoint ID
+            to the best heading (radians) that faces it during the horizon scan.
         start_state: the initial simulator state before performing any rotations.
-        target_found: bool, True if target object found and within distance threshold.
-        best_heading: float, the heading (in radians) where target box is best centered in the view (or None).
-        best_distance: float, the distance at that best-centered heading (or None).
-        target_box: (x1,y1,x2,y2) pixel coordinates of the detected box for the target (or None).
-        horizon_images: list of RGB images (as numpy arrays) captured during the horizon scan, in order of increasing heading.
-        horizon_headings: list of headings (radians) corresponding to each image in horizon_images.
+        horizon_images: list of RGB images (numpy arrays) captured during the scan.
+        horizon_headings: list of headings (radians) aligned with horizon_images.
     """
     start_state = sim.getState()[0]
 
-    best_heading_for_vp = (
-        {}
-    )  # key: neighboring vp_id, value: best heading in radians to face that vp during the horizon scan
-    # record the best (lowest) score for each neighboring vp across the horizon scan, where score reflects how well the neighbor is centered in the view (lower is better)
-    best_score_for_vp = defaultdict(
-        lambda: 1e18
-    )  # key: neighboring vp_id, value: best score (lower is better)
-    heading_info_list_contain_target = (
-        []
-    )  # list of (heading, box, distance, center_score) for each heading where target is detected
+    best_heading_for_vp = {}
+    best_score_for_vp = defaultdict(lambda: 1e18)
 
-    target_found = False
+    horizon_images = []
+    horizon_headings = []
 
-    horizon_images = []  # for MLLM visual context (full 360 horizontal scan)
-    horizon_headings = []  # headings (radians) aligned with horizon_images
-
-    # horizon scan loop
     for horizon_idx in range(HORIZON_LEN):
         state = sim.getState()[0]
         locations = state.navigableLocations
-        cur_heading = state.heading
-        horizon_images.append(np.array(state.rgb, copy=False))
-        horizon_headings.append(float(cur_heading))
+        cur_heading = float(state.heading)
+
+        horizon_images.append(np.array(state.rgb, copy=True))
+        horizon_headings.append(cur_heading)
 
         # record best "in-front" heading for each neighbor
         for loc in locations[1:]:
-            # score reflects how well the neighbor is centered in the view (lower is better)
             score = abs(loc.rel_heading) + 0.5 * abs(loc.rel_elevation)
             if score < best_score_for_vp[loc.viewpointId]:
                 best_score_for_vp[loc.viewpointId] = score
                 best_heading_for_vp[loc.viewpointId] = cur_heading
 
-        # target check
-        if enable_target_check:
-            rgb = np.array(state.rgb, copy=False)  # RGB
-            rgb_display = rgb.copy()
-            depth = np.array(state.depth, copy=False)
-            target_found_in_heading, dist_m, box, similarity_score = (
-                owl_detector.detect_and_distance(
-                    rgb,
-                    depth,
-                    text_query=goal_text,
-                    score_thresh=similarity_threshold,
-                    dist_thresh_m=distance_threshold,
-                    distance_method="median",
-                    percentile=10,
-                )
-            )
-
-            if target_found_in_heading:
-                target_found = True
-                print(
-                    f"✓ Target found at heading {math.degrees(cur_heading):.1f}°, distance {dist_m:.2f}m, similarity_score score {similarity_score:.3f}"
-                )
-                if box is not None:
-                    x1, y1, x2, y2 = box
-                    box_center_x = 0.5 * (x1 + x2)
-                    box_center_y = 0.5 * (y1 + y2)
-                    center_offset_score = math.hypot(
-                        (box_center_x - 0.5 * WIDTH) / (0.5 * WIDTH),
-                        (box_center_y - 0.5 * HEIGHT) / (0.5 * HEIGHT),
-                    )
-                else:
-                    center_offset_score = float("inf")
-
-                heading_info_list_contain_target.append(
-                    (cur_heading, box, dist_m, center_offset_score)
-                )
-                if box is not None:
-                    put_detect_box(rgb_display, box, goal_text, dist_m)
-
-            # cv2.imshow("MLLM RGB", rgb_display)
-            # cv2.waitKey(1)
-            # debugpy.breakpoint()  # for inspecting target detection results during the horizon scan --- IGNORE ---
-
-        # rotate right by one discrete step for next view (except after last)
+        # rotate right for next view (except after last)
         if horizon_idx != HORIZON_LEN - 1:
             sim.makeAction([0], [DELTA_HEADING_RAD], [0])
 
-        if enable_target_check:
-            time.sleep(pause_time / 4)
-
-    # rotate back to the exact starting viewIndex
+    # rotate back to the exact starting heading
     sim.makeAction([0], [DELTA_HEADING_RAD], [0])
 
-    # determine best heading where target box is most centered in the current view
-    if heading_info_list_contain_target:
-        target_heading, target_box, target_distance, _ = min(
-            heading_info_list_contain_target,
-            key=lambda x: (x[3], x[2]),
-        )
-    else:
-        target_heading = None
-        target_distance = None
-        target_box = None
-
-    return (
-        best_heading_for_vp,
-        start_state,
-        target_found,
-        target_heading,
-        target_distance,
-        target_box,
-        horizon_images,
-        horizon_headings,
-    )
+    return best_heading_for_vp, start_state, horizon_images, horizon_headings
 
 
 def compute_rotation(current_heading_deg, target_heading_deg, step_size_deg):
@@ -290,45 +203,6 @@ def rotate_to_target_heading_mov2vp(sim, selected_heading, target_vp_id):
         time.sleep(decision_pause)
         sim.makeAction([location_id], [0], [0])
         render_sim_state(sim.getState()[0])
-
-
-def select_next_viewpoint_by_retrieval(
-    candidate_vps,
-    goal_text,
-    vp_bank,
-    text_embedder,
-):
-    """
-    Choose the candidate viewpoint that best matches the goal text. The matching score is computed using the provided text_embedder and the pre-computed view embeddings in vp_bank. Specifically, for each candidate viewpoint v, we compute:
-    score(v) = max_k cosine( view_emb(v, k), text_emb(goal_text) ), where view_emb(v, k) is the embedding of the k-th view of viewpoint v, and text_emb(goal_text) is the embedding of the goal text. We return the viewpoint with the highest score.
-
-    Returns:
-      best_vp_id, best_score
-    """
-    q = text_embedder.embed(goal_text)
-
-    best_vp_id = None
-    best_score = -1e9
-
-    for vp_id in candidate_vps:
-        view_embs = vp_bank.vp_view_embs.get(vp_id)
-        if view_embs is None:
-            continue
-
-        # view_embs shape: (K, D)
-        s = -1e9
-        for k in range(view_embs.shape[0]):
-            s = max(s, cosine_sim(view_embs[k], q))
-
-        if s > best_score:
-            best_score = s
-            best_vp_id = vp_id
-
-    if best_vp_id is None:
-        # Fallback: deterministic first candidate (avoid randomness)
-        return candidate_vps[0], float("nan")
-
-    return best_vp_id, float(best_score)
 
 
 def explore_world(sim, location=0, heading=0, elevation=0):
