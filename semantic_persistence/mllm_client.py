@@ -13,10 +13,10 @@ except ImportError:
     from transformers import AutoModelForImageTextToText as AutoVLM
 
 
-class LocalQwen2VLClient:
+class LocalQwen3VLClient:
     def __init__(
         self,
-        model_name: str = "Qwen/Qwen2-VL-2B-Instruct",
+        model_name: str = "Qwen/Qwen3-VL-4B-Instruct",
         device: str | None = None,
         dtype: torch.dtype | None = None,
         max_new_tokens: int = 80,
@@ -82,9 +82,24 @@ class LocalQwen2VLClient:
         for depth_img in depth_images or []:
             if depth_img is None:
                 continue
-            if depth_img.dtype != np.uint8:
-                depth_img = depth_img.astype(np.uint8)
-            pil_depths.append(Image.fromarray(depth_img))
+
+            # Depth input is expected as z-depth in shape (H, W, 1) uint16,
+            # where meters = depth_value / 4000.0 (0.25 mm per increment).
+            if isinstance(depth_img, np.ndarray) and depth_img.ndim == 3:
+                if depth_img.shape[2] == 1:
+                    depth_img = depth_img[:, :, 0]
+                else:
+                    # Defensive fallback if extra channels are present.
+                    depth_img = depth_img[:, :, 0]
+
+            # Preserve metric depth fidelity in uint16 whenever possible.
+            if depth_img.dtype == np.float32 or depth_img.dtype == np.float64:
+                # If already in meters, convert back to 16-bit depth units.
+                depth_img = np.clip(depth_img * 4000.0, 0, 65535).astype(np.uint16)
+            elif depth_img.dtype != np.uint16:
+                depth_img = depth_img.astype(np.uint16)
+
+            pil_depths.append(Image.fromarray(depth_img, mode="I;16"))
 
         # -------------------- Optional downsample (keep mapping) --------------------
         # We keep a mapping so the MLLM can reference view indices robustly.
@@ -104,13 +119,13 @@ class LocalQwen2VLClient:
                 ).tolist()
                 pil_images = [pil_images[i] for i in idx]
                 index_map = [index_map[i] for i in idx]
-                pil_depths = [pil_depths[i] for i in idx]
+                pil_depths = [pil_depths[i] for i in idx if i < len(pil_depths)]
         else:
             # naive downsample if HFOV not set
             idx = list(range(0, len(pil_images), 8))
             pil_images = [pil_images[i] for i in idx]
             index_map = [index_map[i] for i in idx]
-            pil_depths = [pil_depths[i] for i in idx]
+            pil_depths = [pil_depths[i] for i in idx if i < len(pil_depths)]
 
         # save pil_images to disk for debugging
         for i, im in enumerate(pil_images):
@@ -271,7 +286,41 @@ class LocalQwen2VLClient:
             }
 
         # -------------------- Normalize output --------------------
+        # Preferred schema from the instruction prompt:
+        # {
+        #   "current_region": {"label": str, "confidence": float},
+        #   "neighbor_regions": [{"label": str, "existence_prob": float}],
+        #   "target": {"found": bool, "views": [int], "confidence": float}
+        # }
+        # Backward-compatible fallback still supports "regions".
         regions_in = payload.get("regions", [])
+        if not isinstance(regions_in, list):
+            regions_in = []
+
+        current_region = payload.get("current_region", {}) or {}
+        if isinstance(current_region, dict):
+            regions_in.insert(
+                0,
+                {
+                    "label": current_region.get("label", ""),
+                    "confidence": current_region.get("confidence", 0.0),
+                    "support_views": [],
+                },
+            )
+
+        neighbor_regions = payload.get("neighbor_regions", []) or []
+        if isinstance(neighbor_regions, list):
+            for neighbor in neighbor_regions:
+                if not isinstance(neighbor, dict):
+                    continue
+                regions_in.append(
+                    {
+                        "label": neighbor.get("label", ""),
+                        "confidence": neighbor.get("existence_prob", 0.0),
+                        "support_views": [],
+                    }
+                )
+
         target_in = payload.get("target", {}) or {}
 
         regions = []

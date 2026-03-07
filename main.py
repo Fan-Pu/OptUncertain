@@ -1,35 +1,13 @@
 import os
 import time
 import debugpy
-import random
-import math
 
 import Helper
-import numpy as np
-import cv2
 
-from semantic_persistence.mllm_client import LocalQwen2VLClient
+from semantic_persistence.mllm_client import LocalQwen3VLClient
 
 
 Explore_mode = False  # True: manual keyboard control
-
-
-def _angle_diff_rad(a: float, b: float) -> float:
-    """Smallest absolute difference between two angles (radians)."""
-    d = (a - b + math.pi) % (2.0 * math.pi) - math.pi
-    return abs(d)
-
-
-def _closest_view_index(horizon_headings: list[float], target_heading: float) -> int:
-    best_i = 0
-    best_d = float("inf")
-    for i, h in enumerate(horizon_headings):
-        d = _angle_diff_rad(h, target_heading)
-        if d < best_d:
-            best_d = d
-            best_i = i
-    return best_i
-
 
 if __name__ == "__main__":
     # -------------------- Debugger --------------------
@@ -53,11 +31,8 @@ if __name__ == "__main__":
         Helper.explore_world(sim)
         raise SystemExit(0)
 
-    # -------------------- Encoders (GPU) --------------------
-    MODEL_DIR = os.path.join("models", "clip-vit-base-patch32")
-
     # -------------------- MLLM --------------------
-    mllm = LocalQwen2VLClient(model_name="Qwen/Qwen2-VL-2B-Instruct", h_fov=Helper.HFOV)
+    mllm = LocalQwen3VLClient(model_name="Qwen/Qwen3-VL-4B-Instruct", h_fov=Helper.HFOV)
 
     # -------------------- Task --------------------
     target_object = os.environ.get("TARGET_OBJECT", "television").strip()
@@ -119,50 +94,11 @@ if __name__ == "__main__":
                 debugpy.breakpoint()
                 break
 
-        # 3) Choose a region label (optional). If no region labels are returned, fall back.
-        regions = mllm_out.get("regions", []) if isinstance(mllm_out, dict) else []
-        if not isinstance(regions, list) or len(regions) == 0:
-            print(
-                "[WARN] MLLM returned no regions. Falling back to greedy first neighbor."
-            )
-            next_vp = list(best_heading_for_vp.keys())[0]
-            Helper.rotate_to_target_heading_mov2vp(
-                sim, best_heading_for_vp[next_vp], next_vp
-            )
-            print(f"[Move] {cur_vp} -> {next_vp}")
-            continue
-
-        regions = sorted(
-            regions, key=lambda x: float(x.get("confidence", 0.0)), reverse=True
-        )
-        top = regions[0]
-        semantic_label = str(top.get("label", "")).strip()
-        top_conf = float(top.get("confidence", 0.0))
-        print(f"[MLLM] Top region: {semantic_label} (confidence={top_conf:.2f})")
-
-        if not semantic_label:
-            print("[WARN] Empty label. Falling back to greedy first neighbor.")
-            next_vp = list(best_heading_for_vp.keys())[0]
-            Helper.rotate_to_target_heading_mov2vp(
-                sim, best_heading_for_vp[next_vp], next_vp
-            )
-            print(f"[Move] {cur_vp} -> {next_vp}")
-            continue
-
-        debugpy.breakpoint()
-
-        # 4) Score each locally observable neighbor using the view that best faces it,
-        #    then compute CLIP similarity with semantic_label.
-        text_emb = text_embedder.embed(semantic_label)
-
-        best_next_vp = None
-
-        print(f"[Select] next_vp={best_next_vp}")
-
-        # 5) Execute one-step move (fully executable in MatterSim).
+        # 3) Greedy navigation fallback when target is not detected.
+        next_vp = list(best_heading_for_vp.keys())[0]
         Helper.rotate_to_target_heading_mov2vp(
-            sim, best_heading_for_vp[best_next_vp], best_next_vp
+            sim, best_heading_for_vp[next_vp], next_vp
         )
-        print(f"[Move] {cur_vp} -> {best_next_vp}")
+        print(f"[Move] {cur_vp} -> {next_vp}")
 
         debugpy.breakpoint()
