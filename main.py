@@ -60,6 +60,7 @@ if __name__ == "__main__":
             observation_images=horizon_rgb_images,
             topk=5,
             target_object=target_object,
+            depth_images=horizon_depths,
         )
         runtime = time.perf_counter() - start_time
         print(f"[MLLM] runtime: {runtime:.2f} seconds")

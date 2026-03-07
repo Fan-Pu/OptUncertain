@@ -365,3 +365,7 @@ class LocalQwen3VLClient:
             "num_obs_images": num_obs_images,
             "index_map": index_map,
         }
+
+
+# Backward-compatible alias
+LocalQwen2VLClient = LocalQwen3VLClient
