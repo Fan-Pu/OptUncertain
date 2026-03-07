@@ -19,7 +19,7 @@ class LocalQwen3VLClient:
         model_name: str = "Qwen/Qwen3-VL-4B-Instruct",
         device: str | None = None,
         dtype: torch.dtype | None = None,
-        max_new_tokens: int = 80,
+        max_new_tokens: int = 256,
         h_fov: float = -1.0,
     ):
         if device is None:
@@ -57,16 +57,10 @@ class LocalQwen3VLClient:
 
         Returns a dict:
           {
-            "regions": [{"label": "...", "confidence": 0.7, "support_views": [0,3]}],
-            "target": {"query": "...", "found": true/false, "views": [..]},
-            "num_obs_images": <int>,
-            "index_map": <list[int]>   # index_map[i] = original horizon index of image i shown to the MLLM
+            "current_region": {"label": "...", "confidence": 0.0},
+            "neighbor_regions": [{"label": "...", "existence_prob": 0.0}],
+            "target": {"found": true/false, "views": [..], "confidence": 0.0}
           }
-
-        Notes:
-          - The MLLM may output fewer than topk regions.
-          - "views" indices refer to the images actually provided to the MLLM (after any downsampling),
-            so you can map them back to original horizon indices via index_map.
         """
 
         # -------------------- Convert to PIL --------------------
@@ -212,17 +206,28 @@ class LocalQwen3VLClient:
         inputs = self.processor(text=[text], images=pil_images, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-        with torch.no_grad():
-            out = self.model.generate(
-                **inputs,
-                max_new_tokens=self.max_new_tokens,
-                do_sample=False,  # deterministic, helps JSON stability
-                temperature=0.0,  # keep consistent outputs
-                top_p=1.0,
-                repetition_penalty=1.05,  # small nudge to reduce loops
-            )
+        def _decode_with_max_tokens(max_tokens: int) -> str:
+            with torch.no_grad():
+                out = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=False,  # deterministic, helps JSON stability
+                    temperature=0.0,  # keep consistent outputs
+                    top_p=1.0,
+                    repetition_penalty=1.05,  # small nudge to reduce loops
+                )
 
-        decoded = self.processor.batch_decode(out, skip_special_tokens=True)[0].strip()
+            # For decoder-only chat models, `generate` returns prompt + completion.
+            # Decode only the newly generated tokens so we don't re-parse the prompt.
+            input_len = inputs["input_ids"].shape[-1]
+            generated = out[:, input_len:]
+            return self.processor.batch_decode(
+                generated,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False,
+            )[0].strip()
+
+        decoded = _decode_with_max_tokens(self.max_new_tokens)
 
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
@@ -258,117 +263,130 @@ class LocalQwen3VLClient:
             raw = "\n".join(lines).strip()
 
         # 2) Try direct JSON parse
-        payload = None
-        try:
-            payload = json.loads(raw)
-        except Exception:
-            # 3) Fallback: extract the first valid {...} JSON object
-            for i in range(len(raw)):
-                if raw[i] != "{":
-                    continue
-                for j in range(len(raw), i, -1):
-                    if raw[j - 1] != "}":
+        def _try_parse_json(candidate_raw: str):
+            parsed = None
+            try:
+                parsed = json.loads(candidate_raw)
+            except Exception:
+                # Fallback: extract the first valid {...} JSON object.
+                for i in range(len(candidate_raw)):
+                    if candidate_raw[i] != "{":
                         continue
-                    candidate = raw[i:j]
-                    try:
-                        payload = json.loads(candidate)
+                    for j in range(len(candidate_raw), i, -1):
+                        if candidate_raw[j - 1] != "}":
+                            continue
+                        candidate = candidate_raw[i:j]
+                        try:
+                            parsed = json.loads(candidate)
+                            break
+                        except Exception:
+                            continue
+                    if parsed is not None:
                         break
-                    except Exception:
-                        continue
-                if payload is not None:
-                    break
+            return parsed
+
+        payload = _try_parse_json(raw)
+
+        # If output appears truncated (common with too-small max_new_tokens),
+        # regenerate once with a larger token budget.
+        if payload is None and raw.count("{") > raw.count("}"):
+            retry_tokens = max(self.max_new_tokens * 2, 512)
+            decoded = _decode_with_max_tokens(retry_tokens)
+            print("\n[MLLM RAW OUTPUT RETRY]\n", decoded)
+            raw = decoded.strip()
+            if "```" in raw:
+                lines = raw.splitlines()
+                if lines and lines[0].strip().startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip().startswith("```"):
+                    lines = lines[:-1]
+                raw = "\n".join(lines).strip()
+            payload = _try_parse_json(raw)
 
         if payload is None:
             print("[MLLM] Failed to parse JSON. Raw output:")
             print(decoded)
             return {
-                "regions": [],
-                "target": {"query": target_object, "found": False, "views": []},
-                "num_obs_images": num_obs_images,
-                "index_map": index_map,
+                "current_region": {"label": "", "confidence": 0.0},
+                "neighbor_regions": [],
+                "target": {"found": False, "views": [], "confidence": 0.0},
             }
 
         # -------------------- Normalize output --------------------
-        # Preferred schema from the instruction prompt:
+        # Output schema:
         # {
         #   "current_region": {"label": str, "confidence": float},
         #   "neighbor_regions": [{"label": str, "existence_prob": float}],
         #   "target": {"found": bool, "views": [int], "confidence": float}
         # }
-        # Backward-compatible fallback still supports "regions".
-        regions_in = payload.get("regions", [])
-        if not isinstance(regions_in, list):
-            regions_in = []
-
-        current_region = payload.get("current_region", {}) or {}
-        if isinstance(current_region, dict):
-            regions_in.insert(
-                0,
-                {
-                    "label": current_region.get("label", ""),
-                    "confidence": current_region.get("confidence", 0.0),
-                    "support_views": [],
-                },
-            )
-
-        neighbor_regions = payload.get("neighbor_regions", []) or []
-        if isinstance(neighbor_regions, list):
-            for neighbor in neighbor_regions:
-                if not isinstance(neighbor, dict):
-                    continue
-                regions_in.append(
-                    {
-                        "label": neighbor.get("label", ""),
-                        "confidence": neighbor.get("existence_prob", 0.0),
-                        "support_views": [],
-                    }
-                )
-
-        target_in = payload.get("target", {}) or {}
-
-        regions = []
-        for r in regions_in[:topk] if isinstance(regions_in, list) else []:
-            label = str(r.get("label", "")).strip()
+        current_region_in = payload.get("current_region", {}) or {}
+        current_label = ""
+        current_confidence = 0.0
+        if isinstance(current_region_in, dict):
+            current_label = str(current_region_in.get("label", "")).strip()
             try:
-                conf = float(r.get("confidence", 0.0))
+                current_confidence = float(current_region_in.get("confidence", 0.0))
             except Exception:
-                conf = 0.0
-            sv = r.get("support_views", []) or []
-            support_views = []
-            for x in sv if isinstance(sv, (list, tuple)) else []:
-                try:
-                    support_views.append(int(x))
-                except Exception:
-                    continue
+                current_confidence = 0.0
+
+        neighbor_regions_in = payload.get("neighbor_regions", []) or []
+
+        # Backward-compat: accept legacy "regions" list if explicit fields are missing.
+        legacy_regions = payload.get("regions", []) or []
+        if isinstance(legacy_regions, list) and not current_label and legacy_regions:
+            first_region = legacy_regions[0] if isinstance(legacy_regions[0], dict) else {}
+            current_label = str(first_region.get("label", "")).strip()
+            try:
+                current_confidence = float(first_region.get("confidence", 0.0))
+            except Exception:
+                current_confidence = 0.0
+            if not isinstance(neighbor_regions_in, list) or not neighbor_regions_in:
+                neighbor_regions_in = [r for r in legacy_regions[1:] if isinstance(r, dict)]
+
+        normalized_neighbors = []
+        for neighbor in neighbor_regions_in if isinstance(neighbor_regions_in, list) else []:
+            if not isinstance(neighbor, dict):
+                continue
+            label = str(neighbor.get("label", "")).strip()
             if not label:
                 continue
-            regions.append(
+            try:
+                existence_prob = float(
+                    neighbor.get("existence_prob", neighbor.get("confidence", 0.0))
+                )
+            except Exception:
+                existence_prob = 0.0
+            normalized_neighbors.append(
                 {
                     "label": label,
-                    "confidence": conf,
-                    "support_views": support_views,
-                    "type": "region",
+                    "existence_prob": existence_prob,
                 }
             )
 
+        target_in = payload.get("target", {}) or {}
         found = bool(target_in.get("found", False))
-        views = target_in.get("views", []) or []
         target_views = []
-        for x in views if isinstance(views, (list, tuple)) else []:
+        for x in (target_in.get("views", []) or []):
             try:
                 target_views.append(int(x))
             except Exception:
                 continue
+        try:
+            target_confidence = float(target_in.get("confidence", 0.0))
+        except Exception:
+            target_confidence = 0.0
 
         return {
-            "regions": regions,
+            "current_region": {
+                "label": current_label,
+                "confidence": current_confidence,
+            },
+            "neighbor_regions": normalized_neighbors[:topk],
             "target": {
-                "query": str(target_in.get("query", target_object)).strip(),
                 "found": found,
                 "views": target_views,
+                "confidence": target_confidence,
             },
-            "num_obs_images": num_obs_images,
-            "index_map": index_map,
         }
 
 
