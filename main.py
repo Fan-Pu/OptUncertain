@@ -8,7 +8,7 @@ import Helper
 import numpy as np
 import cv2
 
-from semantic_persistence.mllm_client import LocalQwen2VLClient
+from semantic_persistence.mllm_client import LocalQwen3VLClient
 
 
 Explore_mode = False  # True: manual keyboard control
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     MODEL_DIR = os.path.join("models", "clip-vit-base-patch32")
 
     # -------------------- MLLM --------------------
-    mllm = LocalQwen2VLClient(model_name="Qwen/Qwen2-VL-2B-Instruct", h_fov=Helper.HFOV)
+    mllm = LocalQwen3VLClient(model_name="Qwen/Qwen3-VL-4B-Instruct", h_fov=Helper.HFOV)
 
     # -------------------- Task --------------------
     target_object = os.environ.get("TARGET_OBJECT", "television").strip()

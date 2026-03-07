@@ -13,10 +13,10 @@ except ImportError:
     from transformers import AutoModelForImageTextToText as AutoVLM
 
 
-class LocalQwen2VLClient:
+class LocalQwen3VLClient:
     def __init__(
         self,
-        model_name: str = "Qwen/Qwen2-VL-2B-Instruct",
+        model_name: str = "Qwen/Qwen3-VL-4B-Instruct",
         device: str | None = None,
         dtype: torch.dtype | None = None,
         max_new_tokens: int = 80,
@@ -318,3 +318,7 @@ class LocalQwen2VLClient:
             "num_obs_images": num_obs_images,
             "index_map": index_map,
         }
+
+
+# Backward-compatible alias
+LocalQwen2VLClient = LocalQwen3VLClient
