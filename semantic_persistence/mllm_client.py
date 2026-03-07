@@ -239,25 +239,6 @@ class LocalQwen3VLClient:
 
         debugpy.breakpoint()
 
-        # Keep only the last assistant segment if present
-        marker = "assistant"
-        if marker in decoded:
-            decoded = decoded.split(marker)[-1].strip()
-
-        # Strip common markdown code fences (```json ... ```)
-        if decoded.startswith("```"):
-            parts = decoded.split("```")
-            if len(parts) >= 2:
-                decoded = parts[1].strip()
-            if decoded.startswith("json"):
-                decoded = decoded.split("\n", 1)[-1].strip()
-            if decoded.endswith("```"):
-                decoded = decoded[:-3].strip()
-
-        print("\n[MLLM RAW OUTPUT 2]\n", decoded)
-
-        debugpy.breakpoint()
-
         # 1) Strip markdown code fences if present
         raw = decoded.strip()
         if "```" in raw:
@@ -401,7 +382,3 @@ class LocalQwen3VLClient:
             "num_obs_images": num_obs_images,
             "index_map": index_map,
         }
-
-
-# Backward-compatible alias
-LocalQwen2VLClient = LocalQwen3VLClient

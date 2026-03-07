@@ -65,6 +65,8 @@ if __name__ == "__main__":
         runtime = time.perf_counter() - start_time
         print(f"[MLLM] runtime: {runtime:.2f} seconds")
 
+        debugpy.breakpoint()
+
         # 2a) If MLLM says the target is visible in some view, rotate to that view and stop.
         tgt = mllm_out.get("target", {}) if isinstance(mllm_out, dict) else {}
         tgt_found = bool(tgt.get("found", False))
