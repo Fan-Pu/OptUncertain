@@ -13,10 +13,10 @@ except ImportError:
     from transformers import AutoModelForImageTextToText as AutoVLM
 
 
-class LocalQwen2VLClient:
+class LocalQwen3VLClient:
     def __init__(
         self,
-        model_name: str = "Qwen/Qwen2-VL-2B-Instruct",
+        model_name: str = "Qwen/Qwen3-VL-4B-Instruct",
         device: str | None = None,
         dtype: torch.dtype | None = None,
         max_new_tokens: int = 80,
@@ -271,7 +271,41 @@ class LocalQwen2VLClient:
             }
 
         # -------------------- Normalize output --------------------
+        # Preferred schema from the instruction prompt:
+        # {
+        #   "current_region": {"label": str, "confidence": float},
+        #   "neighbor_regions": [{"label": str, "existence_prob": float}],
+        #   "target": {"found": bool, "views": [int], "confidence": float}
+        # }
+        # Backward-compatible fallback still supports "regions".
         regions_in = payload.get("regions", [])
+        if not isinstance(regions_in, list):
+            regions_in = []
+
+        current_region = payload.get("current_region", {}) or {}
+        if isinstance(current_region, dict):
+            regions_in.insert(
+                0,
+                {
+                    "label": current_region.get("label", ""),
+                    "confidence": current_region.get("confidence", 0.0),
+                    "support_views": [],
+                },
+            )
+
+        neighbor_regions = payload.get("neighbor_regions", []) or []
+        if isinstance(neighbor_regions, list):
+            for neighbor in neighbor_regions:
+                if not isinstance(neighbor, dict):
+                    continue
+                regions_in.append(
+                    {
+                        "label": neighbor.get("label", ""),
+                        "confidence": neighbor.get("existence_prob", 0.0),
+                        "support_views": [],
+                    }
+                )
+
         target_in = payload.get("target", {}) or {}
 
         regions = []
