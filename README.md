@@ -13,3 +13,7 @@ SigLIP encoders require:
     pip install torch transformers
 
 
+
+Default multimodal model:
+
+    Qwen/Qwen3-VL-4B-Instruct
