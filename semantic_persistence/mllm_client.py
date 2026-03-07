@@ -128,6 +128,9 @@ class LocalQwen3VLClient:
         # save pil_images to disk for debugging
         for i, im in enumerate(pil_images):
             im.save(f"debug_horizon_image_{i}.png")
+        # save pil_depths to disk for debugging
+        for i, d in enumerate(pil_depths):
+            d.save(f"debug_horizon_depth_{i}.png")
 
         num_obs_images = len(pil_images)
 
@@ -220,6 +223,8 @@ class LocalQwen3VLClient:
             )
 
         decoded = self.processor.batch_decode(out, skip_special_tokens=True)[0].strip()
+
+        print("\n[MLLM RAW OUTPUT]\n", decoded)
 
         debugpy.breakpoint()
 
