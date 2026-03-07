@@ -232,7 +232,7 @@ class LocalQwen3VLClient:
             clean_up_tokenization_spaces=False,
         )[0].strip()
 
-        print("\n[MLLM RAW OUTPUT]\n", decoded)
+        print("\n[MLLM RAW OUTPUT 1]\n", decoded)
 
         debugpy.breakpoint()
 
@@ -251,7 +251,7 @@ class LocalQwen3VLClient:
             if decoded.endswith("```"):
                 decoded = decoded[:-3].strip()
 
-        print("\n[MLLM RAW OUTPUT]\n", decoded)
+        print("\n[MLLM RAW OUTPUT 2]\n", decoded)
 
         debugpy.breakpoint()
 
