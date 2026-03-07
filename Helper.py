@@ -105,6 +105,7 @@ def horizon_scan_return(sim):
         start_state: the initial simulator state before performing any rotations.
         horizon_images: list of RGB images (numpy arrays) captured during the scan.
         horizon_headings: list of headings (radians) aligned with horizon_images.
+        horizon_depths: list of depth maps (numpy arrays) captured during the scan.
     """
     start_state = sim.getState()[0]
 
@@ -113,6 +114,7 @@ def horizon_scan_return(sim):
 
     horizon_images = []
     horizon_headings = []
+    horizon_depths = []
 
     for horizon_idx in range(HORIZON_LEN):
         state = sim.getState()[0]
@@ -121,6 +123,7 @@ def horizon_scan_return(sim):
 
         horizon_images.append(np.array(state.rgb, copy=True))
         horizon_headings.append(cur_heading)
+        horizon_depths.append(np.array(state.depth, copy=True))
 
         # record best "in-front" heading for each neighbor
         for loc in locations[1:]:
@@ -136,7 +139,13 @@ def horizon_scan_return(sim):
     # rotate back to the exact starting heading
     sim.makeAction([0], [DELTA_HEADING_RAD], [0])
 
-    return best_heading_for_vp, start_state, horizon_images, horizon_headings
+    return (
+        best_heading_for_vp,
+        start_state,
+        horizon_images,
+        horizon_headings,
+        horizon_depths,
+    )
 
 
 def compute_rotation(current_heading_deg, target_heading_deg, step_size_deg):

@@ -48,6 +48,7 @@ class LocalQwen2VLClient:
     def propose_semantic_nodes(
         self,
         observation_images: list[np.ndarray],
+        depth_images: list[np.ndarray] | None = None,
         topk: int = 5,
         target_object: str | None = None,
     ):
@@ -70,6 +71,7 @@ class LocalQwen2VLClient:
 
         # -------------------- Convert to PIL --------------------
         pil_images = []
+        pil_depths = []
         for img in observation_images:
             if img is None:
                 continue
@@ -77,30 +79,38 @@ class LocalQwen2VLClient:
                 img = img.astype(np.uint8)
             pil_images.append(Image.fromarray(img))
 
+        for depth_img in depth_images or []:
+            if depth_img is None:
+                continue
+            if depth_img.dtype != np.uint8:
+                depth_img = depth_img.astype(np.uint8)
+            pil_depths.append(Image.fromarray(depth_img))
+
         # -------------------- Optional downsample (keep mapping) --------------------
         # We keep a mapping so the MLLM can reference view indices robustly.
         index_map = list(range(len(pil_images)))
 
-        if pil_images:
-            if self.h_fov > 0:
-                target_count = int(np.ceil((2.0 * np.pi) / self.h_fov))
-                target_count = max(1, target_count)
+        if self.h_fov > 0:
+            target_count = int(np.ceil((2.0 * np.pi) / self.h_fov))
+            target_count = max(1, target_count)
 
-                if len(pil_images) > target_count:
-                    idx = np.linspace(
-                        0,
-                        len(pil_images) - 1,
-                        num=target_count,
-                        endpoint=False,
-                        dtype=int,
-                    ).tolist()
-                    pil_images = [pil_images[i] for i in idx]
-                    index_map = [index_map[i] for i in idx]
-            else:
-                # naive downsample if HFOV not set
-                idx = list(range(0, len(pil_images), 8))
+            if len(pil_images) > target_count:
+                idx = np.linspace(
+                    0,
+                    len(pil_images) - 1,
+                    num=target_count,
+                    endpoint=False,
+                    dtype=int,
+                ).tolist()
                 pil_images = [pil_images[i] for i in idx]
                 index_map = [index_map[i] for i in idx]
+                pil_depths = [pil_depths[i] for i in idx]
+        else:
+            # naive downsample if HFOV not set
+            idx = list(range(0, len(pil_images), 8))
+            pil_images = [pil_images[i] for i in idx]
+            index_map = [index_map[i] for i in idx]
+            pil_depths = [pil_depths[i] for i in idx]
 
         # save pil_images to disk for debugging
         for i, im in enumerate(pil_images):
@@ -111,114 +121,61 @@ class LocalQwen2VLClient:
         # -------------------- Prompt --------------------
         target_object = (target_object or "").strip()
 
-        target_block = ""
         if target_object:
             target_block = f"""
-        Task C (target detection)
+            Task C: Target detection
 
-        The target object is: "{target_object}".
+            Target: "{target_object}"
 
-        Decide whether the target object is clearly visible in ANY image.
+            Output:
+            "target": {{"found": boolean, "views": [indices], "confidence": float}}
 
-        Output a "target" object with fields:
-        - found: boolean
-        - views: list of image indices where the target is visible
-        - confidence: a value in [0,1] indicating confidence that the detected object is the target
+            Rules:
+            - If clearly visible in any image: found=true, views=list of those image indices, confidence in [0.6, 0.95]
+            - Otherwise: found=false, views=[], confidence=0.0
+            - Do not guess. If uncertain, use found=false.
+            """.strip()
+        else:
+            target_block = """
+            Task C: Target detection
 
-        Rules:
-        - If there is clear visual evidence of the target in one or more images:
-            found = true
-            views = indices of those images
-            confidence in [0.6, 0.95]
-        - If evidence is weak, ambiguous, or absent:
-            found = false
-            views = []
-            confidence = 0.0
-        - Do NOT guess. If uncertain, output found=false.
-
-        Important:
-        - Do not use confidence > 0.95.
-        - Only include an index in views if the target itself is visible in that image.
-        """.rstrip()
+            Output:
+            "target": {"found": false, "views": [], "confidence": 0.0}
+            """.strip()
 
         instruction = f"""
-        You are given a 360-degree horizon scan (multiple images) from inside a house.
-        Each image is one viewing direction from the SAME physical location.
-        Images are indexed from 0 to {max(0, num_obs_images - 1)}.
+        You are given a 360-degree indoor horizon scan. Each image is a different direction from the same location. Image indices: 0 to {max(0, num_obs_images - 1)}.
 
-        Region labels describe functional areas or rooms in a house.
-
-        Common examples include (but are NOT limited to):
-        - kitchen area
-        - living room area
-        - bedroom area
-        - bathroom area
-        - hallway
-        - dining area
-        - entryway
-        - corridor
-        - stair area
-        - office area
-        - laundry area
-        - garage area
-        - storage area
-
-        You may generate other reasonable room/area labels if the images support them.
-        The region must be a ROOM or FUNCTIONAL AREA, not a single object.
-        INVALID labels: chair, table, sofa, cabinet, door, TV.
-
-        You must do THREE region tasks:
+        Region labels must be rooms or functional areas, not objects. Examples: kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, stair area, office area, laundry area, garage area, storage area. Other reasonable room/area labels are allowed if supported by the images. Invalid labels: chair, table, sofa, cabinet, door, TV.
 
         Task A: Current region
-        Infer the region/area the agent is currently in.
-        - Output EXACTLY 1 current region label.
-        - Provide:
-        - label
-        - confidence in [0,1] based ONLY on visible evidence
+        Infer exactly one current room/area label.
 
-        Confidence calibration for Task A:
-        - Do NOT use confidence = 1.0.
-        - Use confidence in [0.6, 0.95].
-        - Use 0.9 to 0.95 only if there are multiple strong room-level cues across the scan.
-        - Use 0.6 to 0.8 if the evidence is partial or mixed.
+        Output:
+        "current_region": {{"label": "...", "confidence": 0.0}}
 
-        Task B: Neighbor regions (hypotheses)
-        Propose up to {topk} additional region labels that are likely to be adjacent/nearby,
-        even if they are not directly visible.
-        These are HYPOTHESES.
+        Rules:
+        - Confidence is based only on visible evidence
+        - confidence in [0.6, 0.95], never 1.0
 
-        For each hypothesized neighbor region, provide:
-        - label: a room/area label (not an object name)
-        - existence_prob: a plausibility score in [0,1]
+        Task B: Neighbor regions
+        Propose up to {topk} likely adjacent or nearby room/area labels, even if not directly visible.
 
-        Rules for neighbor regions:
-        - Do not repeat the current region label.
-        - Do not output object names.
-        - neighbor_regions may be an empty list ONLY if current_region.confidence >= 0.9
-        AND there are no obvious transition cues (doorways, corridor openings) in the scan.
-        - Otherwise, output at least 1 neighbor region.
+        Output:
+        "neighbor_regions": [{{"label": "...", "existence_prob": 0.0}}]
 
-        existence_prob constraints:
-        - If you output a neighbor region item, existence_prob MUST be >= 0.5.
-        - Do NOT output any neighbor region with existence_prob < 0.5.
-
-        existence_prob meaning:
-        0.9 = very likely nearby (strong layout cues)
-        0.7 = likely nearby (some cues or common adjacency)
-        0.5 = plausible but weak evidence
+        Rules:
+        - Do not repeat the current region
+        - Do not use object names
+        - Each existence_prob must be >= 0.5
+        - neighbor_regions may be empty only if current_region.confidence >= 0.9 and there are no obvious transition cues
 
         {target_block}
 
-        Output the JSON object directly, starting with "{{" and ending with "}}".
-        Do NOT include markdown fences like ```json.
-        Do NOT include any text before or after the JSON.
-
-        Return ONLY valid JSON in this format:
+        Return only valid JSON, no markdown, no extra text:
         {{
         "current_region": {{"label": "...", "confidence": 0.0}},
-        "neighbor_regions": [
-            {{"label": "...", "existence_prob": 0.0}}
-        ],
+        "neighbor_regions": [{{"label": "...", "existence_prob": 0.0}}],
         "target": {{"found": false, "views": [], "confidence": 0.0}}
         }}
         """.strip()

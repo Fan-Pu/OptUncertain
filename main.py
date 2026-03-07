@@ -70,7 +70,7 @@ if __name__ == "__main__":
         Helper.render_sim_state(state)
 
         # 1) Panoramic scan at the current viewpoint.
-        best_heading_for_vp, _, horizon_rgb_images, horizon_headings = (
+        best_heading_for_vp, _, horizon_rgb_images, horizon_headings, horizon_depths = (
             Helper.horizon_scan_return(sim)
         )
 
