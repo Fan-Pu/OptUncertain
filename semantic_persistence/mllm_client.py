@@ -19,7 +19,7 @@ class LocalQwen3VLClient:
         model_name: str = "Qwen/Qwen3-VL-4B-Instruct",
         device: str | None = None,
         dtype: torch.dtype | None = None,
-        max_new_tokens: int = 80,
+        max_new_tokens: int = 256,
         h_fov: float = -1.0,
     ):
         if device is None:
@@ -212,17 +212,28 @@ class LocalQwen3VLClient:
         inputs = self.processor(text=[text], images=pil_images, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-        with torch.no_grad():
-            out = self.model.generate(
-                **inputs,
-                max_new_tokens=self.max_new_tokens,
-                do_sample=False,  # deterministic, helps JSON stability
-                temperature=0.0,  # keep consistent outputs
-                top_p=1.0,
-                repetition_penalty=1.05,  # small nudge to reduce loops
-            )
+        def _decode_with_max_tokens(max_tokens: int) -> str:
+            with torch.no_grad():
+                out = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=False,  # deterministic, helps JSON stability
+                    temperature=0.0,  # keep consistent outputs
+                    top_p=1.0,
+                    repetition_penalty=1.05,  # small nudge to reduce loops
+                )
 
-        decoded = self.processor.batch_decode(out, skip_special_tokens=True)[0].strip()
+            # For decoder-only chat models, `generate` returns prompt + completion.
+            # Decode only the newly generated tokens so we don't re-parse the prompt.
+            input_len = inputs["input_ids"].shape[-1]
+            generated = out[:, input_len:]
+            return self.processor.batch_decode(
+                generated,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False,
+            )[0].strip()
+
+        decoded = _decode_with_max_tokens(self.max_new_tokens)
 
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
@@ -258,25 +269,45 @@ class LocalQwen3VLClient:
             raw = "\n".join(lines).strip()
 
         # 2) Try direct JSON parse
-        payload = None
-        try:
-            payload = json.loads(raw)
-        except Exception:
-            # 3) Fallback: extract the first valid {...} JSON object
-            for i in range(len(raw)):
-                if raw[i] != "{":
-                    continue
-                for j in range(len(raw), i, -1):
-                    if raw[j - 1] != "}":
+        def _try_parse_json(candidate_raw: str):
+            parsed = None
+            try:
+                parsed = json.loads(candidate_raw)
+            except Exception:
+                # Fallback: extract the first valid {...} JSON object.
+                for i in range(len(candidate_raw)):
+                    if candidate_raw[i] != "{":
                         continue
-                    candidate = raw[i:j]
-                    try:
-                        payload = json.loads(candidate)
+                    for j in range(len(candidate_raw), i, -1):
+                        if candidate_raw[j - 1] != "}":
+                            continue
+                        candidate = candidate_raw[i:j]
+                        try:
+                            parsed = json.loads(candidate)
+                            break
+                        except Exception:
+                            continue
+                    if parsed is not None:
                         break
-                    except Exception:
-                        continue
-                if payload is not None:
-                    break
+            return parsed
+
+        payload = _try_parse_json(raw)
+
+        # If output appears truncated (common with too-small max_new_tokens),
+        # regenerate once with a larger token budget.
+        if payload is None and raw.count("{") > raw.count("}"):
+            retry_tokens = max(self.max_new_tokens * 2, 512)
+            decoded = _decode_with_max_tokens(retry_tokens)
+            print("\n[MLLM RAW OUTPUT RETRY]\n", decoded)
+            raw = decoded.strip()
+            if "```" in raw:
+                lines = raw.splitlines()
+                if lines and lines[0].strip().startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip().startswith("```"):
+                    lines = lines[:-1]
+                raw = "\n".join(lines).strip()
+            payload = _try_parse_json(raw)
 
         if payload is None:
             print("[MLLM] Failed to parse JSON. Raw output:")
