@@ -222,7 +222,15 @@ class LocalQwen3VLClient:
                 repetition_penalty=1.05,  # small nudge to reduce loops
             )
 
-        decoded = self.processor.batch_decode(out, skip_special_tokens=True)[0].strip()
+        # For decoder-only chat models, `generate` returns prompt + completion.
+        # Decode only the newly generated tokens so we don't re-parse the prompt.
+        input_len = inputs["input_ids"].shape[-1]
+        generated = out[:, input_len:]
+        decoded = self.processor.batch_decode(
+            generated,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )[0].strip()
 
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
