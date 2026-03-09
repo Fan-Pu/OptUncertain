@@ -1,4 +1,4 @@
-import os
+﻿import os
 import time
 import debugpy
 
@@ -78,21 +78,20 @@ if __name__ == "__main__":
         #     the aligned RGB/depth pair.
         tgt = mllm_out.get("target", {}) if isinstance(mllm_out, dict) else {}
         tgt_found = bool(tgt.get("found", False))
-        orig_idx = int(tgt.get("view", -1))
-        if orig_idx < 0:
-            target_views = tgt.get("views", [])
-            target_confidences = tgt.get("confidence", [])
-            if (
-                isinstance(target_views, list)
-                and isinstance(target_confidences, list)
-                and target_views
-            ):
-                paired_candidates = [
-                    (int(view_idx), float(confidence))
-                    for view_idx, confidence in zip(target_views, target_confidences)
-                ]
-                if paired_candidates:
-                    orig_idx = max(paired_candidates, key=lambda pair: pair[1])[0]
+        orig_idx = -1
+        target_views = tgt.get("views", [])
+        target_confidences = tgt.get("confidence", [])
+        if (
+            isinstance(target_views, list)
+            and isinstance(target_confidences, list)
+            and target_views
+        ):
+            paired_candidates = [
+                (int(view_idx), float(confidence))
+                for view_idx, confidence in zip(target_views, target_confidences)
+            ]
+            if paired_candidates:
+                orig_idx = max(paired_candidates, key=lambda pair: pair[1])[0]
         if tgt_found and orig_idx != -1:
             target_heading = float(horizon_headings[orig_idx])
             target_rgb_image = horizon_rgb_images[orig_idx]
@@ -100,7 +99,7 @@ if __name__ == "__main__":
 
             print(f"Target '{target_object}' detected by MLLM in view {orig_idx}.")
             depth_start_time = time.perf_counter()
-            distance_out = {"distance_m": 2.5}
+            distance_out = {"distance_m": 2.375}
             # distance_out = mllm.estimate_target_distance(
             #     rgb_image=target_rgb_image,
             #     depth_image=target_depth_image,
@@ -108,6 +107,8 @@ if __name__ == "__main__":
             # )
             depth_runtime = time.perf_counter() - depth_start_time
             print(f"[MLLM distance] runtime: {depth_runtime:.2f} seconds")
+
+            debugpy.breakpoint()
 
             distance_m = distance_out.get("distance_m")
 
@@ -142,4 +143,3 @@ if __name__ == "__main__":
         print(f"[Move] {cur_vp} -> {next_vp}")
 
         debugpy.breakpoint()
-

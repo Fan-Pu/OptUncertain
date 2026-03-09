@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import io
 import json
 import os
@@ -209,7 +209,7 @@ class MLLMClient:
             "Return JSON only. No explanation or markdown."
         )
 
-        debugpy.breakpoint()
+        # debugpy.breakpoint()
         return prompt
 
     @staticmethod
@@ -413,7 +413,7 @@ class MLLMClient:
             )
 
         # decoded = self._request_completion(content_items, self.max_new_tokens)
-        decoded = '{"current_region":{"label":"living room area","confidence":0.9},"neighbor_regions":[{"label":"bedroom area","existence_prob":0.9,"target_prob":0.3},{"label":"kitchen area","existence_prob":0.7,"target_prob":0.1},{"label":"dining area","existence_prob":0.7,"target_prob":0.1},{"label":"hallway","existence_prob":0.6,"target_prob":0.1}],"region_connections":[{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.95,"travel_distance":3},{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.9,"travel_distance":4},{"region_a":"living room area","region_b":"dining area","connection_prob":0.9,"travel_distance":4},{"region_a":"living room area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[0,2],"confidence":[0.72,0.95]}}'
+        decoded = '{"current_region":{"label":"living room area","confidence":0.9},"neighbor_regions":[{"label":"kitchen area","existence_prob":0.85,"target_prob":0.1},{"label":"dining area","existence_prob":0.8,"target_prob":0.1},{"label":"bedroom area","existence_prob":0.8,"target_prob":0.2},{"label":"hallway","existence_prob":0.7,"target_prob":0.05}],"region_connections":[{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.8,"travel_distance":3},{"region_a":"living room area","region_b":"dining area","connection_prob":0.7,"travel_distance":3},{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.6,"travel_distance":5},{"region_a":"living room area","region_b":"hallway","connection_prob":0.6,"travel_distance":4},{"region_a":"kitchen area","region_b":"dining area","connection_prob":0.6,"travel_distance":2},{"region_a":"kitchen area","region_b":"bedroom area","connection_prob":0.2,"travel_distance":-1},{"region_a":"kitchen area","region_b":"hallway","connection_prob":0.3,"travel_distance":-1},{"region_a":"dining area","region_b":"bedroom area","connection_prob":0.3,"travel_distance":-1},{"region_a":"dining area","region_b":"hallway","connection_prob":0.3,"travel_distance":-1},{"region_a":"bedroom area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[1],"confidence":[0.9]}}'
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
         raw = self._strip_code_fences(decoded)
@@ -560,4 +560,3 @@ class MLLMClient:
         return {
             "distance_m": distance_m,
         }
-
