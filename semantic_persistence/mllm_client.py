@@ -1,49 +1,229 @@
+﻿import base64
+import io
 import json
+import os
+
 import numpy as np
-import torch
+from openai import BadRequestError, OpenAI
 from PIL import Image
-from transformers import AutoProcessor
-import debugpy
-
-try:
-    # transformers 4.x
-    from transformers import AutoModelForVision2Seq as AutoVLM
-except ImportError:
-    # transformers 5.x name
-    from transformers import AutoModelForImageTextToText as AutoVLM
 
 
-class LocalQwen3VLClient:
+class MLLMClient:
     def __init__(
         self,
-        model_name: str = "Qwen/Qwen3-VL-4B-Instruct",
-        device: str | None = None,
-        dtype: torch.dtype | None = None,
-        max_new_tokens: int = 256,
+        model_name: str = "meta-llama/Llama-4-Scout-17B-16E-Instruct:cheapest",
+        base_url: str = "https://router.huggingface.co/v1",
+        api_key_env: str = "HF_TOKEN",
+        max_new_tokens: int = 160,
         h_fov: float = -1.0,
+        request_timeout: float = 120.0,
+        save_debug_images: bool = True,
     ):
-        if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        if dtype is None:
-            dtype = torch.float16 if device == "cuda" else torch.float32
+        api_key = os.environ.get(api_key_env)
+        if not api_key:
+            raise RuntimeError(
+                f"Environment variable {api_key_env} is required for the Hugging Face router API."
+            )
 
-        self.device = device
-        self.dtype = dtype
+        self.model_name = self._normalize_model_name(model_name)
+        self.base_url = base_url
         self.max_new_tokens = max_new_tokens
         self.h_fov = h_fov
+        self.request_timeout = request_timeout
+        self.save_debug_images = save_debug_images
+        self.client = OpenAI(
+            base_url=base_url, api_key=api_key, timeout=request_timeout
+        )
 
-        self.processor = AutoProcessor.from_pretrained(
-            model_name, trust_remote_code=True
+    @staticmethod
+    def _normalize_model_name(model_name: str) -> str:
+        model_name = (model_name or "").strip()
+        if not model_name:
+            raise ValueError("model_name must be a non-empty string.")
+        if "/" in model_name:
+            return model_name
+
+        shorthand_map = {
+            "Llama-4-Scout-17B-16E-Instruct": "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+            "Llama-4-Scout-17B-16E": "meta-llama/Llama-4-Scout-17B-16E",
+        }
+        return shorthand_map.get(model_name, model_name)
+
+    @staticmethod
+    def _strip_code_fences(raw_text: str) -> str:
+        raw = raw_text.strip()
+        if "```" not in raw:
+            return raw
+        lines = raw.splitlines()
+        if lines and lines[0].strip().startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        return "\n".join(lines).strip()
+
+    @staticmethod
+    def _is_complete_payload(obj) -> bool:
+        if not isinstance(obj, dict):
+            return False
+        required = ("current_region", "neighbor_regions", "target")
+        return all(key in obj for key in required)
+
+    def _try_parse_json(self, candidate_raw: str):
+        try:
+            parsed = json.loads(candidate_raw)
+            if self._is_complete_payload(parsed):
+                return parsed
+        except Exception:
+            pass
+
+        for i in range(len(candidate_raw)):
+            if candidate_raw[i] != "{":
+                continue
+            for j in range(len(candidate_raw), i, -1):
+                if candidate_raw[j - 1] != "}":
+                    continue
+                candidate = candidate_raw[i:j]
+                try:
+                    parsed = json.loads(candidate)
+                    if self._is_complete_payload(parsed):
+                        return parsed
+                except Exception:
+                    continue
+        return None
+
+    @staticmethod
+    def _message_to_text(message_content) -> str:
+        if isinstance(message_content, str):
+            return message_content
+        if isinstance(message_content, list):
+            chunks = []
+            for item in message_content:
+                if isinstance(item, dict) and item.get("type") == "text":
+                    chunks.append(str(item.get("text", "")))
+            return "\n".join(chunk for chunk in chunks if chunk).strip()
+        return str(message_content or "")
+
+    @staticmethod
+    def _extract_json_object(candidate_raw: str):
+        try:
+            parsed = json.loads(candidate_raw)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            pass
+
+        for i in range(len(candidate_raw)):
+            if candidate_raw[i] != "{":
+                continue
+            for j in range(len(candidate_raw), i, -1):
+                if candidate_raw[j - 1] != "}":
+                    continue
+                candidate = candidate_raw[i:j]
+                try:
+                    parsed = json.loads(candidate)
+                    if isinstance(parsed, dict):
+                        return parsed
+                except Exception:
+                    continue
+        return None
+
+    @staticmethod
+    def _image_to_data_url(image) -> str:
+        if isinstance(image, np.ndarray):
+            if image.dtype != np.uint8:
+                image = image.astype(np.uint8)
+            pil_image = Image.fromarray(image)
+        else:
+            pil_image = image
+        buffer = io.BytesIO()
+        pil_image.save(buffer, format="PNG")
+        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+        return f"data:image/png;base64,{encoded}"
+
+    def _build_instruction(
+        self,
+        num_obs_images: int,
+        topk: int,
+        target_object: str,
+    ) -> str:
+        """
+        Builds the instruction string for the MLLM based on the given parameters.
+        """
+        target_object = target_object.strip()
+        if target_object:
+            target_line = (
+                f'target: detect "{target_object}". '
+                'If visible, return {"found":true,"views":[indices],"confidence":0.0}; '
+                'otherwise {"found":false,"views":[],"confidence":0.0}.'
+            )
+        else:
+            target_line = 'target: always {"found":false,"views":[],"confidence":0.0}.'
+
+        prompt = (
+            f"You are given {num_obs_images} indoor images from one 360° viewpoint "
+            f"(indices 0–{max(0, num_obs_images - 1)}). "
+            "Output one-line compact JSON only. "
+            'Schema: {"current_region":{"label":"","confidence":0.0},'
+            '"neighbor_regions":[{"label":"","existence_prob":0.0,"target_prob":0.0}],'
+            '"region_connections":[{"region_a":"","region_b":"","connection_prob":0.0,"travel_distance":-1}],'
+            '"target":{"found":false,"views":[],"confidence":0.0}}. '
+            "Use room/area labels only (no objects): kitchen area, living room area, bedroom area, "
+            "bathroom area, hallway, dining area, entryway, corridor, office area. "
+            "current_region: one label for the camera location; confidence in [0.6,0.95]. "
+            f"{target_line} If unsure, set found=false. "
+            f"neighbor_regions: up to {topk}, no duplicates, exclude current_region. "
+            "Fields: label, existence_prob [0.5,0.95], target_prob [0,1]. "
+            "region_connections: for each unique pair among current_region and neighbors. "
+            "Fields: region_a, region_b, connection_prob [0,1], travel_distance (meters). "
+            "If not directly connected set travel_distance=-1. "
+            "Connections are symmetric: output A→B only, not B→A. "
+            "Return JSON only. No explanation or markdown."
         )
-        self.model = AutoVLM.from_pretrained(
-            model_name,
-            torch_dtype=dtype,
-            device_map="auto" if device == "cuda" else None,
-            trust_remote_code=True,
+
+        return prompt
+
+    def _build_distance_instruction(self, target_object: str) -> str:
+        """
+        Build a short distance-estimation prompt for one aligned RGB/depth pair.
+
+        The target has already been detected before this call, so the prompt only
+        asks the model to read the distance, not to decide whether the target exists.
+        """
+
+        target_object = target_object.strip()
+        return (
+            f'Target: "{target_object}". '
+            "Two aligned images are provided: RGB first, depth second. "
+            "The target is definitely visible in RGB, so do not verify presence. "
+            "Use RGB to locate the target, then estimate distance from depth. "
+            "Depth conversion: meters = pixel_value in the last dimension / 4000.0. "
+            'Return only valid JSON with exactly one key: "distance_m". '
+            'Example valid outputs: {"distance_m": 2.37} or {"distance_m": null}. '
+            "Do not output any other text."
         )
-        if device != "cuda":
-            self.model.to(device)
-        self.model.eval()
+
+    def _request_completion(self, content_items, max_tokens: int) -> str:
+        """
+        Sends a chat completion request to the Hugging Face router API with the given content items and max tokens.
+        Returns the text content of the response message.
+        """
+        try:
+            completion = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": content_items}],
+                max_tokens=max_tokens,
+            )
+        except BadRequestError as exc:
+            message = str(exc)
+            if "model_not_found" in message or "does not exist" in message:
+                raise RuntimeError(
+                    "The configured Hugging Face router model was not found. "
+                    f"Resolved model='{self.model_name}'. "
+                    "Use the full repo id, for example "
+                    "'meta-llama/Llama-4-Scout-17B-16E-Instruct'."
+                ) from exc
+            raise
+        return self._message_to_text(completion.choices[0].message.content)
 
     def propose_semantic_nodes(
         self,
@@ -53,23 +233,16 @@ class LocalQwen3VLClient:
         target_object: str | None = None,
     ):
         """
-        observation_images: list of RGB uint8 arrays (H,W,3), typically your horizon scan frames.
+        observation_images: list of RGB uint8 arrays (H,W,3), typically horizon scan frames.
 
         Returns a dict:
           {
-            "regions": [{"label": "...", "confidence": 0.7, "support_views": [0,3]}],
-            "target": {"query": "...", "found": true/false, "views": [..]},
-            "num_obs_images": <int>,
-            "index_map": <list[int]>   # index_map[i] = original horizon index of image i shown to the MLLM
+            "current_region": {"label": "...", "confidence": 0.0},
+            "neighbor_regions": [{"label": "...", "existence_prob": 0.0}],
+            "target": {"found": true/false, "views": [..], "confidence": 0.0}
           }
-
-        Notes:
-          - The MLLM may output fewer than topk regions.
-          - "views" indices refer to the images actually provided to the MLLM (after any downsampling),
-            so you can map them back to original horizon indices via index_map.
         """
 
-        # -------------------- Convert to PIL --------------------
         pil_images = []
         pil_depths = []
         for img in observation_images:
@@ -83,22 +256,16 @@ class LocalQwen3VLClient:
             if depth_img is None:
                 continue
 
-            # Depth input is expected as z-depth in shape (H, W, 1) uint16,
-            # where meters = depth_value / 4000.0 (0.25 mm per increment).
             if depth_img.ndim == 3:
                 depth_img = depth_img[:, :, 0]
 
-            # Preserve metric depth fidelity in uint16 whenever possible.
             if depth_img.dtype == np.float32 or depth_img.dtype == np.float64:
-                # If already in meters, convert back to 16-bit depth units.
                 depth_img = np.clip(depth_img * 4000.0, 0, 65535).astype(np.uint16)
             elif depth_img.dtype != np.uint16:
                 depth_img = depth_img.astype(np.uint16)
 
             pil_depths.append(Image.fromarray(depth_img, mode="I;16"))
 
-        # -------------------- Optional downsample (keep mapping) --------------------
-        # We keep a mapping so the MLLM can reference view indices robustly.
         index_map = list(range(len(pil_images)))
 
         if self.h_fov > 0:
@@ -118,267 +285,194 @@ class LocalQwen3VLClient:
                 if pil_depths:
                     pil_depths = [pil_depths[i] for i in idx]
         else:
-            # naive downsample if HFOV not set
             idx = list(range(0, len(pil_images), 8))
             pil_images = [pil_images[i] for i in idx]
             index_map = [index_map[i] for i in idx]
             if pil_depths:
                 pil_depths = [pil_depths[i] for i in idx]
 
-        # save pil_images to disk for debugging
-        for i, im in enumerate(pil_images):
-            im.save(f"debug_horizon_image_{i}.png")
-        # save pil_depths to disk for debugging
-        for i, d in enumerate(pil_depths):
-            d.save(f"debug_horizon_depth_{i}.png")
+        if self.save_debug_images:
+            for i, im in enumerate(pil_images):
+                im.save(f"debug_horizon_image_{i}.png")
+            for i, depth in enumerate(pil_depths):
+                depth.save(f"debug_horizon_depth_{i}.png")
 
         num_obs_images = len(pil_images)
-
-        # -------------------- Prompt --------------------
-        target_object = (target_object or "").strip()
-
-        if target_object:
-            target_block = f"""
-            Task C: Target detection
-
-            Target: "{target_object}"
-
-            Output:
-            "target": {{"found": boolean, "views": [indices], "confidence": float}}
-
-            Rules:
-            - If clearly visible in any image: found=true, views=list of those image indices, confidence in [0.6, 0.95]
-            - Otherwise: found=false, views=[], confidence=0.0
-            - Do not guess. If uncertain, use found=false.
-            """.strip()
-        else:
-            target_block = """
-            Task C: Target detection
-
-            Output:
-            "target": {"found": false, "views": [], "confidence": 0.0}
-            """.strip()
-
-        instruction = f"""
-        You are given a 360-degree indoor horizon scan. Each image is a different direction from the same location. Image indices: 0 to {max(0, num_obs_images - 1)}.
-
-        Region labels must be rooms or functional areas, not objects. Examples: kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, stair area, office area, laundry area, garage area, storage area. Other reasonable room/area labels are allowed if supported by the images. Invalid labels: chair, table, sofa, cabinet, door, TV.
-
-        Task A: Current region
-        Infer exactly one current room/area label.
-
-        Output:
-        "current_region": {{"label": "...", "confidence": 0.0}}
-
-        Rules:
-        - Confidence is based only on visible evidence
-        - confidence in [0.6, 0.95], never 1.0
-
-        Task B: Neighbor regions
-        Propose up to {topk} likely adjacent or nearby room/area labels, even if not directly visible.
-
-        Output:
-        "neighbor_regions": [{{"label": "...", "existence_prob": 0.0}}]
-
-        Rules:
-        - Do not repeat the current region
-        - Do not use object names
-        - Each existence_prob must be >= 0.5
-        - neighbor_regions may be empty only if current_region.confidence >= 0.9 and there are no obvious transition cues
-
-        {target_block}
-
-        Return only valid JSON, no markdown, no extra text:
-        {{
-        "current_region": {{"label": "...", "confidence": 0.0}},
-        "neighbor_regions": [{{"label": "...", "existence_prob": 0.0}}],
-        "target": {{"found": false, "views": [], "confidence": 0.0}}
-        }}
-        """.strip()
-
-        # -------------------- Build chat-style prompt --------------------
-        messages = [
-            {
-                "role": "user",
-                "content": [{"type": "image", "image": im} for im in pil_images]
-                + [{"type": "text", "text": instruction}],
-            }
-        ]
-
-        text = self.processor.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
+        instruction = self._build_instruction(
+            num_obs_images=num_obs_images,
+            topk=topk,
+            target_object=target_object or "",
         )
 
-        inputs = self.processor(text=[text], images=pil_images, return_tensors="pt")
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        content_items = [{"type": "text", "text": instruction}]
+        for image in pil_images:
+            content_items.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": self._image_to_data_url(image)},
+                }
+            )
 
-        def _decode_with_max_tokens(max_tokens: int) -> str:
-            with torch.no_grad():
-                out = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=False,  # deterministic, helps JSON stability
-                    temperature=0.0,  # keep consistent outputs
-                    top_p=1.0,
-                    repetition_penalty=1.05,  # small nudge to reduce loops
-                )
-
-            # For decoder-only chat models, `generate` returns prompt + completion.
-            # Decode only the newly generated tokens so we don't re-parse the prompt.
-            input_len = inputs["input_ids"].shape[-1]
-            generated = out[:, input_len:]
-            return self.processor.batch_decode(
-                generated,
-                skip_special_tokens=True,
-                clean_up_tokenization_spaces=False,
-            )[0].strip()
-
-        decoded = _decode_with_max_tokens(self.max_new_tokens)
-
+        # decoded = self._request_completion(content_items, self.max_new_tokens)
+        decoded = '{"current_region":{"label":"living room area","confidence":0.7},"neighbor_regions":[{"label":"dining area","existence_prob":0.8},{"label":"bedroom area","existence_prob":0.6}],"target":{"found":true,"views":[1],"confidence":0.8}}'
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
-        debugpy.breakpoint()
+        raw = self._strip_code_fences(decoded)
+        payload = self._try_parse_json(raw)
 
-        # 1) Strip markdown code fences if present
-        raw = decoded.strip()
-        if "```" in raw:
-            lines = raw.splitlines()
-            if lines and lines[0].strip().startswith("```"):
-                lines = lines[1:]
-            if lines and lines[-1].strip().startswith("```"):
-                lines = lines[:-1]
-            raw = "\n".join(lines).strip()
-
-        # 2) Try direct JSON parse
-        def _try_parse_json(candidate_raw: str):
-            parsed = None
-            try:
-                parsed = json.loads(candidate_raw)
-            except Exception:
-                # Fallback: extract the first valid {...} JSON object.
-                for i in range(len(candidate_raw)):
-                    if candidate_raw[i] != "{":
-                        continue
-                    for j in range(len(candidate_raw), i, -1):
-                        if candidate_raw[j - 1] != "}":
-                            continue
-                        candidate = candidate_raw[i:j]
-                        try:
-                            parsed = json.loads(candidate)
-                            break
-                        except Exception:
-                            continue
-                    if parsed is not None:
-                        break
-            return parsed
-
-        payload = _try_parse_json(raw)
-
-        # If output appears truncated (common with too-small max_new_tokens),
-        # regenerate once with a larger token budget.
-        if payload is None and raw.count("{") > raw.count("}"):
-            retry_tokens = max(self.max_new_tokens * 2, 512)
-            decoded = _decode_with_max_tokens(retry_tokens)
+        needs_retry = (
+            payload is None
+            or raw.count("{") > raw.count("}")
+            or not raw.rstrip().endswith("}")
+        )
+        if needs_retry:
+            retry_tokens = min(max(self.max_new_tokens * 2, 224), 384)
+            decoded = self._request_completion(content_items, retry_tokens)
             print("\n[MLLM RAW OUTPUT RETRY]\n", decoded)
-            raw = decoded.strip()
-            if "```" in raw:
-                lines = raw.splitlines()
-                if lines and lines[0].strip().startswith("```"):
-                    lines = lines[1:]
-                if lines and lines[-1].strip().startswith("```"):
-                    lines = lines[:-1]
-                raw = "\n".join(lines).strip()
-            payload = _try_parse_json(raw)
+            raw = self._strip_code_fences(decoded)
+            payload = self._try_parse_json(raw)
 
         if payload is None:
             print("[MLLM] Failed to parse JSON. Raw output:")
             print(decoded)
             return {
-                "regions": [],
-                "target": {"query": target_object, "found": False, "views": []},
-                "num_obs_images": num_obs_images,
-                "index_map": index_map,
+                "current_region": {"label": "", "confidence": 0.0},
+                "neighbor_regions": [],
+                "target": {"found": False, "views": [], "confidence": 0.0},
             }
 
-        # -------------------- Normalize output --------------------
-        # Preferred schema from the instruction prompt:
-        # {
-        #   "current_region": {"label": str, "confidence": float},
-        #   "neighbor_regions": [{"label": str, "existence_prob": float}],
-        #   "target": {"found": bool, "views": [int], "confidence": float}
-        # }
-        # Backward-compatible fallback still supports "regions".
-        regions_in = payload.get("regions", [])
-        if not isinstance(regions_in, list):
-            regions_in = []
+        # The rest of the code is dedicated to normalizing and validating the parsed output.
 
-        current_region = payload.get("current_region", {}) or {}
-        if isinstance(current_region, dict):
-            regions_in.insert(
-                0,
-                {
-                    "label": current_region.get("label", ""),
-                    "confidence": current_region.get("confidence", 0.0),
-                    "support_views": [],
-                },
-            )
+        current_region = payload.get("current_region", {})
+        current_label = str(current_region.get("label", "")).strip()
+        current_confidence = float(current_region.get("confidence", 0.0))
 
-        neighbor_regions = payload.get("neighbor_regions", []) or []
-        if isinstance(neighbor_regions, list):
-            for neighbor in neighbor_regions:
-                if not isinstance(neighbor, dict):
-                    continue
-                regions_in.append(
-                    {
-                        "label": neighbor.get("label", ""),
-                        "confidence": neighbor.get("existence_prob", 0.0),
-                        "support_views": [],
-                    }
-                )
+        neighbor_regions = payload.get("neighbor_regions", [])
+        legacy_regions = payload.get("regions", [])
 
-        target_in = payload.get("target", {}) or {}
+        if not current_label and legacy_regions:
+            first_region = legacy_regions[0]
+            current_label = str(first_region.get("label", "")).strip()
+            current_confidence = float(first_region.get("confidence", 0.0))
 
-        regions = []
-        for r in regions_in[:topk] if isinstance(regions_in, list) else []:
-            label = str(r.get("label", "")).strip()
-            try:
-                conf = float(r.get("confidence", 0.0))
-            except Exception:
-                conf = 0.0
-            sv = r.get("support_views", []) or []
-            support_views = []
-            for x in sv if isinstance(sv, (list, tuple)) else []:
-                try:
-                    support_views.append(int(x))
-                except Exception:
-                    continue
-            if not label:
+            if not neighbor_regions:
+                neighbor_regions = legacy_regions[1:]
+
+        normalized_neighbors = []
+        for neighbor in neighbor_regions:
+            label = str(neighbor.get("label", "")).strip()
+            if not label or label == current_label:
                 continue
-            regions.append(
+
+            existence_prob = float(
+                neighbor.get("existence_prob", neighbor.get("confidence", 0.0))
+            )
+            normalized_neighbors.append(
                 {
                     "label": label,
-                    "confidence": conf,
-                    "support_views": support_views,
-                    "type": "region",
+                    "existence_prob": existence_prob,
                 }
             )
 
-        found = bool(target_in.get("found", False))
-        views = target_in.get("views", []) or []
-        target_views = []
-        for x in views if isinstance(views, (list, tuple)) else []:
-            try:
-                target_views.append(int(x))
-            except Exception:
-                continue
+        target = payload.get("target", {})
+        found = bool(target.get("found", False))
+
+        # Map the original view indices returned by MLLM back to the corresponding horizon scan indices.
+        target_views = [
+            int(index_map[int(view_idx)])
+            for view_idx in target.get("views", [])
+            if 0 <= int(view_idx) < len(index_map)
+        ]
+
+        deduped_views = list(dict.fromkeys(target_views))
+        target_confidence = float(target.get("confidence", 0.0))
 
         return {
-            "regions": regions,
-            "target": {
-                "query": str(target_in.get("query", target_object)).strip(),
-                "found": found,
-                "views": target_views,
+            "current_region": {
+                "label": current_label,
+                "confidence": current_confidence,
             },
-            "num_obs_images": num_obs_images,
-            "index_map": index_map,
+            "neighbor_regions": normalized_neighbors[:topk],
+            "target": {
+                "found": found,
+                "views": deduped_views,
+                "confidence": target_confidence,
+            },
+        }
+
+    def estimate_target_distance(
+        self,
+        rgb_image: np.ndarray,
+        depth_image: np.ndarray,
+        target_object: str,
+    ):
+        """
+        Estimate the target distance from one aligned RGB/depth pair.
+
+        The RGB image tells the model where the already-detected target is in the
+        frame, and the depth image provides the metric value for that location.
+        """
+
+        if rgb_image is None or depth_image is None:
+            return {"found": False, "distance_m": None, "confidence": 0.0}
+
+        # Keep the RGB image unchanged aside from dtype normalization so the model sees
+        # the same target appearance that was used in the earlier detection step.
+        if rgb_image.dtype != np.uint8:
+            rgb_image = rgb_image.astype(np.uint8)
+        pil_rgb = Image.fromarray(rgb_image)
+
+        # Depth may arrive as float meters or as an integer map. Convert it to the
+        # same 16-bit representation described in the prompt before sending it.
+        if depth_image.ndim == 3:
+            depth_image = depth_image[:, :, 0]
+
+        if depth_image.dtype == np.float32 or depth_image.dtype == np.float64:
+            depth_image = np.clip(depth_image * 4000.0, 0, 65535).astype(np.uint16)
+        elif depth_image.dtype != np.uint16:
+            depth_image = depth_image.astype(np.uint16)
+
+        # Keep the existing debug depth dump untouched so your current debugging flow
+        # stays the same.
+        pil_depth = Image.fromarray(depth_image, mode="I;16")
+        if self.save_debug_images:
+            pil_depth.save("debug_target_depth_query.png")
+
+        # Send the RGB image first and the aligned depth image second to match the
+        # concise prompt in _build_distance_instruction().
+        content_items = [
+            {"type": "text", "text": self._build_distance_instruction(target_object)},
+            {
+                "type": "image_url",
+                "image_url": {"url": self._image_to_data_url(pil_rgb)},
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": self._image_to_data_url(pil_depth)},
+            },
+        ]
+
+        decoded = self._request_completion(content_items, max_tokens=96)
+        print("\n[MLLM DISTANCE RAW OUTPUT]\n", decoded)
+
+        raw = self._strip_code_fences(decoded)
+        payload = self._extract_json_object(raw)
+
+        if payload is None:
+            print("[MLLM] Failed to parse distance JSON. Raw output:")
+            print(decoded)
+            return {"distance_m": None}
+
+        # Treat only numeric values as valid distances. This avoids passing malformed
+        # model output deeper into the navigation loop.
+        distance_m = None
+        raw_distance = payload.get("distance_m")
+        if raw_distance is not None:
+            try:
+                distance_m = float(raw_distance)
+            except Exception:
+                distance_m = None
+
+        return {
+            "distance_m": distance_m,
         }

@@ -1,10 +1,10 @@
-import os
+﻿import os
 import time
 import debugpy
 
 import Helper
 
-from semantic_persistence.mllm_client import LocalQwen3VLClient
+from semantic_persistence.mllm_client import MLLMClient
 
 
 Explore_mode = False  # True: manual keyboard control
@@ -32,10 +32,19 @@ if __name__ == "__main__":
         raise SystemExit(0)
 
     # -------------------- MLLM --------------------
-    mllm = LocalQwen3VLClient(model_name="Qwen/Qwen3-VL-4B-Instruct", h_fov=Helper.HFOV)
+    mllm = MLLMClient(
+        model_name=os.environ.get(
+            "HF_MODEL", "meta-llama/Llama-4-Scout-17B-16E-Instruct"
+        ),
+        max_new_tokens=160,
+        h_fov=Helper.HFOV,
+    )
 
     # -------------------- Task --------------------
     target_object = os.environ.get("TARGET_OBJECT", "television").strip()
+    distance_threshold_m = float(
+        os.environ.get("TARGET_DISTANCE_THRESHOLD_M", "1.0").strip()
+    )
 
     # -------------------- Loop --------------------
     while True:
@@ -44,7 +53,8 @@ if __name__ == "__main__":
 
         Helper.render_sim_state(state)
 
-        # 1) Panoramic scan at the current viewpoint.
+        # 1) Scan the current viewpoint and keep the RGB frames, their headings, and
+        #    the aligned depth maps together so later queries can reuse the same view.
         best_heading_for_vp, _, horizon_rgb_images, horizon_headings, horizon_depths = (
             Helper.horizon_scan_return(sim)
         )
@@ -53,8 +63,8 @@ if __name__ == "__main__":
             print("[STOP] No navigable neighbors returned by the scan.")
             break
 
-        # 2) MLLM: (a) propose region labels AND (b) detect whether the target object
-        #    appears in any of the horizon images, returning the image indices.
+        # 2) Ask the MLLM to label the current/neighboring regions and report which
+        #    RGB view contains the target object.
         start_time = time.perf_counter()
         mllm_out = mllm.propose_semantic_nodes(
             observation_images=horizon_rgb_images,
@@ -65,39 +75,63 @@ if __name__ == "__main__":
         runtime = time.perf_counter() - start_time
         print(f"[MLLM] runtime: {runtime:.2f} seconds")
 
-        debugpy.breakpoint()
-
-        # 2a) If MLLM says the target is visible in some view, rotate to that view and stop.
+        # 2a) The detection step above already guarantees the target is in the chosen
+        #     RGB frame, so the follow-up query only needs to estimate distance from
+        #     the aligned RGB/depth pair.
         tgt = mllm_out.get("target", {}) if isinstance(mllm_out, dict) else {}
         tgt_found = bool(tgt.get("found", False))
         tgt_views = tgt.get("views", []) or []
-        index_map = (
-            mllm_out.get("index_map", list(range(len(horizon_headings))))
-            if isinstance(mllm_out, dict)
-            else list(range(len(horizon_headings)))
-        )
-
+        debugpy.breakpoint()
         if tgt_found and isinstance(tgt_views, list) and len(tgt_views) > 0:
-            # Choose the first supporting view and map it back to the original horizon index.
             try:
-                v_idx = int(tgt_views[0])
+                orig_idx = int(tgt_views[0])
             except Exception:
-                v_idx = None
+                orig_idx = None
 
-            if v_idx is not None and 0 <= v_idx < len(index_map):
-                orig_idx = int(index_map[v_idx])
-                orig_idx = max(0, min(orig_idx, len(horizon_headings) - 1))
+            if orig_idx is not None and 0 <= orig_idx < len(horizon_headings):
                 target_heading = float(horizon_headings[orig_idx])
+                target_rgb_image = horizon_rgb_images[orig_idx]
+                target_depth_image = horizon_depths[orig_idx]
 
-                print(
-                    f"✓ Target '{target_object}' detected by MLLM in view {v_idx} (orig={orig_idx})."
-                )
-                Helper.rotate_to_target_heading_mov2vp(sim, target_heading, None)
-                Helper.render_sim_state(sim.getState()[0])
-                debugpy.breakpoint()
-                break
+                print(f"Target '{target_object}' detected by MLLM in view {orig_idx}.")
+                depth_start_time = time.perf_counter()
+                distance_out = {"distance_m": 2.5}
+                # distance_out = mllm.estimate_target_distance(
+                #     rgb_image=target_rgb_image,
+                #     depth_image=target_depth_image,
+                #     target_object=target_object,
+                # )
+                depth_runtime = time.perf_counter() - depth_start_time
+                print(f"[MLLM distance] runtime: {depth_runtime:.2f} seconds")
 
-        # 3) Greedy navigation fallback when target is not detected.
+                distance_m = distance_out.get("distance_m")
+
+                if distance_m is not None:
+                    print(
+                        f"Target '{target_object}' distance estimate: {distance_m:.2f} m "
+                        f"(threshold: {distance_threshold_m:.2f} m)."
+                    )
+                    if distance_m <= distance_threshold_m:
+                        Helper.rotate_to_target_heading_mov2vp(
+                            sim, target_heading, None
+                        )
+                        Helper.render_sim_state(sim.getState()[0])
+                        debugpy.breakpoint()
+                        break
+
+                    print(
+                        f"[CONTINUE] Target detected but distance {distance_m:.2f} m exceeds "
+                        f"threshold {distance_threshold_m:.2f} m."
+                    )
+                else:
+                    print(
+                        f"[CONTINUE] Target '{target_object}' detected, but distance could not be estimated."
+                    )
+
+        debugpy.breakpoint()
+
+        # 3) Fall back to the existing greedy navigation rule when the target is not
+        #    visible or the distance estimate is unusable.
         next_vp = list(best_heading_for_vp.keys())[0]
         Helper.rotate_to_target_heading_mov2vp(
             sim, best_heading_for_vp[next_vp], next_vp

@@ -1,4 +1,4 @@
-"""
+﻿"""
 semantic_persistence package
 
 This package implements a lightweight semantic persistence component:
@@ -7,5 +7,6 @@ This package implements a lightweight semantic persistence component:
   - match/merge nodes over time (persistence)
 """
 
-from .mllm_client import LocalQwen3VLClient
+from .mllm_client import MLLMClient
 from .nav_graph import load_nav_graph, shortest_path_next_hop, argmin_distance_to_set
+
