@@ -33,9 +33,7 @@ if __name__ == "__main__":
 
     # -------------------- MLLM --------------------
     mllm = MLLMClient(
-        model_name=os.environ.get(
-            "HF_MODEL", "meta-llama/Llama-4-Scout-17B-16E-Instruct"
-        ),
+        "meta-llama/Llama-4-Scout-17B-16E-Instruct:cheapest",
         max_new_tokens=160,
         h_fov=Helper.HFOV,
     )
@@ -80,53 +78,44 @@ if __name__ == "__main__":
         #     the aligned RGB/depth pair.
         tgt = mllm_out.get("target", {}) if isinstance(mllm_out, dict) else {}
         tgt_found = bool(tgt.get("found", False))
-        tgt_views = tgt.get("views", []) or []
-        debugpy.breakpoint()
-        if tgt_found and isinstance(tgt_views, list) and len(tgt_views) > 0:
-            try:
-                orig_idx = int(tgt_views[0])
-            except Exception:
-                orig_idx = None
+        orig_idx = tgt.get("view") or -1
+        if tgt_found and orig_idx != -1:
+            target_heading = float(horizon_headings[orig_idx])
+            target_rgb_image = horizon_rgb_images[orig_idx]
+            target_depth_image = horizon_depths[orig_idx]
 
-            if orig_idx is not None and 0 <= orig_idx < len(horizon_headings):
-                target_heading = float(horizon_headings[orig_idx])
-                target_rgb_image = horizon_rgb_images[orig_idx]
-                target_depth_image = horizon_depths[orig_idx]
+            print(f"Target '{target_object}' detected by MLLM in view {orig_idx}.")
+            depth_start_time = time.perf_counter()
+            distance_out = {"distance_m": 2.5}
+            # distance_out = mllm.estimate_target_distance(
+            #     rgb_image=target_rgb_image,
+            #     depth_image=target_depth_image,
+            #     target_object=target_object,
+            # )
+            depth_runtime = time.perf_counter() - depth_start_time
+            print(f"[MLLM distance] runtime: {depth_runtime:.2f} seconds")
 
-                print(f"Target '{target_object}' detected by MLLM in view {orig_idx}.")
-                depth_start_time = time.perf_counter()
-                distance_out = {"distance_m": 2.5}
-                # distance_out = mllm.estimate_target_distance(
-                #     rgb_image=target_rgb_image,
-                #     depth_image=target_depth_image,
-                #     target_object=target_object,
-                # )
-                depth_runtime = time.perf_counter() - depth_start_time
-                print(f"[MLLM distance] runtime: {depth_runtime:.2f} seconds")
+            distance_m = distance_out.get("distance_m")
 
-                distance_m = distance_out.get("distance_m")
+            if distance_m is not None:
+                print(
+                    f"Target '{target_object}' distance estimate: {distance_m:.2f} m "
+                    f"(threshold: {distance_threshold_m:.2f} m)."
+                )
+                if distance_m <= distance_threshold_m:
+                    Helper.rotate_to_target_heading_mov2vp(sim, target_heading, None)
+                    Helper.render_sim_state(sim.getState()[0])
+                    debugpy.breakpoint()
+                    break
 
-                if distance_m is not None:
-                    print(
-                        f"Target '{target_object}' distance estimate: {distance_m:.2f} m "
-                        f"(threshold: {distance_threshold_m:.2f} m)."
-                    )
-                    if distance_m <= distance_threshold_m:
-                        Helper.rotate_to_target_heading_mov2vp(
-                            sim, target_heading, None
-                        )
-                        Helper.render_sim_state(sim.getState()[0])
-                        debugpy.breakpoint()
-                        break
-
-                    print(
-                        f"[CONTINUE] Target detected but distance {distance_m:.2f} m exceeds "
-                        f"threshold {distance_threshold_m:.2f} m."
-                    )
-                else:
-                    print(
-                        f"[CONTINUE] Target '{target_object}' detected, but distance could not be estimated."
-                    )
+                print(
+                    f"[CONTINUE] Target detected but distance {distance_m:.2f} m exceeds "
+                    f"threshold {distance_threshold_m:.2f} m."
+                )
+            else:
+                print(
+                    f"[CONTINUE] Target '{target_object}' detected, but distance could not be estimated."
+                )
 
         debugpy.breakpoint()
 

@@ -19,6 +19,7 @@ HFOV = (
 TEXT_COLOR = [230, 40, 40]
 MP_ROOT = "/root/mount/Matterport3DSimulator"  # repo root inside container
 HORIZON_LEN = 48
+# Each horizon scan rotates right by this many degrees (360 / HORIZON_LEN) for the next view, so smaller values mean finer-grained scans but more time spent rotating and rendering.
 DELTA_HEADING_DEG = 360 / HORIZON_LEN
 DELTA_HEADING_RAD = math.radians(DELTA_HEADING_DEG)
 pause_time = 0.15  # smooth rendering

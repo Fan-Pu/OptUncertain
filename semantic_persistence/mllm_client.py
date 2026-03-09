@@ -6,6 +6,10 @@ import os
 import numpy as np
 from openai import BadRequestError, OpenAI
 from PIL import Image
+import debugpy
+
+
+MAX_MLLM_INPUT_IMAGES = 5
 
 
 class MLLMClient:
@@ -25,7 +29,7 @@ class MLLMClient:
                 f"Environment variable {api_key_env} is required for the Hugging Face router API."
             )
 
-        self.model_name = self._normalize_model_name(model_name)
+        self.model_name = model_name
         self.base_url = base_url
         self.max_new_tokens = max_new_tokens
         self.h_fov = h_fov
@@ -34,20 +38,6 @@ class MLLMClient:
         self.client = OpenAI(
             base_url=base_url, api_key=api_key, timeout=request_timeout
         )
-
-    @staticmethod
-    def _normalize_model_name(model_name: str) -> str:
-        model_name = (model_name or "").strip()
-        if not model_name:
-            raise ValueError("model_name must be a non-empty string.")
-        if "/" in model_name:
-            return model_name
-
-        shorthand_map = {
-            "Llama-4-Scout-17B-16E-Instruct": "meta-llama/Llama-4-Scout-17B-16E-Instruct",
-            "Llama-4-Scout-17B-16E": "meta-llama/Llama-4-Scout-17B-16E",
-        }
-        return shorthand_map.get(model_name, model_name)
 
     @staticmethod
     def _strip_code_fences(raw_text: str) -> str:
@@ -140,6 +130,42 @@ class MLLMClient:
         encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
         return f"data:image/png;base64,{encoded}"
 
+    @staticmethod
+    def _select_evenly_spaced_indices(total_count: int, sample_count: int) -> list[int]:
+        if total_count <= 0 or sample_count <= 0:
+            return []
+
+        sample_count = min(total_count, sample_count)
+        if sample_count == total_count:
+            return list(range(total_count))
+
+        import Helper
+
+        step_rad = (2.0 * np.pi) / sample_count
+        used_indices = set()
+        selected_indices = []
+
+        for sample_idx in range(sample_count):
+            ideal_heading = sample_idx * step_rad
+            index = int(round(ideal_heading / Helper.DELTA_HEADING_RAD)) % total_count
+
+            if index in used_indices:
+                fallback_index = int(
+                    np.floor((sample_idx * total_count) / sample_count)
+                )
+                while (
+                    fallback_index in used_indices and fallback_index < total_count - 1
+                ):
+                    fallback_index += 1
+                while fallback_index in used_indices and fallback_index > 0:
+                    fallback_index -= 1
+                index = fallback_index
+
+            selected_indices.append(index)
+            used_indices.add(index)
+
+        return selected_indices
+
     def _build_instruction(
         self,
         num_obs_images: int,
@@ -153,24 +179,27 @@ class MLLMClient:
         if target_object:
             target_line = (
                 f'target: detect "{target_object}". '
-                'If visible, return {"found":true,"views":[indices],"confidence":0.0}; '
-                'otherwise {"found":false,"views":[],"confidence":0.0}.'
+                'If visible, return {"found":true,"views":[indices],"confidence":[]}; '
+                'otherwise {"found":false,"views":[],"confidence":[]}.'
             )
         else:
-            target_line = 'target: always {"found":false,"views":[],"confidence":0.0}.'
+            target_line = 'target: always {"found":false,"views":[],"confidence":[]}.'
 
         prompt = (
             f"You are given {num_obs_images} indoor images from one 360° viewpoint "
-            f"(indices 0–{max(0, num_obs_images - 1)}). "
+            f"(indices 0-{max(0, num_obs_images - 1)}). "
             "Output one-line compact JSON only. "
             'Schema: {"current_region":{"label":"","confidence":0.0},'
             '"neighbor_regions":[{"label":"","existence_prob":0.0,"target_prob":0.0}],'
             '"region_connections":[{"region_a":"","region_b":"","connection_prob":0.0,"travel_distance":-1}],'
-            '"target":{"found":false,"views":[],"confidence":0.0}}. '
+            '"target":{"found":false,"views":[],"confidence":[]}}. '
             "Use room/area labels only (no objects): kitchen area, living room area, bedroom area, "
-            "bathroom area, hallway, dining area, entryway, corridor, office area. "
+            "bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. "
             "current_region: one label for the camera location; confidence in [0.6,0.95]. "
-            f"{target_line} If unsure, set found=false. "
+            f"{target_line} "
+            "target: views = image indices where target confidence >0.5. "
+            "confidence = list of detection confidences aligned with views. "
+            "If no view has confidence >0.5 set found=false and return empty lists. "
             f"neighbor_regions: up to {topk}, no duplicates, exclude current_region. "
             "Fields: label, existence_prob [0.5,0.95], target_prob [0,1]. "
             "region_connections: for each unique pair among current_region and neighbors. "
@@ -180,6 +209,7 @@ class MLLMClient:
             "Return JSON only. No explanation or markdown."
         )
 
+        debugpy.breakpoint()
         return prompt
 
     def _build_distance_instruction(self, target_object: str) -> str:
@@ -270,16 +300,13 @@ class MLLMClient:
 
         if self.h_fov > 0:
             target_count = int(np.ceil((2.0 * np.pi) / self.h_fov))
-            target_count = max(1, target_count)
+            target_count = max(1, min(MAX_MLLM_INPUT_IMAGES, target_count))
 
             if len(pil_images) > target_count:
-                idx = np.linspace(
-                    0,
-                    len(pil_images) - 1,
-                    num=target_count,
-                    endpoint=False,
-                    dtype=int,
-                ).tolist()
+                idx = self._select_evenly_spaced_indices(
+                    total_count=len(pil_images),
+                    sample_count=target_count,
+                )
                 pil_images = [pil_images[i] for i in idx]
                 index_map = [index_map[i] for i in idx]
                 if pil_depths:
@@ -314,7 +341,7 @@ class MLLMClient:
             )
 
         # decoded = self._request_completion(content_items, self.max_new_tokens)
-        decoded = '{"current_region":{"label":"living room area","confidence":0.7},"neighbor_regions":[{"label":"dining area","existence_prob":0.8},{"label":"bedroom area","existence_prob":0.6}],"target":{"found":true,"views":[1],"confidence":0.8}}'
+        decoded = '{"current_region":{"label":"living room area","confidence":0.9},"neighbor_regions":[{"label":"bedroom area","existence_prob":0.9,"target_prob":0.3},{"label":"kitchen area","existence_prob":0.7,"target_prob":0.1},{"label":"dining area","existence_prob":0.7,"target_prob":0.1},{"label":"hallway","existence_prob":0.6,"target_prob":0.1}],"region_connections":[{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.95,"travel_distance":3},{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.9,"travel_distance":4},{"region_a":"living room area","region_b":"dining area","connection_prob":0.9,"travel_distance":4},{"region_a":"living room area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[0,2],"confidence":0.95}}'
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
         raw = self._strip_code_fences(decoded)
