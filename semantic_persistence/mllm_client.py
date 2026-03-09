@@ -1,4 +1,4 @@
-﻿import base64
+import base64
 import io
 import json
 import os
@@ -186,7 +186,7 @@ class MLLMClient:
             target_line = 'target: always {"found":false,"views":[],"confidence":[]}.'
 
         prompt = (
-            f"You are given {num_obs_images} indoor images from one 360° viewpoint "
+            f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
             f"(indices 0-{max(0, num_obs_images - 1)}). "
             "Output one-line compact JSON only. "
             'Schema: {"current_region":{"label":"","confidence":0.0},'
@@ -205,12 +205,79 @@ class MLLMClient:
             "region_connections: for each unique pair among current_region and neighbors. "
             "Fields: region_a, region_b, connection_prob [0,1], travel_distance (meters). "
             "If not directly connected set travel_distance=-1. "
-            "Connections are symmetric: output A→B only, not B→A. "
+            "Connections are symmetric: output A->B only, not B->A. "
             "Return JSON only. No explanation or markdown."
         )
 
         debugpy.breakpoint()
         return prompt
+
+    @staticmethod
+    def _normalize_target_output(target: dict, index_map: list[int]) -> dict:
+        found = bool(target.get("found", False))
+
+        raw_views = target.get("views", [])
+        if not isinstance(raw_views, list):
+            raw_views = [raw_views]
+
+        raw_confidences = target.get("confidence", [])
+        if isinstance(raw_confidences, list):
+            confidence_candidates = raw_confidences
+        elif raw_confidences is None:
+            confidence_candidates = []
+        else:
+            confidence_candidates = [raw_confidences]
+
+        normalized_pairs = []
+        for idx, raw_view in enumerate(raw_views):
+            try:
+                sampled_view_idx = int(raw_view)
+            except (TypeError, ValueError):
+                continue
+
+            if not (0 <= sampled_view_idx < len(index_map)):
+                continue
+
+            confidence_value = 0.0
+            if idx < len(confidence_candidates):
+                try:
+                    confidence_value = float(confidence_candidates[idx])
+                except (TypeError, ValueError):
+                    confidence_value = 0.0
+            elif len(confidence_candidates) == 1:
+                try:
+                    confidence_value = float(confidence_candidates[0])
+                except (TypeError, ValueError):
+                    confidence_value = 0.0
+
+            normalized_pairs.append(
+                (int(index_map[sampled_view_idx]), float(confidence_value))
+            )
+
+        best_confidence_by_view = {}
+        for view_idx, confidence_value in normalized_pairs:
+            previous = best_confidence_by_view.get(view_idx)
+            if previous is None or confidence_value > previous:
+                best_confidence_by_view[view_idx] = confidence_value
+
+        deduped_views = list(best_confidence_by_view.keys())
+        deduped_confidences = [
+            float(best_confidence_by_view[view_idx]) for view_idx in deduped_views
+        ]
+
+        best_view = -1
+        if deduped_views:
+            best_pair = max(
+                zip(deduped_views, deduped_confidences), key=lambda pair: pair[1]
+            )
+            best_view = int(best_pair[0])
+
+        return {
+            "found": found and bool(deduped_views),
+            "view": best_view,
+            "views": deduped_views,
+            "confidence": deduped_confidences,
+        }
 
     def _build_distance_instruction(self, target_object: str) -> str:
         """
@@ -269,7 +336,12 @@ class MLLMClient:
           {
             "current_region": {"label": "...", "confidence": 0.0},
             "neighbor_regions": [{"label": "...", "existence_prob": 0.0}],
-            "target": {"found": true/false, "views": [..], "confidence": 0.0}
+            "target": {
+                "found": true/false,
+                "view": -1,
+                "views": [..],
+                "confidence": [..],
+            }
           }
         """
 
@@ -341,7 +413,7 @@ class MLLMClient:
             )
 
         # decoded = self._request_completion(content_items, self.max_new_tokens)
-        decoded = '{"current_region":{"label":"living room area","confidence":0.9},"neighbor_regions":[{"label":"bedroom area","existence_prob":0.9,"target_prob":0.3},{"label":"kitchen area","existence_prob":0.7,"target_prob":0.1},{"label":"dining area","existence_prob":0.7,"target_prob":0.1},{"label":"hallway","existence_prob":0.6,"target_prob":0.1}],"region_connections":[{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.95,"travel_distance":3},{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.9,"travel_distance":4},{"region_a":"living room area","region_b":"dining area","connection_prob":0.9,"travel_distance":4},{"region_a":"living room area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[0,2],"confidence":0.95}}'
+        decoded = '{"current_region":{"label":"living room area","confidence":0.9},"neighbor_regions":[{"label":"bedroom area","existence_prob":0.9,"target_prob":0.3},{"label":"kitchen area","existence_prob":0.7,"target_prob":0.1},{"label":"dining area","existence_prob":0.7,"target_prob":0.1},{"label":"hallway","existence_prob":0.6,"target_prob":0.1}],"region_connections":[{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.95,"travel_distance":3},{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.9,"travel_distance":4},{"region_a":"living room area","region_b":"dining area","connection_prob":0.9,"travel_distance":4},{"region_a":"living room area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[0,2],"confidence":[0.72,0.95]}}'
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
         raw = self._strip_code_fences(decoded)
@@ -365,7 +437,7 @@ class MLLMClient:
             return {
                 "current_region": {"label": "", "confidence": 0.0},
                 "neighbor_regions": [],
-                "target": {"found": False, "views": [], "confidence": 0.0},
+                "target": {"found": False, "view": -1, "views": [], "confidence": []},
             }
 
         # The rest of the code is dedicated to normalizing and validating the parsed output.
@@ -401,18 +473,7 @@ class MLLMClient:
                 }
             )
 
-        target = payload.get("target", {})
-        found = bool(target.get("found", False))
-
-        # Map the original view indices returned by MLLM back to the corresponding horizon scan indices.
-        target_views = [
-            int(index_map[int(view_idx)])
-            for view_idx in target.get("views", [])
-            if 0 <= int(view_idx) < len(index_map)
-        ]
-
-        deduped_views = list(dict.fromkeys(target_views))
-        target_confidence = float(target.get("confidence", 0.0))
+        target = self._normalize_target_output(payload.get("target", {}), index_map)
 
         return {
             "current_region": {
@@ -420,11 +481,7 @@ class MLLMClient:
                 "confidence": current_confidence,
             },
             "neighbor_regions": normalized_neighbors[:topk],
-            "target": {
-                "found": found,
-                "views": deduped_views,
-                "confidence": target_confidence,
-            },
+            "target": target,
         }
 
     def estimate_target_distance(
@@ -503,3 +560,4 @@ class MLLMClient:
         return {
             "distance_m": distance_m,
         }
+

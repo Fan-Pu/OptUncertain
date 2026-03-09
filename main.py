@@ -1,4 +1,4 @@
-﻿import os
+import os
 import time
 import debugpy
 
@@ -78,7 +78,21 @@ if __name__ == "__main__":
         #     the aligned RGB/depth pair.
         tgt = mllm_out.get("target", {}) if isinstance(mllm_out, dict) else {}
         tgt_found = bool(tgt.get("found", False))
-        orig_idx = tgt.get("view") or -1
+        orig_idx = int(tgt.get("view", -1))
+        if orig_idx < 0:
+            target_views = tgt.get("views", [])
+            target_confidences = tgt.get("confidence", [])
+            if (
+                isinstance(target_views, list)
+                and isinstance(target_confidences, list)
+                and target_views
+            ):
+                paired_candidates = [
+                    (int(view_idx), float(confidence))
+                    for view_idx, confidence in zip(target_views, target_confidences)
+                ]
+                if paired_candidates:
+                    orig_idx = max(paired_candidates, key=lambda pair: pair[1])[0]
         if tgt_found and orig_idx != -1:
             target_heading = float(horizon_headings[orig_idx])
             target_rgb_image = horizon_rgb_images[orig_idx]
@@ -128,3 +142,4 @@ if __name__ == "__main__":
         print(f"[Move] {cur_vp} -> {next_vp}")
 
         debugpy.breakpoint()
+
