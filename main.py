@@ -1,4 +1,4 @@
-﻿import os
+import os
 import time
 import debugpy
 
@@ -24,6 +24,7 @@ if __name__ == "__main__":
     # -------------------- Episode --------------------
     scan_id = "17DRP5sb8fy"
     start_vp_id = "10c252c90fa24ef3b698c6f54d984c5c"
+    viewpoint_index_by_vp = Helper.build_viewpoint_index(scan_id)
     sim.newEpisode([scan_id], [start_vp_id], [0.0], [0.0])
 
     # -------------------- Explore mode --------------------
@@ -53,12 +54,21 @@ if __name__ == "__main__":
         state = sim.getState()[0]
         cur_vp = state.location.viewpointId
 
-        Helper.render_sim_state(state)
+        Helper.render_sim_state(state, viewpoint_index_by_vp=viewpoint_index_by_vp)
 
-        # 1) Scan the current viewpoint and keep the RGB frames, their headings, and
-        #    the aligned depth maps together so later queries can reuse the same view.
-        best_heading_for_vp, _, horizon_rgb_images, horizon_headings, horizon_depths = (
-            Helper.horizon_scan_return(sim)
+        # 1) Scan the current viewpoint and keep the raw RGB frames, the annotated
+        #    MLLM frames, their headings, and the aligned depth maps together.
+        (
+            best_heading_for_vp,
+            _,
+            horizon_rgb_images,
+            horizon_mllm_images,
+            horizon_headings,
+            horizon_depths,
+            observation_context,
+        ) = Helper.horizon_scan_return(
+            sim,
+            viewpoint_index_by_vp=viewpoint_index_by_vp,
         )
 
         if not best_heading_for_vp:
@@ -71,14 +81,18 @@ if __name__ == "__main__":
         #    The prompt now receives a compact snapshot of the existing hypothesis
         #    graph so the model can reuse old node ids instead of regenerating
         #    redundant semantic nodes for already-known locations.
-        graph_context = hypothesis_graph.build_mllm_context(current_vp=cur_vp)
+        graph_context = hypothesis_graph.build_mllm_context(
+            current_vp=cur_vp,
+            viewpoint_index_by_vp=viewpoint_index_by_vp,
+        )
         start_time = time.perf_counter()
         mllm_out = mllm.propose_semantic_nodes(
-            observation_images=horizon_rgb_images,
+            observation_images=horizon_mllm_images,
             topk=5,
             target_object=target_object,
             depth_images=horizon_depths,
             graph_context=graph_context,
+            viewpoint_context=observation_context,
         )
         runtime = time.perf_counter() - start_time
         print(f"[MLLM] runtime: {runtime:.2f} seconds")
@@ -146,7 +160,10 @@ if __name__ == "__main__":
                 )
                 if distance_m <= distance_threshold_m:
                     Helper.rotate_to_target_heading_mov2vp(sim, target_heading, None)
-                    Helper.render_sim_state(sim.getState()[0])
+                    Helper.render_sim_state(
+                        sim.getState()[0],
+                        viewpoint_index_by_vp=viewpoint_index_by_vp,
+                    )
                     debugpy.breakpoint()
                     break
 

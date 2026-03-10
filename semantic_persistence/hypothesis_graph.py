@@ -38,15 +38,22 @@ def _safe_float(value: Any, default: float = 0.0) -> float:
         return float(default)
 
 
+def _surface_region_label(label: str) -> str:
+    """Drop the grounded viewpoint suffix while preserving the region instance id."""
+    label = str(label or "").strip()
+    label = re.sub(r"\s*-vp-\d+\s*$", "", label, flags=re.IGNORECASE)
+    label = re.sub(r"\s+", " ", label)
+    return label.strip()
+
+
 def _canonicalize_label(label: str) -> str:
     """
-    Normalize a label for matching while keeping node ids stable.
+    Normalize a region-instance label for matching while keeping node ids stable.
 
-    We still canonicalize labels to compare semantic classes, but node identity is
-    no longer derived from the label alone because multiple viewpoints may share
-    the same room category.
+    Grounded labels like `dining area-1-vp-17` and ungrounded hypotheses like
+    `dining area-1` should match the same semantic region instance.
     """
-    label = str(label or "").strip().lower()
+    label = _surface_region_label(label).lower()
     label = re.sub(r"[^a-z0-9\s]+", " ", label)
     label = re.sub(r"\s+", " ", label)
     return label.strip()
@@ -78,6 +85,7 @@ class HypothesisNode:
 
     node_id: str
     label: str
+    region_label: str
     canonical_label: str
     note: str = ""
     aliases: Set[str] = field(default_factory=set)
@@ -158,6 +166,7 @@ class HypothesisGraph:
         node = HypothesisNode(
             node_id=new_node_id("HGN"),
             label=surface_label,
+            region_label=_surface_region_label(surface_label) or surface_label,
             canonical_label=canonical_label,
             note=_clean_note(note),
             aliases={surface_label},
@@ -184,6 +193,7 @@ class HypothesisGraph:
         surface_label = str(label or "").strip()
         if surface_label:
             node.label = surface_label
+            node.region_label = _surface_region_label(surface_label) or surface_label
             node.aliases.add(surface_label)
             canonical_label = _canonicalize_label(surface_label)
             if canonical_label:
@@ -384,6 +394,89 @@ class HypothesisGraph:
                     node=node,
                     anchor_node_id=self.last_current_node_id,
                     preferred_source_vp=previous_vp,
+                    note=note,
+                ),
+            )
+
+        return self._create_node(label=label, note=note)
+
+    def _resolve_grounded_viewpoint_node(
+        self,
+        current_node: Optional[HypothesisNode],
+        viewpoint_id: str,
+        label: str,
+        note: str = "",
+        requested_node_id: str = "",
+    ) -> Optional[HypothesisNode]:
+        """
+        Resolve one visible physical viewpoint into a dedicated grounded node.
+
+        This mirrors current-region grounding: the physical viewpoint identity wins,
+        while ungrounded hypotheses with the same region instance may still be reused.
+        """
+        viewpoint_id = str(viewpoint_id or "").strip()
+        if not viewpoint_id:
+            return None
+        if viewpoint_id in self._vp_to_node_id:
+            return self._get_node(self._vp_to_node_id[viewpoint_id])
+
+        canonical_label = _canonicalize_label(label)
+        if not canonical_label:
+            return None
+
+        if requested_node_id:
+            hinted_node = self._get_node(requested_node_id)
+            if (
+                hinted_node is not None
+                and hinted_node.canonical_label == canonical_label
+                and (
+                    not hinted_node.mapped_viewpoint
+                    or hinted_node.mapped_viewpoint == viewpoint_id
+                )
+            ):
+                return hinted_node
+
+        anchor_node_id = None if current_node is None else current_node.node_id
+        preferred_source_vp = "" if current_node is None else current_node.mapped_viewpoint
+
+        adjacent_candidates: List[HypothesisNode] = []
+        if current_node is not None:
+            for _, other_node_id in self._iter_adjacent_edges(current_node.node_id):
+                other_node = self._get_node(other_node_id)
+                if other_node is None:
+                    continue
+                if other_node.canonical_label != canonical_label:
+                    continue
+                if other_node.mapped_viewpoint and other_node.mapped_viewpoint != viewpoint_id:
+                    continue
+                if other_node.node_id == current_node.node_id:
+                    continue
+                adjacent_candidates.append(other_node)
+
+        if adjacent_candidates:
+            return max(
+                adjacent_candidates,
+                key=lambda node: self._candidate_rank(
+                    node=node,
+                    anchor_node_id=anchor_node_id,
+                    preferred_source_vp=preferred_source_vp,
+                    note=note,
+                ),
+            )
+
+        ungrounded_candidates = self._nodes_with_canonical_label(
+            canonical_label,
+            grounded=False,
+        )
+        if len(ungrounded_candidates) == 1:
+            return ungrounded_candidates[0]
+        if ungrounded_candidates:
+            return max(
+                ungrounded_candidates,
+                key=lambda node: self._candidate_rank(
+                    node=node,
+                    anchor_node_id=anchor_node_id,
+                    preferred_source_vp=preferred_source_vp,
                     note=note,
                 ),
             )
@@ -615,16 +708,23 @@ class HypothesisGraph:
         return edge
 
     def _node_prompt_record(
-        self, node: Optional[HypothesisNode]
+        self,
+        node: Optional[HypothesisNode],
+        viewpoint_index_by_vp: Optional[Dict[str, int]] = None,
     ) -> Optional[Dict[str, Any]]:
         """Build the compact node payload injected into the MLLM prompt."""
         if node is None:
             return None
+        mapped_viewpoint_index = None
+        if viewpoint_index_by_vp is not None and node.mapped_viewpoint:
+            mapped_viewpoint_index = viewpoint_index_by_vp.get(node.mapped_viewpoint)
         return {
             "node_id": node.node_id,
             "label": node.label,
+            "region_label": node.region_label,
             "note": node.note,
             "mapped_viewpoint": node.mapped_viewpoint,
+            "mapped_viewpoint_index": mapped_viewpoint_index,
             "is_grounded": bool(node.mapped_viewpoint),
             "existence_prob": float(node.existence_prob),
             "target_prob": float(node.target_prob),
@@ -633,6 +733,7 @@ class HypothesisGraph:
     def build_mllm_context(
         self,
         current_vp: str,
+        viewpoint_index_by_vp: Optional[Dict[str, int]] = None,
         max_grounded_nodes: int = 12,
         max_neighbor_candidates: int = 8,
     ) -> Dict[str, Any]:
@@ -682,7 +783,10 @@ class HypothesisGraph:
                     continue
                 neighbor_candidates.append(
                     {
-                        "node": self._node_prompt_record(other_node),
+                        "node": self._node_prompt_record(
+                            other_node,
+                            viewpoint_index_by_vp=viewpoint_index_by_vp,
+                        ),
                         "connection_prob": float(edge.connection_prob),
                         "travel_distance": float(edge.travel_distance),
                     }
@@ -696,10 +800,19 @@ class HypothesisGraph:
         # - a list of neighbor candidates: nodes that are directly connected to the previous current node, sorted by connection strength and recency, limited to max_neighbor_candidates
         return {
             "current_viewpoint": current_vp,  # the
-            "known_current_node": self._node_prompt_record(known_current_node),
-            "previous_current_node": self._node_prompt_record(previous_current_node),
+            "known_current_node": self._node_prompt_record(
+                known_current_node,
+                viewpoint_index_by_vp=viewpoint_index_by_vp,
+            ),
+            "previous_current_node": self._node_prompt_record(
+                previous_current_node,
+                viewpoint_index_by_vp=viewpoint_index_by_vp,
+            ),
             "grounded_nodes": [
-                self._node_prompt_record(node)
+                self._node_prompt_record(
+                    node,
+                    viewpoint_index_by_vp=viewpoint_index_by_vp,
+                )
                 for node in grounded_nodes[:max_grounded_nodes]
             ],
             "neighbor_candidates": neighbor_candidates,
@@ -717,29 +830,10 @@ class HypothesisGraph:
 
         Expected input shape:
           {
-            "current_region": {
-                "node_id": "...",
-                "label": "...",
-                "confidence": ...,
-                "note": "..."
-            },
-            "neighbor_regions": [
-                {
-                    "node_id": "...",
-                    "label": "...",
-                    "existence_prob": ...,
-                    "target_prob": ...,
-                    "note": "..."
-                }
-            ],
-            "region_connections": [
-                {
-                    "region_a": "...",
-                    "region_b": "...",
-                    "connection_prob": ...,
-                    "travel_distance": ...
-                }
-            ],
+            "current_region": {... grounded current viewpoint ...},
+            "visible_viewpoints": [... grounded visible neighbor viewpoints ...],
+            "hypothesis_regions": [... ungrounded semantic regions ...],
+            "region_connections": [...],
             "target": {"found": ..., "confidence": [...]}
           }
         """
@@ -754,7 +848,8 @@ class HypothesisGraph:
             self.visited_viewpoints.add(current_vp)
 
         current_region = mllm_output.get("current_region", {}) or {}
-        neighbor_regions = mllm_output.get("neighbor_regions", []) or []
+        visible_viewpoints = mllm_output.get("visible_viewpoints", []) or []
+        hypothesis_regions = mllm_output.get("hypothesis_regions", []) or []
         region_connections = mllm_output.get("region_connections", []) or []
         target = mllm_output.get("target", {}) or {}
 
@@ -766,8 +861,6 @@ class HypothesisGraph:
                     _safe_float(value, 0.0) for value in confidence_values
                 )
 
-        # We key this local lookup by the surface label emitted in the current MLLM
-        # payload because region_connections refer to the labels from the same output.
         local_nodes_by_label: Dict[str, HypothesisNode] = {}
         updated_node_ids: List[str] = []
         updated_edge_ids: List[str] = []
@@ -801,37 +894,64 @@ class HypothesisGraph:
             updated_node_ids.append(current_node.node_id)
             self.last_current_node_id = current_node.node_id
 
-        # Neighbor regions stay ungrounded until a future current observation lands
-        # on them, but we still try to reuse existing hypotheses or loop-closure nodes.
-        for neighbor in neighbor_regions:
-            label = str(neighbor.get("label", "")).strip()
-            note = _clean_note(neighbor.get("note", ""))
-            neighbor_node = self._resolve_neighbor_node(
+        for visible in visible_viewpoints:
+            label = str(visible.get("label", "")).strip()
+            note = _clean_note(visible.get("note", ""))
+            viewpoint_id = str(visible.get("viewpoint_id", "")).strip()
+            if not label or not viewpoint_id:
+                continue
+
+            visible_node = self._resolve_grounded_viewpoint_node(
+                current_node=current_node,
+                viewpoint_id=viewpoint_id,
+                label=label,
+                note=note,
+                requested_node_id=str(visible.get("node_id", "")).strip(),
+            )
+            if visible_node is None:
+                continue
+
+            visible_node = self._update_node_observation(
+                node=visible_node,
+                label=label,
+                note=note,
+                existence_prob=_safe_float(visible.get("existence_prob", 0.0), 0.0),
+                target_prob=_safe_float(visible.get("target_prob", 0.0), 0.0),
+                scan_id=scan_id,
+                observed_from_vp=current_vp,
+                observation_step=step,
+                grounded_viewpoint=viewpoint_id,
+                proposed_from_viewpoint=current_vp,
+            )
+            local_nodes_by_label[label] = visible_node
+            updated_node_ids.append(visible_node.node_id)
+
+        for hypothesis in hypothesis_regions:
+            label = str(hypothesis.get("label", "")).strip()
+            note = _clean_note(hypothesis.get("note", ""))
+            hypothesis_node = self._resolve_neighbor_node(
                 current_node=current_node,
                 label=label,
                 note=note,
-                requested_node_id=str(neighbor.get("node_id", "")).strip(),
+                requested_node_id=str(hypothesis.get("node_id", "")).strip(),
             )
-            if neighbor_node is None:
+            if hypothesis_node is None:
                 continue
 
-            neighbor_node = self._update_node_observation(
-                node=neighbor_node,
+            hypothesis_node = self._update_node_observation(
+                node=hypothesis_node,
                 label=label,
                 note=note,
-                existence_prob=_safe_float(neighbor.get("existence_prob", 0.0), 0.0),
-                target_prob=_safe_float(neighbor.get("target_prob", 0.0), 0.0),
+                existence_prob=_safe_float(hypothesis.get("existence_prob", 0.0), 0.0),
+                target_prob=_safe_float(hypothesis.get("target_prob", 0.0), 0.0),
                 scan_id=scan_id,
                 observed_from_vp=current_vp,
                 observation_step=step,
                 proposed_from_viewpoint=current_vp,
             )
-            local_nodes_by_label[label] = neighbor_node
-            updated_node_ids.append(neighbor_node.node_id)
+            local_nodes_by_label[label] = hypothesis_node
+            updated_node_ids.append(hypothesis_node.node_id)
 
-        # Connections now describe direct links only, so we no longer create nodes
-        # solely from orphan edge labels. An edge is useful only if both endpoints are
-        # already present in the current local proposal set.
         for connection in region_connections:
             region_a = str(connection.get("region_a", "")).strip()
             region_b = str(connection.get("region_b", "")).strip()
@@ -873,6 +993,7 @@ class HypothesisGraph:
                 {
                     "node_id": node.node_id,
                     "label": node.label,
+                    "region_label": node.region_label,
                     "canonical_label": node.canonical_label,
                     "note": node.note,
                     "aliases": sorted(node.aliases),
