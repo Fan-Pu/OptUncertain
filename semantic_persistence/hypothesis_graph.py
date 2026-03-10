@@ -7,6 +7,10 @@ The graph is intentionally lightweight:
   - each node is a hypothesized semantic region
   - each edge is a hypothesized connection between two regions
   - repeated observations update probabilities instead of replacing them
+Notes:
+    - obs: observation step counter which increments with each MLLM query. For example, if the robot performs 3 actions and queries MLLM after each action, then the obs values for those queries would be 1, 2, and 3.
+    - grounded viewpoints: the set of robot viewpoints that have observed this region as the current_region in their MLLM output. This is evidence that the region is real and also helps link the semantic graph to the robot's pose graph.
+
 
 This keeps the online state easy to inspect and easy to feed into a planner later.
 """
@@ -111,7 +115,9 @@ class HypothesisGraph:
         self.last_current_node_id: Optional[str] = None
 
     @staticmethod
-    def _running_average(previous: float, new_value: float, previous_count: int) -> float:
+    def _running_average(
+        previous: float, new_value: float, previous_count: int
+    ) -> float:
         """
         Update a belief with a simple count-based average.
 
@@ -282,7 +288,7 @@ class HypothesisGraph:
             "current_region": {"label": ..., "confidence": ...},
             "neighbor_regions": [{"label": ..., "existence_prob": ..., "target_prob": ...}],
             "region_connections": [{"region_a": ..., "region_b": ..., "connection_prob": ..., "travel_distance": ...}],
-            "target": {"found": ..., "confidence": [...]} 
+            "target": {"found": ..., "confidence": [...]}
           }
         """
         if observation_step is None:
@@ -374,8 +380,12 @@ class HypothesisGraph:
             edge = self._observe_edge(
                 node_a=node_a,
                 node_b=node_b,
-                connection_prob=_safe_float(connection.get("connection_prob", 0.0), 0.0),
-                travel_distance=_safe_float(connection.get("travel_distance", -1.0), -1.0),
+                connection_prob=_safe_float(
+                    connection.get("connection_prob", 0.0), 0.0
+                ),
+                travel_distance=_safe_float(
+                    connection.get("travel_distance", -1.0), -1.0
+                ),
                 observation_step=step,
                 source_labels=(region_a, region_b),
             )
@@ -457,6 +467,7 @@ class HypothesisGraph:
             ),
             reverse=True,
         )
+        # the grounded={len(node.grounded_viewpoints) means "number of unique viewpoints that have observed this region as current_region in MLLM output". For example, if a region has been observed as current_region from 3 different robot viewpoints, then grounded=3 because that is stronger evidence the region is real and also helps link the semantic graph to the robot's pose graph.
         for node in sorted_nodes[:max_nodes]:
             lines.append(
                 "  "

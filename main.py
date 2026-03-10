@@ -1,4 +1,4 @@
-import os
+﻿import os
 import time
 import debugpy
 
@@ -92,6 +92,8 @@ if __name__ == "__main__":
         )
         print(hypothesis_graph.format_summary())
 
+        debugpy.breakpoint()
+
         # 2a) The detection step above already guarantees the target is in the chosen
         #     RGB frame, so the follow-up query only needs to estimate distance from
         #     the aligned RGB/depth pair.
@@ -118,12 +120,12 @@ if __name__ == "__main__":
 
             print(f"Target '{target_object}' detected by MLLM in view {orig_idx}.")
             depth_start_time = time.perf_counter()
-            # distance_out = {"distance_m": 2.375}
-            distance_out = mllm.estimate_target_distance(
-                rgb_image=target_rgb_image,
-                depth_image=target_depth_image,
-                target_object=target_object,
-            )
+            distance_out = {"distance_m": 2.375}
+            # distance_out = mllm.estimate_target_distance(
+            #     rgb_image=target_rgb_image,
+            #     depth_image=target_depth_image,
+            #     target_object=target_object,
+            # )
             depth_runtime = time.perf_counter() - depth_start_time
             print(f"[MLLM distance] runtime: {depth_runtime:.2f} seconds")
 
