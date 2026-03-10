@@ -83,8 +83,10 @@ class HypothesisNode:
     aliases: Set[str] = field(default_factory=set)
     existence_prob: float = 0.5
     target_prob: float = 0.0
-    observation_count: int = 0
-    grounded_viewpoints: Set[str] = field(default_factory=set)
+    observation_count: int = 0  # of times observed as current or neighbor
+    grounded_viewpoints: Set[str] = field(
+        default_factory=set
+    )  # viewpoints that have validated this node as current_region
     mapped_viewpoint: str = ""
     proposed_from_viewpoints: Set[str] = field(default_factory=set)
     last_observed_step: int = 0
@@ -284,9 +286,12 @@ class HypothesisGraph:
         )
         return (
             1.0 if edge is not None else 0.0,
-            1.0
-            if preferred_source_vp and preferred_source_vp in node.proposed_from_viewpoints
-            else 0.0,
+            (
+                1.0
+                if preferred_source_vp
+                and preferred_source_vp in node.proposed_from_viewpoints
+                else 0.0
+            ),
             note_match,
             edge.connection_prob if edge is not None else -1.0,
             node.existence_prob,
@@ -349,7 +354,10 @@ class HypothesisGraph:
                     continue
                 if other_node.canonical_label != canonical_label:
                     continue
-                if other_node.mapped_viewpoint and other_node.mapped_viewpoint != current_vp:
+                if (
+                    other_node.mapped_viewpoint
+                    and other_node.mapped_viewpoint != current_vp
+                ):
                     continue
                 adjacent_candidates.append(other_node)
 
@@ -405,7 +413,9 @@ class HypothesisGraph:
             if (
                 hinted_node is not None
                 and hinted_node.canonical_label == canonical_label
-                and (current_node is None or hinted_node.node_id != current_node.node_id)
+                and (
+                    current_node is None or hinted_node.node_id != current_node.node_id
+                )
             ):
                 return hinted_node
 
@@ -658,7 +668,11 @@ class HypothesisGraph:
                 key=lambda item: (
                     item[0].connection_prob,
                     item[0].travel_distance,
-                    self.nodes[item[1]].last_observed_step if item[1] in self.nodes else -1,
+                    (
+                        self.nodes[item[1]].last_observed_step
+                        if item[1] in self.nodes
+                        else -1
+                    ),
                 ),
                 reverse=True,
             )
@@ -674,8 +688,14 @@ class HypothesisGraph:
                     }
                 )
 
+        # returns a compact summary of the current graph state relevant to the next MLLM query, including:
+        # - the current viewpoint
+        # - the known current node: the node already bound to the current viewpoint if any, which may be None on a first visit
+        # - the previous current node: the node bound to the previous viewpoint, which may be None if the previous viewpoint was never seen before or had no valid node
+        # - a list of grounded nodes: nodes that have been validated as current regions at their respective viewpoints, sorted by recency and relevance to the target object, limited to max_grounded_nodes
+        # - a list of neighbor candidates: nodes that are directly connected to the previous current node, sorted by connection strength and recency, limited to max_neighbor_candidates
         return {
-            "current_viewpoint": current_vp,
+            "current_viewpoint": current_vp,  # the
             "known_current_node": self._node_prompt_record(known_current_node),
             "previous_current_node": self._node_prompt_record(previous_current_node),
             "grounded_nodes": [

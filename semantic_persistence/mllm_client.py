@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import io
 import json
 import os
@@ -18,7 +18,7 @@ class MLLMClient:
         model_name: str = "meta-llama/Llama-4-Scout-17B-16E-Instruct:cheapest",
         base_url: str = "https://router.huggingface.co/v1",
         api_key_env: str = "HF_TOKEN",
-        max_new_tokens: int = 160,
+        max_new_tokens: int = 1000,
         h_fov: float = -1.0,
         request_timeout: float = 120.0,
         save_debug_images: bool = True,
@@ -166,7 +166,6 @@ class MLLMClient:
 
         return selected_indices
 
-    
     def _build_instruction(
         self,
         num_obs_images: int,
@@ -198,8 +197,8 @@ class MLLMClient:
             f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
             f"(indices 0-{max(0, num_obs_images - 1)}). "
             "Output one-line compact JSON only. "
-            'Schema: {"current_region":{"node_id":"","label":"","confidence":0.0,"note":""},'
-            '"neighbor_regions":[{"node_id":"","label":"","existence_prob":0.0,"target_prob":0.0,"note":""}],'
+            'Schema: {"current_region":{"node_id":"","label":"","confidence":0.0},'
+            '"neighbor_regions":[{"node_id":"","label":"","existence_prob":0.0,"target_prob":0.0}],'
             '"region_connections":[{"region_a":"","region_b":"","connection_prob":0.0,"travel_distance":0.0}],'
             '"target":{"found":false,"views":[],"confidence":[]}}. '
             "Use room/area labels only (no objects): kitchen area, living room area, bedroom area, "
@@ -209,13 +208,12 @@ class MLLMClient:
             "node_id: copy an existing node_id from graph_context when there is a clear match; otherwise use an empty string. "
             "current_region: one label for the camera's current physical viewpoint; confidence in [0.6,0.95]. "
             "If current_region matches a previously proposed hypothesis in graph_context, reuse that exact node_id. "
-            "note: short viewpoint description, at most 12 words, using layout/appearance cues. "
             f"{target_line} "
             "target: views = image indices where target confidence >0.5. "
             "confidence = list of detection confidences aligned with views. "
             "If no view has confidence >0.5 set found=false and return empty lists. "
             f"neighbor_regions: up to {topk}, no duplicates, exclude current_region, and treat each neighbor as a distinct other viewpoint. "
-            "Fields: node_id, label, existence_prob [0.5,0.95], target_prob [0,1], note. "
+            "Fields: node_id, label, existence_prob [0.5,0.95] the probability the region exists, target_prob (0,1) the probability the target is at that region. "
             "Reuse nodes from graph_context instead of creating redundant hypotheses whenever possible. "
             "region_connections: include only direct connections among current_region and the listed neighbors. "
             "Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. "
@@ -224,7 +222,7 @@ class MLLMClient:
             "Return JSON only. No explanation or markdown."
         )
 
-        # debugpy.breakpoint()
+        debugpy.breakpoint()
         return prompt
 
     @staticmethod
@@ -294,7 +292,6 @@ class MLLMClient:
             "confidence": deduped_confidences,
         }
 
-    
     @staticmethod
     def _safe_float(value, default: float = 0.0) -> float:
         """Convert arbitrary model fields to float while staying robust to bad JSON."""
@@ -394,7 +391,9 @@ class MLLMClient:
             if pair_key[0] == pair_key[1]:
                 continue
 
-            travel_distance = cls._safe_float(connection.get("travel_distance", -1.0), -1.0)
+            travel_distance = cls._safe_float(
+                connection.get("travel_distance", -1.0), -1.0
+            )
             if travel_distance <= 0.0:
                 continue
 
@@ -489,8 +488,6 @@ class MLLMClient:
                 ) from exc
             raise
         return self._message_to_text(completion.choices[0].message.content)
-
-    
 
     def propose_semantic_nodes(
         self,
@@ -608,8 +605,8 @@ class MLLMClient:
         # Keep the local stub aligned with the new schema while the remote call stays
         # commented for debugging. Notes are intentionally short, and edges with
         # unknown distance are omitted so downstream graph updates stay clean.
-        # decoded = self._request_completion(content_items, self.max_new_tokens)
-        decoded = '{"current_region":{"node_id":"","label":"living room area","confidence":0.9,"note":"open central lounge space"},"neighbor_regions":[{"node_id":"","label":"kitchen area","existence_prob":0.85,"target_prob":0.1,"note":"open kitchen beside lounge"},{"node_id":"","label":"dining area","existence_prob":0.8,"target_prob":0.1,"note":"table zone near lounge"},{"node_id":"","label":"bedroom area","existence_prob":0.8,"target_prob":0.2,"note":"quieter room past hallway"},{"node_id":"","label":"hallway","existence_prob":0.7,"target_prob":0.05,"note":"narrow connector toward rooms"}],"region_connections":[{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.8,"travel_distance":3},{"region_a":"living room area","region_b":"dining area","connection_prob":0.7,"travel_distance":3},{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.6,"travel_distance":5},{"region_a":"living room area","region_b":"hallway","connection_prob":0.6,"travel_distance":4},{"region_a":"kitchen area","region_b":"dining area","connection_prob":0.6,"travel_distance":2},{"region_a":"bedroom area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[1],"confidence":[0.9]}}'
+        decoded = self._request_completion(content_items, self.max_new_tokens)
+        # decoded = '{"current_region":{"node_id":"","label":"living room area","confidence":0.9,"note":"open central lounge space"},"neighbor_regions":[{"node_id":"","label":"kitchen area","existence_prob":0.85,"target_prob":0.1,"note":"open kitchen beside lounge"},{"node_id":"","label":"dining area","existence_prob":0.8,"target_prob":0.1,"note":"table zone near lounge"},{"node_id":"","label":"bedroom area","existence_prob":0.8,"target_prob":0.2,"note":"quieter room past hallway"},{"node_id":"","label":"hallway","existence_prob":0.7,"target_prob":0.05,"note":"narrow connector toward rooms"}],"region_connections":[{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.8,"travel_distance":3},{"region_a":"living room area","region_b":"dining area","connection_prob":0.7,"travel_distance":3},{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.6,"travel_distance":5},{"region_a":"living room area","region_b":"hallway","connection_prob":0.6,"travel_distance":4},{"region_a":"kitchen area","region_b":"dining area","connection_prob":0.6,"travel_distance":2},{"region_a":"bedroom area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[1],"confidence":[0.9]}}'
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
         raw = self._strip_code_fences(decoded)
@@ -645,7 +642,9 @@ class MLLMClient:
         # The rest of the code is dedicated to normalizing and validating the parsed output.
         current_region = payload.get("current_region", {})
         current_label = str(current_region.get("label", "")).strip()
-        current_confidence = self._safe_float(current_region.get("confidence", 0.0), 0.0)
+        current_confidence = self._safe_float(
+            current_region.get("confidence", 0.0), 0.0
+        )
         current_node_id = self._normalize_node_id(current_region.get("node_id", ""))
         current_note = self._normalize_note(current_region.get("note", ""))
 
@@ -655,7 +654,9 @@ class MLLMClient:
         if not current_label and legacy_regions:
             first_region = legacy_regions[0]
             current_label = str(first_region.get("label", "")).strip()
-            current_confidence = self._safe_float(first_region.get("confidence", 0.0), 0.0)
+            current_confidence = self._safe_float(
+                first_region.get("confidence", 0.0), 0.0
+            )
             current_node_id = self._normalize_node_id(first_region.get("node_id", ""))
             current_note = self._normalize_note(first_region.get("note", ""))
 
@@ -761,5 +762,3 @@ class MLLMClient:
         return {
             "distance_m": distance_m,
         }
-
-

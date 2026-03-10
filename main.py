@@ -40,7 +40,7 @@ if __name__ == "__main__":
     )
 
     # -------------------- Task --------------------
-    target_object = os.environ.get("TARGET_OBJECT", "television").strip()
+    target_object = os.environ.get("TARGET_OBJECT", "green plant on the table").strip()
     distance_threshold_m = float(
         os.environ.get("TARGET_DISTANCE_THRESHOLD_M", "1.0").strip()
     )
