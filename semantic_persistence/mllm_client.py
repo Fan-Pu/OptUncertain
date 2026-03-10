@@ -18,7 +18,7 @@ class MLLMClient:
         model_name: str = "meta-llama/Llama-4-Scout-17B-16E-Instruct:cheapest",
         base_url: str = "https://router.huggingface.co/v1",
         api_key_env: str = "HF_TOKEN",
-        max_new_tokens: int = 1000,
+        max_new_tokens: int = 2000,
         h_fov: float = -1.0,
         request_timeout: float = 120.0,
         save_debug_images: bool = True,
@@ -475,7 +475,8 @@ class MLLMClient:
             completion = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": content_items}],
-                max_tokens=max_tokens,
+                temperature=0.0,
+                seed=42,
             )
         except BadRequestError as exc:
             message = str(exc)
