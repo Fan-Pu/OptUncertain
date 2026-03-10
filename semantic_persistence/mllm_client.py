@@ -2,6 +2,7 @@
 import io
 import json
 import os
+import re
 
 import numpy as np
 from openai import BadRequestError, OpenAI
@@ -55,8 +56,17 @@ class MLLMClient:
     def _is_complete_payload(obj) -> bool:
         if not isinstance(obj, dict):
             return False
-        required = ("current_region", "neighbor_regions", "target")
-        return all(key in obj for key in required)
+        if "current_region" not in obj or "target" not in obj:
+            return False
+        return any(
+            key in obj
+            for key in (
+                "visible_viewpoints",
+                "hypothesis_regions",
+                "neighbor_regions",
+                "regions",
+            )
+        )
 
     def _try_parse_json(self, candidate_raw: str):
         try:
@@ -166,19 +176,112 @@ class MLLMClient:
 
         return selected_indices
 
+    @staticmethod
+    def _select_indices_with_viewpoint_coverage(
+        total_count: int,
+        sample_count: int,
+        frame_viewpoint_indices: list[list[int]] | None = None,
+        required_viewpoint_indices: list[int] | None = None,
+    ) -> list[int]:
+        if total_count <= 0 or sample_count <= 0:
+            return []
+
+        sample_count = min(total_count, sample_count)
+        if sample_count == total_count:
+            return list(range(total_count))
+
+        frame_viewpoint_indices = frame_viewpoint_indices or []
+        required = set(int(idx) for idx in (required_viewpoint_indices or []))
+        if not frame_viewpoint_indices or not required:
+            return MLLMClient._select_evenly_spaced_indices(total_count, sample_count)
+
+        selected = []
+        unused = set(range(total_count))
+        uncovered = set(required)
+
+        while uncovered and len(selected) < sample_count and unused:
+            best_idx = None
+            best_cover = set()
+            for frame_idx in sorted(unused):
+                visible = set(frame_viewpoint_indices[frame_idx])
+                cover = uncovered & visible
+                if best_idx is None or len(cover) > len(best_cover):
+                    best_idx = frame_idx
+                    best_cover = cover
+                elif len(cover) == len(best_cover) and best_idx is not None:
+                    if len(visible) > len(set(frame_viewpoint_indices[best_idx])):
+                        best_idx = frame_idx
+                        best_cover = cover
+            if best_idx is None or not best_cover:
+                break
+            selected.append(best_idx)
+            unused.remove(best_idx)
+            uncovered -= best_cover
+
+        evenly_spaced = MLLMClient._select_evenly_spaced_indices(total_count, sample_count)
+        for frame_idx in evenly_spaced:
+            if len(selected) >= sample_count:
+                break
+            if frame_idx not in selected:
+                selected.append(frame_idx)
+
+        if len(selected) < sample_count:
+            for frame_idx in range(total_count):
+                if len(selected) >= sample_count:
+                    break
+                if frame_idx not in selected:
+                    selected.append(frame_idx)
+
+        return sorted(selected[:sample_count])
+
+    @staticmethod
+    def _normalize_viewpoint_index(value) -> int | None:
+        try:
+            index = int(value)
+        except (TypeError, ValueError):
+            return None
+        return index if index > 0 else None
+
+    @staticmethod
+    def _strip_grounded_suffix(label: str) -> str:
+        label = str(label or "").strip()
+        return re.sub(r"\s*-vp-\d+\s*$", "", label, flags=re.IGNORECASE).strip()
+
+    @classmethod
+    def _normalize_region_label(cls, value) -> str:
+        label = cls._strip_grounded_suffix(value)
+        label = " ".join(label.split())
+        return label[:160]
+
+    @classmethod
+    def _build_grounded_label(cls, region_label: str, viewpoint_index: int | None) -> str:
+        region_label = cls._normalize_region_label(region_label)
+        if not region_label:
+            return ""
+        if viewpoint_index is None:
+            return region_label
+        return f"{region_label}-vp-{int(viewpoint_index)}"
+
+    @classmethod
+    def _extract_viewpoint_index_from_label(cls, label: str) -> int | None:
+        match = re.search(r"-vp-(\d+)\s*$", str(label or ""), flags=re.IGNORECASE)
+        if match is None:
+            return None
+        return cls._normalize_viewpoint_index(match.group(1))
+
     def _build_instruction(
         self,
         num_obs_images: int,
         topk: int,
         target_object: str,
         graph_context: dict | None = None,
+        viewpoint_context: dict | None = None,
     ) -> str:
         """
         Build the semantic-graph prompt for the MLLM.
 
-        The prompt now reminds the model that the current region is the semantic
-        label of the robot's present physical viewpoint, while neighbor regions are
-        distinct ungrounded viewpoint hypotheses that may need to be reused later.
+        The prompt explicitly separates grounded visible viewpoints from purely
+        hypothetical future regions so navigation targets remain physically valid.
         """
         target_object = target_object.strip()
         if target_object:
@@ -193,32 +296,63 @@ class MLLMClient:
         graph_context = graph_context or {}
         graph_context_json = json.dumps(graph_context, separators=(",", ":"))
 
+        viewpoint_context = viewpoint_context or {}
+        current_viewpoint_index = self._normalize_viewpoint_index(
+            viewpoint_context.get("current_viewpoint_index")
+        )
+        visible_viewpoint_indices = sorted(
+            {
+                int(item["viewpoint_index"])
+                for item in viewpoint_context.get("visible_viewpoints", []) or []
+                if self._normalize_viewpoint_index(item.get("viewpoint_index"))
+                is not None
+            }
+        )
+        visible_marker_text = ", ".join(
+            f"vp-{idx}" for idx in visible_viewpoint_indices
+        ) or "none"
+        current_marker_text = (
+            f"vp-{current_viewpoint_index}"
+            if current_viewpoint_index is not None
+            else "the current camera viewpoint"
+        )
+
         prompt = (
             f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
             f"(indices 0-{max(0, num_obs_images - 1)}). "
+            "Some images contain overlaid viewpoint markers like vp-17; each marker is a real physical navigable viewpoint. "
             "Output one-line compact JSON only. "
-            'Schema: {"current_region":{"node_id":"","label":"","confidence":0.0},'
-            '"neighbor_regions":[{"node_id":"","label":"","existence_prob":0.0,"target_prob":0.0}],'
+            'Schema: {"current_region":{"node_id":"","region_label":"","label":"","confidence":0.0},'
+            '"visible_viewpoints":[{"node_id":"","viewpoint_index":0,"region_label":"","label":"","existence_prob":0.0,"target_prob":0.0}],'
+            '"hypothesis_regions":[{"node_id":"","label":"","existence_prob":0.0,"target_prob":0.0}],'
             '"region_connections":[{"region_a":"","region_b":"","connection_prob":0.0,"travel_distance":0.0}],'
             '"target":{"found":false,"views":[],"confidence":[]}}. '
             "Use room/area labels only (no objects): kitchen area, living room area, bedroom area, "
             "bathroom area, hallway, dining area, entryway, corridor, office area. "
-            "graph_context is the persistent graph before this observation. "
-            f"graph_context={graph_context_json}. "
-            "node_id: copy an existing node_id from graph_context when there is a clear match; otherwise use an empty string. "
-            "current_region: one label for the camera's current physical viewpoint; confidence in [0.6,0.95]. "
+            "Every region instance label must be <room-or-area>-<instance>, for example dining area-1 or hallway-2. "
+            "Every grounded viewpoint label must be <region_label>-vp-<viewpoint_index>, for example dining area-1-vp-17. "
+            "If two visible viewpoints belong to the same semantic region, reuse the same region instance number but keep different vp suffixes. "
+            f"The current camera viewpoint is {current_marker_text}. "
+            f"Visible viewpoint markers that must each appear exactly once in visible_viewpoints: [{visible_marker_text}]. "
+            "current_region: one grounded label for the current physical viewpoint; region_label omits the vp suffix; confidence in [0.6,0.95]. "
             "If current_region matches a previously proposed hypothesis in graph_context, reuse that exact node_id. "
+            "visible_viewpoints: include one item for every visible marker listed above, no omissions and no duplicates. "
+            "Fields: node_id, viewpoint_index, region_label, label, existence_prob [0.5,0.99], target_prob (0,1), note optional. "
+            "The label must exactly equal region_label + '-vp-' + viewpoint_index. "
+            f"hypothesis_regions: up to {topk}, optional extra region-instance labels with no vp suffix and no physical grounding yet. "
+            "These are allowed even if no visible viewpoint is currently grounded to them. "
+            "Reuse nodes from graph_context instead of creating redundant hypotheses whenever possible. "
+            "region_connections: include only direct connections among current_region, visible_viewpoints, and hypothesis_regions. "
+            "Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. "
+            "Fields: region_a, region_b, connection_prob [0.5,1], travel_distance (>0 meters). "
+            "Connections are symmetric: output A->B only, not B->A. region_a and region_b must copy the exact labels used elsewhere in your JSON. "
             f"{target_line} "
             "target: views = image indices where target confidence >0.5. "
             "confidence = list of detection confidences aligned with views. "
             "If no view has confidence >0.5 set found=false and return empty lists. "
-            f"neighbor_regions: up to {topk}, no duplicates, exclude current_region, and treat each neighbor as a distinct other viewpoint. "
-            "Fields: node_id, label, existence_prob [0.5,0.95] the probability the region exists, target_prob (0,1) the probability the target is at that region. "
-            "Reuse nodes from graph_context instead of creating redundant hypotheses whenever possible. "
-            "region_connections: include only direct connections among current_region and the listed neighbors. "
-            "Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. "
-            "Fields: region_a, region_b, connection_prob [0.5,1], travel_distance (>0 meters). "
-            "Connections are symmetric: output A->B only, not B->A. "
+            "graph_context is the persistent graph before this observation. "
+            f"graph_context={graph_context_json}. "
+            "node_id: copy an existing node_id from graph_context when there is a clear match; otherwise use an empty string. "
             "Return JSON only. No explanation or markdown."
         )
 
@@ -313,38 +447,121 @@ class MLLMClient:
         return str(value or "").strip()
 
     @classmethod
-    def _normalize_neighbor_regions(
+    def _normalize_visible_viewpoints(
         cls,
-        current_label: str,
-        neighbor_regions,
-        topk: int,
-    ) -> list[dict]:
-        """
-        Deduplicate neighbor proposals while preserving notes and optional node ids.
+        visible_viewpoints,
+        viewpoint_context: dict | None,
+    ) -> tuple[list[dict], dict[str, str]]:
+        viewpoint_context = viewpoint_context or {}
+        visible_infos = viewpoint_context.get("visible_viewpoints", []) or []
+        viewpoint_id_by_index = {
+            int(item["viewpoint_index"]): str(item["viewpoint_id"])
+            for item in visible_infos
+            if cls._normalize_viewpoint_index(item.get("viewpoint_index")) is not None
+        }
+        required_indices = sorted(viewpoint_id_by_index.keys())
 
-        The prompt now allows the MLLM to explicitly reuse graph nodes by id, so the
-        deduplication key prefers node_id when present and otherwise falls back to the
-        semantic label.
-        """
-        normalized_by_key = {}
-        current_key = current_label.strip().lower()
-
-        for neighbor in neighbor_regions or []:
-            label = str(neighbor.get("label", "")).strip()
-            if not label or label.lower() == current_key:
+        normalized_by_index = {}
+        label_aliases = {}
+        for entry in visible_viewpoints or []:
+            raw_label = str(entry.get("label", "")).strip()
+            viewpoint_index = cls._normalize_viewpoint_index(entry.get("viewpoint_index"))
+            if viewpoint_index is None:
+                viewpoint_index = cls._extract_viewpoint_index_from_label(raw_label)
+            if viewpoint_index is None or viewpoint_index not in viewpoint_id_by_index:
                 continue
 
-            node_id = cls._normalize_node_id(neighbor.get("node_id", ""))
+            region_label = cls._normalize_region_label(
+                entry.get("region_label", "") or raw_label
+            )
+            if not region_label:
+                continue
+
+            label = cls._build_grounded_label(region_label, viewpoint_index)
+            normalized = {
+                "node_id": cls._normalize_node_id(entry.get("node_id", "")),
+                "viewpoint_index": int(viewpoint_index),
+                "viewpoint_id": viewpoint_id_by_index[int(viewpoint_index)],
+                "region_label": region_label,
+                "label": label,
+                "existence_prob": cls._safe_float(
+                    entry.get("existence_prob", entry.get("confidence", 0.0)),
+                    0.0,
+                ),
+                "target_prob": cls._safe_float(entry.get("target_prob", 0.0), 0.0),
+                "note": cls._normalize_note(entry.get("note", "")),
+            }
+
+            previous = normalized_by_index.get(int(viewpoint_index))
+            if previous is None:
+                normalized_by_index[int(viewpoint_index)] = normalized
+            else:
+                if not previous["node_id"] and normalized["node_id"]:
+                    previous["node_id"] = normalized["node_id"]
+                previous["existence_prob"] = max(
+                    previous["existence_prob"], normalized["existence_prob"]
+                )
+                previous["target_prob"] = max(
+                    previous["target_prob"], normalized["target_prob"]
+                )
+                if normalized["note"] and not previous["note"]:
+                    previous["note"] = normalized["note"]
+                previous["region_label"] = normalized["region_label"]
+                previous["label"] = normalized["label"]
+
+            label_aliases[str(raw_label)] = label
+            label_aliases[str(region_label)] = label
+            label_aliases[str(label)] = label
+
+        for viewpoint_index in required_indices:
+            if viewpoint_index in normalized_by_index:
+                continue
+            region_label = f"unresolved area-{int(viewpoint_index)}"
+            label = cls._build_grounded_label(region_label, viewpoint_index)
+            normalized_by_index[viewpoint_index] = {
+                "node_id": "",
+                "viewpoint_index": int(viewpoint_index),
+                "viewpoint_id": viewpoint_id_by_index[int(viewpoint_index)],
+                "region_label": region_label,
+                "label": label,
+                "existence_prob": 0.5,
+                "target_prob": 0.0,
+                "note": "auto-filled because the model omitted this visible viewpoint",
+            }
+            label_aliases[region_label] = label
+            label_aliases[label] = label
+
+        normalized = [
+            normalized_by_index[idx] for idx in sorted(normalized_by_index.keys())
+        ]
+        return normalized, label_aliases
+
+    @classmethod
+    def _normalize_hypothesis_regions(
+        cls,
+        hypothesis_regions,
+        topk: int,
+    ) -> tuple[list[dict], dict[str, str]]:
+        normalized_by_key = {}
+        label_aliases = {}
+
+        for region in hypothesis_regions or []:
+            raw_label = str(region.get("label", "")).strip()
+            label = cls._normalize_region_label(raw_label)
+            if not label:
+                continue
+
+            node_id = cls._normalize_node_id(region.get("node_id", ""))
             dedupe_key = node_id or label.lower()
             normalized = {
                 "node_id": node_id,
                 "label": label,
                 "existence_prob": cls._safe_float(
-                    neighbor.get("existence_prob", neighbor.get("confidence", 0.0)),
+                    region.get("existence_prob", region.get("confidence", 0.0)),
                     0.0,
                 ),
-                "target_prob": cls._safe_float(neighbor.get("target_prob", 0.0), 0.0),
-                "note": cls._normalize_note(neighbor.get("note", "")),
+                "target_prob": cls._safe_float(region.get("target_prob", 0.0), 0.0),
+                "note": cls._normalize_note(region.get("note", "")),
             }
 
             previous = normalized_by_key.get(dedupe_key)
@@ -363,28 +580,34 @@ class MLLMClient:
             if normalized["note"] and not previous["note"]:
                 previous["note"] = normalized["note"]
 
-        normalized_neighbors = list(normalized_by_key.values())
-        normalized_neighbors.sort(
+            label_aliases[str(raw_label)] = label
+            label_aliases[label] = label
+
+        normalized_hypotheses = list(normalized_by_key.values())
+        normalized_hypotheses.sort(
             key=lambda item: (item["target_prob"], item["existence_prob"]),
             reverse=True,
         )
-        return normalized_neighbors[:topk]
+        return normalized_hypotheses[:topk], label_aliases
 
     @classmethod
-    def _normalize_region_connections(cls, region_connections) -> list[dict]:
-        """
-        Keep only direct connections with valid positive travel distances.
-
-        The old prompt forced all pairwise links and produced many `-1` distances.
-        We now drop those edges during normalization so the graph only receives
-        actionable direct connections.
-        """
+    def _normalize_region_connections(
+        cls,
+        region_connections,
+        label_aliases: dict[str, str] | None = None,
+    ) -> list[dict]:
         normalized_by_pair = {}
+        label_aliases = label_aliases or {}
 
         for connection in region_connections or []:
-            region_a = str(connection.get("region_a", "")).strip()
-            region_b = str(connection.get("region_b", "")).strip()
-            if not region_a or not region_b:
+            raw_a = str(connection.get("region_a", "")).strip()
+            raw_b = str(connection.get("region_b", "")).strip()
+            if not raw_a or not raw_b:
+                continue
+
+            region_a = label_aliases.get(raw_a, raw_a)
+            region_b = label_aliases.get(raw_b, raw_b)
+            if region_a == region_b:
                 continue
 
             pair_key = tuple(sorted((region_a.lower(), region_b.lower())))
@@ -497,43 +720,16 @@ class MLLMClient:
         topk: int = 5,
         target_object: str | None = None,
         graph_context: dict | None = None,
+        viewpoint_context: dict | None = None,
     ):
         """
         observation_images: list of RGB uint8 arrays (H,W,3), typically horizon scan frames.
 
-        Returns a dict:
-          {
-            "current_region": {
-                "node_id": "...",
-                "label": "...",
-                "confidence": 0.0,
-                "note": "..."
-            },
-            "neighbor_regions": [
-                {
-                    "node_id": "...",
-                    "label": "...",
-                    "existence_prob": 0.0,
-                    "target_prob": 0.0,
-                    "note": "..."
-                }
-            ],
-            "region_connections": [
-                {
-                    "region_a": "...",
-                    "region_b": "...",
-                    "connection_prob": 0.0,
-                    "travel_distance": 0.0,
-                }
-            ],
-            "target": {
-                "found": true/false,
-                "view": -1,
-                "views": [..],
-                "confidence": [..],
-            }
-          }
+        Returns a dict with grounded visible viewpoints separated from ungrounded
+        hypothesis regions so downstream navigation can stay physically consistent.
         """
+
+        viewpoint_context = viewpoint_context or {}
 
         pil_images = []
         pil_depths = []
@@ -565,9 +761,18 @@ class MLLMClient:
             target_count = max(1, min(MAX_MLLM_INPUT_IMAGES, target_count))
 
             if len(pil_images) > target_count:
-                idx = self._select_evenly_spaced_indices(
+                idx = self._select_indices_with_viewpoint_coverage(
                     total_count=len(pil_images),
                     sample_count=target_count,
+                    frame_viewpoint_indices=viewpoint_context.get(
+                        "frame_visible_viewpoint_indices", []
+                    ),
+                    required_viewpoint_indices=[
+                        int(item["viewpoint_index"])
+                        for item in viewpoint_context.get("visible_viewpoints", []) or []
+                        if self._normalize_viewpoint_index(item.get("viewpoint_index"))
+                        is not None
+                    ],
                 )
                 pil_images = [pil_images[i] for i in idx]
                 index_map = [index_map[i] for i in idx]
@@ -592,6 +797,7 @@ class MLLMClient:
             topk=topk,
             target_object=target_object or "",
             graph_context=graph_context,
+            viewpoint_context=viewpoint_context,
         )
 
         content_items = [{"type": "text", "text": instruction}]
@@ -603,11 +809,7 @@ class MLLMClient:
                 }
             )
 
-        # Keep the local stub aligned with the new schema while the remote call stays
-        # commented for debugging. Notes are intentionally short, and edges with
-        # unknown distance are omitted so downstream graph updates stay clean.
         decoded = self._request_completion(content_items, self.max_new_tokens)
-        # decoded = '{"current_region":{"node_id":"","label":"living room area","confidence":0.9,"note":"open central lounge space"},"neighbor_regions":[{"node_id":"","label":"kitchen area","existence_prob":0.85,"target_prob":0.1,"note":"open kitchen beside lounge"},{"node_id":"","label":"dining area","existence_prob":0.8,"target_prob":0.1,"note":"table zone near lounge"},{"node_id":"","label":"bedroom area","existence_prob":0.8,"target_prob":0.2,"note":"quieter room past hallway"},{"node_id":"","label":"hallway","existence_prob":0.7,"target_prob":0.05,"note":"narrow connector toward rooms"}],"region_connections":[{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.8,"travel_distance":3},{"region_a":"living room area","region_b":"dining area","connection_prob":0.7,"travel_distance":3},{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.6,"travel_distance":5},{"region_a":"living room area","region_b":"hallway","connection_prob":0.6,"travel_distance":4},{"region_a":"kitchen area","region_b":"dining area","connection_prob":0.6,"travel_distance":2},{"region_a":"bedroom area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[1],"confidence":[0.9]}}'
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
         raw = self._strip_code_fences(decoded)
@@ -631,46 +833,89 @@ class MLLMClient:
             return {
                 "current_region": {
                     "node_id": "",
+                    "region_label": "",
                     "label": "",
+                    "viewpoint_index": None,
+                    "viewpoint_id": viewpoint_context.get("current_viewpoint_id", ""),
                     "confidence": 0.0,
                     "note": "",
                 },
-                "neighbor_regions": [],
+                "visible_viewpoints": [],
+                "hypothesis_regions": [],
                 "region_connections": [],
                 "target": {"found": False, "view": -1, "views": [], "confidence": []},
             }
 
-        # The rest of the code is dedicated to normalizing and validating the parsed output.
-        current_region = payload.get("current_region", {})
-        current_label = str(current_region.get("label", "")).strip()
+        current_region = payload.get("current_region", {}) or {}
+        raw_visible_viewpoints = payload.get("visible_viewpoints", []) or []
+        raw_hypothesis_regions = payload.get("hypothesis_regions", []) or []
+        legacy_neighbor_regions = payload.get("neighbor_regions", []) or []
+        legacy_regions = payload.get("regions", []) or []
+
+        current_region_label = self._normalize_region_label(
+            current_region.get("region_label", "") or current_region.get("label", "")
+        )
         current_confidence = self._safe_float(
             current_region.get("confidence", 0.0), 0.0
         )
         current_node_id = self._normalize_node_id(current_region.get("node_id", ""))
         current_note = self._normalize_note(current_region.get("note", ""))
 
-        neighbor_regions = payload.get("neighbor_regions", [])
-        legacy_regions = payload.get("regions", [])
-
-        if not current_label and legacy_regions:
+        if not current_region_label and legacy_regions:
             first_region = legacy_regions[0]
-            current_label = str(first_region.get("label", "")).strip()
+            current_region_label = self._normalize_region_label(
+                first_region.get("region_label", "") or first_region.get("label", "")
+            )
             current_confidence = self._safe_float(
                 first_region.get("confidence", 0.0), 0.0
             )
             current_node_id = self._normalize_node_id(first_region.get("node_id", ""))
             current_note = self._normalize_note(first_region.get("note", ""))
+            if not raw_visible_viewpoints and not raw_hypothesis_regions:
+                legacy_neighbor_regions = legacy_regions[1:]
 
-            if not neighbor_regions:
-                neighbor_regions = legacy_regions[1:]
+        if legacy_neighbor_regions:
+            for region in legacy_neighbor_regions:
+                if (
+                    self._normalize_viewpoint_index(region.get("viewpoint_index"))
+                    is not None
+                    or self._extract_viewpoint_index_from_label(
+                        region.get("label", "")
+                    )
+                    is not None
+                ):
+                    raw_visible_viewpoints.append(region)
+                else:
+                    raw_hypothesis_regions.append(region)
 
-        normalized_neighbors = self._normalize_neighbor_regions(
-            current_label=current_label,
-            neighbor_regions=neighbor_regions,
+        current_viewpoint_index = self._normalize_viewpoint_index(
+            viewpoint_context.get("current_viewpoint_index")
+        )
+        current_label = self._build_grounded_label(
+            current_region_label,
+            current_viewpoint_index,
+        )
+
+        normalized_visible_viewpoints, visible_label_aliases = self._normalize_visible_viewpoints(
+            raw_visible_viewpoints,
+            viewpoint_context=viewpoint_context,
+        )
+        normalized_hypotheses, hypothesis_label_aliases = self._normalize_hypothesis_regions(
+            raw_hypothesis_regions,
             topk=topk,
         )
+
+        label_aliases = {}
+        if current_region_label:
+            label_aliases[current_region_label] = current_label or current_region_label
+        if current_label:
+            label_aliases[current_label] = current_label
+        label_aliases.update(visible_label_aliases)
+        label_aliases.update(hypothesis_label_aliases)
+
         normalized_connections = self._normalize_region_connections(
-            payload.get("region_connections", [])
+            payload.get("region_connections", []),
+            label_aliases=label_aliases,
         )
 
         target = self._normalize_target_output(payload.get("target", {}), index_map)
@@ -678,11 +923,15 @@ class MLLMClient:
         return {
             "current_region": {
                 "node_id": current_node_id,
+                "region_label": current_region_label,
                 "label": current_label,
+                "viewpoint_index": current_viewpoint_index,
+                "viewpoint_id": str(viewpoint_context.get("current_viewpoint_id", "")),
                 "confidence": current_confidence,
                 "note": current_note,
             },
-            "neighbor_regions": normalized_neighbors,
+            "visible_viewpoints": normalized_visible_viewpoints,
+            "hypothesis_regions": normalized_hypotheses,
             "region_connections": normalized_connections,
             "target": target,
         }

@@ -62,23 +62,77 @@ def get_viewpoints(scan_id):
     return vp_ids
 
 
-def render_sim_state(state):
-    locations = state.navigableLocations
-    rgb = np.array(state.rgb, copy=False)
+def build_viewpoint_index(scan_id):
+    """Create a stable scan-level integer marker for each viewpoint id."""
+    return {vp_id: idx + 1 for idx, vp_id in enumerate(get_viewpoints(scan_id))}
+
+
+def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
+    """
+    Draw stable `vp-N` markers for all visible navigable viewpoints in one frame.
+
+    Returns:
+        annotated_rgb: RGB copy with overlayed viewpoint markers.
+        visible_viewpoints: list of dicts with viewpoint ids and their stable indices.
+    """
+    annotated_rgb = np.array(rgb, copy=True)
+    visible_viewpoints = []
+
     for idx, loc in enumerate(locations[1:]):
-        # Draw actions on the screen
-        fontScale = 3.0 / loc.rel_distance
+        marker_index = None
+        if viewpoint_index_by_vp is not None:
+            marker_index = viewpoint_index_by_vp.get(loc.viewpointId)
+        if marker_index is None:
+            marker_index = idx + 1
+
+        font_scale = max(0.8, min(2.5, 3.0 / max(float(loc.rel_distance), 1e-3)))
         x = int(WIDTH / 2 + loc.rel_heading / HFOV * WIDTH)
         y = int(HEIGHT / 2 - loc.rel_elevation / VFOV * HEIGHT)
+        marker_text = f"vp-{int(marker_index)}"
+
+        text_size, baseline = cv2.getTextSize(
+            marker_text,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            font_scale,
+            thickness=3,
+        )
+        x1 = x - 6
+        y1 = y - text_size[1] - 8
+        x2 = x + text_size[0] + 6
+        y2 = y + baseline + 8
+        cv2.rectangle(
+            annotated_rgb,
+            (x1, y1),
+            (x2, y2),
+            (245, 245, 245),
+            thickness=-1,
+        )
         cv2.putText(
-            rgb,
-            str(loc.ix),
+            annotated_rgb,
+            marker_text,
             (x, y),
             cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale,
+            font_scale,
             TEXT_COLOR,
             thickness=3,
         )
+        visible_viewpoints.append(
+            {
+                "viewpoint_id": str(loc.viewpointId),
+                "viewpoint_index": int(marker_index),
+            }
+        )
+
+    return annotated_rgb, visible_viewpoints
+
+
+def render_sim_state(state, viewpoint_index_by_vp=None):
+    locations = state.navigableLocations
+    rgb, _ = annotate_rgb_with_viewpoints(
+        state.rgb,
+        locations,
+        viewpoint_index_by_vp=viewpoint_index_by_vp,
+    )
     cv2.imshow("Python RGB", rgb)
 
     depth = np.array(state.depth, copy=False)
@@ -86,7 +140,7 @@ def render_sim_state(state):
     cv2.waitKey(1)
 
 
-def horizon_scan_return(sim):
+def horizon_scan_return(sim, viewpoint_index_by_vp=None):
     """
     Perform a full 360 horizon scan at the current viewpoint and return to the
     exact starting heading at the end.
@@ -94,8 +148,9 @@ def horizon_scan_return(sim):
     This function is intentionally "perception-only": it does NOT perform any
     target detection. It only collects:
       1) the locally observable moveable neighbors (from navigableLocations)
-      2) a list of RGB images for the full horizon scan
-      3) the heading (radians) associated with each image
+      2) a list of raw RGB images for the full horizon scan
+      3) a second list of RGB images with visible `vp-N` markers for the MLLM
+      4) the heading (radians) associated with each image
 
     Args:
         sim: initialized MatterSim.Simulator with an active episode.
@@ -104,9 +159,12 @@ def horizon_scan_return(sim):
         best_heading_for_vp: dict mapping each reachable neighboring viewpoint ID
             to the best heading (radians) that faces it during the horizon scan.
         start_state: the initial simulator state before performing any rotations.
-        horizon_images: list of RGB images (numpy arrays) captured during the scan.
+        horizon_images: list of raw RGB images (numpy arrays) captured during the scan.
+        horizon_mllm_images: list of RGB images with stable viewpoint markers.
         horizon_headings: list of headings (radians) aligned with horizon_images.
         horizon_depths: list of depth maps (numpy arrays) captured during the scan.
+        observation_context: dict describing the current viewpoint index, the visible
+            neighboring viewpoints, and which `vp-N` markers appear in each frame.
     """
     start_state = sim.getState()[0]
 
@@ -114,17 +172,41 @@ def horizon_scan_return(sim):
     best_score_for_vp = defaultdict(lambda: 1e18)
 
     horizon_images = []
+    horizon_mllm_images = []
     horizon_headings = []
     horizon_depths = []
+    frame_visible_viewpoint_indices = []
+    visible_viewpoints_by_index = {}
 
     for horizon_idx in range(HORIZON_LEN):
         state = sim.getState()[0]
         locations = state.navigableLocations
         cur_heading = float(state.heading)
 
-        horizon_images.append(np.array(state.rgb, copy=True))
+        raw_rgb = np.array(state.rgb, copy=True)
+        annotated_rgb, visible_viewpoints = annotate_rgb_with_viewpoints(
+            raw_rgb,
+            locations,
+            viewpoint_index_by_vp=viewpoint_index_by_vp,
+        )
+
+        horizon_images.append(raw_rgb)
+        horizon_mllm_images.append(annotated_rgb)
         horizon_headings.append(cur_heading)
         horizon_depths.append(np.array(state.depth, copy=True))
+        frame_visible_viewpoint_indices.append(
+            [
+                int(item["viewpoint_index"])
+                for item in visible_viewpoints
+                if item.get("viewpoint_index") is not None
+            ]
+        )
+
+        for item in visible_viewpoints:
+            visible_viewpoints_by_index[int(item["viewpoint_index"])] = {
+                "viewpoint_id": str(item["viewpoint_id"]),
+                "viewpoint_index": int(item["viewpoint_index"]),
+            }
 
         # record best "in-front" heading for each neighbor
         for loc in locations[1:]:
@@ -140,12 +222,29 @@ def horizon_scan_return(sim):
     # rotate back to the exact starting heading
     sim.makeAction([0], [DELTA_HEADING_RAD], [0])
 
+    current_vp_id = str(start_state.location.viewpointId)
+    current_viewpoint_index = None
+    if viewpoint_index_by_vp is not None:
+        current_viewpoint_index = viewpoint_index_by_vp.get(current_vp_id)
+
+    observation_context = {
+        "current_viewpoint_id": current_vp_id,
+        "current_viewpoint_index": current_viewpoint_index,
+        "visible_viewpoints": [
+            visible_viewpoints_by_index[idx]
+            for idx in sorted(visible_viewpoints_by_index.keys())
+        ],
+        "frame_visible_viewpoint_indices": frame_visible_viewpoint_indices,
+    }
+
     return (
         best_heading_for_vp,
         start_state,
         horizon_images,
+        horizon_mllm_images,
         horizon_headings,
         horizon_depths,
+        observation_context,
     )
 
 
