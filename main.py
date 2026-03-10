@@ -99,12 +99,12 @@ if __name__ == "__main__":
 
             print(f"Target '{target_object}' detected by MLLM in view {orig_idx}.")
             depth_start_time = time.perf_counter()
-            distance_out = {"distance_m": 2.375}
-            # distance_out = mllm.estimate_target_distance(
-            #     rgb_image=target_rgb_image,
-            #     depth_image=target_depth_image,
-            #     target_object=target_object,
-            # )
+            # distance_out = {"distance_m": 2.375}
+            distance_out = mllm.estimate_target_distance(
+                rgb_image=target_rgb_image,
+                depth_image=target_depth_image,
+                target_object=target_object,
+            )
             depth_runtime = time.perf_counter() - depth_start_time
             print(f"[MLLM distance] runtime: {depth_runtime:.2f} seconds")
 

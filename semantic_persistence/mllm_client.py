@@ -288,16 +288,35 @@ class MLLMClient:
         """
 
         target_object = target_object.strip()
-        return (
+
+        debugpy.breakpoint()
+
+        # prompt = (
+        #     f"Two aligned images are provided: RGB first, depth second. The target object {target_object} is present in the RGB image."
+        #     "First use an open-vocabulary detection tool on the RGB image with the target name to detect the object and obtain bounding boxes. Select the single box with the highest detection confidence."
+        #     "Then estimate the object distance using the aligned depth image. Collect all valid depth pixel values inside the selected bounding box. Use the median depth value inside the box as the measurement. "
+        #     "Depth conversion rule:"
+        #     "distance_m = median(depth_pixel_value in the last channel) / 4000.0. "
+        #     "Rules: use RGB only for detection and depth only for distance. Do not estimate distance from RGB. Do not use pixels outside the selected box. Ignore invalid depth pixels. Do not verify whether the object exists. "
+        #     "Return only valid JSON with exactly one key: "
+        #     '{"distance_m": 2.37}. '
+        #     "Do not output any other text."
+        # )
+
+        prompt = (
             f'Target: "{target_object}". '
             "Two aligned images are provided: RGB first, depth second. "
             "The target is definitely visible in RGB, so do not verify presence. "
             "Use RGB to locate the target, then estimate distance from depth. "
             "Depth conversion: meters = pixel_value in the last dimension / 4000.0. "
             'Return only valid JSON with exactly one key: "distance_m". '
-            'Example valid outputs: {"distance_m": 2.37} or {"distance_m": null}. '
+            'Example valid outputs: {"distance_m": 2.37}. '
             "Do not output any other text."
         )
+
+        debugpy.breakpoint()
+
+        return prompt
 
     def _request_completion(self, content_items, max_tokens: int) -> str:
         """
@@ -516,11 +535,9 @@ class MLLMClient:
         elif depth_image.dtype != np.uint16:
             depth_image = depth_image.astype(np.uint16)
 
-        # Keep the existing debug depth dump untouched so your current debugging flow
-        # stays the same.
         pil_depth = Image.fromarray(depth_image, mode="I;16")
-        if self.save_debug_images:
-            pil_depth.save("debug_target_depth_query.png")
+
+        debugpy.breakpoint()
 
         # Send the RGB image first and the aligned depth image second to match the
         # concise prompt in _build_distance_instruction().
@@ -535,6 +552,8 @@ class MLLMClient:
                 "image_url": {"url": self._image_to_data_url(pil_depth)},
             },
         ]
+
+        debugpy.breakpoint()
 
         decoded = self._request_completion(content_items, max_tokens=96)
         print("\n[MLLM DISTANCE RAW OUTPUT]\n", decoded)
