@@ -85,28 +85,12 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
         if marker_index is None:
             marker_index = idx + 1
 
-        font_scale = max(0.8, min(2.5, 3.0 / max(float(loc.rel_distance), 1e-3)))
+        font_scale = 2.0
+
         x = int(WIDTH / 2 + loc.rel_heading / HFOV * WIDTH)
         y = int(HEIGHT / 2 - loc.rel_elevation / VFOV * HEIGHT)
         marker_text = f"vp-{int(marker_index)}"
 
-        text_size, baseline = cv2.getTextSize(
-            marker_text,
-            cv2.FONT_HERSHEY_SIMPLEX,
-            font_scale,
-            thickness=3,
-        )
-        x1 = x - 6
-        y1 = y - text_size[1] - 8
-        x2 = x + text_size[0] + 6
-        y2 = y + baseline + 8
-        cv2.rectangle(
-            annotated_rgb,
-            (x1, y1),
-            (x2, y2),
-            (245, 245, 245),
-            thickness=-1,
-        )
         cv2.putText(
             annotated_rgb,
             marker_text,
