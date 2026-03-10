@@ -67,6 +67,46 @@ def build_viewpoint_index(scan_id):
     return {vp_id: idx + 1 for idx, vp_id in enumerate(get_viewpoints(scan_id))}
 
 
+def _put_text_if_fully_visible(
+    image,
+    text,
+    origin,
+    font_face,
+    font_scale,
+    color,
+    thickness=1,
+):
+    """Draw text only when the full rendered glyph box stays within the image."""
+    if image is None or text is None:
+        return False
+
+    image_height, image_width = image.shape[:2]
+    x, y = int(origin[0]), int(origin[1])
+    (text_width, text_height), baseline = cv2.getTextSize(
+        str(text), font_face, font_scale, thickness
+    )
+
+    if (
+        x < 0
+        or y < 0
+        or x + text_width > image_width
+        or y - text_height < 0
+        or y + baseline > image_height
+    ):
+        return False
+
+    cv2.putText(
+        image,
+        str(text),
+        (x, y),
+        font_face,
+        font_scale,
+        color,
+        thickness=thickness,
+    )
+    return True
+
+
 def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
     """
     Draw stable `vp-N` markers for all visible navigable viewpoints in one frame.
@@ -91,7 +131,7 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
         y = int(HEIGHT / 2 - loc.rel_elevation / VFOV * HEIGHT)
         marker_text = f"vp-{int(marker_index)}"
 
-        cv2.putText(
+        _put_text_if_fully_visible(
             annotated_rgb,
             marker_text,
             (x, y),
@@ -315,7 +355,7 @@ def explore_world(sim, location=0, heading=0, elevation=0):
             fontScale = 3.0 / loc.rel_distance
             x = int(WIDTH / 2 + loc.rel_heading / HFOV * WIDTH)
             y = int(HEIGHT / 2 - loc.rel_elevation / VFOV * HEIGHT)
-            cv2.putText(
+            _put_text_if_fully_visible(
                 rgb,
                 str(idx + 1),
                 (x, y),
