@@ -1,4 +1,4 @@
-﻿import base64
+import base64
 import io
 import json
 import os
@@ -279,6 +279,122 @@ class MLLMClient:
             "confidence": deduped_confidences,
         }
 
+    @staticmethod
+    def _safe_float(value, default: float = 0.0) -> float:
+        """Convert arbitrary model fields to float while staying robust to bad JSON."""
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return float(default)
+
+    @classmethod
+    def _normalize_neighbor_regions(
+        cls,
+        current_label: str,
+        neighbor_regions,
+        topk: int,
+    ) -> list[dict]:
+        """
+        Deduplicate neighbor proposals by label and preserve both probabilities.
+
+        When the MLLM repeats the same region label, we keep the strongest belief
+        rather than blindly appending duplicate hypotheses.
+        """
+        normalized_by_label = {}
+        current_key = current_label.strip().lower()
+
+        for neighbor in neighbor_regions or []:
+            label = str(neighbor.get("label", "")).strip()
+            if not label or label.lower() == current_key:
+                continue
+
+            normalized = {
+                "label": label,
+                "existence_prob": cls._safe_float(
+                    neighbor.get("existence_prob", neighbor.get("confidence", 0.0)),
+                    0.0,
+                ),
+                "target_prob": cls._safe_float(neighbor.get("target_prob", 0.0), 0.0),
+            }
+
+            previous = normalized_by_label.get(label.lower())
+            if previous is None:
+                normalized_by_label[label.lower()] = normalized
+                continue
+
+            previous["existence_prob"] = max(
+                previous["existence_prob"], normalized["existence_prob"]
+            )
+            previous["target_prob"] = max(
+                previous["target_prob"], normalized["target_prob"]
+            )
+
+        normalized_neighbors = list(normalized_by_label.values())
+        normalized_neighbors.sort(
+            key=lambda item: (item["target_prob"], item["existence_prob"]),
+            reverse=True,
+        )
+        return normalized_neighbors[:topk]
+
+    @classmethod
+    def _normalize_region_connections(cls, region_connections) -> list[dict]:
+        """
+        Deduplicate symmetric connection hypotheses and keep the strongest evidence.
+
+        A pair may appear multiple times in malformed model output. We collapse those
+        duplicates before handing the structure to the graph-maintenance layer.
+        """
+        normalized_by_pair = {}
+
+        for connection in region_connections or []:
+            region_a = str(connection.get("region_a", "")).strip()
+            region_b = str(connection.get("region_b", "")).strip()
+            if not region_a or not region_b:
+                continue
+
+            pair_key = tuple(sorted((region_a.lower(), region_b.lower())))
+            if pair_key[0] == pair_key[1]:
+                continue
+
+            normalized = {
+                "region_a": region_a,
+                "region_b": region_b,
+                "connection_prob": cls._safe_float(
+                    connection.get("connection_prob", 0.0), 0.0
+                ),
+                "travel_distance": cls._safe_float(
+                    connection.get("travel_distance", -1.0), -1.0
+                ),
+            }
+
+            previous = normalized_by_pair.get(pair_key)
+            if previous is None:
+                normalized_by_pair[pair_key] = normalized
+                continue
+
+            if normalized["connection_prob"] > previous["connection_prob"]:
+                previous["connection_prob"] = normalized["connection_prob"]
+                previous["region_a"] = normalized["region_a"]
+                previous["region_b"] = normalized["region_b"]
+
+            if normalized["travel_distance"] >= 0.0:
+                if previous["travel_distance"] < 0.0:
+                    previous["travel_distance"] = normalized["travel_distance"]
+                else:
+                    previous["travel_distance"] = min(
+                        previous["travel_distance"], normalized["travel_distance"]
+                    )
+
+        normalized_connections = list(normalized_by_pair.values())
+        normalized_connections.sort(
+            key=lambda item: (
+                item["connection_prob"],
+                -item["travel_distance"] if item["travel_distance"] >= 0 else -1e9,
+            ),
+            reverse=True,
+        )
+        return normalized_connections
+
     def _build_distance_instruction(self, target_object: str) -> str:
         """
         Build a short distance-estimation prompt for one aligned RGB/depth pair.
@@ -354,7 +470,17 @@ class MLLMClient:
         Returns a dict:
           {
             "current_region": {"label": "...", "confidence": 0.0},
-            "neighbor_regions": [{"label": "...", "existence_prob": 0.0}],
+            "neighbor_regions": [
+                {"label": "...", "existence_prob": 0.0, "target_prob": 0.0}
+            ],
+            "region_connections": [
+                {
+                    "region_a": "...",
+                    "region_b": "...",
+                    "connection_prob": 0.0,
+                    "travel_distance": -1.0,
+                }
+            ],
             "target": {
                 "found": true/false,
                 "view": -1,
@@ -456,6 +582,7 @@ class MLLMClient:
             return {
                 "current_region": {"label": "", "confidence": 0.0},
                 "neighbor_regions": [],
+                "region_connections": [],
                 "target": {"found": False, "view": -1, "views": [], "confidence": []},
             }
 
@@ -476,21 +603,14 @@ class MLLMClient:
             if not neighbor_regions:
                 neighbor_regions = legacy_regions[1:]
 
-        normalized_neighbors = []
-        for neighbor in neighbor_regions:
-            label = str(neighbor.get("label", "")).strip()
-            if not label or label == current_label:
-                continue
-
-            existence_prob = float(
-                neighbor.get("existence_prob", neighbor.get("confidence", 0.0))
-            )
-            normalized_neighbors.append(
-                {
-                    "label": label,
-                    "existence_prob": existence_prob,
-                }
-            )
+        normalized_neighbors = self._normalize_neighbor_regions(
+            current_label=current_label,
+            neighbor_regions=neighbor_regions,
+            topk=topk,
+        )
+        normalized_connections = self._normalize_region_connections(
+            payload.get("region_connections", [])
+        )
 
         target = self._normalize_target_output(payload.get("target", {}), index_map)
 
@@ -499,7 +619,8 @@ class MLLMClient:
                 "label": current_label,
                 "confidence": current_confidence,
             },
-            "neighbor_regions": normalized_neighbors[:topk],
+            "neighbor_regions": normalized_neighbors,
+            "region_connections": normalized_connections,
             "target": target,
         }
 
@@ -579,3 +700,5 @@ class MLLMClient:
         return {
             "distance_m": distance_m,
         }
+
+

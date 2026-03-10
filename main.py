@@ -1,9 +1,10 @@
-﻿import os
+import os
 import time
 import debugpy
 
 import Helper
 
+from semantic_persistence.hypothesis_graph import HypothesisGraph
 from semantic_persistence.mllm_client import MLLMClient
 
 
@@ -43,9 +44,12 @@ if __name__ == "__main__":
     distance_threshold_m = float(
         os.environ.get("TARGET_DISTANCE_THRESHOLD_M", "1.0").strip()
     )
+    hypothesis_graph = HypothesisGraph(target_object=target_object)
+    observation_step = 0
 
     # -------------------- Loop --------------------
     while True:
+        observation_step += 1
         state = sim.getState()[0]
         cur_vp = state.location.viewpointId
 
@@ -72,6 +76,21 @@ if __name__ == "__main__":
         )
         runtime = time.perf_counter() - start_time
         print(f"[MLLM] runtime: {runtime:.2f} seconds")
+
+        # 2b) Convert the one-step MLLM output into a persistent hypothesis graph.
+        #     This preserves semantic nodes and uncertain structural edges across
+        #     multiple robot viewpoints instead of treating each scan independently.
+        graph_update = hypothesis_graph.update_from_mllm(
+            scan_id=scan_id,
+            current_vp=cur_vp,
+            mllm_output=mllm_out,
+            observation_step=observation_step,
+        )
+        print(
+            f"[HypothesisGraph] updated nodes={len(graph_update['updated_node_ids'])} "
+            f"edges={len(graph_update['updated_edge_ids'])}"
+        )
+        print(hypothesis_graph.format_summary())
 
         # 2a) The detection step above already guarantees the target is in the chosen
         #     RGB frame, so the follow-up query only needs to estimate distance from
