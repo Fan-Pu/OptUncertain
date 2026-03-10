@@ -67,12 +67,18 @@ if __name__ == "__main__":
 
         # 2) Ask the MLLM to label the current/neighboring regions and report which
         #    RGB view contains the target object.
+        #
+        #    The prompt now receives a compact snapshot of the existing hypothesis
+        #    graph so the model can reuse old node ids instead of regenerating
+        #    redundant semantic nodes for already-known locations.
+        graph_context = hypothesis_graph.build_mllm_context(current_vp=cur_vp)
         start_time = time.perf_counter()
         mllm_out = mllm.propose_semantic_nodes(
             observation_images=horizon_rgb_images,
             topk=5,
             target_object=target_object,
             depth_images=horizon_depths,
+            graph_context=graph_context,
         )
         runtime = time.perf_counter() - start_time
         print(f"[MLLM] runtime: {runtime:.2f} seconds")

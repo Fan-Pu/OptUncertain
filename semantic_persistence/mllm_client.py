@@ -166,14 +166,20 @@ class MLLMClient:
 
         return selected_indices
 
+    
     def _build_instruction(
         self,
         num_obs_images: int,
         topk: int,
         target_object: str,
+        graph_context: dict | None = None,
     ) -> str:
         """
-        Builds the instruction string for the MLLM based on the given parameters.
+        Build the semantic-graph prompt for the MLLM.
+
+        The prompt now reminds the model that the current region is the semantic
+        label of the robot's present physical viewpoint, while neighbor regions are
+        distinct ungrounded viewpoint hypotheses that may need to be reused later.
         """
         target_object = target_object.strip()
         if target_object:
@@ -185,26 +191,35 @@ class MLLMClient:
         else:
             target_line = 'target: always {"found":false,"views":[],"confidence":[]}.'
 
+        graph_context = graph_context or {}
+        graph_context_json = json.dumps(graph_context, separators=(",", ":"))
+
         prompt = (
             f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
             f"(indices 0-{max(0, num_obs_images - 1)}). "
             "Output one-line compact JSON only. "
-            'Schema: {"current_region":{"label":"","confidence":0.0},'
-            '"neighbor_regions":[{"label":"","existence_prob":0.0,"target_prob":0.0}],'
-            '"region_connections":[{"region_a":"","region_b":"","connection_prob":0.0,"travel_distance":-1}],'
+            'Schema: {"current_region":{"node_id":"","label":"","confidence":0.0,"note":""},'
+            '"neighbor_regions":[{"node_id":"","label":"","existence_prob":0.0,"target_prob":0.0,"note":""}],'
+            '"region_connections":[{"region_a":"","region_b":"","connection_prob":0.0,"travel_distance":0.0}],'
             '"target":{"found":false,"views":[],"confidence":[]}}. '
             "Use room/area labels only (no objects): kitchen area, living room area, bedroom area, "
-            "bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. "
-            "current_region: one label for the camera location; confidence in [0.6,0.95]. "
+            "bathroom area, hallway, dining area, entryway, corridor, office area. "
+            "graph_context is the persistent graph before this observation. "
+            f"graph_context={graph_context_json}. "
+            "node_id: copy an existing node_id from graph_context when there is a clear match; otherwise use an empty string. "
+            "current_region: one label for the camera's current physical viewpoint; confidence in [0.6,0.95]. "
+            "If current_region matches a previously proposed hypothesis in graph_context, reuse that exact node_id. "
+            "note: short viewpoint description, at most 12 words, using layout/appearance cues. "
             f"{target_line} "
             "target: views = image indices where target confidence >0.5. "
             "confidence = list of detection confidences aligned with views. "
             "If no view has confidence >0.5 set found=false and return empty lists. "
-            f"neighbor_regions: up to {topk}, no duplicates, exclude current_region. "
-            "Fields: label, existence_prob [0.5,0.95], target_prob [0,1]. "
-            "region_connections: for each unique pair among current_region and neighbors. "
-            "Fields: region_a, region_b, connection_prob [0,1], travel_distance (meters). "
-            "If not directly connected set travel_distance=-1. "
+            f"neighbor_regions: up to {topk}, no duplicates, exclude current_region, and treat each neighbor as a distinct other viewpoint. "
+            "Fields: node_id, label, existence_prob [0.5,0.95], target_prob [0,1], note. "
+            "Reuse nodes from graph_context instead of creating redundant hypotheses whenever possible. "
+            "region_connections: include only direct connections among current_region and the listed neighbors. "
+            "Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. "
+            "Fields: region_a, region_b, connection_prob [0.5,1], travel_distance (>0 meters). "
             "Connections are symmetric: output A->B only, not B->A. "
             "Return JSON only. No explanation or markdown."
         )
@@ -279,6 +294,7 @@ class MLLMClient:
             "confidence": deduped_confidences,
         }
 
+    
     @staticmethod
     def _safe_float(value, default: float = 0.0) -> float:
         """Convert arbitrary model fields to float while staying robust to bad JSON."""
@@ -286,6 +302,18 @@ class MLLMClient:
             return float(value)
         except (TypeError, ValueError):
             return float(default)
+
+    @staticmethod
+    def _normalize_note(value) -> str:
+        """Keep model-generated notes short and single-line for downstream logging."""
+        note = str(value or "").strip()
+        note = " ".join(note.split())
+        return note[:160]
+
+    @staticmethod
+    def _normalize_node_id(value) -> str:
+        """Normalize optional node ids returned by the prompt context matching step."""
+        return str(value or "").strip()
 
     @classmethod
     def _normalize_neighbor_regions(
@@ -295,12 +323,13 @@ class MLLMClient:
         topk: int,
     ) -> list[dict]:
         """
-        Deduplicate neighbor proposals by label and preserve both probabilities.
+        Deduplicate neighbor proposals while preserving notes and optional node ids.
 
-        When the MLLM repeats the same region label, we keep the strongest belief
-        rather than blindly appending duplicate hypotheses.
+        The prompt now allows the MLLM to explicitly reuse graph nodes by id, so the
+        deduplication key prefers node_id when present and otherwise falls back to the
+        semantic label.
         """
-        normalized_by_label = {}
+        normalized_by_key = {}
         current_key = current_label.strip().lower()
 
         for neighbor in neighbor_regions or []:
@@ -308,28 +337,36 @@ class MLLMClient:
             if not label or label.lower() == current_key:
                 continue
 
+            node_id = cls._normalize_node_id(neighbor.get("node_id", ""))
+            dedupe_key = node_id or label.lower()
             normalized = {
+                "node_id": node_id,
                 "label": label,
                 "existence_prob": cls._safe_float(
                     neighbor.get("existence_prob", neighbor.get("confidence", 0.0)),
                     0.0,
                 ),
                 "target_prob": cls._safe_float(neighbor.get("target_prob", 0.0), 0.0),
+                "note": cls._normalize_note(neighbor.get("note", "")),
             }
 
-            previous = normalized_by_label.get(label.lower())
+            previous = normalized_by_key.get(dedupe_key)
             if previous is None:
-                normalized_by_label[label.lower()] = normalized
+                normalized_by_key[dedupe_key] = normalized
                 continue
 
+            if not previous["node_id"] and normalized["node_id"]:
+                previous["node_id"] = normalized["node_id"]
             previous["existence_prob"] = max(
                 previous["existence_prob"], normalized["existence_prob"]
             )
             previous["target_prob"] = max(
                 previous["target_prob"], normalized["target_prob"]
             )
+            if normalized["note"] and not previous["note"]:
+                previous["note"] = normalized["note"]
 
-        normalized_neighbors = list(normalized_by_label.values())
+        normalized_neighbors = list(normalized_by_key.values())
         normalized_neighbors.sort(
             key=lambda item: (item["target_prob"], item["existence_prob"]),
             reverse=True,
@@ -339,10 +376,11 @@ class MLLMClient:
     @classmethod
     def _normalize_region_connections(cls, region_connections) -> list[dict]:
         """
-        Deduplicate symmetric connection hypotheses and keep the strongest evidence.
+        Keep only direct connections with valid positive travel distances.
 
-        A pair may appear multiple times in malformed model output. We collapse those
-        duplicates before handing the structure to the graph-maintenance layer.
+        The old prompt forced all pairwise links and produced many `-1` distances.
+        We now drop those edges during normalization so the graph only receives
+        actionable direct connections.
         """
         normalized_by_pair = {}
 
@@ -356,15 +394,17 @@ class MLLMClient:
             if pair_key[0] == pair_key[1]:
                 continue
 
+            travel_distance = cls._safe_float(connection.get("travel_distance", -1.0), -1.0)
+            if travel_distance <= 0.0:
+                continue
+
             normalized = {
                 "region_a": region_a,
                 "region_b": region_b,
                 "connection_prob": cls._safe_float(
                     connection.get("connection_prob", 0.0), 0.0
                 ),
-                "travel_distance": cls._safe_float(
-                    connection.get("travel_distance", -1.0), -1.0
-                ),
+                "travel_distance": travel_distance,
             }
 
             previous = normalized_by_pair.get(pair_key)
@@ -377,20 +417,13 @@ class MLLMClient:
                 previous["region_a"] = normalized["region_a"]
                 previous["region_b"] = normalized["region_b"]
 
-            if normalized["travel_distance"] >= 0.0:
-                if previous["travel_distance"] < 0.0:
-                    previous["travel_distance"] = normalized["travel_distance"]
-                else:
-                    previous["travel_distance"] = min(
-                        previous["travel_distance"], normalized["travel_distance"]
-                    )
+            previous["travel_distance"] = min(
+                previous["travel_distance"], normalized["travel_distance"]
+            )
 
         normalized_connections = list(normalized_by_pair.values())
         normalized_connections.sort(
-            key=lambda item: (
-                item["connection_prob"],
-                -item["travel_distance"] if item["travel_distance"] >= 0 else -1e9,
-            ),
+            key=lambda item: (item["connection_prob"], -item["travel_distance"]),
             reverse=True,
         )
         return normalized_connections
@@ -457,28 +490,42 @@ class MLLMClient:
             raise
         return self._message_to_text(completion.choices[0].message.content)
 
+    
+
     def propose_semantic_nodes(
         self,
         observation_images: list[np.ndarray],
         depth_images: list[np.ndarray] | None = None,
         topk: int = 5,
         target_object: str | None = None,
+        graph_context: dict | None = None,
     ):
         """
         observation_images: list of RGB uint8 arrays (H,W,3), typically horizon scan frames.
 
         Returns a dict:
           {
-            "current_region": {"label": "...", "confidence": 0.0},
+            "current_region": {
+                "node_id": "...",
+                "label": "...",
+                "confidence": 0.0,
+                "note": "..."
+            },
             "neighbor_regions": [
-                {"label": "...", "existence_prob": 0.0, "target_prob": 0.0}
+                {
+                    "node_id": "...",
+                    "label": "...",
+                    "existence_prob": 0.0,
+                    "target_prob": 0.0,
+                    "note": "..."
+                }
             ],
             "region_connections": [
                 {
                     "region_a": "...",
                     "region_b": "...",
                     "connection_prob": 0.0,
-                    "travel_distance": -1.0,
+                    "travel_distance": 0.0,
                 }
             ],
             "target": {
@@ -546,6 +593,7 @@ class MLLMClient:
             num_obs_images=num_obs_images,
             topk=topk,
             target_object=target_object or "",
+            graph_context=graph_context,
         )
 
         content_items = [{"type": "text", "text": instruction}]
@@ -557,8 +605,11 @@ class MLLMClient:
                 }
             )
 
+        # Keep the local stub aligned with the new schema while the remote call stays
+        # commented for debugging. Notes are intentionally short, and edges with
+        # unknown distance are omitted so downstream graph updates stay clean.
         # decoded = self._request_completion(content_items, self.max_new_tokens)
-        decoded = '{"current_region":{"label":"living room area","confidence":0.9},"neighbor_regions":[{"label":"kitchen area","existence_prob":0.85,"target_prob":0.1},{"label":"dining area","existence_prob":0.8,"target_prob":0.1},{"label":"bedroom area","existence_prob":0.8,"target_prob":0.2},{"label":"hallway","existence_prob":0.7,"target_prob":0.05}],"region_connections":[{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.8,"travel_distance":3},{"region_a":"living room area","region_b":"dining area","connection_prob":0.7,"travel_distance":3},{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.6,"travel_distance":5},{"region_a":"living room area","region_b":"hallway","connection_prob":0.6,"travel_distance":4},{"region_a":"kitchen area","region_b":"dining area","connection_prob":0.6,"travel_distance":2},{"region_a":"kitchen area","region_b":"bedroom area","connection_prob":0.2,"travel_distance":-1},{"region_a":"kitchen area","region_b":"hallway","connection_prob":0.3,"travel_distance":-1},{"region_a":"dining area","region_b":"bedroom area","connection_prob":0.3,"travel_distance":-1},{"region_a":"dining area","region_b":"hallway","connection_prob":0.3,"travel_distance":-1},{"region_a":"bedroom area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[1],"confidence":[0.9]}}'
+        decoded = '{"current_region":{"node_id":"","label":"living room area","confidence":0.9,"note":"open central lounge space"},"neighbor_regions":[{"node_id":"","label":"kitchen area","existence_prob":0.85,"target_prob":0.1,"note":"open kitchen beside lounge"},{"node_id":"","label":"dining area","existence_prob":0.8,"target_prob":0.1,"note":"table zone near lounge"},{"node_id":"","label":"bedroom area","existence_prob":0.8,"target_prob":0.2,"note":"quieter room past hallway"},{"node_id":"","label":"hallway","existence_prob":0.7,"target_prob":0.05,"note":"narrow connector toward rooms"}],"region_connections":[{"region_a":"living room area","region_b":"kitchen area","connection_prob":0.8,"travel_distance":3},{"region_a":"living room area","region_b":"dining area","connection_prob":0.7,"travel_distance":3},{"region_a":"living room area","region_b":"bedroom area","connection_prob":0.6,"travel_distance":5},{"region_a":"living room area","region_b":"hallway","connection_prob":0.6,"travel_distance":4},{"region_a":"kitchen area","region_b":"dining area","connection_prob":0.6,"travel_distance":2},{"region_a":"bedroom area","region_b":"hallway","connection_prob":0.7,"travel_distance":2}],"target":{"found":true,"views":[1],"confidence":[0.9]}}'
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
         raw = self._strip_code_fences(decoded)
@@ -580,17 +631,23 @@ class MLLMClient:
             print("[MLLM] Failed to parse JSON. Raw output:")
             print(decoded)
             return {
-                "current_region": {"label": "", "confidence": 0.0},
+                "current_region": {
+                    "node_id": "",
+                    "label": "",
+                    "confidence": 0.0,
+                    "note": "",
+                },
                 "neighbor_regions": [],
                 "region_connections": [],
                 "target": {"found": False, "view": -1, "views": [], "confidence": []},
             }
 
         # The rest of the code is dedicated to normalizing and validating the parsed output.
-
         current_region = payload.get("current_region", {})
         current_label = str(current_region.get("label", "")).strip()
-        current_confidence = float(current_region.get("confidence", 0.0))
+        current_confidence = self._safe_float(current_region.get("confidence", 0.0), 0.0)
+        current_node_id = self._normalize_node_id(current_region.get("node_id", ""))
+        current_note = self._normalize_note(current_region.get("note", ""))
 
         neighbor_regions = payload.get("neighbor_regions", [])
         legacy_regions = payload.get("regions", [])
@@ -598,7 +655,9 @@ class MLLMClient:
         if not current_label and legacy_regions:
             first_region = legacy_regions[0]
             current_label = str(first_region.get("label", "")).strip()
-            current_confidence = float(first_region.get("confidence", 0.0))
+            current_confidence = self._safe_float(first_region.get("confidence", 0.0), 0.0)
+            current_node_id = self._normalize_node_id(first_region.get("node_id", ""))
+            current_note = self._normalize_note(first_region.get("note", ""))
 
             if not neighbor_regions:
                 neighbor_regions = legacy_regions[1:]
@@ -616,8 +675,10 @@ class MLLMClient:
 
         return {
             "current_region": {
+                "node_id": current_node_id,
                 "label": current_label,
                 "confidence": current_confidence,
+                "note": current_note,
             },
             "neighbor_regions": normalized_neighbors,
             "region_connections": normalized_connections,
