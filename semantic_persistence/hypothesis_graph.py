@@ -136,6 +136,191 @@ class HypothesisGraph:
         self.observation_step: int = 0
         self.visited_viewpoints: Set[str] = set()
         self.last_current_node_id: Optional[str] = None
+        self.graph_context: Dict[str, Any] = self._empty_graph_context()
+
+    @staticmethod
+    def _empty_graph_context() -> Dict[str, Any]:
+        return {
+            "label_names": [],
+            "label_existence_probs": [],
+            "label_target_probs": [],
+            "label_connection_ajacent_matrix": [],
+            "label_distance_ajacent_matrix": [],
+            "label_assigns": {},
+            "viewpoints_target_confidences": {},
+        }
+
+    @classmethod
+    def _normalize_graph_context(cls, raw_context: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        if not isinstance(raw_context, dict):
+            return cls._empty_graph_context()
+
+        raw_labels = raw_context.get("label_names", []) or []
+        raw_existence = raw_context.get("label_existence_probs", []) or []
+        raw_target = raw_context.get("label_target_probs", []) or []
+        raw_connection = raw_context.get("label_connection_ajacent_matrix", []) or []
+        raw_distance = raw_context.get("label_distance_ajacent_matrix", []) or []
+        raw_assigns = raw_context.get("label_assigns", {}) or {}
+        raw_view_confidences = raw_context.get("viewpoints_target_confidences", {}) or {}
+
+        canonical_to_label: Dict[str, str] = {}
+        raw_index_by_key: Dict[str, int] = {}
+        for idx, raw_label in enumerate(raw_labels):
+            label = _surface_region_label(raw_label)
+            key = _canonicalize_label(label)
+            if not key or key in canonical_to_label:
+                continue
+            canonical_to_label[key] = label
+            raw_index_by_key[key] = idx
+
+        label_names = sorted(canonical_to_label.values(), key=lambda item: item.lower())
+        label_lookup = {_canonicalize_label(label): label for label in label_names}
+
+        existence_map: Dict[str, float] = {}
+        target_map: Dict[str, float] = {}
+        for label in label_names:
+            key = _canonicalize_label(label)
+            raw_idx = raw_index_by_key.get(key, -1)
+            raw_exist = raw_existence[raw_idx] if 0 <= raw_idx < len(raw_existence) else 0.5
+            raw_tgt = raw_target[raw_idx] if 0 <= raw_idx < len(raw_target) else 0.0
+            existence_map[label] = _clamp(_safe_float(raw_exist, 0.5))
+            target_map[label] = _clamp(_safe_float(raw_tgt, 0.0))
+
+        label_assigns: Dict[str, List[int]] = {label: [] for label in label_names}
+        assigned_viewpoints: Set[int] = set()
+        for raw_label, raw_values in raw_assigns.items():
+            label = label_lookup.get(_canonicalize_label(raw_label), "")
+            if not label:
+                continue
+            candidates = raw_values if isinstance(raw_values, list) else [raw_values]
+            cleaned: List[int] = []
+            for value in candidates:
+                try:
+                    viewpoint_index = int(value)
+                except (TypeError, ValueError):
+                    continue
+                if viewpoint_index <= 0 or viewpoint_index in assigned_viewpoints:
+                    continue
+                cleaned.append(viewpoint_index)
+                assigned_viewpoints.add(viewpoint_index)
+            label_assigns[label] = sorted(cleaned)
+
+        edge_map: Dict[Tuple[str, str], float] = {}
+        distance_map: Dict[Tuple[str, str], float] = {}
+        for label_a in label_names:
+            idx_a = raw_index_by_key.get(_canonicalize_label(label_a), -1)
+            if idx_a < 0:
+                continue
+            for label_b in label_names:
+                idx_b = raw_index_by_key.get(_canonicalize_label(label_b), -1)
+                if idx_b < 0 or label_a == label_b:
+                    continue
+                pair_key = tuple(sorted((label_a, label_b), key=lambda item: item.lower()))
+                prob = 0.0
+                dist = 0.0
+                if (
+                    isinstance(raw_connection, list)
+                    and idx_a < len(raw_connection)
+                    and isinstance(raw_connection[idx_a], list)
+                    and idx_b < len(raw_connection[idx_a])
+                ):
+                    prob = _clamp(_safe_float(raw_connection[idx_a][idx_b], 0.0))
+                if (
+                    isinstance(raw_distance, list)
+                    and idx_a < len(raw_distance)
+                    and isinstance(raw_distance[idx_a], list)
+                    and idx_b < len(raw_distance[idx_a])
+                ):
+                    dist = max(0.0, _safe_float(raw_distance[idx_a][idx_b], 0.0))
+                if prob > 0.0 and dist > 0.0:
+                    edge_map[pair_key] = max(edge_map.get(pair_key, 0.0), prob)
+                    previous_dist = distance_map.get(pair_key, 0.0)
+                    distance_map[pair_key] = dist if previous_dist <= 0.0 else min(previous_dist, dist)
+
+        viewpoint_owner = {}
+        for label, assignments in label_assigns.items():
+            for viewpoint_index in assignments:
+                viewpoint_owner[int(viewpoint_index)] = label
+
+        viewpoints_target_confidences: Dict[str, float] = {}
+        for raw_key, raw_value in raw_view_confidences.items():
+            try:
+                viewpoint_index = int(raw_key)
+            except (TypeError, ValueError):
+                continue
+            if viewpoint_index <= 0 or viewpoint_index not in viewpoint_owner:
+                continue
+            owner_label = viewpoint_owner[viewpoint_index]
+            viewpoints_target_confidences[str(viewpoint_index)] = min(
+                _clamp(_safe_float(raw_value, 0.0)),
+                target_map.get(owner_label, 0.0),
+            )
+
+        label_index = {label: idx for idx, label in enumerate(label_names)}
+        size = len(label_names)
+        connection_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
+        distance_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
+        for (label_a, label_b), prob in edge_map.items():
+            dist = distance_map.get((label_a, label_b), 0.0)
+            if prob <= 0.0 or dist <= 0.0:
+                continue
+            idx_a = label_index[label_a]
+            idx_b = label_index[label_b]
+            connection_matrix[idx_a][idx_b] = prob
+            connection_matrix[idx_b][idx_a] = prob
+            distance_matrix[idx_a][idx_b] = dist
+            distance_matrix[idx_b][idx_a] = dist
+
+        return {
+            "label_names": label_names,
+            "label_existence_probs": [float(existence_map.get(label, 0.5)) for label in label_names],
+            "label_target_probs": [float(target_map.get(label, 0.0)) for label in label_names],
+            "label_connection_ajacent_matrix": connection_matrix,
+            "label_distance_ajacent_matrix": distance_matrix,
+            "label_assigns": {label: list(label_assigns.get(label, [])) for label in label_names},
+            "viewpoints_target_confidences": {
+                key: viewpoints_target_confidences[key]
+                for key in sorted(viewpoints_target_confidences.keys(), key=lambda item: int(item))
+            },
+        }
+
+    @staticmethod
+    def _graph_edge_records(graph_context: Dict[str, Any]) -> List[Dict[str, Any]]:
+        labels = graph_context.get("label_names", []) or []
+        connection_matrix = graph_context.get("label_connection_ajacent_matrix", []) or []
+        distance_matrix = graph_context.get("label_distance_ajacent_matrix", []) or []
+        records: List[Dict[str, Any]] = []
+        for idx_a, label_a in enumerate(labels):
+            for idx_b in range(idx_a + 1, len(labels)):
+                label_b = labels[idx_b]
+                prob = 0.0
+                dist = 0.0
+                if (
+                    idx_a < len(connection_matrix)
+                    and isinstance(connection_matrix[idx_a], list)
+                    and idx_b < len(connection_matrix[idx_a])
+                ):
+                    prob = _clamp(_safe_float(connection_matrix[idx_a][idx_b], 0.0))
+                if (
+                    idx_a < len(distance_matrix)
+                    and isinstance(distance_matrix[idx_a], list)
+                    and idx_b < len(distance_matrix[idx_a])
+                ):
+                    dist = max(0.0, _safe_float(distance_matrix[idx_a][idx_b], 0.0))
+                if prob > 0.0 and dist > 0.0:
+                    records.append(
+                        {
+                            "A": label_a,
+                            "B": label_b,
+                            "prob": prob,
+                            "dist": dist,
+                        }
+                    )
+        records.sort(
+            key=lambda item: (item["prob"], -item["dist"], item["A"].lower(), item["B"].lower()),
+            reverse=True,
+        )
+        return records
 
     @staticmethod
     def _running_average(
@@ -737,86 +922,11 @@ class HypothesisGraph:
         max_grounded_nodes: int = 12,
         max_neighbor_candidates: int = 8,
     ) -> Dict[str, Any]:
-        """
-        Export compact graph context for the next MLLM call.
-
-        The prompt only needs the current viewpoint binding, the previously active
-        node, and a small set of reusable nodes/edges. Keeping this summary short
-        makes the prompt more stable and avoids wasting tokens on the full graph.
-        """
         current_vp = str(current_vp or "").strip()
-        known_current_node = (
-            self._get_node(self._vp_to_node_id[current_vp])
-            if current_vp and current_vp in self._vp_to_node_id
-            else None
-        )
-        previous_current_node = self._get_node(self.last_current_node_id or "")
-
-        grounded_nodes = sorted(
-            [node for node in self.nodes.values() if node.mapped_viewpoint],
-            key=lambda node: (
-                node.last_observed_step,
-                node.target_prob,
-                node.existence_prob,
-            ),
-            reverse=True,
-        )
-
-        neighbor_candidates: List[Dict[str, Any]] = []
-        if previous_current_node is not None:
-            adjacent = sorted(
-                self._iter_adjacent_edges(previous_current_node.node_id),
-                key=lambda item: (
-                    item[0].connection_prob,
-                    item[0].travel_distance,
-                    (
-                        self.nodes[item[1]].last_observed_step
-                        if item[1] in self.nodes
-                        else -1
-                    ),
-                ),
-                reverse=True,
-            )
-            for edge, other_node_id in adjacent[:max_neighbor_candidates]:
-                other_node = self._get_node(other_node_id)
-                if other_node is None:
-                    continue
-                neighbor_candidates.append(
-                    {
-                        "node": self._node_prompt_record(
-                            other_node,
-                            viewpoint_index_by_vp=viewpoint_index_by_vp,
-                        ),
-                        "connection_prob": float(edge.connection_prob),
-                        "travel_distance": float(edge.travel_distance),
-                    }
-                )
-
-        # returns a compact summary of the current graph state relevant to the next MLLM query, including:
-        # - the current viewpoint
-        # - the known current node: the node already bound to the current viewpoint if any, which may be None on a first visit
-        # - the previous current node: the node bound to the previous viewpoint, which may be None if the previous viewpoint was never seen before or had no valid node
-        # - a list of grounded nodes: nodes that have been validated as current regions at their respective viewpoints, sorted by recency and relevance to the target object, limited to max_grounded_nodes
-        # - a list of neighbor candidates: nodes that are directly connected to the previous current node, sorted by connection strength and recency, limited to max_neighbor_candidates
-        return {
-            "current_viewpoint": current_vp,  # the
-            "known_current_node": self._node_prompt_record(
-                known_current_node,
-                viewpoint_index_by_vp=viewpoint_index_by_vp,
-            ),
-            "previous_current_node": self._node_prompt_record(
-                previous_current_node,
-                viewpoint_index_by_vp=viewpoint_index_by_vp,
-            ),
-            "grounded_nodes": [
-                self._node_prompt_record(
-                    node,
-                    viewpoint_index_by_vp=viewpoint_index_by_vp,
-                )
-                for node in grounded_nodes[:max_grounded_nodes]
-            ],
-            "neighbor_candidates": neighbor_candidates,
-        }
+        if current_vp:
+            self.visited_viewpoints.add(current_vp)
+        self.graph_context = self._normalize_graph_context(self.graph_context)
+        return self.graph_context
 
     def update_from_mllm(
         self,
@@ -825,18 +935,6 @@ class HypothesisGraph:
         mllm_output: Dict[str, Any],
         observation_step: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """
-        Ingest one normalized MLLM payload and update the persistent graph.
-
-        Expected input shape:
-          {
-            "current_region": {... grounded current viewpoint ...},
-            "visible_viewpoints": [... grounded visible neighbor viewpoints ...],
-            "hypothesis_regions": [... ungrounded semantic regions ...],
-            "region_connections": [...],
-            "target": {"found": ..., "confidence": [...]}
-          }
-        """
         if observation_step is None:
             self.observation_step += 1
         else:
@@ -847,254 +945,116 @@ class HypothesisGraph:
         if current_vp:
             self.visited_viewpoints.add(current_vp)
 
-        current_region = mllm_output.get("current_region", {}) or {}
-        visible_viewpoints = mllm_output.get("visible_viewpoints", []) or []
-        hypothesis_regions = mllm_output.get("hypothesis_regions", []) or []
-        region_connections = mllm_output.get("region_connections", []) or []
-        target = mllm_output.get("target", {}) or {}
-
-        direct_target_prob = 0.0
-        if bool(target.get("found", False)):
-            confidence_values = target.get("confidence", [])
-            if isinstance(confidence_values, list) and confidence_values:
-                direct_target_prob = max(
-                    _safe_float(value, 0.0) for value in confidence_values
-                )
-
-        local_nodes_by_label: Dict[str, HypothesisNode] = {}
-        updated_node_ids: List[str] = []
-        updated_edge_ids: List[str] = []
-
-        current_label = str(current_region.get("label", "")).strip()
-        current_note = _clean_note(current_region.get("note", ""))
-        current_node = self._resolve_current_node(
-            current_vp=current_vp,
-            label=current_label,
-            note=current_note,
-            requested_node_id=str(current_region.get("node_id", "")).strip(),
+        previous_graph_context = self._normalize_graph_context(self.graph_context)
+        updated_graph_context = self._normalize_graph_context(
+            mllm_output.get("updated_graph_context", previous_graph_context)
         )
+        if not updated_graph_context["label_names"] and previous_graph_context["label_names"]:
+            updated_graph_context = previous_graph_context
+        self.graph_context = updated_graph_context
 
-        if current_node is not None:
-            current_confidence = _clamp(
-                _safe_float(current_region.get("confidence", 0.0), 0.0)
-            )
-            current_node = self._update_node_observation(
-                node=current_node,
-                label=current_label,
-                note=current_note,
-                existence_prob=current_confidence,
-                target_prob=direct_target_prob if direct_target_prob > 0.0 else None,
-                scan_id=scan_id,
-                observed_from_vp=current_vp,
-                observation_step=step,
-                grounded_viewpoint=current_vp,
-                direct_target_detection=direct_target_prob > 0.0,
-            )
-            local_nodes_by_label[current_label] = current_node
-            updated_node_ids.append(current_node.node_id)
-            self.last_current_node_id = current_node.node_id
+        current_region = mllm_output.get("current_region", {}) or {}
+        current_label = _surface_region_label(current_region.get("label", ""))
+        if current_label:
+            self.last_current_node_id = current_label
 
-        for visible in visible_viewpoints:
-            label = str(visible.get("label", "")).strip()
-            note = _clean_note(visible.get("note", ""))
-            viewpoint_id = str(visible.get("viewpoint_id", "")).strip()
-            if not label or not viewpoint_id:
-                continue
+        previous_labels = set(previous_graph_context.get("label_names", []))
+        current_labels = set(updated_graph_context.get("label_names", []))
+        mentioned_labels = set()
+        if current_label:
+            mentioned_labels.add(current_label)
+        for region in mllm_output.get("neighbor_regions", []) or []:
+            label = _surface_region_label(region.get("label", ""))
+            if label:
+                mentioned_labels.add(label)
 
-            visible_node = self._resolve_grounded_viewpoint_node(
-                current_node=current_node,
-                viewpoint_id=viewpoint_id,
-                label=label,
-                note=note,
-                requested_node_id=str(visible.get("node_id", "")).strip(),
-            )
-            if visible_node is None:
-                continue
-
-            visible_node = self._update_node_observation(
-                node=visible_node,
-                label=label,
-                note=note,
-                existence_prob=_safe_float(visible.get("existence_prob", 0.0), 0.0),
-                target_prob=_safe_float(visible.get("target_prob", 0.0), 0.0),
-                scan_id=scan_id,
-                observed_from_vp=current_vp,
-                observation_step=step,
-                grounded_viewpoint=viewpoint_id,
-                proposed_from_viewpoint=current_vp,
-            )
-            local_nodes_by_label[label] = visible_node
-            updated_node_ids.append(visible_node.node_id)
-
-        for hypothesis in hypothesis_regions:
-            label = str(hypothesis.get("label", "")).strip()
-            note = _clean_note(hypothesis.get("note", ""))
-            hypothesis_node = self._resolve_neighbor_node(
-                current_node=current_node,
-                label=label,
-                note=note,
-                requested_node_id=str(hypothesis.get("node_id", "")).strip(),
-            )
-            if hypothesis_node is None:
-                continue
-
-            hypothesis_node = self._update_node_observation(
-                node=hypothesis_node,
-                label=label,
-                note=note,
-                existence_prob=_safe_float(hypothesis.get("existence_prob", 0.0), 0.0),
-                target_prob=_safe_float(hypothesis.get("target_prob", 0.0), 0.0),
-                scan_id=scan_id,
-                observed_from_vp=current_vp,
-                observation_step=step,
-                proposed_from_viewpoint=current_vp,
-            )
-            local_nodes_by_label[label] = hypothesis_node
-            updated_node_ids.append(hypothesis_node.node_id)
-
-        for connection in region_connections:
-            region_a = str(connection.get("region_a", "")).strip()
-            region_b = str(connection.get("region_b", "")).strip()
-            if not region_a or not region_b or region_a == region_b:
-                continue
-
-            node_a = local_nodes_by_label.get(region_a)
-            node_b = local_nodes_by_label.get(region_b)
-            if node_a is None or node_b is None:
-                continue
-
-            edge = self._observe_edge(
-                node_a=node_a,
-                node_b=node_b,
-                connection_prob=_safe_float(
-                    connection.get("connection_prob", 0.0), 0.0
-                ),
-                travel_distance=_safe_float(
-                    connection.get("travel_distance", -1.0), -1.0
-                ),
-                observation_step=step,
-                source_labels=(region_a, region_b),
-            )
-            if edge is not None:
-                updated_edge_ids.append(edge.edge_id)
+        previous_edges = {
+            f"{edge['A']}|{edge['B']}" for edge in self._graph_edge_records(previous_graph_context)
+        }
+        current_edges = {
+            f"{edge['A']}|{edge['B']}" for edge in self._graph_edge_records(updated_graph_context)
+        }
+        mentioned_edges = {
+            f"{_surface_region_label(edge.get('A', ''))}|{_surface_region_label(edge.get('B', ''))}"
+            for edge in mllm_output.get("region_connections", []) or []
+            if _surface_region_label(edge.get("A", ""))
+            and _surface_region_label(edge.get("B", ""))
+            and _surface_region_label(edge.get("A", ""))
+            != _surface_region_label(edge.get("B", ""))
+        }
 
         return {
             "step": step,
-            "current_node_id": None if current_node is None else current_node.node_id,
-            "updated_node_ids": list(dict.fromkeys(updated_node_ids)),
-            "updated_edge_ids": list(dict.fromkeys(updated_edge_ids)),
+            "current_node_id": current_label or None,
+            "updated_node_ids": sorted(
+                mentioned_labels | (current_labels - previous_labels),
+                key=lambda item: item.lower(),
+            ),
+            "updated_edge_ids": sorted(
+                mentioned_edges if mentioned_edges else (current_edges - previous_edges),
+                key=lambda item: item.lower(),
+            ),
         }
 
     def to_dict(self) -> Dict[str, Any]:
-        """Serialize the graph into a planner/debug-friendly dictionary."""
-        nodes = []
-        for node in self.nodes.values():
-            nodes.append(
-                {
-                    "node_id": node.node_id,
-                    "label": node.label,
-                    "region_label": node.region_label,
-                    "canonical_label": node.canonical_label,
-                    "note": node.note,
-                    "aliases": sorted(node.aliases),
-                    "existence_prob": float(node.existence_prob),
-                    "target_prob": float(node.target_prob),
-                    "observation_count": int(node.observation_count),
-                    "grounded_viewpoints": sorted(node.grounded_viewpoints),
-                    "mapped_viewpoint": node.mapped_viewpoint,
-                    "proposed_from_viewpoints": sorted(node.proposed_from_viewpoints),
-                    "last_observed_step": int(node.last_observed_step),
-                    "last_observed_scan": node.last_observed_scan,
-                    "last_observed_from_vp": node.last_observed_from_vp,
-                }
-            )
-
-        edges = []
-        for edge in self.edges.values():
-            edges.append(
-                {
-                    "edge_id": edge.edge_id,
-                    "node_a_id": edge.node_a_id,
-                    "node_b_id": edge.node_b_id,
-                    "connection_prob": float(edge.connection_prob),
-                    "travel_distance": float(edge.travel_distance),
-                    "observation_count": int(edge.observation_count),
-                    "distance_observation_count": int(edge.distance_observation_count),
-                    "last_observed_step": int(edge.last_observed_step),
-                }
-            )
-
         return {
             "target_object": self.target_object,
             "observation_step": int(self.observation_step),
             "visited_viewpoints": sorted(self.visited_viewpoints),
             "last_current_node_id": self.last_current_node_id,
-            "viewpoint_to_node_id": dict(self._vp_to_node_id),
-            "nodes": nodes,
-            "edges": edges,
+            "graph_context": self._normalize_graph_context(self.graph_context),
         }
 
     def format_summary(self, max_nodes: int = 8, max_edges: int = 8) -> str:
-        """
-        Build a compact text summary for debugging in the main navigation loop.
-
-        The summary now explicitly shows whether a node is already bound to a
-        viewpoint and carries the short note generated by the MLLM.
-        """
+        graph_context = self._normalize_graph_context(self.graph_context)
+        edges = self._graph_edge_records(graph_context)
         lines = [
             (
                 f"[HypothesisGraph] step={self.observation_step} "
-                f"nodes={len(self.nodes)} edges={len(self.edges)} "
+                f"labels={len(graph_context['label_names'])} edges={len(edges)} "
                 f"visited_vps={len(self.visited_viewpoints)}"
             )
         ]
 
-        sorted_nodes = sorted(
-            self.nodes.values(),
-            key=lambda node: (
-                bool(node.mapped_viewpoint),
-                node.target_prob,
-                node.existence_prob,
-                node.observation_count,
-            ),
+        label_records = []
+        for idx, label in enumerate(graph_context.get("label_names", [])):
+            label_records.append(
+                {
+                    "label": label,
+                    "exist": float(graph_context["label_existence_probs"][idx]),
+                    "target": float(graph_context["label_target_probs"][idx]),
+                    "assigns": list(graph_context["label_assigns"].get(label, [])),
+                }
+            )
+        label_records.sort(
+            key=lambda item: (item["target"], item["exist"], len(item["assigns"]), item["label"].lower()),
             reverse=True,
         )
 
-        # grounded={len(node.grounded_viewpoints)} behaves like a binary signal in
-        # normal operation because each validated node maps to exactly one viewpoint.
-        for node in sorted_nodes[:max_nodes]:
-            vp_text = node.mapped_viewpoint if node.mapped_viewpoint else "unbound"
-            note_text = f" | note={node.note}" if node.note else ""
+        for record in label_records[:max_nodes]:
+            assign_text = ",".join(str(item) for item in record["assigns"]) or "-"
             lines.append(
                 "  "
                 + (
-                    f"NODE {node.node_id} | {node.label} | exist={node.existence_prob:.2f} "
-                    f"| target={node.target_prob:.2f} | obs={node.observation_count} "
-                    f"| grounded={len(node.grounded_viewpoints)} | vp={vp_text}"
-                    f"{note_text}"
+                    f"LABEL {record['label']} | exist={record['exist']:.2f} "
+                    f"| target={record['target']:.2f} | assigns=[{assign_text}]"
                 )
             )
 
-        sorted_edges = sorted(
-            self.edges.values(),
-            key=lambda edge: (
-                edge.connection_prob,
-                edge.travel_distance,
-            ),
-            reverse=True,
-        )
-        for edge in sorted_edges[:max_edges]:
-            node_a = self.nodes.get(edge.node_a_id)
-            node_b = self.nodes.get(edge.node_b_id)
-            label_a = node_a.label if node_a is not None else edge.node_a_id
-            label_b = node_b.label if node_b is not None else edge.node_b_id
+        for edge in edges[:max_edges]:
             lines.append(
                 "  "
                 + (
-                    f"EDGE {edge.edge_id} | {label_a} <-> {label_b} "
-                    f"| conn={edge.connection_prob:.2f} | dist={edge.travel_distance:.2f}m "
-                    f"| obs={edge.observation_count}"
+                    f"EDGE {edge['A']} <-> {edge['B']} | conn={edge['prob']:.2f} "
+                    f"| dist={edge['dist']:.2f}m"
                 )
             )
+
+        viewpoint_confidences = graph_context.get("viewpoints_target_confidences", {}) or {}
+        if viewpoint_confidences:
+            conf_text = ", ".join(
+                f"{key}:{value:.2f}" for key, value in viewpoint_confidences.items()
+            )
+            lines.append(f"  TARGET_VPS {conf_text}")
 
         return "\n".join(lines)
