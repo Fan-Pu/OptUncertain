@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import io
 import json
 import os
@@ -296,34 +296,80 @@ class MLLMClient:
         )
 
         visited_labels = []
+        # prompt = (
+        #     f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
+        #     f"(indices 0-{max(0, num_obs_images - 1)}). "
+        #     "Output compact JSON only. "
+        #     "Each figure may contain a text number indicating the potential movement direction. "
+        #     "The same text number can appear in multiple images, and the same text number refer to the same physical direction. "
+        #     'Schema: {"current_region":{"label":""},"neighbor_regions":[{"label":"","prob":0.0,"target_prob":0.0}],'
+        #     '"region_connections":[{"A":"","B":"","prob":0.0,"dist":0.0}],'
+        #     '"target":{"found":false,"views":[],"confidence":[]},'
+        #     '"direction_heading_label":[{"id":"","label":""}],"updated_graph_context":{}}. '
+        #     "Use room/area labels only (no objects), e.g., kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. "
+        #     "The graph_context is the persistent graph before this observation, taking the form: "
+        #     '{"label_names":[],"label_existence_probs":[],"label_target_probs":[],"label_connection_ajacent_matrix":[],"label_connection_prob_ajacent_matrix":[],"label_distance_ajacent_matrix":[],"label_assigns":{"label_name":[assigned viewpoints indices]},"viewpoints_target_confidences":{"viewpoint_id":0.0}}. '
+        #     "label_connection_prob_ajacent_matrix describes the probability that a direct connection exists between two regions"
+        #     'For ajacent matrix and array, the index of rows and colums uses the index of labels in "label_names". '
+        #     '"label_assigns" records the viewpoints assigned to each label. Each viewpoint can be at most assigned to one label. '
+        #     "Some label can have empty assigned viewpoints if no observations match that label. "
+        #     'Each item in "viewpoints_target_confidences" records the confidence that the target object is at that viewpoint. '
+        #     "This confidence should be no larger than the confidence that the target is within the region label that the viewpoint is assigned. "
+        #     f"The current graph context is: {graph_context_json}. "
+        #     "current_region: one label for the region the current physical viewpoint is in. If current_region matches a label in graph_context, reuse that exact label. "
+        #     f"{target_line} "
+        #     "target: views = image indices where target confidence >0.5. confidence = list of detection confidences aligned with views. If no view has confidence >0.5 set found=false and return empty lists. "
+        #     "neighbor_regions: up to 5, no duplicates, exclude current_region. Fields: label, prob [0.5,0.95] the probability the region exists, target_prob (0,1) the probability the target is at that region. Neighbor_regions should be new proposed regions induced from current observations that are not in graph_context. "
+        #     "region_connections: include only hypothetical direct connections among the union of current_region, the listed new neighbors, and the existing label in graph_context only if strongly supported. Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. Fields: A, B, prob in [0.5,1] the connection_probability, dist (>0 meters) the travel_distance. Connections are symmetric: output A->B only, not B->A. "
+        #     'direction_heading_label: for each potential movement direction, output its text number id and the region label it heads to. Use the form [{"id":"","label":""}]. The label must be current_region, a label in graph_context, or a label in neighbor_regions. '
+        #     "updated_graph_context: update graph_context using the current observation and keep it fully consistent with the other output fields. Strictly follow the graph_context format. Append any new labels to label_names in alphabetical order, and keep all arrays, matrices, assignments, and probabilities aligned with the final label_names order. "
+        #     f"Labels have been visited are: {visited_labels}. For each visited label, its prob=1 meaning it must exist."
+        #     "Return JSON only. No explanation or markdown."
+        # )
+
         prompt = (
             f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
             f"(indices 0-{max(0, num_obs_images - 1)}). "
             "Output compact JSON only. "
-            "Each figure may contain a text number indicating the potential movement direction. "
-            "The same text number can appear in multiple images, and the same text number refer to the same physical direction. "
+            "Each figure may contain a text number indicating a potential movement direction. "
+            "The same text number can appear in multiple images, and the same text number always refers to the same physical direction. "
             'Schema: {"current_region":{"label":""},"neighbor_regions":[{"label":"","prob":0.0,"target_prob":0.0}],'
             '"region_connections":[{"A":"","B":"","prob":0.0,"dist":0.0}],'
             '"target":{"found":false,"views":[],"confidence":[]},'
             '"direction_heading_label":[{"id":"","label":""}],"updated_graph_context":{}}. '
-            "Use room/area labels only (no objects), e.g., kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. "
-            "The graph_context is the persistent graph before this observation, taking the form: "
-            '{"label_names":[],"label_existence_probs":[],"label_target_probs":[],"label_connection_ajacent_matrix":[],"label_connection_prob_ajacent_matrix":[],"label_distance_ajacent_matrix":[],"label_assigns":{"label_name":[assigned viewpoints indices]},"viewpoints_target_confidences":{"viewpoint_id":0.0}}. '
-            "label_connection_prob_ajacent_matrix describes the probability that a direct connection exists between two regions"
-            'For ajacent matrix and array, the index of rows and colums uses the index of labels in "label_names". '
-            '"label_assigns" records the viewpoints assigned to each label. Each viewpoint can be at most assigned to one label. '
-            "Some label can have empty assigned viewpoints if no observations match that label. "
-            'Each item in "viewpoints_target_confidences" records the confidence that the target object is at that viewpoint. '
-            "This confidence should be no larger than the confidence that the target is within the region label that the viewpoint is assigned. "
+            "Use room or area labels only, not objects, for example kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. "
+            "The graph_context is the persistent graph before this observation, with format: "
+            '{"label_names":[],"label_existence_probs":[],"label_target_probs":[],"label_connection_ajacent_matrix":[],"label_connection_prob_ajacent_matrix":[],"label_distance_ajacent_matrix":[],"label_assigns":{"label_name":[assigned viewpoint ids]},"viewpoints_target_confidences":{"viewpoint_id":0.0}}. '
+            '"label_connection_prob_ajacent_matrix" gives the probability that a direct connection exists between two labels. '
+            'For every matrix and array, row and column indices follow the order of "label_names". '
+            '"label_assigns" records which viewpoint ids are assigned to each label. Each viewpoint can be assigned to at most one label. '
+            "A label may have no assigned viewpoints. "
+            '"viewpoints_target_confidences" gives the probability that the target may be at each viewpoint, even if it is not directly visible now. '
+            "If a viewpoint is assigned to a label, its target confidence must be no larger than that label's target probability. "
             f"The current graph context is: {graph_context_json}. "
-            "current_region: one label for the region the current physical viewpoint is in. If current_region matches a label in graph_context, reuse that exact label. "
+            f"Visited labels are: {visited_labels}. Every visited label must have existence probability 1.0. "
+            "current_region: output one label for the region containing the current physical viewpoint. If it matches a label already in graph_context, reuse that exact label. "
             f"{target_line} "
-            "target: views = image indices where target confidence >0.5. confidence = list of detection confidences aligned with views. If no view has confidence >0.5 set found=false and return empty lists. "
-            "neighbor_regions: up to 5, no duplicates, exclude current_region. Fields: label, prob [0.5,0.95] the probability the region exists, target_prob (0,1) the probability the target is at that region. Neighbor_regions should be new proposed regions induced from current observations that are not in graph_context. "
-            "region_connections: include only hypothetical direct connections among the union of current_region, the listed new neighbors, and the existing label in graph_context only if strongly supported. Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. Fields: A, B, prob in [0.5,1] the connection_probability, dist (>0 meters) the travel_distance. Connections are symmetric: output A->B only, not B->A. "
-            'direction_heading_label: for each potential movement direction, output its text number id and the region label it heads to. Use the form [{"id":"","label":""}]. The label must be current_region, a label in graph_context, or a label in neighbor_regions. '
-            "updated_graph_context: update graph_context using the current observation and keep it fully consistent with the other output fields. Strictly follow the graph_context format. Append any new labels to label_names in alphabetical order, and keep all arrays, matrices, assignments, and probabilities aligned with the final label_names order. "
-            f"Labels have been visited are: {visited_labels}. For each visited label, its prob=1 meaning it must exist."
+            "target: views are image indices where target confidence is greater than 0.5. confidence is the list of confidences aligned with views. If no view has confidence greater than 0.5, set found=false and return empty lists. "
+            "neighbor_regions: output up to 5 labels, no duplicates, excluding current_region. These should be new proposed neighboring regions induced from the current observation and not already in graph_context. "
+            "For each neighbor region, prob is in [0.5,0.95] and target_prob is in [0,1]. "
+            "Do not make all target_prob values trivially small. Assign larger target_prob to regions that are visually plausible search destinations or likely places for the target, and use 0 only if clearly implausible. "
+            "If target is not directly observed, keep meaningful uncertainty across plausible regions instead of collapsing all target_prob values near zero. "
+            "region_connections: output plausible direct connections that are visually or spatially supported. "
+            "Prefer including direct connections from current_region to each neighbor_region when they are reasonably likely in indoor layouts, unless there is evidence against the connection. "
+            "You may also include other strongly supported direct connections involving labels in graph_context. "
+            "Do not enumerate all pairs, but do not be overly sparse. "
+            "Omit a pair only if direct connectivity is genuinely uncertain or unlikely. "
+            "Each connection has fields A, B, prob in [0.5,1], and dist in meters with dist > 0. "
+            "Connections are symmetric, so output each pair once only. "
+            'direction_heading_label: for each potential movement direction, output {"id":"","label":""}. '
+            "The label must be current_region, a label already in graph_context, or a label in neighbor_regions. "
+            "updated_graph_context: update graph_context using the current observation and keep it fully consistent with all other output fields. "
+            "Append any new labels to label_names in alphabetical order, then align all arrays and matrices to that final order. "
+            "If a direct connection in region_connections is reasonably likely, reflect it in both label_connection_ajacent_matrix and label_connection_prob_ajacent_matrix. "
+            "If a region remains a plausible target location, its target probability should be reflected in label_target_probs and in non-zero viewpoints_target_confidences for plausible assigned or candidate viewpoints. "
+            "Do not set all viewpoints_target_confidences to zero unless the target is confidently impossible at every viewpoint. "
+            "When the target is not visible, still assign non-zero viewpoint target confidences to plausible candidate viewpoints based on regional target probabilities and prior graph_context. "
             "Return JSON only. No explanation or markdown."
         )
 
@@ -1592,4 +1638,3 @@ class MLLMClient:
         return {
             "distance_m": distance_m,
         }
-
