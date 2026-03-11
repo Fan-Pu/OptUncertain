@@ -61,6 +61,8 @@ class MLLMClient:
         return any(
             key in obj
             for key in (
+                "updated_graph_context",
+                "direction_heading_label",
                 "visible_viewpoints",
                 "hypothesis_regions",
                 "neighbor_regions",
@@ -277,12 +279,6 @@ class MLLMClient:
         graph_context: dict | None = None,
         viewpoint_context: dict | None = None,
     ) -> str:
-        """
-        Build the semantic-graph prompt for the MLLM.
-
-        The prompt explicitly separates grounded visible viewpoints from purely
-        hypothetical future regions so navigation targets remain physically valid.
-        """
         target_object = target_object.strip()
         if target_object:
             target_line = (
@@ -294,65 +290,38 @@ class MLLMClient:
             target_line = 'target: always {"found":false,"views":[],"confidence":[]}.'
 
         graph_context = graph_context or {}
-        graph_context_json = json.dumps(graph_context, separators=(",", ":"))
-
-        viewpoint_context = viewpoint_context or {}
-        current_viewpoint_index = self._normalize_viewpoint_index(
-            viewpoint_context.get("current_viewpoint_index")
-        )
-        visible_viewpoint_indices = sorted(
-            {
-                int(item["viewpoint_index"])
-                for item in viewpoint_context.get("visible_viewpoints", []) or []
-                if self._normalize_viewpoint_index(item.get("viewpoint_index"))
-                is not None
-            }
-        )
-        visible_marker_text = ", ".join(
-            f"vp-{idx}" for idx in visible_viewpoint_indices
-        ) or "none"
-        current_marker_text = (
-            f"vp-{current_viewpoint_index}"
-            if current_viewpoint_index is not None
-            else "the current camera viewpoint"
+        graph_context_json = json.dumps(
+            graph_context,
+            separators=(",", ":"),
+            ensure_ascii=True,
         )
 
         prompt = (
             f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
             f"(indices 0-{max(0, num_obs_images - 1)}). "
-            "Some images contain overlaid viewpoint markers like vp-17; each marker is a real physical navigable viewpoint. "
-            "Output one-line compact JSON only. "
-            'Schema: {"current_region":{"node_id":"","region_label":"","label":"","confidence":0.0},'
-            '"visible_viewpoints":[{"node_id":"","viewpoint_index":0,"region_label":"","label":"","existence_prob":0.0,"target_prob":0.0}],'
-            '"hypothesis_regions":[{"node_id":"","label":"","existence_prob":0.0,"target_prob":0.0}],'
-            '"region_connections":[{"region_a":"","region_b":"","connection_prob":0.0,"travel_distance":0.0}],'
-            '"target":{"found":false,"views":[],"confidence":[]}}. '
-            "Use room/area labels only (no objects): kitchen area, living room area, bedroom area, "
-            "bathroom area, hallway, dining area, entryway, corridor, office area. "
-            "Every region instance label must be <room-or-area>-<instance>, for example dining area-1 or hallway-2. "
-            "Every grounded viewpoint label must be <region_label>-vp-<viewpoint_index>, for example dining area-1-vp-17. "
-            "If two visible viewpoints belong to the same semantic region, reuse the same region instance number but keep different vp suffixes. "
-            f"The current camera viewpoint is {current_marker_text}. "
-            f"Visible viewpoint markers that must each appear exactly once in visible_viewpoints: [{visible_marker_text}]. "
-            "current_region: one grounded label for the current physical viewpoint; region_label omits the vp suffix; confidence in [0.6,0.95]. "
-            "If current_region matches a previously proposed hypothesis in graph_context, reuse that exact node_id. "
-            "visible_viewpoints: include one item for every visible marker listed above, no omissions and no duplicates. "
-            "Fields: node_id, viewpoint_index, region_label, label, existence_prob [0.5,0.99], target_prob (0,1), note optional. "
-            "The label must exactly equal region_label + '-vp-' + viewpoint_index. "
-            f"hypothesis_regions: up to {topk}, optional extra region-instance labels with no vp suffix and no physical grounding yet. "
-            "These are allowed even if no visible viewpoint is currently grounded to them. "
-            "Reuse nodes from graph_context instead of creating redundant hypotheses whenever possible. "
-            "region_connections: include only direct connections among current_region, visible_viewpoints, and hypothesis_regions. "
-            "Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. "
-            "Fields: region_a, region_b, connection_prob [0.5,1], travel_distance (>0 meters). "
-            "Connections are symmetric: output A->B only, not B->A. region_a and region_b must copy the exact labels used elsewhere in your JSON. "
+            "Output compact JSON only. "
+            "Each figure may contain a text number indicating the potential movement direction. "
+            "The same text number can appear in multiple images, and the same text number refer to the same physical direction. "
+            'Schema: {"current_region":{"label":""},"neighbor_regions":[{"label":"","prob":0.0,"target_prob":0.0}],'
+            '"region_connections":[{"A":"","B":"","prob":0.0,"dist":0.0}],'
+            '"target":{"found":false,"views":[],"confidence":[]},'
+            '"direction_heading_label":[{"id":"","label":""}],"updated_graph_context":{}}. '
+            "Use room/area labels only (no objects), e.g., kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. "
+            "The graph_context is the persistent graph before this observation, taking the form: "
+            '{"label_names":[],"label_existence_probs":[],"label_target_probs":[],"label_connection_ajacent_matrix":[],"label_distance_ajacent_matrix":[],"label_assigns":{"label_name":[assigned viewpoints indices]},"viewpoints_target_confidences":{"viewpoint_id":0.0}}. '
+            'For ajacent matrix and array, the index of rows and colums uses the index of labels in "label_names". '
+            '"label_assigns" records the viewpoints assigned to each label. Each viewpoint can be at most assigned to one label. '
+            "Some label can have empty assigned viewpoints if no observations match that label. "
+            'Each item in "viewpoints_target_confidences" records the confidence that the target object is at that viewpoint. '
+            "This confidence should be no larger than the confidence that the target is within the region label that the viewpoint is assigned. "
+            f"The current graph context is: {graph_context_json}. "
+            "current_region: one label for the region the current physical viewpoint is in. If current_region matches a label in graph_context, reuse that exact label. "
             f"{target_line} "
-            "target: views = image indices where target confidence >0.5. "
-            "confidence = list of detection confidences aligned with views. "
-            "If no view has confidence >0.5 set found=false and return empty lists. "
-            "graph_context is the persistent graph before this observation. "
-            f"graph_context={graph_context_json}. "
-            "node_id: copy an existing node_id from graph_context when there is a clear match; otherwise use an empty string. "
+            "target: views = image indices where target confidence >0.5. confidence = list of detection confidences aligned with views. If no view has confidence >0.5 set found=false and return empty lists. "
+            "neighbor_regions: up to 5, no duplicates, exclude current_region. Fields: label, prob [0.5,0.95] the probability the region exists, target_prob (0,1) the probability the target is at that region. Neighbor_regions should be new proposed regions induced from current observations that are not in graph_context. "
+            "region_connections: include only hypothetical connections among the union of current_region, the listed new neighbors, and the existing label in graph_context only if strongly supported. Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. Fields: A, B, prob in [0.5,1] the connection_probability, dist (>0 meters) the travel_distance. Connections are symmetric: output A->B only, not B->A. "
+            'direction_heading_label: for each potential movement direction, output its text number id and the region label it heads to. Use the form [{"id":"","label":""}]. The label must be current_region, a label in graph_context, or a label in neighbor_regions. '
+            "updated_graph_context: update graph_context using the current observation and keep it fully consistent with the other output fields. Strictly follow the graph_context format. Append any new labels to label_names in alphabetical order, and keep all arrays, matrices, assignments, and probabilities aligned with the final label_names order. "
             "Return JSON only. No explanation or markdown."
         )
 
@@ -361,8 +330,6 @@ class MLLMClient:
 
     @staticmethod
     def _normalize_target_output(target: dict, index_map: list[int]) -> dict:
-        found = bool(target.get("found", False))
-
         raw_views = target.get("views", [])
         if not isinstance(raw_views, list):
             raw_views = [raw_views]
@@ -403,6 +370,8 @@ class MLLMClient:
 
         best_confidence_by_view = {}
         for view_idx, confidence_value in normalized_pairs:
+            if confidence_value <= 0.5:
+                continue
             previous = best_confidence_by_view.get(view_idx)
             if previous is None or confidence_value > previous:
                 best_confidence_by_view[view_idx] = confidence_value
@@ -420,7 +389,7 @@ class MLLMClient:
             best_view = int(best_pair[0])
 
         return {
-            "found": found and bool(deduped_views),
+            "found": bool(deduped_views),
             "view": best_view,
             "views": deduped_views,
             "confidence": deduped_confidences,
@@ -446,8 +415,528 @@ class MLLMClient:
         """Normalize optional node ids returned by the prompt context matching step."""
         return str(value or "").strip()
 
+    @staticmethod
+    def _clamp_float(value, low: float, high: float, default: float) -> float:
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            value = float(default)
+        return max(low, min(high, value))
+
+    @classmethod
+    def _canonical_label_key(cls, value) -> str:
+        label = cls._normalize_region_label(value).lower()
+        label = re.sub(r"[^a-z0-9\s]+", " ", label)
+        label = re.sub(r"\s+", " ", label)
+        return label.strip()
+
+    @classmethod
+    def _build_label_lookup(cls, labels: list[str]) -> dict[str, str]:
+        lookup = {}
+        for label in labels or []:
+            normalized = cls._normalize_region_label(label)
+            key = cls._canonical_label_key(normalized)
+            if key and key not in lookup:
+                lookup[key] = normalized
+        return lookup
+
+    @classmethod
+    def _resolve_label(cls, value, label_lookup: dict[str, str] | None = None) -> str:
+        normalized = cls._normalize_region_label(value)
+        if not normalized:
+            return ""
+        if not label_lookup:
+            return normalized
+        return label_lookup.get(cls._canonical_label_key(normalized), normalized)
+
+    @staticmethod
+    def _empty_graph_context() -> dict:
+        return {
+            "label_names": [],
+            "label_existence_probs": [],
+            "label_target_probs": [],
+            "label_connection_ajacent_matrix": [],
+            "label_distance_ajacent_matrix": [],
+            "label_assigns": {},
+            "viewpoints_target_confidences": {},
+        }
+
+    @classmethod
+    def _normalize_standalone_graph_context(cls, raw_context) -> dict:
+        if not isinstance(raw_context, dict):
+            return cls._empty_graph_context()
+
+        raw_labels = raw_context.get("label_names", []) or []
+        raw_existence = raw_context.get("label_existence_probs", []) or []
+        raw_target = raw_context.get("label_target_probs", []) or []
+        raw_connection = raw_context.get("label_connection_ajacent_matrix", []) or []
+        raw_distance = raw_context.get("label_distance_ajacent_matrix", []) or []
+        raw_assigns = raw_context.get("label_assigns", {}) or {}
+        raw_view_confidences = raw_context.get("viewpoints_target_confidences", {}) or {}
+
+        canonical_to_label = {}
+        raw_index_by_key = {}
+        for idx, raw_label in enumerate(raw_labels):
+            label = cls._normalize_region_label(raw_label)
+            key = cls._canonical_label_key(label)
+            if not key or key in canonical_to_label:
+                continue
+            canonical_to_label[key] = label
+            raw_index_by_key[key] = idx
+
+        label_names = sorted(canonical_to_label.values(), key=lambda item: item.lower())
+        label_lookup = cls._build_label_lookup(label_names)
+
+        existence_map = {}
+        target_map = {}
+        for label in label_names:
+            key = cls._canonical_label_key(label)
+            raw_idx = raw_index_by_key.get(key, -1)
+            raw_exist = raw_existence[raw_idx] if 0 <= raw_idx < len(raw_existence) else 0.5
+            raw_tgt = raw_target[raw_idx] if 0 <= raw_idx < len(raw_target) else 0.0
+            existence_map[label] = cls._clamp_float(raw_exist, 0.0, 1.0, 0.5)
+            target_map[label] = cls._clamp_float(raw_tgt, 0.0, 1.0, 0.0)
+
+        label_assigns = {label: [] for label in label_names}
+        assigned_viewpoints = set()
+        for raw_label, raw_values in raw_assigns.items():
+            label = cls._resolve_label(raw_label, label_lookup)
+            if not label:
+                continue
+            candidates = raw_values if isinstance(raw_values, list) else [raw_values]
+            cleaned = []
+            for value in candidates:
+                viewpoint_index = cls._normalize_viewpoint_index(value)
+                if viewpoint_index is None or viewpoint_index in assigned_viewpoints:
+                    continue
+                assigned_viewpoints.add(viewpoint_index)
+                cleaned.append(int(viewpoint_index))
+            label_assigns[label] = sorted(cleaned)
+
+        edge_map = {}
+        distance_map = {}
+        for label_a in label_names:
+            key_a = cls._canonical_label_key(label_a)
+            raw_idx_a = raw_index_by_key.get(key_a, -1)
+            if raw_idx_a < 0:
+                continue
+            for label_b in label_names:
+                key_b = cls._canonical_label_key(label_b)
+                raw_idx_b = raw_index_by_key.get(key_b, -1)
+                if raw_idx_b < 0 or label_a == label_b:
+                    continue
+                conn_candidates = []
+                dist_candidates = []
+                if (
+                    isinstance(raw_connection, list)
+                    and raw_idx_a < len(raw_connection)
+                    and isinstance(raw_connection[raw_idx_a], list)
+                    and raw_idx_b < len(raw_connection[raw_idx_a])
+                ):
+                    conn_candidates.append(raw_connection[raw_idx_a][raw_idx_b])
+                if (
+                    isinstance(raw_distance, list)
+                    and raw_idx_a < len(raw_distance)
+                    and isinstance(raw_distance[raw_idx_a], list)
+                    and raw_idx_b < len(raw_distance[raw_idx_a])
+                ):
+                    dist_candidates.append(raw_distance[raw_idx_a][raw_idx_b])
+                pair_key = tuple(sorted((label_a, label_b), key=lambda item: item.lower()))
+                prob = max(
+                    (cls._clamp_float(value, 0.0, 1.0, 0.0) for value in conn_candidates),
+                    default=0.0,
+                )
+                dist_values = []
+                for value in dist_candidates:
+                    dist = cls._clamp_float(value, 0.0, 1e6, 0.0)
+                    if dist > 0.0:
+                        dist_values.append(dist)
+                if prob > 0.0 and dist_values:
+                    edge_map[pair_key] = prob
+                    distance_map[pair_key] = min(dist_values)
+
+        viewpoint_owner = {}
+        for label, assignments in label_assigns.items():
+            for viewpoint_index in assignments:
+                viewpoint_owner[int(viewpoint_index)] = label
+
+        viewpoints_target_confidences = {}
+        for raw_key, raw_value in raw_view_confidences.items():
+            viewpoint_index = cls._normalize_viewpoint_index(raw_key)
+            if viewpoint_index is None or viewpoint_index not in viewpoint_owner:
+                continue
+            label = viewpoint_owner[viewpoint_index]
+            value = cls._clamp_float(raw_value, 0.0, target_map.get(label, 0.0), 0.0)
+            viewpoints_target_confidences[str(int(viewpoint_index))] = value
+
+        label_index = {label: idx for idx, label in enumerate(label_names)}
+        size = len(label_names)
+        connection_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
+        distance_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
+        for (label_a, label_b), prob in edge_map.items():
+            idx_a = label_index[label_a]
+            idx_b = label_index[label_b]
+            dist = distance_map.get((label_a, label_b), 0.0)
+            if prob <= 0.0 or dist <= 0.0:
+                continue
+            connection_matrix[idx_a][idx_b] = prob
+            connection_matrix[idx_b][idx_a] = prob
+            distance_matrix[idx_a][idx_b] = dist
+            distance_matrix[idx_b][idx_a] = dist
+
+        return {
+            "label_names": label_names,
+            "label_existence_probs": [float(existence_map.get(label, 0.5)) for label in label_names],
+            "label_target_probs": [float(target_map.get(label, 0.0)) for label in label_names],
+            "label_connection_ajacent_matrix": connection_matrix,
+            "label_distance_ajacent_matrix": distance_matrix,
+            "label_assigns": {label: sorted(label_assigns.get(label, [])) for label in label_names},
+            "viewpoints_target_confidences": {
+                key: viewpoints_target_confidences[key]
+                for key in sorted(viewpoints_target_confidences.keys(), key=lambda item: int(item))
+            },
+        }
+
+    @classmethod
+    def _normalize_neighbor_regions_payload(
+        cls,
+        raw_regions,
+        prior_graph_context: dict,
+        current_region_label: str,
+        topk: int,
+    ) -> list[dict]:
+        prior_lookup = cls._build_label_lookup(prior_graph_context.get("label_names", []))
+        current_key = cls._canonical_label_key(current_region_label)
+        normalized_by_key = {}
+
+        for region in raw_regions or []:
+            label = cls._normalize_region_label(region.get("label", ""))
+            key = cls._canonical_label_key(label)
+            if not key or key == current_key or key in prior_lookup:
+                continue
+
+            normalized = {
+                "label": label,
+                "prob": cls._clamp_float(
+                    region.get("prob", region.get("existence_prob", 0.5)),
+                    0.5,
+                    0.95,
+                    0.5,
+                ),
+                "target_prob": cls._clamp_float(
+                    region.get("target_prob", 0.0),
+                    0.0,
+                    1.0,
+                    0.0,
+                ),
+            }
+
+            previous = normalized_by_key.get(key)
+            if previous is None:
+                normalized_by_key[key] = normalized
+                continue
+
+            previous["prob"] = max(previous["prob"], normalized["prob"])
+            previous["target_prob"] = max(previous["target_prob"], normalized["target_prob"])
+
+        normalized_regions = list(normalized_by_key.values())
+        normalized_regions.sort(
+            key=lambda item: (item["target_prob"], item["prob"], item["label"].lower()),
+            reverse=True,
+        )
+        return normalized_regions[:topk]
+
+    @classmethod
+    def _normalize_region_connections_payload(
+        cls,
+        raw_connections,
+        allowed_labels: list[str],
+    ) -> list[dict]:
+        label_lookup = cls._build_label_lookup(allowed_labels)
+        allowed_set = set(allowed_labels)
+        normalized_by_pair = {}
+
+        for connection in raw_connections or []:
+            label_a = cls._resolve_label(connection.get("A", connection.get("region_a", "")), label_lookup)
+            label_b = cls._resolve_label(connection.get("B", connection.get("region_b", "")), label_lookup)
+            if (
+                not label_a
+                or not label_b
+                or label_a == label_b
+                or label_a not in allowed_set
+                or label_b not in allowed_set
+            ):
+                continue
+
+            prob = cls._clamp_float(
+                connection.get("prob", connection.get("connection_prob", 0.0)),
+                0.5,
+                1.0,
+                0.5,
+            )
+            dist = cls._clamp_float(
+                connection.get("dist", connection.get("travel_distance", 0.0)),
+                0.0,
+                1e6,
+                0.0,
+            )
+            if dist <= 0.0:
+                continue
+
+            pair_key = tuple(sorted((label_a, label_b), key=lambda item: item.lower()))
+            normalized = {"A": label_a, "B": label_b, "prob": prob, "dist": dist}
+            previous = normalized_by_pair.get(pair_key)
+            if previous is None:
+                normalized_by_pair[pair_key] = normalized
+                continue
+
+            previous["prob"] = max(previous["prob"], normalized["prob"])
+            previous["dist"] = min(previous["dist"], normalized["dist"])
+
+        normalized_connections = list(normalized_by_pair.values())
+        normalized_connections.sort(
+            key=lambda item: (item["prob"], -item["dist"], item["A"].lower(), item["B"].lower()),
+            reverse=True,
+        )
+        return normalized_connections
+
+    @classmethod
+    def _normalize_direction_heading_payload(
+        cls,
+        raw_directions,
+        allowed_labels: list[str],
+        viewpoint_context: dict | None = None,
+    ) -> list[dict]:
+        if isinstance(raw_directions, dict):
+            raw_directions = [{"id": key, "label": value} for key, value in raw_directions.items()]
+
+        viewpoint_context = viewpoint_context or {}
+        valid_direction_ids = {
+            str(int(item["viewpoint_index"]))
+            for item in viewpoint_context.get("visible_viewpoints", []) or []
+            if cls._normalize_viewpoint_index(item.get("viewpoint_index")) is not None
+        }
+        label_lookup = cls._build_label_lookup(allowed_labels)
+        allowed_set = set(allowed_labels)
+        normalized_by_id = {}
+
+        for entry in raw_directions or []:
+            raw_id = str(entry.get("id", "")).strip()
+            match = re.search(r"(\d+)", raw_id)
+            if match is None:
+                continue
+            direction_id = str(int(match.group(1)))
+            if valid_direction_ids and direction_id not in valid_direction_ids:
+                continue
+
+            label = cls._resolve_label(entry.get("label", ""), label_lookup)
+            if not label or label not in allowed_set:
+                continue
+
+            normalized_by_id[direction_id] = {"id": direction_id, "label": label}
+
+        return [
+            normalized_by_id[key]
+            for key in sorted(normalized_by_id.keys(), key=lambda item: int(item))
+        ]
+
+    @classmethod
+    def _normalize_updated_graph_context(
+        cls,
+        raw_context,
+        *,
+        prior_graph_context: dict | None = None,
+        current_region_label: str = "",
+        neighbor_regions: list[dict] | None = None,
+        region_connections: list[dict] | None = None,
+        target: dict | None = None,
+        viewpoint_context: dict | None = None,
+    ) -> dict:
+        prior_context = cls._normalize_standalone_graph_context(prior_graph_context)
+        candidate_context = cls._normalize_standalone_graph_context(raw_context)
+        if candidate_context["label_names"] or not prior_context["label_names"]:
+            base_context = candidate_context
+        else:
+            base_context = prior_context
+
+        labels = list(base_context["label_names"])
+        existence_map = {
+            label: float(base_context["label_existence_probs"][idx])
+            for idx, label in enumerate(labels)
+        }
+        target_map = {
+            label: float(base_context["label_target_probs"][idx])
+            for idx, label in enumerate(labels)
+        }
+        label_assigns = {
+            label: list(base_context["label_assigns"].get(label, [])) for label in labels
+        }
+        edge_map = {}
+        distance_map = {}
+        for i, label_a in enumerate(labels):
+            for j in range(i + 1, len(labels)):
+                label_b = labels[j]
+                prob = cls._clamp_float(
+                    base_context["label_connection_ajacent_matrix"][i][j],
+                    0.0,
+                    1.0,
+                    0.0,
+                )
+                dist = cls._clamp_float(
+                    base_context["label_distance_ajacent_matrix"][i][j],
+                    0.0,
+                    1e6,
+                    0.0,
+                )
+                if prob > 0.0 and dist > 0.0:
+                    pair_key = tuple(sorted((label_a, label_b), key=lambda item: item.lower()))
+                    edge_map[pair_key] = prob
+                    distance_map[pair_key] = dist
+
+        viewpoints_target_confidences = dict(base_context["viewpoints_target_confidences"])
+
+        def ensure_label(raw_label, existence_default: float = 0.5, target_default: float = 0.0) -> str:
+            nonlocal labels
+            label_lookup = cls._build_label_lookup(labels)
+            label = cls._resolve_label(raw_label, label_lookup)
+            if not label:
+                return ""
+            if label not in existence_map:
+                labels.append(label)
+                existence_map[label] = cls._clamp_float(existence_default, 0.0, 1.0, 0.5)
+                target_map[label] = cls._clamp_float(target_default, 0.0, 1.0, 0.0)
+                label_assigns[label] = []
+            return label
+
+        current_label = ensure_label(current_region_label, 0.95, 0.0)
+        if current_label:
+            existence_map[current_label] = max(existence_map.get(current_label, 0.0), 0.95)
+
+        for region in neighbor_regions or []:
+            label = ensure_label(region.get("label", ""), region.get("prob", 0.5), region.get("target_prob", 0.0))
+            if not label:
+                continue
+            existence_map[label] = max(
+                existence_map.get(label, 0.0),
+                cls._clamp_float(region.get("prob", 0.5), 0.5, 0.95, 0.5),
+            )
+            target_map[label] = max(
+                target_map.get(label, 0.0),
+                cls._clamp_float(region.get("target_prob", 0.0), 0.0, 1.0, 0.0),
+            )
+
+        max_target_confidence = 0.0
+        if isinstance(target, dict):
+            confidence_values = target.get("confidence", []) or []
+            if confidence_values:
+                max_target_confidence = max(
+                    cls._clamp_float(value, 0.0, 1.0, 0.0)
+                    for value in confidence_values
+                )
+        if current_label and max_target_confidence > 0.0:
+            target_map[current_label] = max(target_map.get(current_label, 0.0), max_target_confidence)
+
+        for connection in region_connections or []:
+            label_a = ensure_label(connection.get("A", ""), 0.5, 0.0)
+            label_b = ensure_label(connection.get("B", ""), 0.5, 0.0)
+            if not label_a or not label_b or label_a == label_b:
+                continue
+            pair_key = tuple(sorted((label_a, label_b), key=lambda item: item.lower()))
+            edge_map[pair_key] = max(
+                edge_map.get(pair_key, 0.0),
+                cls._clamp_float(connection.get("prob", 0.5), 0.5, 1.0, 0.5),
+            )
+            dist = cls._clamp_float(connection.get("dist", 0.0), 0.0, 1e6, 0.0)
+            if dist > 0.0:
+                previous_dist = distance_map.get(pair_key, 0.0)
+                distance_map[pair_key] = dist if previous_dist <= 0.0 else min(previous_dist, dist)
+
+        viewpoint_context = viewpoint_context or {}
+        current_viewpoint_index = cls._normalize_viewpoint_index(viewpoint_context.get("current_viewpoint_index"))
+        if current_viewpoint_index is not None and current_label:
+            for label in label_assigns:
+                label_assigns[label] = [
+                    value
+                    for value in label_assigns.get(label, [])
+                    if int(value) != int(current_viewpoint_index)
+                ]
+            label_assigns[current_label] = sorted(
+                set(label_assigns.get(current_label, [])) | {int(current_viewpoint_index)}
+            )
+
+        label_order_for_assignment = []
+        if current_label:
+            label_order_for_assignment.append(current_label)
+        label_order_for_assignment.extend(
+            sorted([label for label in labels if label != current_label], key=lambda item: item.lower())
+        )
+        seen_assignments = set()
+        for label in label_order_for_assignment:
+            cleaned = []
+            for value in sorted(set(label_assigns.get(label, []))):
+                viewpoint_index = cls._normalize_viewpoint_index(value)
+                if viewpoint_index is None or viewpoint_index in seen_assignments:
+                    continue
+                cleaned.append(int(viewpoint_index))
+                seen_assignments.add(int(viewpoint_index))
+            label_assigns[label] = cleaned
+
+        if current_viewpoint_index is not None and current_label and max_target_confidence > 0.0:
+            viewpoints_target_confidences[str(int(current_viewpoint_index))] = max_target_confidence
+
+        viewpoint_owner = {}
+        for label, assignments in label_assigns.items():
+            for viewpoint_index in assignments:
+                viewpoint_owner[int(viewpoint_index)] = label
+
+        for key in list(viewpoints_target_confidences.keys()):
+            viewpoint_index = cls._normalize_viewpoint_index(key)
+            if viewpoint_index is None or viewpoint_index not in viewpoint_owner:
+                viewpoints_target_confidences.pop(key, None)
+                continue
+            owner_label = viewpoint_owner[viewpoint_index]
+            viewpoints_target_confidences[str(int(viewpoint_index))] = cls._clamp_float(
+                viewpoints_target_confidences[key],
+                0.0,
+                target_map.get(owner_label, 0.0),
+                0.0,
+            )
+            if str(int(viewpoint_index)) != key:
+                viewpoints_target_confidences.pop(key, None)
+
+        final_labels = sorted(set(labels), key=lambda item: item.lower())
+        label_index = {label: idx for idx, label in enumerate(final_labels)}
+        size = len(final_labels)
+        connection_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
+        distance_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
+        for pair_key, prob in edge_map.items():
+            dist = distance_map.get(pair_key, 0.0)
+            if prob <= 0.0 or dist <= 0.0:
+                continue
+            label_a, label_b = pair_key
+            idx_a = label_index[label_a]
+            idx_b = label_index[label_b]
+            connection_matrix[idx_a][idx_b] = prob
+            connection_matrix[idx_b][idx_a] = prob
+            distance_matrix[idx_a][idx_b] = dist
+            distance_matrix[idx_b][idx_a] = dist
+
+        return {
+            "label_names": final_labels,
+            "label_existence_probs": [float(existence_map.get(label, 0.5)) for label in final_labels],
+            "label_target_probs": [float(target_map.get(label, 0.0)) for label in final_labels],
+            "label_connection_ajacent_matrix": connection_matrix,
+            "label_distance_ajacent_matrix": distance_matrix,
+            "label_assigns": {label: list(label_assigns.get(label, [])) for label in final_labels},
+            "viewpoints_target_confidences": {
+                key: viewpoints_target_confidences[key]
+                for key in sorted(viewpoints_target_confidences.keys(), key=lambda item: int(item))
+            },
+        }
+
     @classmethod
     def _normalize_visible_viewpoints(
+
         cls,
         visible_viewpoints,
         viewpoint_context: dict | None,
@@ -821,119 +1310,124 @@ class MLLMClient:
             or not raw.rstrip().endswith("}")
         )
         if needs_retry:
-            retry_tokens = min(max(self.max_new_tokens * 2, 224), 384)
+            retry_tokens = min(max(self.max_new_tokens * 2, 768), 1536)
             decoded = self._request_completion(content_items, retry_tokens)
             print("\n[MLLM RAW OUTPUT RETRY]\n", decoded)
             raw = self._strip_code_fences(decoded)
             payload = self._try_parse_json(raw)
 
+        prior_graph_context = self._normalize_standalone_graph_context(graph_context)
+
         if payload is None:
             print("[MLLM] Failed to parse JSON. Raw output:")
             print(decoded)
             return {
-                "current_region": {
-                    "node_id": "",
-                    "region_label": "",
-                    "label": "",
-                    "viewpoint_index": None,
-                    "viewpoint_id": viewpoint_context.get("current_viewpoint_id", ""),
-                    "confidence": 0.0,
-                    "note": "",
-                },
-                "visible_viewpoints": [],
-                "hypothesis_regions": [],
+                "current_region": {"label": ""},
+                "neighbor_regions": [],
                 "region_connections": [],
                 "target": {"found": False, "view": -1, "views": [], "confidence": []},
+                "direction_heading_label": [],
+                "updated_graph_context": prior_graph_context,
             }
 
         current_region = payload.get("current_region", {}) or {}
-        raw_visible_viewpoints = payload.get("visible_viewpoints", []) or []
-        raw_hypothesis_regions = payload.get("hypothesis_regions", []) or []
-        legacy_neighbor_regions = payload.get("neighbor_regions", []) or []
+        raw_updated_graph_context = payload.get("updated_graph_context", {}) or {}
+        raw_neighbor_regions = payload.get("neighbor_regions", []) or []
+        if not raw_neighbor_regions:
+            raw_neighbor_regions = payload.get("hypothesis_regions", []) or []
         legacy_regions = payload.get("regions", []) or []
 
-        current_region_label = self._normalize_region_label(
-            current_region.get("region_label", "") or current_region.get("label", "")
+        raw_current_region_label = self._normalize_region_label(
+            current_region.get("label", "") or current_region.get("region_label", "")
         )
-        current_confidence = self._safe_float(
-            current_region.get("confidence", 0.0), 0.0
+        if not raw_current_region_label and legacy_regions:
+            raw_current_region_label = self._normalize_region_label(
+                legacy_regions[0].get("label", "") or legacy_regions[0].get("region_label", "")
+            )
+            if not raw_neighbor_regions:
+                raw_neighbor_regions = legacy_regions[1:]
+
+        prior_label_lookup = self._build_label_lookup(prior_graph_context.get("label_names", []))
+        current_region_label = self._resolve_label(raw_current_region_label, prior_label_lookup)
+
+        target = self._normalize_target_output(payload.get("target", {}), index_map)
+        neighbor_regions = self._normalize_neighbor_regions_payload(
+            raw_neighbor_regions,
+            prior_graph_context=prior_graph_context,
+            current_region_label=current_region_label,
+            topk=min(topk, 5),
         )
-        current_node_id = self._normalize_node_id(current_region.get("node_id", ""))
-        current_note = self._normalize_note(current_region.get("note", ""))
 
-        if not current_region_label and legacy_regions:
-            first_region = legacy_regions[0]
-            current_region_label = self._normalize_region_label(
-                first_region.get("region_label", "") or first_region.get("label", "")
-            )
-            current_confidence = self._safe_float(
-                first_region.get("confidence", 0.0), 0.0
-            )
-            current_node_id = self._normalize_node_id(first_region.get("node_id", ""))
-            current_note = self._normalize_note(first_region.get("note", ""))
-            if not raw_visible_viewpoints and not raw_hypothesis_regions:
-                legacy_neighbor_regions = legacy_regions[1:]
+        allowed_labels = list(prior_graph_context.get("label_names", []))
+        if current_region_label and current_region_label not in allowed_labels:
+            allowed_labels.append(current_region_label)
+        for region in neighbor_regions:
+            if region["label"] not in allowed_labels:
+                allowed_labels.append(region["label"])
 
-        if legacy_neighbor_regions:
-            for region in legacy_neighbor_regions:
-                if (
-                    self._normalize_viewpoint_index(region.get("viewpoint_index"))
-                    is not None
-                    or self._extract_viewpoint_index_from_label(
-                        region.get("label", "")
-                    )
-                    is not None
-                ):
-                    raw_visible_viewpoints.append(region)
-                else:
-                    raw_hypothesis_regions.append(region)
+        region_connections = self._normalize_region_connections_payload(
+            payload.get("region_connections", []) or [],
+            allowed_labels=allowed_labels,
+        )
+        updated_graph_context = self._normalize_updated_graph_context(
+            raw_updated_graph_context,
+            prior_graph_context=prior_graph_context,
+            current_region_label=current_region_label,
+            neighbor_regions=neighbor_regions,
+            region_connections=region_connections,
+            target=target,
+            viewpoint_context=viewpoint_context,
+        )
 
+        final_label_lookup = self._build_label_lookup(updated_graph_context.get("label_names", []))
         current_viewpoint_index = self._normalize_viewpoint_index(
             viewpoint_context.get("current_viewpoint_index")
         )
-        current_label = self._build_grounded_label(
-            current_region_label,
-            current_viewpoint_index,
-        )
+        if not current_region_label and current_viewpoint_index is not None:
+            for label, assignments in updated_graph_context.get("label_assigns", {}).items():
+                if int(current_viewpoint_index) in [int(value) for value in assignments]:
+                    current_region_label = label
+                    break
+        current_region_label = self._resolve_label(current_region_label, final_label_lookup)
 
-        normalized_visible_viewpoints, visible_label_aliases = self._normalize_visible_viewpoints(
-            raw_visible_viewpoints,
+        deduped_neighbor_regions = []
+        seen_neighbor_keys = set()
+        current_key = self._canonical_label_key(current_region_label)
+        for region in neighbor_regions:
+            label = self._resolve_label(region.get("label", ""), final_label_lookup)
+            key = self._canonical_label_key(label)
+            if not label or key == current_key or key in seen_neighbor_keys:
+                continue
+            deduped_neighbor_regions.append(
+                {
+                    "label": label,
+                    "prob": float(region["prob"]),
+                    "target_prob": float(region["target_prob"]),
+                }
+            )
+            seen_neighbor_keys.add(key)
+        neighbor_regions = deduped_neighbor_regions
+
+        final_allowed_labels = list(updated_graph_context.get("label_names", []))
+        if current_region_label and current_region_label not in final_allowed_labels:
+            final_allowed_labels.append(current_region_label)
+        region_connections = self._normalize_region_connections_payload(
+            region_connections,
+            allowed_labels=final_allowed_labels,
+        )
+        direction_heading_label = self._normalize_direction_heading_payload(
+            payload.get("direction_heading_label", []) or [],
+            allowed_labels=final_allowed_labels,
             viewpoint_context=viewpoint_context,
         )
-        normalized_hypotheses, hypothesis_label_aliases = self._normalize_hypothesis_regions(
-            raw_hypothesis_regions,
-            topk=topk,
-        )
-
-        label_aliases = {}
-        if current_region_label:
-            label_aliases[current_region_label] = current_label or current_region_label
-        if current_label:
-            label_aliases[current_label] = current_label
-        label_aliases.update(visible_label_aliases)
-        label_aliases.update(hypothesis_label_aliases)
-
-        normalized_connections = self._normalize_region_connections(
-            payload.get("region_connections", []),
-            label_aliases=label_aliases,
-        )
-
-        target = self._normalize_target_output(payload.get("target", {}), index_map)
 
         return {
-            "current_region": {
-                "node_id": current_node_id,
-                "region_label": current_region_label,
-                "label": current_label,
-                "viewpoint_index": current_viewpoint_index,
-                "viewpoint_id": str(viewpoint_context.get("current_viewpoint_id", "")),
-                "confidence": current_confidence,
-                "note": current_note,
-            },
-            "visible_viewpoints": normalized_visible_viewpoints,
-            "hypothesis_regions": normalized_hypotheses,
-            "region_connections": normalized_connections,
+            "current_region": {"label": current_region_label},
+            "neighbor_regions": neighbor_regions,
+            "region_connections": region_connections,
             "target": target,
+            "direction_heading_label": direction_heading_label,
+            "updated_graph_context": updated_graph_context,
         }
 
     def estimate_target_distance(
