@@ -9,7 +9,7 @@ from semantic_persistence.mllm_client import MLLMClient
 
 
 Explore_mode = False  # True: manual keyboard control
-LAST_IMAGE_RIGHT_SHIFT_STEPS = 2
+LAST_IMAGE_RIGHT_SHIFT_STEPS = 6
 
 if __name__ == "__main__":
     # -------------------- Debugger --------------------
