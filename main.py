@@ -8,7 +8,7 @@ from semantic_persistence.hypothesis_graph import HypothesisGraph
 from semantic_persistence.mllm_client import MLLMClient
 
 
-Explore_mode = False  # True: manual keyboard control
+Explore_mode = True  # True: manual keyboard control
 
 if __name__ == "__main__":
     # -------------------- Debugger --------------------
