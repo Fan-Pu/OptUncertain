@@ -1,4 +1,4 @@
-import os
+﻿import os
 import time
 import debugpy
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # -------------------- MLLM --------------------
     mllm = MLLMClient(
         "meta-llama/Llama-4-Scout-17B-16E-Instruct:cheapest",
-        max_new_tokens=768,
+        max_new_tokens=160,
         h_fov=Helper.HFOV,
     )
 

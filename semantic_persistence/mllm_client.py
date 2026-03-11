@@ -1,4 +1,4 @@
-﻿import base64
+import base64
 import io
 import json
 import os
@@ -220,7 +220,9 @@ class MLLMClient:
             unused.remove(best_idx)
             uncovered -= best_cover
 
-        evenly_spaced = MLLMClient._select_evenly_spaced_indices(total_count, sample_count)
+        evenly_spaced = MLLMClient._select_evenly_spaced_indices(
+            total_count, sample_count
+        )
         for frame_idx in evenly_spaced:
             if len(selected) >= sample_count:
                 break
@@ -256,7 +258,9 @@ class MLLMClient:
         return label[:160]
 
     @classmethod
-    def _build_grounded_label(cls, region_label: str, viewpoint_index: int | None) -> str:
+    def _build_grounded_label(
+        cls, region_label: str, viewpoint_index: int | None
+    ) -> str:
         region_label = cls._normalize_region_label(region_label)
         if not region_label:
             return ""
@@ -272,12 +276,7 @@ class MLLMClient:
         return cls._normalize_viewpoint_index(match.group(1))
 
     def _build_instruction(
-        self,
-        num_obs_images: int,
-        topk: int,
-        target_object: str,
-        graph_context: dict | None = None,
-        viewpoint_context: dict | None = None,
+        self, num_obs_images: int, target_object: str, graph_context: dict | None = None
     ) -> str:
         target_object = target_object.strip()
         if target_object:
@@ -289,13 +288,14 @@ class MLLMClient:
         else:
             target_line = 'target: always {"found":false,"views":[],"confidence":[]}.'
 
-        graph_context = graph_context or {}
+        graph_context = self._normalize_standalone_graph_context(graph_context)
         graph_context_json = json.dumps(
             graph_context,
             separators=(",", ":"),
             ensure_ascii=True,
         )
 
+        visited_labels = []
         prompt = (
             f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
             f"(indices 0-{max(0, num_obs_images - 1)}). "
@@ -308,7 +308,8 @@ class MLLMClient:
             '"direction_heading_label":[{"id":"","label":""}],"updated_graph_context":{}}. '
             "Use room/area labels only (no objects), e.g., kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. "
             "The graph_context is the persistent graph before this observation, taking the form: "
-            '{"label_names":[],"label_existence_probs":[],"label_target_probs":[],"label_connection_ajacent_matrix":[],"label_distance_ajacent_matrix":[],"label_assigns":{"label_name":[assigned viewpoints indices]},"viewpoints_target_confidences":{"viewpoint_id":0.0}}. '
+            '{"label_names":[],"label_existence_probs":[],"label_target_probs":[],"label_connection_ajacent_matrix":[],"label_connection_prob_ajacent_matrix":[],"label_distance_ajacent_matrix":[],"label_assigns":{"label_name":[assigned viewpoints indices]},"viewpoints_target_confidences":{"viewpoint_id":0.0}}. '
+            "label_connection_prob_ajacent_matrix describes the probability that a direct connection exists between two regions"
             'For ajacent matrix and array, the index of rows and colums uses the index of labels in "label_names". '
             '"label_assigns" records the viewpoints assigned to each label. Each viewpoint can be at most assigned to one label. '
             "Some label can have empty assigned viewpoints if no observations match that label. "
@@ -319,9 +320,10 @@ class MLLMClient:
             f"{target_line} "
             "target: views = image indices where target confidence >0.5. confidence = list of detection confidences aligned with views. If no view has confidence >0.5 set found=false and return empty lists. "
             "neighbor_regions: up to 5, no duplicates, exclude current_region. Fields: label, prob [0.5,0.95] the probability the region exists, target_prob (0,1) the probability the target is at that region. Neighbor_regions should be new proposed regions induced from current observations that are not in graph_context. "
-            "region_connections: include only hypothetical connections among the union of current_region, the listed new neighbors, and the existing label in graph_context only if strongly supported. Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. Fields: A, B, prob in [0.5,1] the connection_probability, dist (>0 meters) the travel_distance. Connections are symmetric: output A->B only, not B->A. "
+            "region_connections: include only hypothetical direct connections among the union of current_region, the listed new neighbors, and the existing label in graph_context only if strongly supported. Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. Fields: A, B, prob in [0.5,1] the connection_probability, dist (>0 meters) the travel_distance. Connections are symmetric: output A->B only, not B->A. "
             'direction_heading_label: for each potential movement direction, output its text number id and the region label it heads to. Use the form [{"id":"","label":""}]. The label must be current_region, a label in graph_context, or a label in neighbor_regions. '
             "updated_graph_context: update graph_context using the current observation and keep it fully consistent with the other output fields. Strictly follow the graph_context format. Append any new labels to label_names in alphabetical order, and keep all arrays, matrices, assignments, and probabilities aligned with the final label_names order. "
+            f"Labels have been visited are: {visited_labels}. For each visited label, its prob=1 meaning it must exist."
             "Return JSON only. No explanation or markdown."
         )
 
@@ -472,7 +474,9 @@ class MLLMClient:
         raw_connection = raw_context.get("label_connection_ajacent_matrix", []) or []
         raw_distance = raw_context.get("label_distance_ajacent_matrix", []) or []
         raw_assigns = raw_context.get("label_assigns", {}) or {}
-        raw_view_confidences = raw_context.get("viewpoints_target_confidences", {}) or {}
+        raw_view_confidences = (
+            raw_context.get("viewpoints_target_confidences", {}) or {}
+        )
 
         canonical_to_label = {}
         raw_index_by_key = {}
@@ -492,7 +496,9 @@ class MLLMClient:
         for label in label_names:
             key = cls._canonical_label_key(label)
             raw_idx = raw_index_by_key.get(key, -1)
-            raw_exist = raw_existence[raw_idx] if 0 <= raw_idx < len(raw_existence) else 0.5
+            raw_exist = (
+                raw_existence[raw_idx] if 0 <= raw_idx < len(raw_existence) else 0.5
+            )
             raw_tgt = raw_target[raw_idx] if 0 <= raw_idx < len(raw_target) else 0.0
             existence_map[label] = cls._clamp_float(raw_exist, 0.0, 1.0, 0.5)
             target_map[label] = cls._clamp_float(raw_tgt, 0.0, 1.0, 0.0)
@@ -541,9 +547,14 @@ class MLLMClient:
                     and raw_idx_b < len(raw_distance[raw_idx_a])
                 ):
                     dist_candidates.append(raw_distance[raw_idx_a][raw_idx_b])
-                pair_key = tuple(sorted((label_a, label_b), key=lambda item: item.lower()))
+                pair_key = tuple(
+                    sorted((label_a, label_b), key=lambda item: item.lower())
+                )
                 prob = max(
-                    (cls._clamp_float(value, 0.0, 1.0, 0.0) for value in conn_candidates),
+                    (
+                        cls._clamp_float(value, 0.0, 1.0, 0.0)
+                        for value in conn_candidates
+                    ),
                     default=0.0,
                 )
                 dist_values = []
@@ -586,14 +597,22 @@ class MLLMClient:
 
         return {
             "label_names": label_names,
-            "label_existence_probs": [float(existence_map.get(label, 0.5)) for label in label_names],
-            "label_target_probs": [float(target_map.get(label, 0.0)) for label in label_names],
+            "label_existence_probs": [
+                float(existence_map.get(label, 0.5)) for label in label_names
+            ],
+            "label_target_probs": [
+                float(target_map.get(label, 0.0)) for label in label_names
+            ],
             "label_connection_ajacent_matrix": connection_matrix,
             "label_distance_ajacent_matrix": distance_matrix,
-            "label_assigns": {label: sorted(label_assigns.get(label, [])) for label in label_names},
+            "label_assigns": {
+                label: sorted(label_assigns.get(label, [])) for label in label_names
+            },
             "viewpoints_target_confidences": {
                 key: viewpoints_target_confidences[key]
-                for key in sorted(viewpoints_target_confidences.keys(), key=lambda item: int(item))
+                for key in sorted(
+                    viewpoints_target_confidences.keys(), key=lambda item: int(item)
+                )
             },
         }
 
@@ -605,7 +624,9 @@ class MLLMClient:
         current_region_label: str,
         topk: int,
     ) -> list[dict]:
-        prior_lookup = cls._build_label_lookup(prior_graph_context.get("label_names", []))
+        prior_lookup = cls._build_label_lookup(
+            prior_graph_context.get("label_names", [])
+        )
         current_key = cls._canonical_label_key(current_region_label)
         normalized_by_key = {}
 
@@ -637,7 +658,9 @@ class MLLMClient:
                 continue
 
             previous["prob"] = max(previous["prob"], normalized["prob"])
-            previous["target_prob"] = max(previous["target_prob"], normalized["target_prob"])
+            previous["target_prob"] = max(
+                previous["target_prob"], normalized["target_prob"]
+            )
 
         normalized_regions = list(normalized_by_key.values())
         normalized_regions.sort(
@@ -657,8 +680,12 @@ class MLLMClient:
         normalized_by_pair = {}
 
         for connection in raw_connections or []:
-            label_a = cls._resolve_label(connection.get("A", connection.get("region_a", "")), label_lookup)
-            label_b = cls._resolve_label(connection.get("B", connection.get("region_b", "")), label_lookup)
+            label_a = cls._resolve_label(
+                connection.get("A", connection.get("region_a", "")), label_lookup
+            )
+            label_b = cls._resolve_label(
+                connection.get("B", connection.get("region_b", "")), label_lookup
+            )
             if (
                 not label_a
                 or not label_b
@@ -695,7 +722,12 @@ class MLLMClient:
 
         normalized_connections = list(normalized_by_pair.values())
         normalized_connections.sort(
-            key=lambda item: (item["prob"], -item["dist"], item["A"].lower(), item["B"].lower()),
+            key=lambda item: (
+                item["prob"],
+                -item["dist"],
+                item["A"].lower(),
+                item["B"].lower(),
+            ),
             reverse=True,
         )
         return normalized_connections
@@ -708,7 +740,9 @@ class MLLMClient:
         viewpoint_context: dict | None = None,
     ) -> list[dict]:
         if isinstance(raw_directions, dict):
-            raw_directions = [{"id": key, "label": value} for key, value in raw_directions.items()]
+            raw_directions = [
+                {"id": key, "label": value} for key, value in raw_directions.items()
+            ]
 
         viewpoint_context = viewpoint_context or {}
         valid_direction_ids = {
@@ -769,7 +803,8 @@ class MLLMClient:
             for idx, label in enumerate(labels)
         }
         label_assigns = {
-            label: list(base_context["label_assigns"].get(label, [])) for label in labels
+            label: list(base_context["label_assigns"].get(label, []))
+            for label in labels
         }
         edge_map = {}
         distance_map = {}
@@ -789,13 +824,19 @@ class MLLMClient:
                     0.0,
                 )
                 if prob > 0.0 and dist > 0.0:
-                    pair_key = tuple(sorted((label_a, label_b), key=lambda item: item.lower()))
+                    pair_key = tuple(
+                        sorted((label_a, label_b), key=lambda item: item.lower())
+                    )
                     edge_map[pair_key] = prob
                     distance_map[pair_key] = dist
 
-        viewpoints_target_confidences = dict(base_context["viewpoints_target_confidences"])
+        viewpoints_target_confidences = dict(
+            base_context["viewpoints_target_confidences"]
+        )
 
-        def ensure_label(raw_label, existence_default: float = 0.5, target_default: float = 0.0) -> str:
+        def ensure_label(
+            raw_label, existence_default: float = 0.5, target_default: float = 0.0
+        ) -> str:
             nonlocal labels
             label_lookup = cls._build_label_lookup(labels)
             label = cls._resolve_label(raw_label, label_lookup)
@@ -803,17 +844,25 @@ class MLLMClient:
                 return ""
             if label not in existence_map:
                 labels.append(label)
-                existence_map[label] = cls._clamp_float(existence_default, 0.0, 1.0, 0.5)
+                existence_map[label] = cls._clamp_float(
+                    existence_default, 0.0, 1.0, 0.5
+                )
                 target_map[label] = cls._clamp_float(target_default, 0.0, 1.0, 0.0)
                 label_assigns[label] = []
             return label
 
         current_label = ensure_label(current_region_label, 0.95, 0.0)
         if current_label:
-            existence_map[current_label] = max(existence_map.get(current_label, 0.0), 0.95)
+            existence_map[current_label] = max(
+                existence_map.get(current_label, 0.0), 0.95
+            )
 
         for region in neighbor_regions or []:
-            label = ensure_label(region.get("label", ""), region.get("prob", 0.5), region.get("target_prob", 0.0))
+            label = ensure_label(
+                region.get("label", ""),
+                region.get("prob", 0.5),
+                region.get("target_prob", 0.0),
+            )
             if not label:
                 continue
             existence_map[label] = max(
@@ -834,7 +883,9 @@ class MLLMClient:
                     for value in confidence_values
                 )
         if current_label and max_target_confidence > 0.0:
-            target_map[current_label] = max(target_map.get(current_label, 0.0), max_target_confidence)
+            target_map[current_label] = max(
+                target_map.get(current_label, 0.0), max_target_confidence
+            )
 
         for connection in region_connections or []:
             label_a = ensure_label(connection.get("A", ""), 0.5, 0.0)
@@ -849,10 +900,14 @@ class MLLMClient:
             dist = cls._clamp_float(connection.get("dist", 0.0), 0.0, 1e6, 0.0)
             if dist > 0.0:
                 previous_dist = distance_map.get(pair_key, 0.0)
-                distance_map[pair_key] = dist if previous_dist <= 0.0 else min(previous_dist, dist)
+                distance_map[pair_key] = (
+                    dist if previous_dist <= 0.0 else min(previous_dist, dist)
+                )
 
         viewpoint_context = viewpoint_context or {}
-        current_viewpoint_index = cls._normalize_viewpoint_index(viewpoint_context.get("current_viewpoint_index"))
+        current_viewpoint_index = cls._normalize_viewpoint_index(
+            viewpoint_context.get("current_viewpoint_index")
+        )
         if current_viewpoint_index is not None and current_label:
             for label in label_assigns:
                 label_assigns[label] = [
@@ -861,14 +916,18 @@ class MLLMClient:
                     if int(value) != int(current_viewpoint_index)
                 ]
             label_assigns[current_label] = sorted(
-                set(label_assigns.get(current_label, [])) | {int(current_viewpoint_index)}
+                set(label_assigns.get(current_label, []))
+                | {int(current_viewpoint_index)}
             )
 
         label_order_for_assignment = []
         if current_label:
             label_order_for_assignment.append(current_label)
         label_order_for_assignment.extend(
-            sorted([label for label in labels if label != current_label], key=lambda item: item.lower())
+            sorted(
+                [label for label in labels if label != current_label],
+                key=lambda item: item.lower(),
+            )
         )
         seen_assignments = set()
         for label in label_order_for_assignment:
@@ -881,8 +940,14 @@ class MLLMClient:
                 seen_assignments.add(int(viewpoint_index))
             label_assigns[label] = cleaned
 
-        if current_viewpoint_index is not None and current_label and max_target_confidence > 0.0:
-            viewpoints_target_confidences[str(int(current_viewpoint_index))] = max_target_confidence
+        if (
+            current_viewpoint_index is not None
+            and current_label
+            and max_target_confidence > 0.0
+        ):
+            viewpoints_target_confidences[str(int(current_viewpoint_index))] = (
+                max_target_confidence
+            )
 
         viewpoint_owner = {}
         for label, assignments in label_assigns.items():
@@ -923,20 +988,27 @@ class MLLMClient:
 
         return {
             "label_names": final_labels,
-            "label_existence_probs": [float(existence_map.get(label, 0.5)) for label in final_labels],
-            "label_target_probs": [float(target_map.get(label, 0.0)) for label in final_labels],
+            "label_existence_probs": [
+                float(existence_map.get(label, 0.5)) for label in final_labels
+            ],
+            "label_target_probs": [
+                float(target_map.get(label, 0.0)) for label in final_labels
+            ],
             "label_connection_ajacent_matrix": connection_matrix,
             "label_distance_ajacent_matrix": distance_matrix,
-            "label_assigns": {label: list(label_assigns.get(label, [])) for label in final_labels},
+            "label_assigns": {
+                label: list(label_assigns.get(label, [])) for label in final_labels
+            },
             "viewpoints_target_confidences": {
                 key: viewpoints_target_confidences[key]
-                for key in sorted(viewpoints_target_confidences.keys(), key=lambda item: int(item))
+                for key in sorted(
+                    viewpoints_target_confidences.keys(), key=lambda item: int(item)
+                )
             },
         }
 
     @classmethod
     def _normalize_visible_viewpoints(
-
         cls,
         visible_viewpoints,
         viewpoint_context: dict | None,
@@ -954,7 +1026,9 @@ class MLLMClient:
         label_aliases = {}
         for entry in visible_viewpoints or []:
             raw_label = str(entry.get("label", "")).strip()
-            viewpoint_index = cls._normalize_viewpoint_index(entry.get("viewpoint_index"))
+            viewpoint_index = cls._normalize_viewpoint_index(
+                entry.get("viewpoint_index")
+            )
             if viewpoint_index is None:
                 viewpoint_index = cls._extract_viewpoint_index_from_label(raw_label)
             if viewpoint_index is None or viewpoint_index not in viewpoint_id_by_index:
@@ -1258,7 +1332,8 @@ class MLLMClient:
                     ),
                     required_viewpoint_indices=[
                         int(item["viewpoint_index"])
-                        for item in viewpoint_context.get("visible_viewpoints", []) or []
+                        for item in viewpoint_context.get("visible_viewpoints", [])
+                        or []
                         if self._normalize_viewpoint_index(item.get("viewpoint_index"))
                         is not None
                     ],
@@ -1283,10 +1358,8 @@ class MLLMClient:
         num_obs_images = len(pil_images)
         instruction = self._build_instruction(
             num_obs_images=num_obs_images,
-            topk=topk,
             target_object=target_object or "",
             graph_context=graph_context,
-            viewpoint_context=viewpoint_context,
         )
 
         content_items = [{"type": "text", "text": instruction}]
@@ -1342,13 +1415,18 @@ class MLLMClient:
         )
         if not raw_current_region_label and legacy_regions:
             raw_current_region_label = self._normalize_region_label(
-                legacy_regions[0].get("label", "") or legacy_regions[0].get("region_label", "")
+                legacy_regions[0].get("label", "")
+                or legacy_regions[0].get("region_label", "")
             )
             if not raw_neighbor_regions:
                 raw_neighbor_regions = legacy_regions[1:]
 
-        prior_label_lookup = self._build_label_lookup(prior_graph_context.get("label_names", []))
-        current_region_label = self._resolve_label(raw_current_region_label, prior_label_lookup)
+        prior_label_lookup = self._build_label_lookup(
+            prior_graph_context.get("label_names", [])
+        )
+        current_region_label = self._resolve_label(
+            raw_current_region_label, prior_label_lookup
+        )
 
         target = self._normalize_target_output(payload.get("target", {}), index_map)
         neighbor_regions = self._normalize_neighbor_regions_payload(
@@ -1379,16 +1457,24 @@ class MLLMClient:
             viewpoint_context=viewpoint_context,
         )
 
-        final_label_lookup = self._build_label_lookup(updated_graph_context.get("label_names", []))
+        final_label_lookup = self._build_label_lookup(
+            updated_graph_context.get("label_names", [])
+        )
         current_viewpoint_index = self._normalize_viewpoint_index(
             viewpoint_context.get("current_viewpoint_index")
         )
         if not current_region_label and current_viewpoint_index is not None:
-            for label, assignments in updated_graph_context.get("label_assigns", {}).items():
-                if int(current_viewpoint_index) in [int(value) for value in assignments]:
+            for label, assignments in updated_graph_context.get(
+                "label_assigns", {}
+            ).items():
+                if int(current_viewpoint_index) in [
+                    int(value) for value in assignments
+                ]:
                     current_region_label = label
                     break
-        current_region_label = self._resolve_label(current_region_label, final_label_lookup)
+        current_region_label = self._resolve_label(
+            current_region_label, final_label_lookup
+        )
 
         deduped_neighbor_regions = []
         seen_neighbor_keys = set()
@@ -1506,3 +1592,4 @@ class MLLMClient:
         return {
             "distance_m": distance_m,
         }
+
