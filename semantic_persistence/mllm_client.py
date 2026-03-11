@@ -23,6 +23,7 @@ class MLLMClient:
         h_fov: float = -1.0,
         request_timeout: float = 120.0,
         save_debug_images: bool = True,
+        last_image_right_shift_steps: int = 1,
     ):
         api_key = os.environ.get(api_key_env)
         if not api_key:
@@ -36,6 +37,7 @@ class MLLMClient:
         self.h_fov = h_fov
         self.request_timeout = request_timeout
         self.save_debug_images = save_debug_images
+        self.last_image_right_shift_steps = max(0, int(last_image_right_shift_steps))
         self.client = OpenAI(
             base_url=base_url, api_key=api_key, timeout=request_timeout
         )
@@ -237,6 +239,29 @@ class MLLMClient:
                     selected.append(frame_idx)
 
         return sorted(selected[:sample_count])
+
+    @staticmethod
+    def _nudge_final_sample_right(
+        indices: list[int],
+        total_count: int,
+        shift_steps: int = 1,
+    ) -> list[int]:
+        if len(indices) < 2 or total_count <= 0 or shift_steps <= 0:
+            return indices
+
+        adjusted = sorted(int(index) for index in indices)
+        used = set(adjusted[:-1])
+        last_index = adjusted[-1]
+        shifted = 0
+
+        for candidate in range(last_index + 1, total_count):
+            if candidate not in used:
+                adjusted[-1] = candidate
+                shifted += 1
+                if shifted >= shift_steps:
+                    return adjusted
+
+        return adjusted
 
     @staticmethod
     def _normalize_viewpoint_index(value) -> int | None:
@@ -1384,6 +1409,11 @@ class MLLMClient:
                         is not None
                     ],
                 )
+                idx = self._nudge_final_sample_right(
+                    indices=idx,
+                    total_count=len(pil_images),
+                    shift_steps=self.last_image_right_shift_steps,
+                )
                 pil_images = [pil_images[i] for i in idx]
                 index_map = [index_map[i] for i in idx]
                 if pil_depths:
@@ -1400,6 +1430,8 @@ class MLLMClient:
                 im.save(f"debug_horizon_image_{i}.png")
             for i, depth in enumerate(pil_depths):
                 depth.save(f"debug_horizon_depth_{i}.png")
+
+        debugpy.breakpoint()
 
         num_obs_images = len(pil_images)
         instruction = self._build_instruction(
