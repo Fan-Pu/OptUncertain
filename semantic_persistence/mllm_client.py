@@ -1,4 +1,4 @@
-﻿import base64
+import base64
 import io
 import json
 import os
@@ -288,7 +288,7 @@ class MLLMClient:
         else:
             target_line = 'target: always {"found":false,"views":[],"confidence":[]}.'
 
-        graph_context = graph_context or {}
+        graph_context = self._normalize_standalone_graph_context(graph_context)
         graph_context_json = json.dumps(
             graph_context,
             separators=(",", ":"),
@@ -1592,3 +1592,4 @@ class MLLMClient:
         return {
             "distance_m": distance_m,
         }
+
