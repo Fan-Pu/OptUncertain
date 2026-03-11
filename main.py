@@ -8,7 +8,8 @@ from semantic_persistence.hypothesis_graph import HypothesisGraph
 from semantic_persistence.mllm_client import MLLMClient
 
 
-Explore_mode = True  # True: manual keyboard control
+Explore_mode = False  # True: manual keyboard control
+LAST_IMAGE_RIGHT_SHIFT_STEPS = 2
 
 if __name__ == "__main__":
     # -------------------- Debugger --------------------
@@ -38,6 +39,7 @@ if __name__ == "__main__":
         "meta-llama/Llama-4-Scout-17B-16E-Instruct:cheapest",
         max_new_tokens=160,
         h_fov=Helper.HFOV,
+        last_image_right_shift_steps=LAST_IMAGE_RIGHT_SHIFT_STEPS,
     )
 
     # -------------------- Task --------------------
