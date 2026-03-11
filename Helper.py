@@ -76,6 +76,7 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
         visible_viewpoints: list of dicts with viewpoint ids and their stable indices.
     """
     annotated_rgb = np.array(rgb, copy=True)
+    image_height, image_width = annotated_rgb.shape[:2]
     visible_viewpoints = []
 
     for idx, loc in enumerate(locations[1:]):
@@ -86,10 +87,26 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
             marker_index = idx + 1
 
         font_scale = 2.0
+        thickness = 3
 
-        x = int(WIDTH / 2 + loc.rel_heading / HFOV * WIDTH)
-        y = int(HEIGHT / 2 - loc.rel_elevation / VFOV * HEIGHT)
+        x = int(image_width / 2 + loc.rel_heading / HFOV * image_width)
+        y = int(image_height / 2 - loc.rel_elevation / VFOV * image_height)
         marker_text = f"vp-{int(marker_index)}"
+        (text_width, text_height), baseline = cv2.getTextSize(
+            marker_text,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            font_scale,
+            thickness,
+        )
+
+        # Skip labels that would be clipped by the image boundary.
+        if (
+            x < 0
+            or x + text_width > image_width
+            or y - text_height < 0
+            or y + baseline > image_height
+        ):
+            continue
 
         cv2.putText(
             annotated_rgb,
@@ -98,7 +115,7 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
             cv2.FONT_HERSHEY_SIMPLEX,
             font_scale,
             TEXT_COLOR,
-            thickness=3,
+            thickness=thickness,
         )
         visible_viewpoints.append(
             {
