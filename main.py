@@ -122,18 +122,41 @@ if __name__ == "__main__":
         tgt_found = bool(tgt.get("found", False))
         orig_idx = -1
         target_views = tgt.get("views", [])
-        target_confidences = tgt.get("confidence", [])
-        if (
-            isinstance(target_views, list)
-            and isinstance(target_confidences, list)
-            and target_views
-        ):
-            paired_candidates = [
-                (int(view_idx), float(confidence))
-                for view_idx, confidence in zip(target_views, target_confidences)
-            ]
-            if paired_candidates:
-                orig_idx = max(paired_candidates, key=lambda pair: pair[1])[0]
+        target_confidences = tgt.get("view_confidences", tgt.get("confidence", []))
+        paired_candidates = []
+        if isinstance(target_views, list) and target_views:
+            if isinstance(target_confidences, list):
+                paired_candidates = [
+                    (int(view_idx), float(confidence))
+                    for view_idx, confidence in zip(target_views, target_confidences)
+                ]
+            else:
+                try:
+                    scalar_confidence = float(target_confidences)
+                except (TypeError, ValueError):
+                    scalar_confidence = 0.0
+                paired_candidates = [
+                    (int(view_idx), scalar_confidence) for view_idx in target_views
+                ]
+
+        if not paired_candidates:
+            raw_target_view = tgt.get("view", -1)
+            try:
+                raw_target_view = int(raw_target_view)
+            except (TypeError, ValueError):
+                raw_target_view = -1
+            if raw_target_view >= 0:
+                confidence_score = tgt.get(
+                    "confidence_score", tgt.get("confidence", 0.0)
+                )
+                try:
+                    confidence_score = float(confidence_score)
+                except (TypeError, ValueError):
+                    confidence_score = 0.0
+                paired_candidates = [(raw_target_view, confidence_score)]
+
+        if paired_candidates:
+            orig_idx = max(paired_candidates, key=lambda pair: pair[1])[0]
         if tgt_found and orig_idx != -1:
             target_heading = float(horizon_headings[orig_idx])
             target_rgb_image = horizon_rgb_images[orig_idx]
@@ -163,7 +186,7 @@ if __name__ == "__main__":
                     Helper.rotate_to_target_heading_mov2vp(sim, target_heading, None)
                     Helper.render_sim_state(
                         sim.getState()[0],
-                        viewpoint_index_by_vp=viewpoint_index_by_vp,
+                        viewpoint_index_by_vp=Helper.viewpoint_index_by_vp,
                     )
                     debugpy.breakpoint()
                     break

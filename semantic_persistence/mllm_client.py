@@ -62,6 +62,8 @@ class MLLMClient:
     def _is_complete_payload(obj) -> bool:
         if not isinstance(obj, dict):
             return False
+        if "current_region_node" in obj and "target" in obj:
+            return True
         if "current_region" not in obj or "target" not in obj:
             return False
         return any(
@@ -473,6 +475,236 @@ class MLLMClient:
             "view": best_view,
             "views": deduped_views,
             "confidence": deduped_confidences,
+        }
+
+    @classmethod
+    def _normalize_region_node_payload(
+        cls,
+        region: dict | None,
+        default_exist_prob: float,
+    ) -> dict | None:
+        if not isinstance(region, dict):
+            return None
+
+        try:
+            node_id = int(region.get("id"))
+        except (TypeError, ValueError):
+            return None
+        if node_id <= 0:
+            return None
+
+        label = cls._normalize_region_label(region.get("label", ""))
+        if not label:
+            return None
+
+        return {
+            "id": node_id,
+            "label": label,
+            "exist_prob": cls._clamp_float(
+                region.get("exist_prob", default_exist_prob),
+                0.0,
+                1.0,
+                default_exist_prob,
+            ),
+            "target_prob": cls._clamp_float(
+                region.get("target_prob", 0.0),
+                0.0,
+                1.0,
+                0.0,
+            ),
+        }
+
+    @classmethod
+    def _normalize_assignment_payload(cls, raw_assignments) -> list[dict]:
+        normalized_by_viewpoint = {}
+
+        for assignment in raw_assignments or []:
+            if not isinstance(assignment, dict):
+                continue
+            viewpoint_node_id = cls._normalize_viewpoint_index(assignment.get("id"))
+            try:
+                region_node_id = int(assignment.get("assign_region_node_id"))
+            except (TypeError, ValueError):
+                continue
+            if viewpoint_node_id is None or region_node_id <= 0:
+                continue
+
+            normalized_by_viewpoint[int(viewpoint_node_id)] = {
+                "id": int(viewpoint_node_id),
+                "assign_region_node_id": int(region_node_id),
+            }
+
+        return [
+            normalized_by_viewpoint[key]
+            for key in sorted(normalized_by_viewpoint.keys())
+        ]
+
+    @classmethod
+    def _normalize_arc_payload(cls, raw_arcs) -> list[dict]:
+        normalized_by_pair = {}
+
+        for arc in raw_arcs or []:
+            if not isinstance(arc, dict):
+                continue
+            try:
+                node_i = int(arc.get("i"))
+                node_j = int(arc.get("j"))
+            except (TypeError, ValueError):
+                continue
+            if node_i <= 0 or node_j <= 0 or node_i == node_j:
+                continue
+
+            pair = tuple(sorted((node_i, node_j)))
+            distance = cls._clamp_float(arc.get("dist", 0.0), 0.0, 1e6, 0.0)
+            if distance <= 0.0:
+                continue
+
+            normalized = {
+                "i": pair[0],
+                "j": pair[1],
+                "exist_prob": cls._clamp_float(
+                    arc.get("exist_prob", 0.0),
+                    0.0,
+                    1.0,
+                    0.0,
+                ),
+                "dist": distance,
+            }
+
+            previous = normalized_by_pair.get(pair)
+            if previous is None:
+                normalized_by_pair[pair] = normalized
+                continue
+
+            previous["exist_prob"] = max(previous["exist_prob"], normalized["exist_prob"])
+            previous["dist"] = min(previous["dist"], normalized["dist"])
+
+        return [normalized_by_pair[key] for key in sorted(normalized_by_pair.keys())]
+
+    @classmethod
+    def _normalize_region_merges_payload(cls, raw_region_merges) -> list[dict]:
+        normalized = []
+        seen_pairs = set()
+
+        for merge in raw_region_merges or []:
+            if isinstance(merge, dict):
+                raw_i = merge.get("i")
+                raw_j = merge.get("j")
+            elif isinstance(merge, (list, tuple)) and len(merge) >= 2:
+                raw_i = merge[0]
+                raw_j = merge[1]
+            else:
+                continue
+
+            try:
+                node_i = int(raw_i)
+                node_j = int(raw_j)
+            except (TypeError, ValueError):
+                continue
+            if node_i <= 0 or node_j <= 0 or node_i == node_j:
+                continue
+
+            pair = (node_i, node_j)
+            if pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            normalized.append({"i": node_i, "j": node_j})
+
+        return normalized
+
+    @classmethod
+    def _normalize_schema_target_output(cls, target: dict, index_map: list[int]) -> dict:
+        if not isinstance(target, dict):
+            target = {}
+
+        if "views" in target or "view" in target:
+            normalized = cls._normalize_target_output(target, index_map)
+            confidence_list = normalized.get("confidence", [])
+            normalized["confidence_score"] = (
+                max(confidence_list) if confidence_list else 0.0
+            )
+            return normalized
+
+        found = bool(target.get("found", False))
+        confidence_score = cls._clamp_float(
+            target.get("confidence", 0.0),
+            0.0,
+            1.0,
+            0.0,
+        )
+
+        view = -1
+        try:
+            raw_view = target.get("view", -1)
+            if raw_view is not None:
+                sampled_view_idx = int(raw_view)
+                if 0 <= sampled_view_idx < len(index_map):
+                    view = int(index_map[sampled_view_idx])
+        except (TypeError, ValueError):
+            view = -1
+
+        views = [view] if found and view >= 0 else []
+        view_confidences = [confidence_score] if views else []
+        return {
+            "found": found,
+            "view": view,
+            "views": views,
+            "confidence": confidence_score,
+            "view_confidences": view_confidences,
+            "confidence_score": confidence_score,
+        }
+
+    @classmethod
+    def _normalize_semantic_graph_payload(
+        cls,
+        payload: dict,
+        index_map: list[int],
+    ) -> dict:
+        current_region = cls._normalize_region_node_payload(
+            payload.get("current_region_node", {}),
+            default_exist_prob=1.0,
+        )
+        if current_region is None:
+            current_region = {
+                "id": -1,
+                "label": "",
+                "exist_prob": 1.0,
+                "target_prob": 0.0,
+            }
+
+        visible_nodes = []
+        for region in payload.get("new_visible_region_nodes", []) or []:
+            normalized = cls._normalize_region_node_payload(
+                region,
+                default_exist_prob=0.5,
+            )
+            if normalized is not None:
+                visible_nodes.append(normalized)
+
+        invisible_nodes = []
+        for region in payload.get("new_invisible_region_nodes", []) or []:
+            normalized = cls._normalize_region_node_payload(
+                region,
+                default_exist_prob=0.5,
+            )
+            if normalized is not None:
+                invisible_nodes.append(normalized)
+
+        return {
+            "current_region_node": current_region,
+            "new_visible_region_nodes": visible_nodes,
+            "new_invisible_region_nodes": invisible_nodes,
+            "new_arcs": cls._normalize_arc_payload(payload.get("new_arcs", []) or []),
+            "target": cls._normalize_schema_target_output(
+                payload.get("target", {}) or {},
+                index_map=index_map,
+            ),
+            "viewpoint_node_assigns": cls._normalize_assignment_payload(
+                payload.get("viewpoint_node_assigns", []) or []
+            ),
+            "region_merges": cls._normalize_region_merges_payload(
+                payload.get("region_merges", []) or []
+            ),
         }
 
     @staticmethod
@@ -1114,147 +1346,50 @@ class MLLMClient:
 
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
-        raw = self._strip_code_fences(decoded)
-        payload = self._try_parse_json(raw)
-
-        needs_retry = (
-            payload is None
-            or raw.count("{") > raw.count("}")
-            or not raw.rstrip().endswith("}")
-        )
-        if needs_retry:
-            retry_tokens = min(max(self.max_new_tokens * 2, 768), 1536)
-            decoded = self._request_completion(content_items, retry_tokens)
-            print("\n[MLLM RAW OUTPUT RETRY]\n", decoded)
+        if isinstance(decoded, dict):
+            payload = decoded
+        else:
             raw = self._strip_code_fences(decoded)
             payload = self._try_parse_json(raw)
 
-        prior_graph_context = self._normalize_standalone_graph_context(graph_context)
+            needs_retry = (
+                payload is None
+                or raw.count("{") > raw.count("}")
+                or not raw.rstrip().endswith("}")
+            )
+            if needs_retry:
+                retry_tokens = min(max(self.max_new_tokens * 2, 768), 1536)
+                decoded = self._request_completion(content_items, retry_tokens)
+                print("\n[MLLM RAW OUTPUT RETRY]\n", decoded)
+                raw = self._strip_code_fences(decoded)
+                payload = self._try_parse_json(raw)
 
         if payload is None:
             print("[MLLM] Failed to parse JSON. Raw output:")
             print(decoded)
             return {
-                "current_region": {"label": ""},
-                "neighbor_regions": [],
-                "region_connections": [],
-                "target": {"found": False, "view": -1, "views": [], "confidence": []},
-                "direction_heading_label": [],
-                "updated_graph_context": prior_graph_context,
+                "current_region_node": {
+                    "id": -1,
+                    "label": "",
+                    "exist_prob": 1.0,
+                    "target_prob": 0.0,
+                },
+                "new_visible_region_nodes": [],
+                "new_invisible_region_nodes": [],
+                "new_arcs": [],
+                "target": {
+                    "found": False,
+                    "view": -1,
+                    "views": [],
+                    "confidence": 0.0,
+                    "view_confidences": [],
+                    "confidence_score": 0.0,
+                },
+                "viewpoint_node_assigns": [],
+                "region_merges": [],
             }
 
-        current_region = payload.get("current_region", {}) or {}
-        raw_updated_graph_context = payload.get("updated_graph_context", {}) or {}
-        raw_neighbor_regions = payload.get("neighbor_regions", []) or []
-        if not raw_neighbor_regions:
-            raw_neighbor_regions = payload.get("hypothesis_regions", []) or []
-        legacy_regions = payload.get("regions", []) or []
-
-        raw_current_region_label = self._normalize_region_label(
-            current_region.get("label", "") or current_region.get("region_label", "")
-        )
-        if not raw_current_region_label and legacy_regions:
-            raw_current_region_label = self._normalize_region_label(
-                legacy_regions[0].get("label", "")
-                or legacy_regions[0].get("region_label", "")
-            )
-            if not raw_neighbor_regions:
-                raw_neighbor_regions = legacy_regions[1:]
-
-        prior_label_lookup = self._build_label_lookup(
-            prior_graph_context.get("label_names", [])
-        )
-        current_region_label = self._resolve_label(
-            raw_current_region_label, prior_label_lookup
-        )
-
-        target = self._normalize_target_output(payload.get("target", {}), index_map)
-        neighbor_regions = self._normalize_neighbor_regions_payload(
-            raw_neighbor_regions,
-            prior_graph_context=prior_graph_context,
-            current_region_label=current_region_label,
-            topk=min(topk, 5),
-        )
-
-        allowed_labels = list(prior_graph_context.get("label_names", []))
-        if current_region_label and current_region_label not in allowed_labels:
-            allowed_labels.append(current_region_label)
-        for region in neighbor_regions:
-            if region["label"] not in allowed_labels:
-                allowed_labels.append(region["label"])
-
-        region_connections = self._normalize_region_connections_payload(
-            payload.get("region_connections", []) or [],
-            allowed_labels=allowed_labels,
-        )
-        updated_graph_context = self._normalize_updated_graph_context(
-            raw_updated_graph_context,
-            prior_graph_context=prior_graph_context,
-            current_region_label=current_region_label,
-            neighbor_regions=neighbor_regions,
-            region_connections=region_connections,
-            target=target,
-            viewpoint_context=viewpoint_context,
-        )
-
-        final_label_lookup = self._build_label_lookup(
-            updated_graph_context.get("label_names", [])
-        )
-        current_viewpoint_index = self._normalize_viewpoint_index(
-            viewpoint_context.get("current_viewpoint_index")
-        )
-        if not current_region_label and current_viewpoint_index is not None:
-            for label, assignments in updated_graph_context.get(
-                "label_assigns", {}
-            ).items():
-                if int(current_viewpoint_index) in [
-                    int(value) for value in assignments
-                ]:
-                    current_region_label = label
-                    break
-        current_region_label = self._resolve_label(
-            current_region_label, final_label_lookup
-        )
-
-        deduped_neighbor_regions = []
-        seen_neighbor_keys = set()
-        current_key = self._canonical_label_key(current_region_label)
-        for region in neighbor_regions:
-            label = self._resolve_label(region.get("label", ""), final_label_lookup)
-            key = self._canonical_label_key(label)
-            if not label or key == current_key or key in seen_neighbor_keys:
-                continue
-            deduped_neighbor_regions.append(
-                {
-                    "label": label,
-                    "prob": float(region["prob"]),
-                    "target_prob": float(region["target_prob"]),
-                }
-            )
-            seen_neighbor_keys.add(key)
-        neighbor_regions = deduped_neighbor_regions
-
-        final_allowed_labels = list(updated_graph_context.get("label_names", []))
-        if current_region_label and current_region_label not in final_allowed_labels:
-            final_allowed_labels.append(current_region_label)
-        region_connections = self._normalize_region_connections_payload(
-            region_connections,
-            allowed_labels=final_allowed_labels,
-        )
-        direction_heading_label = self._normalize_direction_heading_payload(
-            payload.get("direction_heading_label", []) or [],
-            allowed_labels=final_allowed_labels,
-            viewpoint_context=viewpoint_context,
-        )
-
-        return {
-            "current_region": {"label": current_region_label},
-            "neighbor_regions": neighbor_regions,
-            "region_connections": region_connections,
-            "target": target,
-            "direction_heading_label": direction_heading_label,
-            "updated_graph_context": updated_graph_context,
-        }
+        return self._normalize_semantic_graph_payload(payload, index_map=index_map)
 
     def estimate_target_distance(
         self,
