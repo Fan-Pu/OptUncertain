@@ -1,4 +1,5 @@
-﻿import os
+﻿from doctest import debug
+import os
 import time
 import debugpy
 
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     distance_threshold_m = float(
         os.environ.get("TARGET_DISTANCE_THRESHOLD_M", "1.0").strip()
     )
-    hypothesis_graph = HypothesisGraph(target_object=target_object)
+    hypothesis_graph = HypothesisGraph()
     observation_step = 0
 
     # -------------------- Loop --------------------
@@ -85,18 +86,14 @@ if __name__ == "__main__":
         #    The prompt now receives a compact snapshot of the existing hypothesis
         #    graph so the model can reuse old node ids instead of regenerating
         #    redundant semantic nodes for already-known locations.
-        graph_context = hypothesis_graph.build_mllm_context(
-            current_vp=cur_vp,
-            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp,
-        )
         start_time = time.perf_counter()
         mllm_out = mllm.propose_semantic_nodes(
             observation_images=horizon_mllm_images,
             topk=5,
             target_object=target_object,
             depth_images=horizon_depths,
-            graph_context=graph_context,
             viewpoint_context=observation_context,
+            graph=hypothesis_graph,
         )
         runtime = time.perf_counter() - start_time
         print(f"[MLLM] runtime: {runtime:.2f} seconds")

@@ -1,4 +1,5 @@
 ﻿import base64
+from doctest import debug
 import io
 import json
 import os
@@ -9,6 +10,8 @@ from openai import BadRequestError, OpenAI
 from PIL import Image
 import debugpy
 from textwrap import dedent
+
+from semantic_persistence import hypothesis_graph
 
 
 MAX_MLLM_INPUT_IMAGES = 5
@@ -301,31 +304,33 @@ class MLLMClient:
             return None
         return cls._normalize_viewpoint_index(match.group(1))
 
-    def _build_instruction(self, num_obs_images: int, target_object: str) -> str:
+    def _build_instruction(
+        self,
+        num_obs_images: int,
+        target_object: str,
+        graph: hypothesis_graph,
+        current_vp_node_id: int,
+        neighbor_vp_node_ids: list[int],
+        neighbor_vp_distances_list: list[float],
+    ) -> str:
         """Build the instruction prompt for MLLM based on the current graph context and observations."""
         target_object = target_object.strip()
-        # node information
-        node_indices = []
-        node_grounding_list = []
-        node_existence_list = []
-        node_target_list = []
-        node_type_list = []
-        node_assign_dict = {}
-
-        # arc information
-        arc_indices = []
-        arc_grounding_list = []
-        arc_existence_list = []
-        arc_distance_list = []
-
+        graph_summary = graph.get_MLLM_summary()
+        # untangle the graph summary into individual variables for easier formatting in the prompt
+        node_indices = graph_summary.get("node_indices", [])
+        node_grounding_list = graph_summary.get("node_grounding_list", [])
+        node_existence_list = graph_summary.get("node_existence_list", [])
+        node_target_list = graph_summary.get("node_target_list", [])
+        node_type_list = graph_summary.get("node_type_list", [])
+        node_assign_dict = graph_summary.get("node_assign_dict", {})
+        arc_indices = graph_summary.get("arc_indices", [])
+        arc_grounding_list = graph_summary.get("arc_grounding_list", [])
+        arc_existence_list = graph_summary.get("arc_existence_list", [])
+        arc_distance_list = graph_summary.get("arc_distance_list", [])
         if len(node_indices) > 0:
             start_region_node_id = max(node_indices) + 1
         else:
             start_region_node_id = int(max(Helper.viewpoint_index_by_vp.values())) + 1
-
-        current_vp_node_id = -1
-        neighbor_vp_node_ids = []
-        neighbor_vp_distances_list = []
 
         prompt = dedent(
             f"""
@@ -348,6 +353,7 @@ class MLLMClient:
             The corresponding grounding list of arcs, "arc_grounding_list", is {arc_grounding_list}, where each item =0 if it is not grounded, =1 grounded.
             The existence probability list of arcs, "arc_existence_list", is {arc_existence_list}, where each item is a float in [0, 1] representing the probability that the arc exists in the environment.
             The distance list of arcs, "arc_distance_list", is {arc_distance_list}, where each item is a float in (0, +inf) representing the estimated travel distance of the arc.
+            Arc connection is symmetric, meaning if (i, j) is an arc and is in "arc_indices", then (j, i) is the reverse arc with the same existence probability and distance. To save space, only one direction (i, j) with i<j is included in "arc_indices".
             
             The id of region nodes should be no less than {start_region_node_id}. The current viewpoint node id is {current_vp_node_id}.
             
@@ -367,18 +373,18 @@ class MLLMClient:
             }}
             
             [notes]:
-            "target_prob" represents the probability that the target is at that region node.
+            "target_prob" in (0, 1) represents the probability that the target is at that region node.
             
-            "exist_prob" represents the probability that the region node or arc exists in the environment.
+            "exist_prob" in (0, 1] represents the probability that the region node or arc exists in the environment.
             
             current_region_node: the region node that the current viewpoint node is assigned to.
             
             new_visible_region_nodes: the newly proposed region nodes that are supported by current observations and not in the previous graph 
             context. These should be mostly visible in current RGB observation.
             
-            new_invisible_region_nodes: the newly proposed region nodes that are not supported by current observations but are consistent with the accumulated graph context.
+            new_invisible_region_nodes: the newly proposed region nodes that are not supported by current observations but are consistent with the accumulated graph context. You are encouraged to propose invisible region nodes based on the typical understanding of the enviroment and the physical layout suggested by the current observations and the accumulated graph context.
             
-            new_arcs: the newly proposed arcs between nodes, based on the current observations and the accumulated graph context. "i" and "j" are node indices, and "dist" is the estimated travel distance (m) of the arc.
+            new_arcs: the newly proposed arcs between nodes, based on the current observations and the accumulated graph context. "i" and "j" are node indices, and "dist" is the estimated travel distance (m) of the arc. Only need to generate arcs where i<j to save space since the arc is symmetric. The arcs can be proposed between any two nodes except region to region. The arcs between two nodes indicate the direct connection between them. The existence of arcs should be supported by the current observations and consistent with the accumulated graph context. For example, if two nodes are far away in the physical layout suggested by the current observations and the accumulated graph context, then it is unlikely there is a direct arc between them. Do not generate arcs between current viewpoint node and its neighbor viewpoint nodes since they are already directly connected by definition. Do not generate arc (i,j) such that i is a viewpoint (region) node and j is a region (viewpoint) node, and i (j) is assigned to j (i) as indicated by "viewpoint_node_assigns".
             
             target: if the target object, {target_object}, is directly observed in current RGB observation, set found=true and confidence to the detection confidence; otherwise set found=false and confidence=0.0.
             
@@ -388,6 +394,8 @@ class MLLMClient:
             
             [constraints]:
             No node (region) to node (region) connection.
+            
+            The labels for regions must add adjective that show both the characteristics and the relative global location to distinguish similar regions, e.g., "modern living room area with sofa and TV wall near kitchen" and "open dining and kitchen bar area near living room". This is because the enviroment may contain multiple similar regions, for example "master bedroom area" and "guest bedroom area".
             
             Normalization: sum of target_prob for all region nodes =1; sum of target_prob for all viewpoint nodes assigned to the same region node j should equal target_prob of node j.
             
@@ -954,8 +962,8 @@ class MLLMClient:
         depth_images: list[np.ndarray] | None = None,
         topk: int = 5,
         target_object: str | None = None,
-        graph_context: dict | None = None,
         viewpoint_context: dict | None = None,
+        graph: hypothesis_graph.HypothesisGraph | None = None,
     ):
         """
         observation_images: list of RGB uint8 arrays (H,W,3), typically horizon scan frames.
@@ -1032,11 +1040,22 @@ class MLLMClient:
             for i, depth in enumerate(pil_depths):
                 depth.save(f"debug_horizon_depth_{i}.png")
 
+        current_vp_node_id = viewpoint_context["current_viewpoint_index"]
+        neighbor_vp_node_ids = [
+            vp["viewpoint_index"] for vp in viewpoint_context["visible_viewpoints"]
+        ]
+        neighbor_vp_distances = [
+            vp["distance"] for vp in viewpoint_context["visible_viewpoints"]
+        ]
+
         num_obs_images = len(pil_images)
         instruction = self._build_instruction(
             num_obs_images=num_obs_images,
-            target_object=target_object or "",
-            graph_context=graph_context,
+            target_object=target_object,
+            graph=graph,
+            current_vp_node_id=current_vp_node_id,
+            neighbor_vp_node_ids=neighbor_vp_node_ids,
+            neighbor_vp_distances_list=neighbor_vp_distances,
         )
 
         content_items = [{"type": "text", "text": instruction}]
@@ -1048,7 +1067,51 @@ class MLLMClient:
                 }
             )
 
-        decoded = self._request_completion(content_items, self.max_new_tokens)
+        # decoded = self._request_completion(content_items, self.max_new_tokens)
+        decoded = {
+            "current_region_node": {
+                "id": 45,
+                "label": "modern open living room area with curved sofa and TV wall between bedroom and kitchen",
+                "target_prob": 0.45,
+            },
+            "new_visible_region_nodes": [
+                {
+                    "id": 46,
+                    "label": "stylish bedroom sleeping area with canopy bed near the living room",
+                    "exist_prob": 0.98,
+                    "target_prob": 0.20,
+                },
+                {
+                    "id": 47,
+                    "label": "bright dining and kitchen bar area with white counter near the living room",
+                    "exist_prob": 0.97,
+                    "target_prob": 0.25,
+                },
+            ],
+            "new_invisible_region_nodes": [
+                {
+                    "id": 48,
+                    "label": "private bathroom or dressing area behind the bedroom side of the suite",
+                    "exist_prob": 0.42,
+                    "target_prob": 0.10,
+                }
+            ],
+            "new_arcs": [
+                {"i": 1, "j": 45, "exist_prob": 1.00, "dist": 0.10},
+                {"i": 1, "j": 46, "exist_prob": 0.93, "dist": 0.94},
+                {"i": 1, "j": 47, "exist_prob": 0.95, "dist": 1.16},
+                {"i": 17, "j": 46, "exist_prob": 0.99, "dist": 0.10},
+                {"i": 22, "j": 47, "exist_prob": 0.99, "dist": 0.10},
+            ],
+            "target": {"found": False, "confidence": 0.0},
+            "viewpoint_node_assigns": [
+                {"id": 1, "assign_region_node_id": 45},
+                {"id": 17, "assign_region_node_id": 46},
+                {"id": 22, "assign_region_node_id": 47},
+            ],
+            "region_merges": [],
+        }
+
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
         raw = self._strip_code_fences(decoded)

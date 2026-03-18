@@ -125,6 +125,7 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
             {
                 "viewpoint_id": str(loc.viewpointId),
                 "viewpoint_index": int(marker_index),
+                "distance": float(loc.rel_distance),
             }
         )
 
@@ -168,8 +169,7 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
         horizon_mllm_images: list of RGB images with stable viewpoint markers.
         horizon_headings: list of headings (radians) aligned with horizon_images.
         horizon_depths: list of depth maps (numpy arrays) captured during the scan.
-        observation_context: dict describing the current viewpoint index, the visible
-            neighboring viewpoints, and which `vp-N` markers appear in each frame.
+        observation_context: dict containing: current viewpoint id/index, list of visible viewpoints with their ids and indices, and list of visible viewpoint indices for each frame in the horizon scan.
     """
     start_state = sim.getState()[0]
 
@@ -211,6 +211,7 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
             visible_viewpoints_by_index[int(item["viewpoint_index"])] = {
                 "viewpoint_id": str(item["viewpoint_id"]),
                 "viewpoint_index": int(item["viewpoint_index"]),
+                "distance": round(float(item["distance"]), 3),
             }
 
         # record best "in-front" heading for each neighbor
