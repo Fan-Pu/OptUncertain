@@ -25,6 +25,10 @@ DELTA_HEADING_RAD = math.radians(DELTA_HEADING_DEG)
 pause_time = 0.15  # smooth rendering
 decision_pause = 1.5
 
+viewpoint_index_by_vp = (
+    {}
+)  # key: viewpoint_id (str), value: stable integer index for MLLM marker labels
+
 
 def init_render():
     cv2.namedWindow("Python RGB")
@@ -91,7 +95,7 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
 
         x = int(image_width / 2 + loc.rel_heading / HFOV * image_width)
         y = int(image_height / 2 - loc.rel_elevation / VFOV * image_height)
-        marker_text = f"vp-{int(marker_index)}"
+        marker_text = f"{int(marker_index)}"
         (text_width, text_height), baseline = cv2.getTextSize(
             marker_text,
             cv2.FONT_HERSHEY_SIMPLEX,

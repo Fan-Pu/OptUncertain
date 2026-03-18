@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # -------------------- Episode --------------------
     scan_id = "17DRP5sb8fy"
     start_vp_id = "10c252c90fa24ef3b698c6f54d984c5c"
-    viewpoint_index_by_vp = Helper.build_viewpoint_index(scan_id)
+    Helper.viewpoint_index_by_vp = Helper.build_viewpoint_index(scan_id)
     sim.newEpisode([scan_id], [start_vp_id], [0.0], [0.0])
 
     # -------------------- Explore mode --------------------
@@ -56,7 +56,9 @@ if __name__ == "__main__":
         state = sim.getState()[0]
         cur_vp = state.location.viewpointId
 
-        Helper.render_sim_state(state, viewpoint_index_by_vp=viewpoint_index_by_vp)
+        Helper.render_sim_state(
+            state, viewpoint_index_by_vp=Helper.viewpoint_index_by_vp
+        )
 
         # 1) Scan the current viewpoint and keep the raw RGB frames, the annotated
         #    MLLM frames, their headings, and the aligned depth maps together.
@@ -70,7 +72,7 @@ if __name__ == "__main__":
             observation_context,
         ) = Helper.horizon_scan_return(
             sim,
-            viewpoint_index_by_vp=viewpoint_index_by_vp,
+            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp,
         )
 
         if not best_heading_for_vp:
@@ -85,7 +87,7 @@ if __name__ == "__main__":
         #    redundant semantic nodes for already-known locations.
         graph_context = hypothesis_graph.build_mllm_context(
             current_vp=cur_vp,
-            viewpoint_index_by_vp=viewpoint_index_by_vp,
+            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp,
         )
         start_time = time.perf_counter()
         mllm_out = mllm.propose_semantic_nodes(

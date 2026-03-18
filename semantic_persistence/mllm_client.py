@@ -3,11 +3,12 @@ import io
 import json
 import os
 import re
-
+import Helper
 import numpy as np
 from openai import BadRequestError, OpenAI
 from PIL import Image
 import debugpy
+from textwrap import dedent
 
 
 MAX_MLLM_INPUT_IMAGES = 5
@@ -300,103 +301,101 @@ class MLLMClient:
             return None
         return cls._normalize_viewpoint_index(match.group(1))
 
-    def _build_instruction(
-        self, num_obs_images: int, target_object: str, graph_context: dict | None = None
-    ) -> str:
+    def _build_instruction(self, num_obs_images: int, target_object: str) -> str:
+        """Build the instruction prompt for MLLM based on the current graph context and observations."""
         target_object = target_object.strip()
-        if target_object:
-            target_line = (
-                f'target: detect "{target_object}". '
-                'If visible, return {"found":true,"views":[indices],"confidence":[]}; '
-                'otherwise {"found":false,"views":[],"confidence":[]}.'
-            )
+        # node information
+        node_indices = []
+        node_grounding_list = []
+        node_existence_list = []
+        node_target_list = []
+        node_type_list = []
+        node_assign_dict = {}
+
+        # arc information
+        arc_indices = []
+        arc_grounding_list = []
+        arc_existence_list = []
+        arc_distance_list = []
+
+        if len(node_indices) > 0:
+            start_region_node_id = max(node_indices) + 1
         else:
-            target_line = 'target: always {"found":false,"views":[],"confidence":[]}.'
+            start_region_node_id = int(max(Helper.viewpoint_index_by_vp.values())) + 1
 
-        graph_context = self._normalize_standalone_graph_context(graph_context)
-        graph_context_json = json.dumps(
-            graph_context,
-            separators=(",", ":"),
-            ensure_ascii=True,
-        )
+        current_vp_node_id = -1
+        neighbor_vp_node_ids = []
+        neighbor_vp_distances_list = []
 
-        visited_labels = []
-        # prompt = (
-        #     f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
-        #     f"(indices 0-{max(0, num_obs_images - 1)}). "
-        #     "Output compact JSON only. "
-        #     "Each figure may contain a text number indicating the potential movement direction. "
-        #     "The same text number can appear in multiple images, and the same text number refer to the same physical direction. "
-        #     'Schema: {"current_region":{"label":""},"neighbor_regions":[{"label":"","prob":0.0,"target_prob":0.0}],'
-        #     '"region_connections":[{"A":"","B":"","prob":0.0,"dist":0.0}],'
-        #     '"target":{"found":false,"views":[],"confidence":[]},'
-        #     '"direction_heading_label":[{"id":"","label":""}],"updated_graph_context":{}}. '
-        #     "Use room/area labels only (no objects), e.g., kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. "
-        #     "The graph_context is the persistent graph before this observation, taking the form: "
-        #     '{"label_names":[],"label_existence_probs":[],"label_target_probs":[],"label_connection_ajacent_matrix":[],"label_connection_prob_ajacent_matrix":[],"label_distance_ajacent_matrix":[],"label_assigns":{"label_name":[assigned viewpoints indices]},"viewpoints_target_confidences":{"viewpoint_id":0.0}}. '
-        #     "label_connection_prob_ajacent_matrix describes the probability that a direct connection exists between two regions"
-        #     'For ajacent matrix and array, the index of rows and colums uses the index of labels in "label_names". '
-        #     '"label_assigns" records the viewpoints assigned to each label. Each viewpoint can be at most assigned to one label. '
-        #     "Some label can have empty assigned viewpoints if no observations match that label. "
-        #     'Each item in "viewpoints_target_confidences" records the confidence that the target object is at that viewpoint. '
-        #     "This confidence should be no larger than the confidence that the target is within the region label that the viewpoint is assigned. "
-        #     f"The current graph context is: {graph_context_json}. "
-        #     "current_region: one label for the region the current physical viewpoint is in. If current_region matches a label in graph_context, reuse that exact label. "
-        #     f"{target_line} "
-        #     "target: views = image indices where target confidence >0.5. confidence = list of detection confidences aligned with views. If no view has confidence >0.5 set found=false and return empty lists. "
-        #     "neighbor_regions: up to 5, no duplicates, exclude current_region. Fields: label, prob [0.5,0.95] the probability the region exists, target_prob (0,1) the probability the target is at that region. Neighbor_regions should be new proposed regions induced from current observations that are not in graph_context. "
-        #     "region_connections: include only hypothetical direct connections among the union of current_region, the listed new neighbors, and the existing label in graph_context only if strongly supported. Do not enumerate all pairs. Omit any pair if direct connectivity or travel distance is uncertain. Fields: A, B, prob in [0.5,1] the connection_probability, dist (>0 meters) the travel_distance. Connections are symmetric: output A->B only, not B->A. "
-        #     'direction_heading_label: for each potential movement direction, output its text number id and the region label it heads to. Use the form [{"id":"","label":""}]. The label must be current_region, a label in graph_context, or a label in neighbor_regions. '
-        #     "updated_graph_context: update graph_context using the current observation and keep it fully consistent with the other output fields. Strictly follow the graph_context format. Append any new labels to label_names in alphabetical order, and keep all arrays, matrices, assignments, and probabilities aligned with the final label_names order. "
-        #     f"Labels have been visited are: {visited_labels}. For each visited label, its prob=1 meaning it must exist."
-        #     "Return JSON only. No explanation or markdown."
-        # )
+        prompt = dedent(
+            f"""
+            You are given {num_obs_images} indoor images from one 360-degree viewpoint (indices 0-{max(0, num_obs_images - 1)}).
 
-        prompt = (
-            f"You are given {num_obs_images} indoor images from one 360-degree viewpoint "
-            f"(indices 0-{max(0, num_obs_images - 1)}). "
-            "Output compact JSON only. "
-            "Each figure may contain a text number indicating a potential movement direction. "
-            "The same text number can appear in multiple images, and the same text number always refers to the same physical direction. "
-            'Schema: {"current_region":{"label":""},"neighbor_regions":[{"label":"","prob":0.0,"target_prob":0.0}],'
-            '"region_connections":[{"A":"","B":"","prob":0.0,"dist":0.0}],'
-            '"target":{"found":false,"views":[],"confidence":[]},'
-            '"direction_heading_label":[{"id":"","label":""}],"updated_graph_context":{}}. '
-            "Use room or area labels only, not objects, for example kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. "
-            "The graph_context is the persistent graph before this observation, with format: "
-            '{"label_names":[],"label_existence_probs":[],"label_target_probs":[],"label_connection_ajacent_matrix":[],"label_connection_prob_ajacent_matrix":[],"label_distance_ajacent_matrix":[],"label_assigns":{"label_name":[assigned viewpoint ids]},"viewpoints_target_confidences":{"viewpoint_id":0.0}}. '
-            '"label_connection_prob_ajacent_matrix" gives the probability that a direct connection exists between two labels. '
-            'For every matrix and array, row and column indices follow the order of "label_names". '
-            '"label_assigns" records which viewpoint ids are assigned to each label. Each viewpoint can be assigned to at most one label. '
-            "A label may have no assigned viewpoints. "
-            '"viewpoints_target_confidences" gives the probability that the target may be at each viewpoint, even if it is not directly visible now. '
-            "If a viewpoint is assigned to a label, its target confidence must be no larger than that label's target probability. "
-            f"The current graph context is: {graph_context_json}. "
-            f"Visited labels are: {visited_labels}. Every visited label must have existence probability 1.0. "
-            "current_region: output one label for the region containing the current physical viewpoint. If it matches a label already in graph_context, reuse that exact label. "
-            f"{target_line} "
-            "target: views are image indices where target confidence is greater than 0.5. confidence is the list of confidences aligned with views. If no view has confidence greater than 0.5, set found=false and return empty lists. "
-            "neighbor_regions: output up to 5 labels, no duplicates, excluding current_region. These should be new proposed neighboring regions induced from the current observation and not already in graph_context. "
-            "For each neighbor region, prob is in [0.5,0.95] and target_prob is in [0,1]. "
-            "Do not make all target_prob values trivially small. Assign larger target_prob to regions that are visually plausible search destinations or likely places for the target, and use 0 only if clearly implausible. "
-            "If target is not directly observed, keep meaningful uncertainty across plausible regions instead of collapsing all target_prob values near zero. "
-            "region_connections: output plausible direct connections that are visually or spatially supported. "
-            "Prefer including direct connections from current_region to each neighbor_region when they are reasonably likely in indoor layouts, unless there is evidence against the connection. "
-            "You may also include other strongly supported direct connections involving labels in graph_context. "
-            "Do not enumerate all pairs, but do not be overly sparse. "
-            "Omit a pair only if direct connectivity is genuinely uncertain or unlikely. "
-            "Each connection has fields A, B, prob in [0.5,1], and dist in meters with dist > 0. "
-            "Connections are symmetric, so output each pair once only. "
-            'direction_heading_label: for each potential movement direction, output {"id":"","label":""}. '
-            "The label must be current_region, a label already in graph_context, or a label in neighbor_regions. "
-            "updated_graph_context: update graph_context using the current observation and keep it fully consistent with all other output fields. "
-            "Append any new labels to label_names in alphabetical order, then align all arrays and matrices to that final order. "
-            "If a direct connection in region_connections is reasonably likely, reflect it in both label_connection_ajacent_matrix and label_connection_prob_ajacent_matrix. "
-            "If a region remains a plausible target location, its target probability should be reflected in label_target_probs and in non-zero viewpoints_target_confidences for plausible assigned or candidate viewpoints. "
-            "Do not set all viewpoints_target_confidences to zero unless the target is confidently impossible at every viewpoint. "
-            "When the target is not visible, still assign non-zero viewpoint target confidences to plausible candidate viewpoints based on regional target probabilities and prior graph_context. "
-            "Return JSON only. No explanation or markdown."
-        )
+            Output compact JSON only.
+
+            Each figure may contain a text number indicating a potential next viewpoint. The same text number can appear in multiple images, and the same text number always refers to the same viewpoint.
+            
+            The following is the condensed snapshot of the accumulated graph context:
+            
+            The indices of existing nodes, "node_indices", are {node_indices}.
+            The corresponding grounding list of nodes, "node_grounding_list", is {node_grounding_list}, where each item =0 if it is not grounded, =1 grounded.
+            The existence probability list of nodes, "node_existence_list", is {node_existence_list}, where each item is a float in [0, 1] representing the probability that the node exists in the environment.
+            The target probability list of nodes, "node_target_list", is {node_target_list}, where each item is a float in [0, 1] representing the probability that the target object is at the corresponding node.
+            The type list of nodes, "node_type_list", is {node_type_list}, where each item =0 if it is a region, =1 a viewpoint.
+            The dict of node assignments, "node_assigns", is {node_assign_dict}, where each key is a region node index and the value is a list of assigned viewpoint node indices for that region node. Each viewpoint can be assigned to at most one region node. A region node may have no assigned viewpoint nodes. When a viewpoint node is assigned to a region node, it means the viewpoint is observed at that region and can provide visual information for that region.
+            
+            The indices of existing arcs, "arc_indices", are {arc_indices}, where each item is a tuple of (node_index_A, node_index_B) representing a potential connection between two nodes.
+            The corresponding grounding list of arcs, "arc_grounding_list", is {arc_grounding_list}, where each item =0 if it is not grounded, =1 grounded.
+            The existence probability list of arcs, "arc_existence_list", is {arc_existence_list}, where each item is a float in [0, 1] representing the probability that the arc exists in the environment.
+            The distance list of arcs, "arc_distance_list", is {arc_distance_list}, where each item is a float in (0, +inf) representing the estimated travel distance of the arc.
+            
+            The id of region nodes should be no less than {start_region_node_id}. The current viewpoint node id is {current_vp_node_id}.
+            
+            The list of neighborhood viewpoint node ids are {neighbor_vp_node_ids}, as shown in the figure. The distances of neigborborhood viewpoint nodes to the current viewpoint node is {neighbor_vp_distances_list}.
+            
+            A region node is "grounded" if any viewpoints is assigned to that region. A viewpoint node is "grounded" if it is visited by the robot. An arc is "grounded" if both of its endpoint nodes are grounded.
+
+            Generate the following json schema:
+            {{
+                "current_region_node":{{"label": "", "id": "", "target_prob": 0.0}},
+                "new_visible_region_nodes": [{{"label": "", "id": "", "exist_prob": 0.0, "target_prob": 0.0}}],
+                "new_invisible_region_nodes": [{{"label": "", "id": "", "exist_prob": 0.0, "target_prob": 0.0}}],
+                "new_arcs":[{{"i": "", "j": "", "exist_prob": 0.0, "dist": 0.0}}],
+                "target":{{"found": false, "confidence": 0.0}},
+                "viewpoint_node_assigns": [{{"id": "", "assign_region_node_id": ""}}],
+                "region_merges": [(i,j)],
+            }}
+            
+            [notes]:
+            "target_prob" represents the probability that the target is at that region node.
+            
+            "exist_prob" represents the probability that the region node or arc exists in the environment.
+            
+            current_region_node: the region node that the current viewpoint node is assigned to.
+            
+            new_visible_region_nodes: the newly proposed region nodes that are supported by current observations and not in the previous graph 
+            context. These should be mostly visible in current RGB observation.
+            
+            new_invisible_region_nodes: the newly proposed region nodes that are not supported by current observations but are consistent with the accumulated graph context.
+            
+            new_arcs: the newly proposed arcs between nodes, based on the current observations and the accumulated graph context. "i" and "j" are node indices, and "dist" is the estimated travel distance (m) of the arc.
+            
+            target: if the target object, {target_object}, is directly observed in current RGB observation, set found=true and confidence to the detection confidence; otherwise set found=false and confidence=0.0.
+            
+            The label for region nodes are room or area labels only, not objects, for example kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. Do not generate too many region nodes. A maximum of 5 new region nodes (including both visible and invisible) should be proposed at each step. When the region is revisited, reuse the previous label instead of proposing a new label. Only propose the new similar label if they are not the same physical region, for example "kitchen area" vs "dining area". There may be several similar labels, such as "bedroom area" and "master bedroom area", to distinguish them use the suffix "near xx" to indicate the relative location of the region, for example "bedroom area near entryway" vs "bedroom area near living room".
+            
+            region_merges: the pair of region nodes that needs to be merged into one region node because they are the same region as suggested by the physical layout. This is to correct the over-segmentation issue in region proposals. "i" and "j" are node indices.
+            
+            [constraints]:
+            No node (region) to node (region) connection.
+            
+            Normalization: sum of target_prob for all region nodes =1; sum of target_prob for all viewpoint nodes assigned to the same region node j should equal target_prob of node j.
+            
+            Return JSON only. No explanation or markdown.
+            """
+        ).strip()
+
+        print(prompt)
 
         debugpy.breakpoint()
         return prompt
@@ -521,171 +520,6 @@ class MLLMClient:
         if not label_lookup:
             return normalized
         return label_lookup.get(cls._canonical_label_key(normalized), normalized)
-
-    @staticmethod
-    def _empty_graph_context() -> dict:
-        return {
-            "label_names": [],
-            "label_existence_probs": [],
-            "label_target_probs": [],
-            "label_connection_ajacent_matrix": [],
-            "label_distance_ajacent_matrix": [],
-            "label_assigns": {},
-            "viewpoints_target_confidences": {},
-        }
-
-    @classmethod
-    def _normalize_standalone_graph_context(cls, raw_context) -> dict:
-        if not isinstance(raw_context, dict):
-            return cls._empty_graph_context()
-
-        raw_labels = raw_context.get("label_names", []) or []
-        raw_existence = raw_context.get("label_existence_probs", []) or []
-        raw_target = raw_context.get("label_target_probs", []) or []
-        raw_connection = raw_context.get("label_connection_ajacent_matrix", []) or []
-        raw_distance = raw_context.get("label_distance_ajacent_matrix", []) or []
-        raw_assigns = raw_context.get("label_assigns", {}) or {}
-        raw_view_confidences = (
-            raw_context.get("viewpoints_target_confidences", {}) or {}
-        )
-
-        canonical_to_label = {}
-        raw_index_by_key = {}
-        for idx, raw_label in enumerate(raw_labels):
-            label = cls._normalize_region_label(raw_label)
-            key = cls._canonical_label_key(label)
-            if not key or key in canonical_to_label:
-                continue
-            canonical_to_label[key] = label
-            raw_index_by_key[key] = idx
-
-        label_names = sorted(canonical_to_label.values(), key=lambda item: item.lower())
-        label_lookup = cls._build_label_lookup(label_names)
-
-        existence_map = {}
-        target_map = {}
-        for label in label_names:
-            key = cls._canonical_label_key(label)
-            raw_idx = raw_index_by_key.get(key, -1)
-            raw_exist = (
-                raw_existence[raw_idx] if 0 <= raw_idx < len(raw_existence) else 0.5
-            )
-            raw_tgt = raw_target[raw_idx] if 0 <= raw_idx < len(raw_target) else 0.0
-            existence_map[label] = cls._clamp_float(raw_exist, 0.0, 1.0, 0.5)
-            target_map[label] = cls._clamp_float(raw_tgt, 0.0, 1.0, 0.0)
-
-        label_assigns = {label: [] for label in label_names}
-        assigned_viewpoints = set()
-        for raw_label, raw_values in raw_assigns.items():
-            label = cls._resolve_label(raw_label, label_lookup)
-            if not label:
-                continue
-            candidates = raw_values if isinstance(raw_values, list) else [raw_values]
-            cleaned = []
-            for value in candidates:
-                viewpoint_index = cls._normalize_viewpoint_index(value)
-                if viewpoint_index is None or viewpoint_index in assigned_viewpoints:
-                    continue
-                assigned_viewpoints.add(viewpoint_index)
-                cleaned.append(int(viewpoint_index))
-            label_assigns[label] = sorted(cleaned)
-
-        edge_map = {}
-        distance_map = {}
-        for label_a in label_names:
-            key_a = cls._canonical_label_key(label_a)
-            raw_idx_a = raw_index_by_key.get(key_a, -1)
-            if raw_idx_a < 0:
-                continue
-            for label_b in label_names:
-                key_b = cls._canonical_label_key(label_b)
-                raw_idx_b = raw_index_by_key.get(key_b, -1)
-                if raw_idx_b < 0 or label_a == label_b:
-                    continue
-                conn_candidates = []
-                dist_candidates = []
-                if (
-                    isinstance(raw_connection, list)
-                    and raw_idx_a < len(raw_connection)
-                    and isinstance(raw_connection[raw_idx_a], list)
-                    and raw_idx_b < len(raw_connection[raw_idx_a])
-                ):
-                    conn_candidates.append(raw_connection[raw_idx_a][raw_idx_b])
-                if (
-                    isinstance(raw_distance, list)
-                    and raw_idx_a < len(raw_distance)
-                    and isinstance(raw_distance[raw_idx_a], list)
-                    and raw_idx_b < len(raw_distance[raw_idx_a])
-                ):
-                    dist_candidates.append(raw_distance[raw_idx_a][raw_idx_b])
-                pair_key = tuple(
-                    sorted((label_a, label_b), key=lambda item: item.lower())
-                )
-                prob = max(
-                    (
-                        cls._clamp_float(value, 0.0, 1.0, 0.0)
-                        for value in conn_candidates
-                    ),
-                    default=0.0,
-                )
-                dist_values = []
-                for value in dist_candidates:
-                    dist = cls._clamp_float(value, 0.0, 1e6, 0.0)
-                    if dist > 0.0:
-                        dist_values.append(dist)
-                if prob > 0.0 and dist_values:
-                    edge_map[pair_key] = prob
-                    distance_map[pair_key] = min(dist_values)
-
-        viewpoint_owner = {}
-        for label, assignments in label_assigns.items():
-            for viewpoint_index in assignments:
-                viewpoint_owner[int(viewpoint_index)] = label
-
-        viewpoints_target_confidences = {}
-        for raw_key, raw_value in raw_view_confidences.items():
-            viewpoint_index = cls._normalize_viewpoint_index(raw_key)
-            if viewpoint_index is None or viewpoint_index not in viewpoint_owner:
-                continue
-            label = viewpoint_owner[viewpoint_index]
-            value = cls._clamp_float(raw_value, 0.0, target_map.get(label, 0.0), 0.0)
-            viewpoints_target_confidences[str(int(viewpoint_index))] = value
-
-        label_index = {label: idx for idx, label in enumerate(label_names)}
-        size = len(label_names)
-        connection_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
-        distance_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
-        for (label_a, label_b), prob in edge_map.items():
-            idx_a = label_index[label_a]
-            idx_b = label_index[label_b]
-            dist = distance_map.get((label_a, label_b), 0.0)
-            if prob <= 0.0 or dist <= 0.0:
-                continue
-            connection_matrix[idx_a][idx_b] = prob
-            connection_matrix[idx_b][idx_a] = prob
-            distance_matrix[idx_a][idx_b] = dist
-            distance_matrix[idx_b][idx_a] = dist
-
-        return {
-            "label_names": label_names,
-            "label_existence_probs": [
-                float(existence_map.get(label, 0.5)) for label in label_names
-            ],
-            "label_target_probs": [
-                float(target_map.get(label, 0.0)) for label in label_names
-            ],
-            "label_connection_ajacent_matrix": connection_matrix,
-            "label_distance_ajacent_matrix": distance_matrix,
-            "label_assigns": {
-                label: sorted(label_assigns.get(label, [])) for label in label_names
-            },
-            "viewpoints_target_confidences": {
-                key: viewpoints_target_confidences[key]
-                for key in sorted(
-                    viewpoints_target_confidences.keys(), key=lambda item: int(item)
-                )
-            },
-        }
 
     @classmethod
     def _normalize_neighbor_regions_payload(
@@ -844,239 +678,6 @@ class MLLMClient:
             normalized_by_id[key]
             for key in sorted(normalized_by_id.keys(), key=lambda item: int(item))
         ]
-
-    @classmethod
-    def _normalize_updated_graph_context(
-        cls,
-        raw_context,
-        *,
-        prior_graph_context: dict | None = None,
-        current_region_label: str = "",
-        neighbor_regions: list[dict] | None = None,
-        region_connections: list[dict] | None = None,
-        target: dict | None = None,
-        viewpoint_context: dict | None = None,
-    ) -> dict:
-        prior_context = cls._normalize_standalone_graph_context(prior_graph_context)
-        candidate_context = cls._normalize_standalone_graph_context(raw_context)
-        if candidate_context["label_names"] or not prior_context["label_names"]:
-            base_context = candidate_context
-        else:
-            base_context = prior_context
-
-        labels = list(base_context["label_names"])
-        existence_map = {
-            label: float(base_context["label_existence_probs"][idx])
-            for idx, label in enumerate(labels)
-        }
-        target_map = {
-            label: float(base_context["label_target_probs"][idx])
-            for idx, label in enumerate(labels)
-        }
-        label_assigns = {
-            label: list(base_context["label_assigns"].get(label, []))
-            for label in labels
-        }
-        edge_map = {}
-        distance_map = {}
-        for i, label_a in enumerate(labels):
-            for j in range(i + 1, len(labels)):
-                label_b = labels[j]
-                prob = cls._clamp_float(
-                    base_context["label_connection_ajacent_matrix"][i][j],
-                    0.0,
-                    1.0,
-                    0.0,
-                )
-                dist = cls._clamp_float(
-                    base_context["label_distance_ajacent_matrix"][i][j],
-                    0.0,
-                    1e6,
-                    0.0,
-                )
-                if prob > 0.0 and dist > 0.0:
-                    pair_key = tuple(
-                        sorted((label_a, label_b), key=lambda item: item.lower())
-                    )
-                    edge_map[pair_key] = prob
-                    distance_map[pair_key] = dist
-
-        viewpoints_target_confidences = dict(
-            base_context["viewpoints_target_confidences"]
-        )
-
-        def ensure_label(
-            raw_label, existence_default: float = 0.5, target_default: float = 0.0
-        ) -> str:
-            nonlocal labels
-            label_lookup = cls._build_label_lookup(labels)
-            label = cls._resolve_label(raw_label, label_lookup)
-            if not label:
-                return ""
-            if label not in existence_map:
-                labels.append(label)
-                existence_map[label] = cls._clamp_float(
-                    existence_default, 0.0, 1.0, 0.5
-                )
-                target_map[label] = cls._clamp_float(target_default, 0.0, 1.0, 0.0)
-                label_assigns[label] = []
-            return label
-
-        current_label = ensure_label(current_region_label, 0.95, 0.0)
-        if current_label:
-            existence_map[current_label] = max(
-                existence_map.get(current_label, 0.0), 0.95
-            )
-
-        for region in neighbor_regions or []:
-            label = ensure_label(
-                region.get("label", ""),
-                region.get("prob", 0.5),
-                region.get("target_prob", 0.0),
-            )
-            if not label:
-                continue
-            existence_map[label] = max(
-                existence_map.get(label, 0.0),
-                cls._clamp_float(region.get("prob", 0.5), 0.5, 0.95, 0.5),
-            )
-            target_map[label] = max(
-                target_map.get(label, 0.0),
-                cls._clamp_float(region.get("target_prob", 0.0), 0.0, 1.0, 0.0),
-            )
-
-        max_target_confidence = 0.0
-        if isinstance(target, dict):
-            confidence_values = target.get("confidence", []) or []
-            if confidence_values:
-                max_target_confidence = max(
-                    cls._clamp_float(value, 0.0, 1.0, 0.0)
-                    for value in confidence_values
-                )
-        if current_label and max_target_confidence > 0.0:
-            target_map[current_label] = max(
-                target_map.get(current_label, 0.0), max_target_confidence
-            )
-
-        for connection in region_connections or []:
-            label_a = ensure_label(connection.get("A", ""), 0.5, 0.0)
-            label_b = ensure_label(connection.get("B", ""), 0.5, 0.0)
-            if not label_a or not label_b or label_a == label_b:
-                continue
-            pair_key = tuple(sorted((label_a, label_b), key=lambda item: item.lower()))
-            edge_map[pair_key] = max(
-                edge_map.get(pair_key, 0.0),
-                cls._clamp_float(connection.get("prob", 0.5), 0.5, 1.0, 0.5),
-            )
-            dist = cls._clamp_float(connection.get("dist", 0.0), 0.0, 1e6, 0.0)
-            if dist > 0.0:
-                previous_dist = distance_map.get(pair_key, 0.0)
-                distance_map[pair_key] = (
-                    dist if previous_dist <= 0.0 else min(previous_dist, dist)
-                )
-
-        viewpoint_context = viewpoint_context or {}
-        current_viewpoint_index = cls._normalize_viewpoint_index(
-            viewpoint_context.get("current_viewpoint_index")
-        )
-        if current_viewpoint_index is not None and current_label:
-            for label in label_assigns:
-                label_assigns[label] = [
-                    value
-                    for value in label_assigns.get(label, [])
-                    if int(value) != int(current_viewpoint_index)
-                ]
-            label_assigns[current_label] = sorted(
-                set(label_assigns.get(current_label, []))
-                | {int(current_viewpoint_index)}
-            )
-
-        label_order_for_assignment = []
-        if current_label:
-            label_order_for_assignment.append(current_label)
-        label_order_for_assignment.extend(
-            sorted(
-                [label for label in labels if label != current_label],
-                key=lambda item: item.lower(),
-            )
-        )
-        seen_assignments = set()
-        for label in label_order_for_assignment:
-            cleaned = []
-            for value in sorted(set(label_assigns.get(label, []))):
-                viewpoint_index = cls._normalize_viewpoint_index(value)
-                if viewpoint_index is None or viewpoint_index in seen_assignments:
-                    continue
-                cleaned.append(int(viewpoint_index))
-                seen_assignments.add(int(viewpoint_index))
-            label_assigns[label] = cleaned
-
-        if (
-            current_viewpoint_index is not None
-            and current_label
-            and max_target_confidence > 0.0
-        ):
-            viewpoints_target_confidences[str(int(current_viewpoint_index))] = (
-                max_target_confidence
-            )
-
-        viewpoint_owner = {}
-        for label, assignments in label_assigns.items():
-            for viewpoint_index in assignments:
-                viewpoint_owner[int(viewpoint_index)] = label
-
-        for key in list(viewpoints_target_confidences.keys()):
-            viewpoint_index = cls._normalize_viewpoint_index(key)
-            if viewpoint_index is None or viewpoint_index not in viewpoint_owner:
-                viewpoints_target_confidences.pop(key, None)
-                continue
-            owner_label = viewpoint_owner[viewpoint_index]
-            viewpoints_target_confidences[str(int(viewpoint_index))] = cls._clamp_float(
-                viewpoints_target_confidences[key],
-                0.0,
-                target_map.get(owner_label, 0.0),
-                0.0,
-            )
-            if str(int(viewpoint_index)) != key:
-                viewpoints_target_confidences.pop(key, None)
-
-        final_labels = sorted(set(labels), key=lambda item: item.lower())
-        label_index = {label: idx for idx, label in enumerate(final_labels)}
-        size = len(final_labels)
-        connection_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
-        distance_matrix = [[0.0 for _ in range(size)] for _ in range(size)]
-        for pair_key, prob in edge_map.items():
-            dist = distance_map.get(pair_key, 0.0)
-            if prob <= 0.0 or dist <= 0.0:
-                continue
-            label_a, label_b = pair_key
-            idx_a = label_index[label_a]
-            idx_b = label_index[label_b]
-            connection_matrix[idx_a][idx_b] = prob
-            connection_matrix[idx_b][idx_a] = prob
-            distance_matrix[idx_a][idx_b] = dist
-            distance_matrix[idx_b][idx_a] = dist
-
-        return {
-            "label_names": final_labels,
-            "label_existence_probs": [
-                float(existence_map.get(label, 0.5)) for label in final_labels
-            ],
-            "label_target_probs": [
-                float(target_map.get(label, 0.0)) for label in final_labels
-            ],
-            "label_connection_ajacent_matrix": connection_matrix,
-            "label_distance_ajacent_matrix": distance_matrix,
-            "label_assigns": {
-                label: list(label_assigns.get(label, [])) for label in final_labels
-            },
-            "viewpoints_target_confidences": {
-                key: viewpoints_target_confidences[key]
-                for key in sorted(
-                    viewpoints_target_confidences.keys(), key=lambda item: int(item)
-                )
-            },
-        }
 
     @classmethod
     def _normalize_visible_viewpoints(
@@ -1430,8 +1031,6 @@ class MLLMClient:
                 im.save(f"debug_horizon_image_{i}.png")
             for i, depth in enumerate(pil_depths):
                 depth.save(f"debug_horizon_depth_{i}.png")
-
-        debugpy.breakpoint()
 
         num_obs_images = len(pil_images)
         instruction = self._build_instruction(
