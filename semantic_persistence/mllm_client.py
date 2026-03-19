@@ -368,14 +368,15 @@ class MLLMClient:
                 "current_region_node":{{"label": "", "id": "", "target_prob": 0.0}},
                 "new_visible_region_nodes": [{{"label": "", "id": "", "exist_prob": 0.0, "target_prob": 0.0}}],
                 "new_invisible_region_nodes": [{{"label": "", "id": "", "exist_prob": 0.0, "target_prob": 0.0}}],
+                "viewpoint_target_probs": [{{"id": "", "target_prob": 0.0}}],
                 "new_arcs":[{{"i": "", "j": "", "exist_prob": 0.0, "dist": 0.0}}],
-                "target":{{"found": false, "confidence": 0.0}},
+                "target":{{"found": False, "confidence": 0.0}},
                 "viewpoint_node_assigns": [{{"id": "", "assign_region_node_id": ""}}],
                 "region_merges": [(i,j)],
             }}
             
             [notes]:
-            "target_prob" in (0, 1) represents the probability that the target is at that region node.
+            "target_prob" in (0, 1) represents the probability that the target is at that region node or viewpoint node.
             
             "exist_prob" in (0, 1] represents the probability that the region node or arc exists in the environment.
             
@@ -386,11 +387,15 @@ class MLLMClient:
             
             new_invisible_region_nodes: the newly proposed region nodes that are not supported by current observations but are consistent with the accumulated graph context. You are encouraged to propose invisible region nodes based on the typical understanding of the enviroment and the physical layout suggested by the current observations and the accumulated graph context.
             
+            viewpoint_target_probs: the probability estimation of the target object being at the neighboring viewpoint nodes {neighbor_vp_node_ids}.
+            
             new_arcs: the newly proposed arcs between nodes, based on the current observations and the accumulated graph context. "i" and "j" are node indices, and "dist" is the estimated travel distance (m) of the arc. Only need to generate arcs where i<j to save space since the arc is symmetric. The arcs can be proposed between any two nodes except region to region. The arcs between two nodes indicate the direct connection between them. The existence of arcs should be supported by the current observations and consistent with the accumulated graph context. For example, if two nodes are far away in the physical layout suggested by the current observations and the accumulated graph context, then it is unlikely there is a direct arc between them. Do not generate arcs between current viewpoint node and its neighbor viewpoint nodes since they are already directly connected by definition. Do not generate arc (i,j) such that i is a viewpoint (region) node and j is a region (viewpoint) node, and i (j) is assigned to j (i) as indicated by "viewpoint_node_assigns".
             
-            target: if the target object, {target_object}, is directly observed in current RGB observation, set found=true and confidence to the detection confidence; otherwise set found=false and confidence=0.0.
+            target: if the target object, {target_object}, is directly observed in current RGB observation, set found=true and confidence to the detection confidence; otherwise set found=False and confidence=0.0.
             
             The label for region nodes are room or area labels only, not objects, for example kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. Do not generate too many region nodes. A maximum of 5 new region nodes (including both visible and invisible) should be proposed at each step. When the region is revisited, reuse the previous label instead of proposing a new label. Only propose the new similar label if they are not the same physical region, for example "kitchen area" vs "dining area". There may be several similar labels, such as "bedroom area" and "master bedroom area", to distinguish them use the suffix "near xx" to indicate the relative location of the region, for example "bedroom area near entryway" vs "bedroom area near living room".
+            
+            viewpoint_node_assigns: the assignment of viewpoint nodes to region nodes. The neighboring viewpoint nodes {neighbor_vp_node_ids} can be assigned to the current region node or other region nodes if they are located at those regions. Each neighboring viewpoint node must be assigned to exactly one region node.
             
             region_merges: the pair of region nodes that needs to be merged into one region node because they are the same region as suggested by the physical layout. This is to correct the over-segmentation issue in region proposals. "i" and "j" are node indices.
             
@@ -407,7 +412,6 @@ class MLLMClient:
 
         print(prompt)
 
-        debugpy.breakpoint()
         return prompt
 
     @staticmethod
@@ -576,7 +580,9 @@ class MLLMClient:
                 normalized_by_pair[pair] = normalized
                 continue
 
-            previous["exist_prob"] = max(previous["exist_prob"], normalized["exist_prob"])
+            previous["exist_prob"] = max(
+                previous["exist_prob"], normalized["exist_prob"]
+            )
             previous["dist"] = min(previous["dist"], normalized["dist"])
 
         return [normalized_by_pair[key] for key in sorted(normalized_by_pair.keys())]
@@ -613,7 +619,9 @@ class MLLMClient:
         return normalized
 
     @classmethod
-    def _normalize_schema_target_output(cls, target: dict, index_map: list[int]) -> dict:
+    def _normalize_schema_target_output(
+        cls, target: dict, index_map: list[int]
+    ) -> dict:
         if not isinstance(target, dict):
             target = {}
 
@@ -1164,7 +1172,7 @@ class MLLMClient:
 
         return prompt
 
-    def _request_completion(self, content_items, max_tokens: int) -> str:
+    def _request_completion(self, content_items) -> str:
         """
         Sends a chat completion request to the Hugging Face router API with the given content items and max tokens.
         Returns the text content of the response message.
@@ -1173,8 +1181,6 @@ class MLLMClient:
             completion = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": content_items}],
-                temperature=0.0,
-                seed=42,
             )
         except BadRequestError as exc:
             message = str(exc)
@@ -1192,7 +1198,6 @@ class MLLMClient:
         self,
         observation_images: list[np.ndarray],
         depth_images: list[np.ndarray] | None = None,
-        topk: int = 5,
         target_object: str | None = None,
         viewpoint_context: dict | None = None,
         graph: hypothesis_graph.HypothesisGraph | None = None,
@@ -1299,50 +1304,53 @@ class MLLMClient:
                 }
             )
 
-        # decoded = self._request_completion(content_items, self.max_new_tokens)
-        decoded = {
-            "current_region_node": {
-                "id": 45,
-                "label": "modern open living room area with curved sofa and TV wall between bedroom and kitchen",
-                "target_prob": 0.45,
-            },
-            "new_visible_region_nodes": [
-                {
-                    "id": 46,
-                    "label": "stylish bedroom sleeping area with canopy bed near the living room",
-                    "exist_prob": 0.98,
-                    "target_prob": 0.20,
-                },
-                {
-                    "id": 47,
-                    "label": "bright dining and kitchen bar area with white counter near the living room",
-                    "exist_prob": 0.97,
-                    "target_prob": 0.25,
-                },
-            ],
-            "new_invisible_region_nodes": [
-                {
-                    "id": 48,
-                    "label": "private bathroom or dressing area behind the bedroom side of the suite",
-                    "exist_prob": 0.42,
-                    "target_prob": 0.10,
-                }
-            ],
-            "new_arcs": [
-                {"i": 1, "j": 45, "exist_prob": 1.00, "dist": 0.10},
-                {"i": 1, "j": 46, "exist_prob": 0.93, "dist": 0.94},
-                {"i": 1, "j": 47, "exist_prob": 0.95, "dist": 1.16},
-                {"i": 17, "j": 46, "exist_prob": 0.99, "dist": 0.10},
-                {"i": 22, "j": 47, "exist_prob": 0.99, "dist": 0.10},
-            ],
-            "target": {"found": False, "confidence": 0.0},
-            "viewpoint_node_assigns": [
-                {"id": 1, "assign_region_node_id": 45},
-                {"id": 17, "assign_region_node_id": 46},
-                {"id": 22, "assign_region_node_id": 47},
-            ],
-            "region_merges": [],
-        }
+        decoded = self._request_completion(content_items)
+
+        debugpy.breakpoint()
+
+        # decoded = {
+        #     "current_region_node": {
+        #         "id": 45,
+        #         "label": "modern open living room area with curved sofa and TV wall between bedroom and kitchen",
+        #         "target_prob": 0.45,
+        #     },
+        #     "new_visible_region_nodes": [
+        #         {
+        #             "id": 46,
+        #             "label": "stylish bedroom sleeping area with canopy bed near the living room",
+        #             "exist_prob": 0.98,
+        #             "target_prob": 0.20,
+        #         },
+        #         {
+        #             "id": 47,
+        #             "label": "bright dining and kitchen bar area with white counter near the living room",
+        #             "exist_prob": 0.97,
+        #             "target_prob": 0.25,
+        #         },
+        #     ],
+        #     "new_invisible_region_nodes": [
+        #         {
+        #             "id": 48,
+        #             "label": "private bathroom or dressing area behind the bedroom side of the suite",
+        #             "exist_prob": 0.42,
+        #             "target_prob": 0.10,
+        #         }
+        #     ],
+        #     "new_arcs": [
+        #         {"i": 1, "j": 45, "exist_prob": 1.00, "dist": 0.10},
+        #         {"i": 1, "j": 46, "exist_prob": 0.93, "dist": 0.94},
+        #         {"i": 1, "j": 47, "exist_prob": 0.95, "dist": 1.16},
+        #         {"i": 17, "j": 46, "exist_prob": 0.99, "dist": 0.10},
+        #         {"i": 22, "j": 47, "exist_prob": 0.99, "dist": 0.10},
+        #     ],
+        #     "target": {"found": False, "confidence": 0.0},
+        #     "viewpoint_node_assigns": [
+        #         {"id": 1, "assign_region_node_id": 45},
+        #         {"id": 17, "assign_region_node_id": 46},
+        #         {"id": 22, "assign_region_node_id": 47},
+        #     ],
+        #     "region_merges": [],
+        # }
 
         print("\n[MLLM RAW OUTPUT]\n", decoded)
 
@@ -1351,18 +1359,6 @@ class MLLMClient:
         else:
             raw = self._strip_code_fences(decoded)
             payload = self._try_parse_json(raw)
-
-            needs_retry = (
-                payload is None
-                or raw.count("{") > raw.count("}")
-                or not raw.rstrip().endswith("}")
-            )
-            if needs_retry:
-                retry_tokens = min(max(self.max_new_tokens * 2, 768), 1536)
-                decoded = self._request_completion(content_items, retry_tokens)
-                print("\n[MLLM RAW OUTPUT RETRY]\n", decoded)
-                raw = self._strip_code_fences(decoded)
-                payload = self._try_parse_json(raw)
 
         if payload is None:
             print("[MLLM] Failed to parse JSON. Raw output:")
@@ -1379,11 +1375,7 @@ class MLLMClient:
                 "new_arcs": [],
                 "target": {
                     "found": False,
-                    "view": -1,
-                    "views": [],
                     "confidence": 0.0,
-                    "view_confidences": [],
-                    "confidence_score": 0.0,
                 },
                 "viewpoint_node_assigns": [],
                 "region_merges": [],
@@ -1443,7 +1435,7 @@ class MLLMClient:
 
         debugpy.breakpoint()
 
-        decoded = self._request_completion(content_items, max_tokens=96)
+        decoded = self._request_completion(content_items)
         print("\n[MLLM DISTANCE RAW OUTPUT]\n", decoded)
 
         raw = self._strip_code_fences(decoded)

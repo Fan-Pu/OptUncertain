@@ -89,7 +89,6 @@ if __name__ == "__main__":
         start_time = time.perf_counter()
         mllm_out = mllm.propose_semantic_nodes(
             observation_images=horizon_mllm_images,
-            topk=5,
             target_object=target_object,
             depth_images=horizon_depths,
             viewpoint_context=observation_context,
@@ -97,6 +96,8 @@ if __name__ == "__main__":
         )
         runtime = time.perf_counter() - start_time
         print(f"[MLLM] runtime: {runtime:.2f} seconds")
+
+        debugpy.breakpoint()
 
         # 2b) Convert the one-step MLLM output into a persistent hypothesis graph.
         #     This preserves semantic nodes and uncertain structural edges across
