@@ -1,5 +1,7 @@
 import json
 import os
+from pydoc import Helper
+from unittest import result
 import debugpy
 import numpy as np
 import cv2
@@ -25,9 +27,12 @@ DELTA_HEADING_RAD = math.radians(DELTA_HEADING_DEG)
 pause_time = 0.15  # smooth rendering
 decision_pause = 1.5
 
-viewpoint_index_by_vp = (
+viewpoint_index_by_vp_label = (
     {}
 )  # key: viewpoint_id (str), value: stable integer index for MLLM marker labels
+viewpoint_vp_label_by_index = (
+    {}
+)  # key: stable integer index for MLLM marker labels, value: viewpoint_id (str)
 
 
 def init_render():
@@ -68,7 +73,9 @@ def get_viewpoints(scan_id):
 
 def build_viewpoint_index(scan_id):
     """Create a stable scan-level integer marker for each viewpoint id."""
-    return {vp_id: idx + 1 for idx, vp_id in enumerate(get_viewpoints(scan_id))}
+    for idx, vp_id in enumerate(get_viewpoints(scan_id)):
+        Helper.viewpoint_index_by_vp_label[vp_id] = idx
+        Helper.viewpoint_vp_label_by_index[idx] = vp_id
 
 
 def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):

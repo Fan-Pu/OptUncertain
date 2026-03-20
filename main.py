@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # -------------------- Episode --------------------
     scan_id = "17DRP5sb8fy"
     start_vp_id = "10c252c90fa24ef3b698c6f54d984c5c"
-    Helper.viewpoint_index_by_vp = Helper.build_viewpoint_index(scan_id)
+    Helper.build_viewpoint_index(scan_id)
     sim.newEpisode([scan_id], [start_vp_id], [0.0], [0.0])
 
     # -------------------- Explore mode --------------------
@@ -36,8 +36,10 @@ if __name__ == "__main__":
         raise SystemExit(0)
 
     # -------------------- MLLM --------------------
+    model_name = "meta-llama/Llama-4-Maverick-17B-128E-Instruct:cheapest"
+    # model_name = "meta-llama/Llama-4-Scout-17B-16E-Instruct:cheapest"
     mllm = MLLMClient(
-        "meta-llama/Llama-4-Scout-17B-16E-Instruct:cheapest",
+        model_name=model_name,
         max_new_tokens=160,
         h_fov=Helper.HFOV,
         last_image_right_shift_steps=LAST_IMAGE_RIGHT_SHIFT_STEPS,
@@ -58,7 +60,7 @@ if __name__ == "__main__":
         cur_vp = state.location.viewpointId
 
         Helper.render_sim_state(
-            state, viewpoint_index_by_vp=Helper.viewpoint_index_by_vp
+            state, viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label
         )
 
         # 1) Scan the current viewpoint and keep the raw RGB frames, the annotated
@@ -73,7 +75,7 @@ if __name__ == "__main__":
             observation_context,
         ) = Helper.horizon_scan_return(
             sim,
-            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp,
+            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
         )
 
         if not best_heading_for_vp:
@@ -102,17 +104,11 @@ if __name__ == "__main__":
         # 2b) Convert the one-step MLLM output into a persistent hypothesis graph.
         #     This preserves semantic nodes and uncertain structural edges across
         #     multiple robot viewpoints instead of treating each scan independently.
-        graph_update = hypothesis_graph.update_from_mllm(
-            scan_id=scan_id,
-            current_vp=cur_vp,
-            mllm_output=mllm_out,
-            observation_step=observation_step,
-        )
+        hypothesis_graph.update_from_mllm(mllm_output=mllm_out)
         print(
-            f"[HypothesisGraph] updated nodes={len(graph_update['updated_node_ids'])} "
-            f"edges={len(graph_update['updated_edge_ids'])}"
+            f"[HypothesisGraph] updated nodes={len(hypothesis_graph.nodes)} "
+            f"edges={len(hypothesis_graph.edges)}"
         )
-        print(hypothesis_graph.format_summary())
 
         debugpy.breakpoint()
 
@@ -187,7 +183,7 @@ if __name__ == "__main__":
                     Helper.rotate_to_target_heading_mov2vp(sim, target_heading, None)
                     Helper.render_sim_state(
                         sim.getState()[0],
-                        viewpoint_index_by_vp=Helper.viewpoint_index_by_vp,
+                        viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
                     )
                     debugpy.breakpoint()
                     break

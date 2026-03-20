@@ -269,43 +269,6 @@ class MLLMClient:
 
         return adjusted
 
-    @staticmethod
-    def _normalize_viewpoint_index(value) -> int | None:
-        try:
-            index = int(value)
-        except (TypeError, ValueError):
-            return None
-        return index if index > 0 else None
-
-    @staticmethod
-    def _strip_grounded_suffix(label: str) -> str:
-        label = str(label or "").strip()
-        return re.sub(r"\s*-vp-\d+\s*$", "", label, flags=re.IGNORECASE).strip()
-
-    @classmethod
-    def _normalize_region_label(cls, value) -> str:
-        label = cls._strip_grounded_suffix(value)
-        label = " ".join(label.split())
-        return label[:160]
-
-    @classmethod
-    def _build_grounded_label(
-        cls, region_label: str, viewpoint_index: int | None
-    ) -> str:
-        region_label = cls._normalize_region_label(region_label)
-        if not region_label:
-            return ""
-        if viewpoint_index is None:
-            return region_label
-        return f"{region_label}-vp-{int(viewpoint_index)}"
-
-    @classmethod
-    def _extract_viewpoint_index_from_label(cls, label: str) -> int | None:
-        match = re.search(r"-vp-(\d+)\s*$", str(label or ""), flags=re.IGNORECASE)
-        if match is None:
-            return None
-        return cls._normalize_viewpoint_index(match.group(1))
-
     def _build_instruction(
         self,
         num_obs_images: int,
@@ -332,408 +295,138 @@ class MLLMClient:
         if len(node_indices) > 0:
             start_region_node_id = max(node_indices) + 1
         else:
-            start_region_node_id = int(max(Helper.viewpoint_index_by_vp.values())) + 1
+            start_region_node_id = (
+                int(max(Helper.viewpoint_index_by_vp_label.values())) + 1
+            )
 
-        prompt = dedent(
-            f"""
-            You are given {num_obs_images} indoor images from one 360-degree viewpoint (indices 0-{max(0, num_obs_images - 1)}).
+        system_message = dedent(
+            """
+            You are an indoor scene graph proposal module.
 
-            Output compact JSON only.
+            Return compact JSON only.
+            Do not output markdown or any explanation.
 
-            Each figure may contain a text number indicating a potential next viewpoint. The same text number can appear in multiple images, and the same text number always refers to the same viewpoint.
-            
-            The following is the condensed snapshot of the accumulated graph context:
-            
-            The indices of existing nodes, "node_indices", are {node_indices}.
-            The corresponding grounding list of nodes, "node_grounding_list", is {node_grounding_list}, where each item =0 if it is not grounded, =1 grounded.
-            The existence probability list of nodes, "node_existence_list", is {node_existence_list}, where each item is a float in [0, 1] representing the probability that the node exists in the environment.
-            The target probability list of nodes, "node_target_list", is {node_target_list}, where each item is a float in [0, 1] representing the probability that the target object is at the corresponding node.
-            The type list of nodes, "node_type_list", is {node_type_list}, where each item =0 if it is a region, =1 a viewpoint.
-            The dict of node assignments, "node_assigns", is {node_assign_dict}, where each key is a region node index and the value is a list of assigned viewpoint node indices for that region node. Each viewpoint can be assigned to at most one region node. A region node may have no assigned viewpoint nodes. When a viewpoint node is assigned to a region node, it means the viewpoint is observed at that region and can provide visual information for that region.
-            
-            The indices of existing arcs, "arc_indices", are {arc_indices}, where each item is a tuple of (node_index_A, node_index_B) representing a potential connection between two nodes.
-            The corresponding grounding list of arcs, "arc_grounding_list", is {arc_grounding_list}, where each item =0 if it is not grounded, =1 grounded.
-            The existence probability list of arcs, "arc_existence_list", is {arc_existence_list}, where each item is a float in [0, 1] representing the probability that the arc exists in the environment.
-            The distance list of arcs, "arc_distance_list", is {arc_distance_list}, where each item is a float in (0, +inf) representing the estimated travel distance of the arc.
-            Arc connection is symmetric, meaning if (i, j) is an arc and is in "arc_indices", then (j, i) is the reverse arc with the same existence probability and distance. To save space, only one direction (i, j) with i<j is included in "arc_indices".
-            
-            The id of region nodes should be no less than {start_region_node_id}. The current viewpoint node id is {current_vp_node_id}.
-            
-            The list of neighborhood viewpoint node ids are {neighbor_vp_node_ids}, as shown in the figure. The distances of neigborborhood viewpoint nodes to the current viewpoint node is {neighbor_vp_distances_list}.
-            
-            A region node is "grounded" if any viewpoints is assigned to that region. A viewpoint node is "grounded" if it is visited by the robot. An arc is "grounded" if both of its endpoint nodes are grounded.
+            All ids must be integers.
+            All probabilities and distances must be numeric values, not strings.
+            Use true/false for booleans.
 
-            Generate the following json schema:
-            {{
-                "current_region_node":{{"label": "", "id": "", "target_prob": 0.0}},
-                "new_visible_region_nodes": [{{"label": "", "id": "", "exist_prob": 0.0, "target_prob": 0.0}}],
-                "new_invisible_region_nodes": [{{"label": "", "id": "", "exist_prob": 0.0, "target_prob": 0.0}}],
-                "viewpoint_target_probs": [{{"id": "", "target_prob": 0.0}}],
-                "new_arcs":[{{"i": "", "j": "", "exist_prob": 0.0, "dist": 0.0}}],
-                "target":{{"found": False, "confidence": 0.0}},
-                "viewpoint_node_assigns": [{{"id": "", "assign_region_node_id": ""}}],
-                "region_merges": [(i,j)],
-            }}
+            Each figure may contain a text number indicating a potential next viewpoint.
+            The same text number can appear in multiple images, and the same text number always refers to the same viewpoint.
+
+            Region labels must be room or area labels only, not object names.
+            Each region label must be descriptive and must include:
+            1. a characteristic or appearance cue,
+            2. the room or area type,
+            3. a relative location cue.
+
+            Good examples:
+            - modern living room area with curved sofa and TV wall near kitchen bar
+            - open dining and kitchen bar area with stools near living room
+            - minimalist bedroom area with large bed and window near living room
+
+            Bad examples:
+            - living room area
+            - kitchen area
+            - bedroom area
+
+            Do not generate too many region nodes.
+            A maximum of 5 new region nodes in total may be proposed at each step.
+
+            When a region is revisited, reuse the previous label instead of proposing a new one.
+            Only propose a similar label if it is a different physical region.
+
+            No region-to-region arcs are allowed.
+
+            Do not generate arcs between the current viewpoint node and its neighbor viewpoint nodes.
+
+            Do not generate an arc between a viewpoint node and its assigned region node.
+
+            Every neighboring viewpoint node must be assigned to exactly one region node.
+
+            Normalization rules:
+            - target_prob for all returned region nodes and that for existing region nodes must sum to 1.
+            - target_prob values must be positive, not all zero.
+            - viewpoint_target_probs must be provided for all neighboring viewpoint nodes listed by the user.
+            - target_prob for viewpoint node i should not be larger than the target_prob of its assigned region node j.
+
+            If the target object is not directly observed in the current RGB observation, set:
+            "found": False, "confidence": 0.0
             
-            [notes]:
-            "target_prob" in (0, 1) represents the probability that the target is at that region node or viewpoint node.
-            
-            "exist_prob" in (0, 1] represents the probability that the region node or arc exists in the environment.
-            
-            current_region_node: the region node that the current viewpoint node is assigned to.
-            
-            new_visible_region_nodes: the newly proposed region nodes that are supported by current observations and not in the previous graph 
-            context. These should be mostly visible in current RGB observation.
-            
-            new_invisible_region_nodes: the newly proposed region nodes that are not supported by current observations but are consistent with the accumulated graph context. You are encouraged to propose invisible region nodes based on the typical understanding of the enviroment and the physical layout suggested by the current observations and the accumulated graph context.
-            
-            viewpoint_target_probs: the probability estimation of the target object being at the neighboring viewpoint nodes {neighbor_vp_node_ids}.
-            
-            new_arcs: the newly proposed arcs between nodes, based on the current observations and the accumulated graph context. "i" and "j" are node indices, and "dist" is the estimated travel distance (m) of the arc. Only need to generate arcs where i<j to save space since the arc is symmetric. The arcs can be proposed between any two nodes except region to region. The arcs between two nodes indicate the direct connection between them. The existence of arcs should be supported by the current observations and consistent with the accumulated graph context. For example, if two nodes are far away in the physical layout suggested by the current observations and the accumulated graph context, then it is unlikely there is a direct arc between them. Do not generate arcs between current viewpoint node and its neighbor viewpoint nodes since they are already directly connected by definition. Do not generate arc (i,j) such that i is a viewpoint (region) node and j is a region (viewpoint) node, and i (j) is assigned to j (i) as indicated by "viewpoint_node_assigns".
-            
-            target: if the target object, {target_object}, is directly observed in current RGB observation, set found=true and confidence to the detection confidence; otherwise set found=False and confidence=0.0.
-            
-            The label for region nodes are room or area labels only, not objects, for example kitchen area, living room area, bedroom area, bathroom area, hallway, dining area, entryway, corridor, office area. Do not generate too many region nodes. A maximum of 5 new region nodes (including both visible and invisible) should be proposed at each step. When the region is revisited, reuse the previous label instead of proposing a new label. Only propose the new similar label if they are not the same physical region, for example "kitchen area" vs "dining area". There may be several similar labels, such as "bedroom area" and "master bedroom area", to distinguish them use the suffix "near xx" to indicate the relative location of the region, for example "bedroom area near entryway" vs "bedroom area near living room".
-            
-            viewpoint_node_assigns: the assignment of viewpoint nodes to region nodes. The neighboring viewpoint nodes {neighbor_vp_node_ids} can be assigned to the current region node or other region nodes if they are located at those regions. Each neighboring viewpoint node must be assigned to exactly one region node.
-            
-            region_merges: the pair of region nodes that needs to be merged into one region node because they are the same region as suggested by the physical layout. This is to correct the over-segmentation issue in region proposals. "i" and "j" are node indices.
-            
-            [constraints]:
-            No node (region) to node (region) connection.
-            
-            The labels for regions must add adjective that show both the characteristics and the relative global location to distinguish similar regions, e.g., "modern living room area with sofa and TV wall near kitchen" and "open dining and kitchen bar area near living room". This is because the enviroment may contain multiple similar regions, for example "master bedroom area" and "guest bedroom area".
-            
-            Normalization: sum of target_prob for all region nodes =1; sum of target_prob for all viewpoint nodes assigned to the same region node j should equal target_prob of node j.
-            
-            Return JSON only. No explanation or markdown.
+            If at least one legal connection is supported by the observation and assignments, new_arcs must not be empty.
             """
         ).strip()
 
-        print(prompt)
+        user_message = dedent(
+            f"""
+            You are given {num_obs_images} indoor images from one 360-degree viewpoint (indices 0-{max(0, num_obs_images - 1)}).
 
-        return prompt
+            The following is the condensed snapshot of the accumulated graph context.
 
-    @staticmethod
-    def _normalize_target_output(target: dict, index_map: list[int]) -> dict:
-        raw_views = target.get("views", [])
-        if not isinstance(raw_views, list):
-            raw_views = [raw_views]
+            node_indices = {node_indices}
+            node_grounding_list = {node_grounding_list}   # 0 = not grounded, 1 = grounded
+            node_existence_list = {node_existence_list}
+            node_target_list = {node_target_list}
+            node_type_list = {node_type_list}             # 0 = region, 1 = viewpoint
+            node_assigns = {node_assign_dict}             # region_id -> list of assigned viewpoint ids
 
-        raw_confidences = target.get("confidence", [])
-        if isinstance(raw_confidences, list):
-            confidence_candidates = raw_confidences
-        elif raw_confidences is None:
-            confidence_candidates = []
-        else:
-            confidence_candidates = [raw_confidences]
+            arc_indices = {arc_indices}                   # stored only for i < j
+            arc_grounding_list = {arc_grounding_list}
+            arc_existence_list = {arc_existence_list}
+            arc_distance_list = {arc_distance_list}       # in meters 
 
-        normalized_pairs = []
-        for idx, raw_view in enumerate(raw_views):
-            try:
-                sampled_view_idx = int(raw_view)
-            except (TypeError, ValueError):
-                continue
+            Arc connection is symmetric. If (i, j) exists, then (j, i) is the reverse arc with the same existence probability and distance.
+            Only one direction with i < j is listed.
 
-            if not (0 <= sampled_view_idx < len(index_map)):
-                continue
+            Region node ids must be no less than {start_region_node_id}.
+            Current viewpoint node id = {current_vp_node_id}
+            Neighbor viewpoint node ids = {neighbor_vp_node_ids}
+            Distances from current viewpoint node to neighboring viewpoint nodes = {neighbor_vp_distances_list} # in meters
 
-            confidence_value = 0.0
-            if idx < len(confidence_candidates):
-                try:
-                    confidence_value = float(confidence_candidates[idx])
-                except (TypeError, ValueError):
-                    confidence_value = 0.0
-            elif len(confidence_candidates) == 1:
-                try:
-                    confidence_value = float(confidence_candidates[0])
-                except (TypeError, ValueError):
-                    confidence_value = 0.0
+            Grounding rules:
+            - a region node is grounded if any viewpoint is assigned to that region
+            - a viewpoint node is grounded if it is visited by the robot
+            - an arc is grounded if both endpoint nodes are grounded
 
-            normalized_pairs.append(
-                (int(index_map[sampled_view_idx]), float(confidence_value))
-            )
+            Target object = {target_object}
+            
+            Generation priority:
+            1.identify current region.
+            2.identify distinct visible regions.
+            3.infer hidden adjacent regions when strong layout cues exist.
+            4.assign each neighboring viewpoint to one region.
+            5.generate all legal arcs supported by observation and assignments.
 
-        best_confidence_by_view = {}
-        for view_idx, confidence_value in normalized_pairs:
-            if confidence_value <= 0.5:
-                continue
-            previous = best_confidence_by_view.get(view_idx)
-            if previous is None or confidence_value > previous:
-                best_confidence_by_view[view_idx] = confidence_value
+            Generate JSON with exactly this schema:
+            {{
+                "current_region_node": {{"label": "", "id": 0, "target_prob": 0.0}},
+                "new_visible_region_nodes": [{{"label": "", "id": 0, "exist_prob": 0.0, "target_prob": 0.0}}],
+                "new_invisible_region_nodes": [{{"label": "", "id": 0, "exist_prob": 0.0, "target_prob": 0.0}}],
+                "viewpoint_target_probs": [{{"id": 0, "target_prob": 0.0}}],
+                "new_arcs": [{{"i": 0, "j": 0, "exist_prob": 0.0, "dist": 0.0}}],
+                "target": {{"found": false, "confidence": 0.0}},
+                "viewpoint_node_assigns": [{{"id": 0, "assign_region_node_id": 0}}],
+                "region_merges": []
+            }}
 
-        deduped_views = list(best_confidence_by_view.keys())
-        deduped_confidences = [
-            float(best_confidence_by_view[view_idx]) for view_idx in deduped_views
-        ]
+            Notes:
+            - current_region_node is the region node assigned to the current viewpoint node.
+            - new_visible_region_nodes are new region nodes supported by the current RGB observations.
+            - new_invisible_region_nodes are plausible new region nodes not directly visible now but strongly suggested by layout cues (e.g., doorway openings, partial room visibility, continuation of space, or necessary to support neighboring viewpoint assignments).
+            - viewpoint_target_probs must include one item for each neighboring viewpoint id in {neighbor_vp_node_ids}.
+            - new_arcs may connect viewpoint-region or viewpoint-viewpoint, but never region-region.
+            - only generate arcs supported by the current observations and graph context.
+            - do not generate arcs between the current viewpoint node and its neighboring viewpoint nodes.
+            - do not generate an arc between a viewpoint node and its assigned region node.
+            - viewpoint_node_assigns must include all neighboring viewpoint ids in {neighbor_vp_node_ids}, and each must be assigned to exactly one region node.
+            - region_merges contains pairs of region node ids that should be merged if they refer to the same physical region.
+            - do not leave new_visible_region_nodes, new_invisible_region_nodes, or new_arcs empty by default if there is reasonable supporting evidence.
+            """
+        ).strip()
 
-        best_view = -1
-        if deduped_views:
-            best_pair = max(
-                zip(deduped_views, deduped_confidences), key=lambda pair: pair[1]
-            )
-            best_view = int(best_pair[0])
+        print("system_message = \n\n", system_message)
+        print("user_message = \n", user_message)
 
-        return {
-            "found": bool(deduped_views),
-            "view": best_view,
-            "views": deduped_views,
-            "confidence": deduped_confidences,
-        }
-
-    @classmethod
-    def _normalize_region_node_payload(
-        cls,
-        region: dict | None,
-        default_exist_prob: float,
-    ) -> dict | None:
-        if not isinstance(region, dict):
-            return None
-
-        try:
-            node_id = int(region.get("id"))
-        except (TypeError, ValueError):
-            return None
-        if node_id <= 0:
-            return None
-
-        label = cls._normalize_region_label(region.get("label", ""))
-        if not label:
-            return None
-
-        return {
-            "id": node_id,
-            "label": label,
-            "exist_prob": cls._clamp_float(
-                region.get("exist_prob", default_exist_prob),
-                0.0,
-                1.0,
-                default_exist_prob,
-            ),
-            "target_prob": cls._clamp_float(
-                region.get("target_prob", 0.0),
-                0.0,
-                1.0,
-                0.0,
-            ),
-        }
-
-    @classmethod
-    def _normalize_assignment_payload(cls, raw_assignments) -> list[dict]:
-        normalized_by_viewpoint = {}
-
-        for assignment in raw_assignments or []:
-            if not isinstance(assignment, dict):
-                continue
-            viewpoint_node_id = cls._normalize_viewpoint_index(assignment.get("id"))
-            try:
-                region_node_id = int(assignment.get("assign_region_node_id"))
-            except (TypeError, ValueError):
-                continue
-            if viewpoint_node_id is None or region_node_id <= 0:
-                continue
-
-            normalized_by_viewpoint[int(viewpoint_node_id)] = {
-                "id": int(viewpoint_node_id),
-                "assign_region_node_id": int(region_node_id),
-            }
-
-        return [
-            normalized_by_viewpoint[key]
-            for key in sorted(normalized_by_viewpoint.keys())
-        ]
-
-    @classmethod
-    def _normalize_arc_payload(cls, raw_arcs) -> list[dict]:
-        normalized_by_pair = {}
-
-        for arc in raw_arcs or []:
-            if not isinstance(arc, dict):
-                continue
-            try:
-                node_i = int(arc.get("i"))
-                node_j = int(arc.get("j"))
-            except (TypeError, ValueError):
-                continue
-            if node_i <= 0 or node_j <= 0 or node_i == node_j:
-                continue
-
-            pair = tuple(sorted((node_i, node_j)))
-            distance = cls._clamp_float(arc.get("dist", 0.0), 0.0, 1e6, 0.0)
-            if distance <= 0.0:
-                continue
-
-            normalized = {
-                "i": pair[0],
-                "j": pair[1],
-                "exist_prob": cls._clamp_float(
-                    arc.get("exist_prob", 0.0),
-                    0.0,
-                    1.0,
-                    0.0,
-                ),
-                "dist": distance,
-            }
-
-            previous = normalized_by_pair.get(pair)
-            if previous is None:
-                normalized_by_pair[pair] = normalized
-                continue
-
-            previous["exist_prob"] = max(
-                previous["exist_prob"], normalized["exist_prob"]
-            )
-            previous["dist"] = min(previous["dist"], normalized["dist"])
-
-        return [normalized_by_pair[key] for key in sorted(normalized_by_pair.keys())]
-
-    @classmethod
-    def _normalize_region_merges_payload(cls, raw_region_merges) -> list[dict]:
-        normalized = []
-        seen_pairs = set()
-
-        for merge in raw_region_merges or []:
-            if isinstance(merge, dict):
-                raw_i = merge.get("i")
-                raw_j = merge.get("j")
-            elif isinstance(merge, (list, tuple)) and len(merge) >= 2:
-                raw_i = merge[0]
-                raw_j = merge[1]
-            else:
-                continue
-
-            try:
-                node_i = int(raw_i)
-                node_j = int(raw_j)
-            except (TypeError, ValueError):
-                continue
-            if node_i <= 0 or node_j <= 0 or node_i == node_j:
-                continue
-
-            pair = (node_i, node_j)
-            if pair in seen_pairs:
-                continue
-            seen_pairs.add(pair)
-            normalized.append({"i": node_i, "j": node_j})
-
-        return normalized
-
-    @classmethod
-    def _normalize_schema_target_output(
-        cls, target: dict, index_map: list[int]
-    ) -> dict:
-        if not isinstance(target, dict):
-            target = {}
-
-        if "views" in target or "view" in target:
-            normalized = cls._normalize_target_output(target, index_map)
-            confidence_list = normalized.get("confidence", [])
-            normalized["confidence_score"] = (
-                max(confidence_list) if confidence_list else 0.0
-            )
-            return normalized
-
-        found = bool(target.get("found", False))
-        confidence_score = cls._clamp_float(
-            target.get("confidence", 0.0),
-            0.0,
-            1.0,
-            0.0,
-        )
-
-        view = -1
-        try:
-            raw_view = target.get("view", -1)
-            if raw_view is not None:
-                sampled_view_idx = int(raw_view)
-                if 0 <= sampled_view_idx < len(index_map):
-                    view = int(index_map[sampled_view_idx])
-        except (TypeError, ValueError):
-            view = -1
-
-        views = [view] if found and view >= 0 else []
-        view_confidences = [confidence_score] if views else []
-        return {
-            "found": found,
-            "view": view,
-            "views": views,
-            "confidence": confidence_score,
-            "view_confidences": view_confidences,
-            "confidence_score": confidence_score,
-        }
-
-    @classmethod
-    def _normalize_semantic_graph_payload(
-        cls,
-        payload: dict,
-        index_map: list[int],
-    ) -> dict:
-        current_region = cls._normalize_region_node_payload(
-            payload.get("current_region_node", {}),
-            default_exist_prob=1.0,
-        )
-        if current_region is None:
-            current_region = {
-                "id": -1,
-                "label": "",
-                "exist_prob": 1.0,
-                "target_prob": 0.0,
-            }
-
-        visible_nodes = []
-        for region in payload.get("new_visible_region_nodes", []) or []:
-            normalized = cls._normalize_region_node_payload(
-                region,
-                default_exist_prob=0.5,
-            )
-            if normalized is not None:
-                visible_nodes.append(normalized)
-
-        invisible_nodes = []
-        for region in payload.get("new_invisible_region_nodes", []) or []:
-            normalized = cls._normalize_region_node_payload(
-                region,
-                default_exist_prob=0.5,
-            )
-            if normalized is not None:
-                invisible_nodes.append(normalized)
-
-        return {
-            "current_region_node": current_region,
-            "new_visible_region_nodes": visible_nodes,
-            "new_invisible_region_nodes": invisible_nodes,
-            "new_arcs": cls._normalize_arc_payload(payload.get("new_arcs", []) or []),
-            "target": cls._normalize_schema_target_output(
-                payload.get("target", {}) or {},
-                index_map=index_map,
-            ),
-            "viewpoint_node_assigns": cls._normalize_assignment_payload(
-                payload.get("viewpoint_node_assigns", []) or []
-            ),
-            "region_merges": cls._normalize_region_merges_payload(
-                payload.get("region_merges", []) or []
-            ),
-        }
-
-    @staticmethod
-    def _safe_float(value, default: float = 0.0) -> float:
-        """Convert arbitrary model fields to float while staying robust to bad JSON."""
-        try:
-            return float(value)
-        except (TypeError, ValueError):
-            return float(default)
-
-    @staticmethod
-    def _normalize_note(value) -> str:
-        """Keep model-generated notes short and single-line for downstream logging."""
-        note = str(value or "").strip()
-        note = " ".join(note.split())
-        return note[:160]
-
-    @staticmethod
-    def _normalize_node_id(value) -> str:
-        """Normalize optional node ids returned by the prompt context matching step."""
-        return str(value or "").strip()
+        return system_message, user_message
 
     @staticmethod
     def _clamp_float(value, low: float, high: float, default: float) -> float:
@@ -742,396 +435,6 @@ class MLLMClient:
         except (TypeError, ValueError):
             value = float(default)
         return max(low, min(high, value))
-
-    @classmethod
-    def _canonical_label_key(cls, value) -> str:
-        label = cls._normalize_region_label(value).lower()
-        label = re.sub(r"[^a-z0-9\s]+", " ", label)
-        label = re.sub(r"\s+", " ", label)
-        return label.strip()
-
-    @classmethod
-    def _build_label_lookup(cls, labels: list[str]) -> dict[str, str]:
-        lookup = {}
-        for label in labels or []:
-            normalized = cls._normalize_region_label(label)
-            key = cls._canonical_label_key(normalized)
-            if key and key not in lookup:
-                lookup[key] = normalized
-        return lookup
-
-    @classmethod
-    def _resolve_label(cls, value, label_lookup: dict[str, str] | None = None) -> str:
-        normalized = cls._normalize_region_label(value)
-        if not normalized:
-            return ""
-        if not label_lookup:
-            return normalized
-        return label_lookup.get(cls._canonical_label_key(normalized), normalized)
-
-    @classmethod
-    def _normalize_neighbor_regions_payload(
-        cls,
-        raw_regions,
-        prior_graph_context: dict,
-        current_region_label: str,
-        topk: int,
-    ) -> list[dict]:
-        prior_lookup = cls._build_label_lookup(
-            prior_graph_context.get("label_names", [])
-        )
-        current_key = cls._canonical_label_key(current_region_label)
-        normalized_by_key = {}
-
-        for region in raw_regions or []:
-            label = cls._normalize_region_label(region.get("label", ""))
-            key = cls._canonical_label_key(label)
-            if not key or key == current_key or key in prior_lookup:
-                continue
-
-            normalized = {
-                "label": label,
-                "prob": cls._clamp_float(
-                    region.get("prob", region.get("existence_prob", 0.5)),
-                    0.5,
-                    0.95,
-                    0.5,
-                ),
-                "target_prob": cls._clamp_float(
-                    region.get("target_prob", 0.0),
-                    0.0,
-                    1.0,
-                    0.0,
-                ),
-            }
-
-            previous = normalized_by_key.get(key)
-            if previous is None:
-                normalized_by_key[key] = normalized
-                continue
-
-            previous["prob"] = max(previous["prob"], normalized["prob"])
-            previous["target_prob"] = max(
-                previous["target_prob"], normalized["target_prob"]
-            )
-
-        normalized_regions = list(normalized_by_key.values())
-        normalized_regions.sort(
-            key=lambda item: (item["target_prob"], item["prob"], item["label"].lower()),
-            reverse=True,
-        )
-        return normalized_regions[:topk]
-
-    @classmethod
-    def _normalize_region_connections_payload(
-        cls,
-        raw_connections,
-        allowed_labels: list[str],
-    ) -> list[dict]:
-        label_lookup = cls._build_label_lookup(allowed_labels)
-        allowed_set = set(allowed_labels)
-        normalized_by_pair = {}
-
-        for connection in raw_connections or []:
-            label_a = cls._resolve_label(
-                connection.get("A", connection.get("region_a", "")), label_lookup
-            )
-            label_b = cls._resolve_label(
-                connection.get("B", connection.get("region_b", "")), label_lookup
-            )
-            if (
-                not label_a
-                or not label_b
-                or label_a == label_b
-                or label_a not in allowed_set
-                or label_b not in allowed_set
-            ):
-                continue
-
-            prob = cls._clamp_float(
-                connection.get("prob", connection.get("connection_prob", 0.0)),
-                0.5,
-                1.0,
-                0.5,
-            )
-            dist = cls._clamp_float(
-                connection.get("dist", connection.get("travel_distance", 0.0)),
-                0.0,
-                1e6,
-                0.0,
-            )
-            if dist <= 0.0:
-                continue
-
-            pair_key = tuple(sorted((label_a, label_b), key=lambda item: item.lower()))
-            normalized = {"A": label_a, "B": label_b, "prob": prob, "dist": dist}
-            previous = normalized_by_pair.get(pair_key)
-            if previous is None:
-                normalized_by_pair[pair_key] = normalized
-                continue
-
-            previous["prob"] = max(previous["prob"], normalized["prob"])
-            previous["dist"] = min(previous["dist"], normalized["dist"])
-
-        normalized_connections = list(normalized_by_pair.values())
-        normalized_connections.sort(
-            key=lambda item: (
-                item["prob"],
-                -item["dist"],
-                item["A"].lower(),
-                item["B"].lower(),
-            ),
-            reverse=True,
-        )
-        return normalized_connections
-
-    @classmethod
-    def _normalize_direction_heading_payload(
-        cls,
-        raw_directions,
-        allowed_labels: list[str],
-        viewpoint_context: dict | None = None,
-    ) -> list[dict]:
-        if isinstance(raw_directions, dict):
-            raw_directions = [
-                {"id": key, "label": value} for key, value in raw_directions.items()
-            ]
-
-        viewpoint_context = viewpoint_context or {}
-        valid_direction_ids = {
-            str(int(item["viewpoint_index"]))
-            for item in viewpoint_context.get("visible_viewpoints", []) or []
-            if cls._normalize_viewpoint_index(item.get("viewpoint_index")) is not None
-        }
-        label_lookup = cls._build_label_lookup(allowed_labels)
-        allowed_set = set(allowed_labels)
-        normalized_by_id = {}
-
-        for entry in raw_directions or []:
-            raw_id = str(entry.get("id", "")).strip()
-            match = re.search(r"(\d+)", raw_id)
-            if match is None:
-                continue
-            direction_id = str(int(match.group(1)))
-            if valid_direction_ids and direction_id not in valid_direction_ids:
-                continue
-
-            label = cls._resolve_label(entry.get("label", ""), label_lookup)
-            if not label or label not in allowed_set:
-                continue
-
-            normalized_by_id[direction_id] = {"id": direction_id, "label": label}
-
-        return [
-            normalized_by_id[key]
-            for key in sorted(normalized_by_id.keys(), key=lambda item: int(item))
-        ]
-
-    @classmethod
-    def _normalize_visible_viewpoints(
-        cls,
-        visible_viewpoints,
-        viewpoint_context: dict | None,
-    ) -> tuple[list[dict], dict[str, str]]:
-        viewpoint_context = viewpoint_context or {}
-        visible_infos = viewpoint_context.get("visible_viewpoints", []) or []
-        viewpoint_id_by_index = {
-            int(item["viewpoint_index"]): str(item["viewpoint_id"])
-            for item in visible_infos
-            if cls._normalize_viewpoint_index(item.get("viewpoint_index")) is not None
-        }
-        required_indices = sorted(viewpoint_id_by_index.keys())
-
-        normalized_by_index = {}
-        label_aliases = {}
-        for entry in visible_viewpoints or []:
-            raw_label = str(entry.get("label", "")).strip()
-            viewpoint_index = cls._normalize_viewpoint_index(
-                entry.get("viewpoint_index")
-            )
-            if viewpoint_index is None:
-                viewpoint_index = cls._extract_viewpoint_index_from_label(raw_label)
-            if viewpoint_index is None or viewpoint_index not in viewpoint_id_by_index:
-                continue
-
-            region_label = cls._normalize_region_label(
-                entry.get("region_label", "") or raw_label
-            )
-            if not region_label:
-                continue
-
-            label = cls._build_grounded_label(region_label, viewpoint_index)
-            normalized = {
-                "node_id": cls._normalize_node_id(entry.get("node_id", "")),
-                "viewpoint_index": int(viewpoint_index),
-                "viewpoint_id": viewpoint_id_by_index[int(viewpoint_index)],
-                "region_label": region_label,
-                "label": label,
-                "existence_prob": cls._safe_float(
-                    entry.get("existence_prob", entry.get("confidence", 0.0)),
-                    0.0,
-                ),
-                "target_prob": cls._safe_float(entry.get("target_prob", 0.0), 0.0),
-                "note": cls._normalize_note(entry.get("note", "")),
-            }
-
-            previous = normalized_by_index.get(int(viewpoint_index))
-            if previous is None:
-                normalized_by_index[int(viewpoint_index)] = normalized
-            else:
-                if not previous["node_id"] and normalized["node_id"]:
-                    previous["node_id"] = normalized["node_id"]
-                previous["existence_prob"] = max(
-                    previous["existence_prob"], normalized["existence_prob"]
-                )
-                previous["target_prob"] = max(
-                    previous["target_prob"], normalized["target_prob"]
-                )
-                if normalized["note"] and not previous["note"]:
-                    previous["note"] = normalized["note"]
-                previous["region_label"] = normalized["region_label"]
-                previous["label"] = normalized["label"]
-
-            label_aliases[str(raw_label)] = label
-            label_aliases[str(region_label)] = label
-            label_aliases[str(label)] = label
-
-        for viewpoint_index in required_indices:
-            if viewpoint_index in normalized_by_index:
-                continue
-            region_label = f"unresolved area-{int(viewpoint_index)}"
-            label = cls._build_grounded_label(region_label, viewpoint_index)
-            normalized_by_index[viewpoint_index] = {
-                "node_id": "",
-                "viewpoint_index": int(viewpoint_index),
-                "viewpoint_id": viewpoint_id_by_index[int(viewpoint_index)],
-                "region_label": region_label,
-                "label": label,
-                "existence_prob": 0.5,
-                "target_prob": 0.0,
-                "note": "auto-filled because the model omitted this visible viewpoint",
-            }
-            label_aliases[region_label] = label
-            label_aliases[label] = label
-
-        normalized = [
-            normalized_by_index[idx] for idx in sorted(normalized_by_index.keys())
-        ]
-        return normalized, label_aliases
-
-    @classmethod
-    def _normalize_hypothesis_regions(
-        cls,
-        hypothesis_regions,
-        topk: int,
-    ) -> tuple[list[dict], dict[str, str]]:
-        normalized_by_key = {}
-        label_aliases = {}
-
-        for region in hypothesis_regions or []:
-            raw_label = str(region.get("label", "")).strip()
-            label = cls._normalize_region_label(raw_label)
-            if not label:
-                continue
-
-            node_id = cls._normalize_node_id(region.get("node_id", ""))
-            dedupe_key = node_id or label.lower()
-            normalized = {
-                "node_id": node_id,
-                "label": label,
-                "existence_prob": cls._safe_float(
-                    region.get("existence_prob", region.get("confidence", 0.0)),
-                    0.0,
-                ),
-                "target_prob": cls._safe_float(region.get("target_prob", 0.0), 0.0),
-                "note": cls._normalize_note(region.get("note", "")),
-            }
-
-            previous = normalized_by_key.get(dedupe_key)
-            if previous is None:
-                normalized_by_key[dedupe_key] = normalized
-                continue
-
-            if not previous["node_id"] and normalized["node_id"]:
-                previous["node_id"] = normalized["node_id"]
-            previous["existence_prob"] = max(
-                previous["existence_prob"], normalized["existence_prob"]
-            )
-            previous["target_prob"] = max(
-                previous["target_prob"], normalized["target_prob"]
-            )
-            if normalized["note"] and not previous["note"]:
-                previous["note"] = normalized["note"]
-
-            label_aliases[str(raw_label)] = label
-            label_aliases[label] = label
-
-        normalized_hypotheses = list(normalized_by_key.values())
-        normalized_hypotheses.sort(
-            key=lambda item: (item["target_prob"], item["existence_prob"]),
-            reverse=True,
-        )
-        return normalized_hypotheses[:topk], label_aliases
-
-    @classmethod
-    def _normalize_region_connections(
-        cls,
-        region_connections,
-        label_aliases: dict[str, str] | None = None,
-    ) -> list[dict]:
-        normalized_by_pair = {}
-        label_aliases = label_aliases or {}
-
-        for connection in region_connections or []:
-            raw_a = str(connection.get("region_a", "")).strip()
-            raw_b = str(connection.get("region_b", "")).strip()
-            if not raw_a or not raw_b:
-                continue
-
-            region_a = label_aliases.get(raw_a, raw_a)
-            region_b = label_aliases.get(raw_b, raw_b)
-            if region_a == region_b:
-                continue
-
-            pair_key = tuple(sorted((region_a.lower(), region_b.lower())))
-            if pair_key[0] == pair_key[1]:
-                continue
-
-            travel_distance = cls._safe_float(
-                connection.get("travel_distance", -1.0), -1.0
-            )
-            if travel_distance <= 0.0:
-                continue
-
-            normalized = {
-                "region_a": region_a,
-                "region_b": region_b,
-                "connection_prob": cls._safe_float(
-                    connection.get("connection_prob", 0.0), 0.0
-                ),
-                "travel_distance": travel_distance,
-            }
-
-            previous = normalized_by_pair.get(pair_key)
-            if previous is None:
-                normalized_by_pair[pair_key] = normalized
-                continue
-
-            if normalized["connection_prob"] > previous["connection_prob"]:
-                previous["connection_prob"] = normalized["connection_prob"]
-                previous["region_a"] = normalized["region_a"]
-                previous["region_b"] = normalized["region_b"]
-
-            previous["travel_distance"] = min(
-                previous["travel_distance"], normalized["travel_distance"]
-            )
-
-        normalized_connections = list(normalized_by_pair.values())
-        normalized_connections.sort(
-            key=lambda item: (item["connection_prob"], -item["travel_distance"]),
-            reverse=True,
-        )
-        return normalized_connections
 
     def _build_distance_instruction(self, target_object: str) -> str:
         """
@@ -1172,7 +475,7 @@ class MLLMClient:
 
         return prompt
 
-    def _request_completion(self, content_items) -> str:
+    def _request_completion(self, messages) -> str:
         """
         Sends a chat completion request to the Hugging Face router API with the given content items and max tokens.
         Returns the text content of the response message.
@@ -1180,7 +483,9 @@ class MLLMClient:
         try:
             completion = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=[{"role": "user", "content": content_items}],
+                messages=messages,
+                temperature=0.0,
+                top_p=0.9,
             )
         except BadRequestError as exc:
             message = str(exc)
@@ -1251,8 +556,7 @@ class MLLMClient:
                         int(item["viewpoint_index"])
                         for item in viewpoint_context.get("visible_viewpoints", [])
                         or []
-                        if self._normalize_viewpoint_index(item.get("viewpoint_index"))
-                        is not None
+                        if item.get("viewpoint_index") is not None
                     ],
                 )
                 idx = self._nudge_final_sample_right(
@@ -1286,7 +590,7 @@ class MLLMClient:
         ]
 
         num_obs_images = len(pil_images)
-        instruction = self._build_instruction(
+        system_message, user_message = self._build_instruction(
             num_obs_images=num_obs_images,
             target_object=target_object,
             graph=graph,
@@ -1295,65 +599,73 @@ class MLLMClient:
             neighbor_vp_distances_list=neighbor_vp_distances,
         )
 
-        content_items = [{"type": "text", "text": instruction}]
+        debugpy.breakpoint()
+
+        user_content = [{"type": "text", "text": user_message}]
         for image in pil_images:
-            content_items.append(
+            user_content.append(
                 {
                     "type": "image_url",
                     "image_url": {"url": self._image_to_data_url(image)},
                 }
             )
 
-        decoded = self._request_completion(content_items)
+        messages = [
+            {
+                "role": "system",
+                "content": system_message,
+            },
+            {
+                "role": "user",
+                "content": user_content,
+            },
+        ]
 
-        debugpy.breakpoint()
+        # decoded = self._request_completion(messages)
 
-        # decoded = {
-        #     "current_region_node": {
-        #         "id": 45,
-        #         "label": "modern open living room area with curved sofa and TV wall between bedroom and kitchen",
-        #         "target_prob": 0.45,
-        #     },
-        #     "new_visible_region_nodes": [
-        #         {
-        #             "id": 46,
-        #             "label": "stylish bedroom sleeping area with canopy bed near the living room",
-        #             "exist_prob": 0.98,
-        #             "target_prob": 0.20,
-        #         },
-        #         {
-        #             "id": 47,
-        #             "label": "bright dining and kitchen bar area with white counter near the living room",
-        #             "exist_prob": 0.97,
-        #             "target_prob": 0.25,
-        #         },
-        #     ],
-        #     "new_invisible_region_nodes": [
-        #         {
-        #             "id": 48,
-        #             "label": "private bathroom or dressing area behind the bedroom side of the suite",
-        #             "exist_prob": 0.42,
-        #             "target_prob": 0.10,
-        #         }
-        #     ],
-        #     "new_arcs": [
-        #         {"i": 1, "j": 45, "exist_prob": 1.00, "dist": 0.10},
-        #         {"i": 1, "j": 46, "exist_prob": 0.93, "dist": 0.94},
-        #         {"i": 1, "j": 47, "exist_prob": 0.95, "dist": 1.16},
-        #         {"i": 17, "j": 46, "exist_prob": 0.99, "dist": 0.10},
-        #         {"i": 22, "j": 47, "exist_prob": 0.99, "dist": 0.10},
-        #     ],
-        #     "target": {"found": False, "confidence": 0.0},
-        #     "viewpoint_node_assigns": [
-        #         {"id": 1, "assign_region_node_id": 45},
-        #         {"id": 17, "assign_region_node_id": 46},
-        #         {"id": 22, "assign_region_node_id": 47},
-        #     ],
-        #     "region_merges": [],
-        # }
+        decoded = {
+            "current_region_node": {
+                "id": 45,
+                "label": "modern living room area with curved sofa and TV wall near kitchen bar",
+                "target_prob": 0.5,
+            },
+            "new_visible_region_nodes": [
+                {
+                    "id": 46,
+                    "label": "minimalist bedroom area with large bed and window beyond living room",
+                    "exist_prob": 0.96,
+                    "target_prob": 0.2,
+                },
+                {
+                    "id": 47,
+                    "label": "open dining and kitchen bar area with stools beside TV wall",
+                    "exist_prob": 0.98,
+                    "target_prob": 0.3,
+                },
+            ],
+            "new_invisible_region_nodes": [],
+            "viewpoint_target_probs": [
+                {"id": 17, "target_prob": 0.15},
+                {"id": 22, "target_prob": 0.25},
+            ],
+            "new_arcs": [
+                {"i": 17, "j": 45, "exist_prob": 0.93, "dist": 0.936},
+                {"i": 22, "j": 45, "exist_prob": 0.95, "dist": 1.155},
+            ],
+            "target": {"found": False, "confidence": 0.0},
+            "viewpoint_node_assigns": [
+                {"id": 17, "assign_region_node_id": 46},
+                {"id": 22, "assign_region_node_id": 47},
+            ],
+            "region_merges": [],
+        }
+
+        decoded["current_vp_id"] = current_vp_node_id
+        decoded["neighbor_vp_ids"] = neighbor_vp_node_ids
+        decoded["neighbor_vp_distances"] = neighbor_vp_distances
 
         print("\n[MLLM RAW OUTPUT]\n", decoded)
-
+        debugpy.breakpoint()
         if isinstance(decoded, dict):
             payload = decoded
         else:
@@ -1381,7 +693,7 @@ class MLLMClient:
                 "region_merges": [],
             }
 
-        return self._normalize_semantic_graph_payload(payload, index_map=index_map)
+        return payload
 
     def estimate_target_distance(
         self,
