@@ -140,14 +140,21 @@ if __name__ == "__main__":
 
         debugpy.breakpoint()
 
-        # 3) Optimization model selects the best neighboring viewpoint to move to based on the MLLM-labeled graph and the target detection results.
+        # 3) The optimizer plans a full route through the reachable viewpoint graph.
+        #    The control loop remains receding-horizon: execute only the first waypoint,
+        #    then rescan and replan from the new location on the next iteration.
         current_vp_node_id = observation_context["current_viewpoint_index"]
         optimization_result = optimizer.solve(hypothesis_graph, current_vp_node_id)
-        next_vp_node_id = optimization_result["next_vp_node_id"]
+        planned_path_node_ids = optimization_result["planned_path_node_ids"]
+        next_vp_node_id = planned_path_node_ids[0]
         next_vp = Helper.viewpoint_vp_label_by_index[next_vp_node_id]
         Helper.rotate_to_target_heading_mov2vp(
             sim, best_heading_for_vp[next_vp], next_vp
         )
-        print(f"[Move] {cur_vp} -> {next_vp}")
+        print(
+            "[Move] "
+            f"path={optimization_result['route_node_ids']} "
+            f"execute_first_hop={cur_vp} -> {next_vp}"
+        )
 
         debugpy.breakpoint()

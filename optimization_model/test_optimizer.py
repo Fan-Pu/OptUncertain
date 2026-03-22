@@ -47,6 +47,27 @@ class RollingHorizonOptimizerTest(unittest.TestCase):
         graph.add_or_update_an_edge(graph.nodes[1], graph.nodes[4], 1.0, 1.0)
         return graph
 
+    def _build_chain_graph(self):
+        graph = HypothesisGraph()
+        graph.add_or_update_a_node(1, "vp-1", 1, 1.0, 0.0, True)
+        graph.add_or_update_a_node(2, "vp-2", 1, 1.0, 0.0, True)
+        graph.add_or_update_a_node(3, "vp-3", 1, 1.0, 0.0, True)
+
+        graph.add_or_update_a_node(10, "region-10", 0, 1.0, 0.1, True)
+        graph.add_or_update_a_node(11, "region-11", 0, 1.0, 0.9, True)
+        graph.add_or_update_a_node(12, "region-12", 0, 1.0, 1.0, True)
+
+        graph.viewpoint_to_region[1] = 10
+        graph.viewpoint_to_region[2] = 11
+        graph.viewpoint_to_region[3] = 12
+        graph.region_to_viewpoints[10] = {1}
+        graph.region_to_viewpoints[11] = {2}
+        graph.region_to_viewpoints[12] = {3}
+
+        graph.add_or_update_an_edge(graph.nodes[1], graph.nodes[2], 1.0, 0.1)
+        graph.add_or_update_an_edge(graph.nodes[2], graph.nodes[3], 1.0, 0.1)
+        return graph
+
     def test_selects_higher_reward_first_hop(self):
         graph = self._build_graph()
         optimizer = RollingHorizonOptimizer()
@@ -54,6 +75,8 @@ class RollingHorizonOptimizerTest(unittest.TestCase):
         result = optimizer.solve(graph, 1)
 
         self.assertEqual(result["next_vp_node_id"], 2)
+        self.assertEqual(result["planned_path_node_ids"], [2])
+        self.assertEqual(result["route_node_ids"], [1, 2])
 
     def test_prefers_safer_edge_when_rewards_match(self):
         graph = self._build_graph()
@@ -76,6 +99,16 @@ class RollingHorizonOptimizerTest(unittest.TestCase):
         result = optimizer.solve(graph, 1)
 
         self.assertEqual(result["next_vp_node_id"], 4)
+
+    def test_returns_multi_step_path_when_graph_supports_it(self):
+        graph = self._build_chain_graph()
+        optimizer = RollingHorizonOptimizer()
+
+        result = optimizer.solve(graph, 1)
+
+        self.assertEqual(result["planned_path_node_ids"], [2, 3])
+        self.assertEqual(result["next_vp_node_id"], 2)
+        self.assertEqual(result["route_node_ids"], [1, 2, 3])
 
 
 if __name__ == "__main__":
