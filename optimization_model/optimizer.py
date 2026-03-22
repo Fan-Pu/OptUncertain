@@ -1,6 +1,7 @@
 from gurobipy import GRB, Model, quicksum
 
 from Helper import TYPE_VP
+from semantic_persistence.hypothesis_graph import HypothesisGraph, GraphNode, GraphEdge
 
 
 class RollingHorizonOptimizer:
@@ -12,15 +13,9 @@ class RollingHorizonOptimizer:
         self.budget = 20.0
         self.grounded_resolution_weight = 1.25
         self.ungrounded_resolution_weight = 1.0
-        self.visibility_by_node_id = (
-            {}
-        )  # node_id -> visibility (0.0 to 1.0), where 1.0 means fully visible from the current viewpoint and 0.0 means not visible at all
 
     def solve(self, hypothesis_graph, current_vp_node_id):
         """Plan a multi-step viewpoint route and expose its first hop."""
-
-        # The current viewpoint has already been observed completely.
-        self.visibility_by_node_id[current_vp_node_id] = 1.0
 
         # Candidate path nodes include both viewpoint and region nodes. The current
         # viewpoint is the fixed route start, so it does not get its own path variable.
@@ -28,13 +23,6 @@ class RollingHorizonOptimizer:
             node_id
             for node_id in sorted(hypothesis_graph.nodes)
             if node_id != current_vp_node_id
-        ]
-
-        # Only viewpoint nodes contribute reward, service cost, and viewpoint-level risk.
-        rewarded_viewpoint_ids = [
-            node_id
-            for node_id in path_node_ids
-            if hypothesis_graph.nodes[node_id].type == TYPE_VP
         ]
 
         # The graph stores undirected navigation edges, but the MILP uses directed edge
@@ -69,21 +57,11 @@ class RollingHorizonOptimizer:
         node_reward = {}
         node_risk = {}
         resolution_weight = {}
-        for node_id in rewarded_viewpoint_ids:
-            node = hypothesis_graph.nodes[node_id]
-            region_id = hypothesis_graph.viewpoint_to_region.get(node_id)
-            region = (
-                hypothesis_graph.nodes[region_id] if region_id is not None else None
-            )
-            target_prob = max(
-                node.target_prob,
-                region.target_prob if region is not None else 0.0,
-            )
-            visibility = self.visibility_by_node_id.get(node_id, 0.0)
-            node_reward[node_id] = target_prob * (1.0 - visibility)
-            node_risk[node_id] = (
-                1.0 - region.exist_prob if region is not None else 1.0 - node.exist_prob
-            )
+        for node_id in path_node_ids:
+            node: GraphNode = hypothesis_graph.nodes[node_id]
+            target_prob = node.target_prob
+            node_reward[node_id] = target_prob
+            node_risk[node_id] = 1.0 - node.exist_prob
             resolution_weight[node_id] = (
                 self.grounded_resolution_weight
                 if node.grounded
@@ -122,7 +100,7 @@ class RollingHorizonOptimizer:
         model.setObjective(
             quicksum(
                 resolution_weight[node_id] * node_reward[node_id] * y[node_id]
-                for node_id in rewarded_viewpoint_ids
+                for node_id in path_node_ids
             )
             - self.alpha
             * quicksum(
@@ -131,9 +109,7 @@ class RollingHorizonOptimizer:
             - self.beta
             * quicksum(edge_risk[edge_id] * x[edge_id] for edge_id in directed_edges)
             - self.gamma
-            * quicksum(
-                node_risk[node_id] * y[node_id] for node_id in rewarded_viewpoint_ids
-            ),
+            * quicksum(node_risk[node_id] * y[node_id] for node_id in path_node_ids),
             GRB.MAXIMIZE,
         )
 
@@ -208,14 +184,12 @@ class RollingHorizonOptimizer:
             name="open_path_edge_count",
         )
 
-        model.addConstr(
-            quicksum(edge_distance[edge_id] * x[edge_id] for edge_id in directed_edges)
-            + quicksum(
-                self.service_cost * y[node_id] for node_id in rewarded_viewpoint_ids
-            )
-            <= self.budget,
-            name="budget",
-        )
+        # model.addConstr(
+        #     quicksum(edge_distance[edge_id] * x[edge_id] for edge_id in directed_edges)
+        #     + quicksum(self.service_cost * y[node_id] for node_id in path_node_ids)
+        #     <= self.budget,
+        #     name="budget",
+        # )
 
         for source_id in path_node_ids:
             for target_id in path_node_ids:
