@@ -5,6 +5,7 @@ import debugpy
 
 import Helper
 
+from optimization_model import RollingHorizonOptimizer
 from semantic_persistence.hypothesis_graph import HypothesisGraph
 from semantic_persistence.mllm_client import MLLMClient
 
@@ -51,6 +52,7 @@ if __name__ == "__main__":
         os.environ.get("TARGET_DISTANCE_THRESHOLD_M", "1.0").strip()
     )
     hypothesis_graph = HypothesisGraph()
+    optimizer = RollingHorizonOptimizer()
     observation_step = 0
 
     # -------------------- Loop --------------------
@@ -118,17 +120,23 @@ if __name__ == "__main__":
         tgt = mllm_out.get("target", {}) if isinstance(mllm_out, dict) else {}
         terminate = Helper.target_detection(
             tgt,
+            target_object,
             horizon_headings,
             horizon_rgb_images,
             horizon_depths,
-            target_object,
             distance_threshold_m,
+            sim,
         )
+        if terminate:
+            break
 
         debugpy.breakpoint()
 
         # 3) Optimization model selects the best neighboring viewpoint to move to based on the MLLM-labeled graph and the target detection results.
-        next_vp = list(best_heading_for_vp.keys())[0]
+        current_vp_node_id = observation_context["current_viewpoint_index"]
+        optimization_result = optimizer.solve(hypothesis_graph, current_vp_node_id)
+        next_vp_node_id = optimization_result["next_vp_node_id"]
+        next_vp = Helper.viewpoint_vp_label_by_index[next_vp_node_id]
         Helper.rotate_to_target_heading_mov2vp(
             sim, best_heading_for_vp[next_vp], next_vp
         )

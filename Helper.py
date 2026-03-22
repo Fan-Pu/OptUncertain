@@ -473,10 +473,10 @@ def target_detection(
                 f"(threshold: {distance_threshold_m:.2f} m)."
             )
             if distance_m <= distance_threshold_m:
-                Helper.rotate_to_target_heading_mov2vp(sim, target_heading, None)
-                Helper.render_sim_state(
+                rotate_to_target_heading_mov2vp(sim, target_heading, None)
+                render_sim_state(
                     sim.getState()[0],
-                    viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
+                    viewpoint_index_by_vp=viewpoint_index_by_vp_label,
                 )
                 debugpy.breakpoint()
                 terminate = True
