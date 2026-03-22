@@ -411,7 +411,6 @@ def target_detection(
     sim,
 ):
     """Process the MLLM output for target detection and distance estimation, and decide whether to terminate or continue exploring."""
-    debugpy.breakpoint()
     if not bool(tgt["found"]):
         return False
 
@@ -426,8 +425,6 @@ def target_detection(
     # )
     depth_runtime = time.perf_counter() - depth_start_time
     print(f"[MLLM distance] runtime: {depth_runtime:.2f} seconds")
-
-    debugpy.breakpoint()
 
     distance_m = distance_out.get("distance_m")
 

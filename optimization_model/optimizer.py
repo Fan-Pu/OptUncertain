@@ -3,23 +3,26 @@ from gurobipy import GRB, Model, quicksum
 
 class RollingHorizonOptimizer:
     def __init__(self):
-        self.alpha = 1.0
-        self.beta = 2.0
-        self.gamma = 0.5
+        self.alpha = 1.0  # weight for distance cost: the cost between the current viewpoint and the next viewpoint.
+        self.beta = 2.0  # weight for risk cost: the cost of traversing an edge with low existence probability.
+        self.gamma = 0.5  # weight for node risk cost: the cost of resolving a node with low existence probability.
         self.service_cost = 0.5
         self.budget = 20.0
         self.grounded_resolution_weight = 1.25
         self.ungrounded_resolution_weight = 1.0
-        self.visibility_by_node_id = {}
+        self.visibility_by_node_id = (
+            {}
+        )  # node_id -> visibility (0.0 to 1.0), where 1.0 means fully visible from the current viewpoint and 0.0 means not visible at all
 
     def solve(self, hypothesis_graph, current_vp_node_id):
         self.visibility_by_node_id[current_vp_node_id] = 1.0
-
         component_node_ids, undirected_edges = self._get_component(
             hypothesis_graph, current_vp_node_id
         )
         search_node_ids = [
-            node_id for node_id in sorted(component_node_ids) if node_id != current_vp_node_id
+            node_id
+            for node_id in sorted(component_node_ids)
+            if node_id != current_vp_node_id
         ]
         directed_edges = []
         edge_distance = {}
@@ -38,7 +41,9 @@ class RollingHorizonOptimizer:
         for node_id in search_node_ids:
             node = hypothesis_graph.nodes[node_id]
             region_id = hypothesis_graph.viewpoint_to_region.get(node_id)
-            region = hypothesis_graph.nodes[region_id] if region_id is not None else None
+            region = (
+                hypothesis_graph.nodes[region_id] if region_id is not None else None
+            )
             target_prob = max(
                 node.target_prob,
                 region.target_prob if region is not None else 0.0,
@@ -49,14 +54,18 @@ class RollingHorizonOptimizer:
                 1.0 - region.exist_prob if region is not None else 1.0 - node.exist_prob
             )
             resolution_weight[node_id] = (
-                self.grounded_resolution_weight if node.grounded else self.ungrounded_resolution_weight
+                self.grounded_resolution_weight
+                if node.grounded
+                else self.ungrounded_resolution_weight
             )
 
         model = Model("rolling_horizon_milp")
         model.Params.OutputFlag = 0
 
         x = {
-            (source_id, target_id): model.addVar(vtype=GRB.BINARY, name=f"x_{source_id}_{target_id}")
+            (source_id, target_id): model.addVar(
+                vtype=GRB.BINARY, name=f"x_{source_id}_{target_id}"
+            )
             for source_id, target_id in directed_edges
         }
         y = {
@@ -79,10 +88,13 @@ class RollingHorizonOptimizer:
                 for node_id in search_node_ids
             )
             - self.alpha
-            * quicksum(edge_distance[edge_id] * x[edge_id] for edge_id in directed_edges)
+            * quicksum(
+                edge_distance[edge_id] * x[edge_id] for edge_id in directed_edges
+            )
             - self.beta
             * quicksum(edge_risk[edge_id] * x[edge_id] for edge_id in directed_edges)
-            - self.gamma * quicksum(node_risk[node_id] * y[node_id] for node_id in search_node_ids),
+            - self.gamma
+            * quicksum(node_risk[node_id] * y[node_id] for node_id in search_node_ids),
             GRB.MAXIMIZE,
         )
 
@@ -137,13 +149,15 @@ class RollingHorizonOptimizer:
 
         model.optimize()
 
-        selected_edges = [
-            edge_id for edge_id, var in x.items() if var.X > 0.5
-        ]
+        selected_edges = [edge_id for edge_id, var in x.items() if var.X > 0.5]
         selected_outgoing = [
-            target_id for source_id, target_id in selected_edges if source_id == current_vp_node_id
+            target_id
+            for source_id, target_id in selected_edges
+            if source_id == current_vp_node_id
         ]
-        outgoing_by_source = {source_id: target_id for source_id, target_id in selected_edges}
+        outgoing_by_source = {
+            source_id: target_id for source_id, target_id in selected_edges
+        }
 
         route_node_ids = [current_vp_node_id]
         next_node_id = selected_outgoing[0]
