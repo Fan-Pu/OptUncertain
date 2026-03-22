@@ -116,91 +116,18 @@ if __name__ == "__main__":
         #     RGB frame, so the follow-up query only needs to estimate distance from
         #     the aligned RGB/depth pair.
         tgt = mllm_out.get("target", {}) if isinstance(mllm_out, dict) else {}
-        tgt_found = bool(tgt.get("found", False))
-        orig_idx = -1
-        target_views = tgt.get("views", [])
-        target_confidences = tgt.get("view_confidences", tgt.get("confidence", []))
-        paired_candidates = []
-        if isinstance(target_views, list) and target_views:
-            if isinstance(target_confidences, list):
-                paired_candidates = [
-                    (int(view_idx), float(confidence))
-                    for view_idx, confidence in zip(target_views, target_confidences)
-                ]
-            else:
-                try:
-                    scalar_confidence = float(target_confidences)
-                except (TypeError, ValueError):
-                    scalar_confidence = 0.0
-                paired_candidates = [
-                    (int(view_idx), scalar_confidence) for view_idx in target_views
-                ]
-
-        if not paired_candidates:
-            raw_target_view = tgt.get("view", -1)
-            try:
-                raw_target_view = int(raw_target_view)
-            except (TypeError, ValueError):
-                raw_target_view = -1
-            if raw_target_view >= 0:
-                confidence_score = tgt.get(
-                    "confidence_score", tgt.get("confidence", 0.0)
-                )
-                try:
-                    confidence_score = float(confidence_score)
-                except (TypeError, ValueError):
-                    confidence_score = 0.0
-                paired_candidates = [(raw_target_view, confidence_score)]
-
-        if paired_candidates:
-            orig_idx = max(paired_candidates, key=lambda pair: pair[1])[0]
-        if tgt_found and orig_idx != -1:
-            target_heading = float(horizon_headings[orig_idx])
-            target_rgb_image = horizon_rgb_images[orig_idx]
-            target_depth_image = horizon_depths[orig_idx]
-
-            print(f"Target '{target_object}' detected by MLLM in view {orig_idx}.")
-            depth_start_time = time.perf_counter()
-            distance_out = {"distance_m": 2.375}
-            # distance_out = mllm.estimate_target_distance(
-            #     rgb_image=target_rgb_image,
-            #     depth_image=target_depth_image,
-            #     target_object=target_object,
-            # )
-            depth_runtime = time.perf_counter() - depth_start_time
-            print(f"[MLLM distance] runtime: {depth_runtime:.2f} seconds")
-
-            debugpy.breakpoint()
-
-            distance_m = distance_out.get("distance_m")
-
-            if distance_m is not None:
-                print(
-                    f"Target '{target_object}' distance estimate: {distance_m:.2f} m "
-                    f"(threshold: {distance_threshold_m:.2f} m)."
-                )
-                if distance_m <= distance_threshold_m:
-                    Helper.rotate_to_target_heading_mov2vp(sim, target_heading, None)
-                    Helper.render_sim_state(
-                        sim.getState()[0],
-                        viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
-                    )
-                    debugpy.breakpoint()
-                    break
-
-                print(
-                    f"[CONTINUE] Target detected but distance {distance_m:.2f} m exceeds "
-                    f"threshold {distance_threshold_m:.2f} m."
-                )
-            else:
-                print(
-                    f"[CONTINUE] Target '{target_object}' detected, but distance could not be estimated."
-                )
+        terminate = Helper.target_detection(
+            tgt,
+            horizon_headings,
+            horizon_rgb_images,
+            horizon_depths,
+            target_object,
+            distance_threshold_m,
+        )
 
         debugpy.breakpoint()
 
-        # 3) Fall back to the existing greedy navigation rule when the target is not
-        #    visible or the distance estimate is unusable.
+        # 3) Optimization model selects the best neighboring viewpoint to move to based on the MLLM-labeled graph and the target detection results.
         next_vp = list(best_heading_for_vp.keys())[0]
         Helper.rotate_to_target_heading_mov2vp(
             sim, best_heading_for_vp[next_vp], next_vp
