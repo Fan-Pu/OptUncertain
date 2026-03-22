@@ -118,12 +118,20 @@ if __name__ == "__main__":
         #     RGB frame, so the follow-up query only needs to estimate distance from
         #     the aligned RGB/depth pair.
         tgt = mllm_out.get("target")
+        target_heading = None
+        target_rgb_image = None
+        target_depth_image = None
+        if tgt["found"]:
+            target_view_id = int(tgt["view_id"])
+            target_heading = float(horizon_headings[target_view_id])
+            target_rgb_image = horizon_rgb_images[target_view_id]
+            target_depth_image = horizon_depths[target_view_id]
         terminate = Helper.target_detection(
             tgt,
             target_object,
-            horizon_headings,
-            horizon_rgb_images,
-            horizon_depths,
+            target_heading,
+            target_rgb_image,
+            target_depth_image,
             distance_threshold_m,
             sim,
         )

@@ -350,7 +350,7 @@ class MLLMClient:
             - target_prob for viewpoint node i should not be larger than the target_prob of its assigned region node j.
 
             If the target object is not directly observed in the current RGB observation, set:
-            "found": False, "confidence": 0.0, "view_id": -1. The view_id field is the index of the RGB image that contains the target. If multiple iamges contain the target, set view_id to the one where the target is most centered.
+            "found": False, "confidence": 0.0, "view_id": -1. The view_id field is the index of the provided RGB image that contains the target. If multiple images contain the target, set view_id to the one where the target is most centered.
             
             If at least one legal connection is supported by the observation and assignments, new_arcs must not be empty.
             """
@@ -435,6 +435,14 @@ class MLLMClient:
         except (TypeError, ValueError):
             value = float(default)
         return max(low, min(high, value))
+
+    @staticmethod
+    def _remap_target_view_id(payload: dict, index_map: list[int]) -> dict:
+        target = payload["target"]
+        view_id = int(target["view_id"])
+        if view_id >= 0:
+            target["view_id"] = int(index_map[view_id])
+        return payload
 
     def _build_distance_instruction(self, target_object: str) -> str:
         """
@@ -690,6 +698,8 @@ class MLLMClient:
                 "viewpoint_node_assigns": [],
                 "region_merges": [],
             }
+
+        payload = self._remap_target_view_id(payload, index_map)
 
         return payload
 
