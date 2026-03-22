@@ -101,7 +101,7 @@ if __name__ == "__main__":
         runtime = time.perf_counter() - start_time
         print(f"[MLLM] runtime: {runtime:.2f} seconds")
 
-        debugpy.breakpoint()
+        # debugpy.breakpoint()
 
         # 2b) Convert the one-step MLLM output into a persistent hypothesis graph.
         #     This preserves semantic nodes and uncertain structural edges across
@@ -112,12 +112,12 @@ if __name__ == "__main__":
             f"edges={len(hypothesis_graph.edges)}"
         )
 
-        debugpy.breakpoint()
+        # debugpy.breakpoint()
 
         # 2a) The detection step above already guarantees the target is in the chosen
         #     RGB frame, so the follow-up query only needs to estimate distance from
         #     the aligned RGB/depth pair.
-        tgt = mllm_out.get("target", {}) if isinstance(mllm_out, dict) else {}
+        tgt = mllm_out.get("target")
         terminate = Helper.target_detection(
             tgt,
             target_object,

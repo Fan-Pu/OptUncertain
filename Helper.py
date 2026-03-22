@@ -410,6 +410,8 @@ def target_detection(
     distance_threshold_m,
     sim,
 ):
+    """Process the MLLM output for target detection and distance estimation, and decide whether to terminate or continue exploring."""
+    debugpy.breakpoint()
     terminate = False
     tgt_found = bool(tgt.get("found", False))
     orig_idx = -1
