@@ -1,5 +1,7 @@
 from gurobipy import GRB, Model, quicksum
 
+from Helper import TYPE_VP
+
 
 class RollingHorizonOptimizer:
     def __init__(self):
@@ -20,25 +22,30 @@ class RollingHorizonOptimizer:
         # The current viewpoint has already been observed completely.
         self.visibility_by_node_id[current_vp_node_id] = 1.0
 
-        # Only viewpoints in the same connected component can appear in the route.
-        component_node_ids, undirected_edges = self._get_component(
-            hypothesis_graph, current_vp_node_id
-        )
-
-        # Search nodes are the candidate future viewpoints. The current viewpoint is the
-        # fixed route start, so it does not get its own visit variable.
-        search_node_ids = [
+        # Candidate path nodes include both viewpoint and region nodes. The current
+        # viewpoint is the fixed route start, so it does not get its own path variable.
+        path_node_ids = [
             node_id
-            for node_id in sorted(component_node_ids)
+            for node_id in sorted(hypothesis_graph.nodes)
             if node_id != current_vp_node_id
         ]
 
+        # Only viewpoint nodes contribute reward, service cost, and viewpoint-level risk.
+        rewarded_viewpoint_ids = [
+            node_id
+            for node_id in path_node_ids
+            if hypothesis_graph.nodes[node_id].type == TYPE_VP
+        ]
+
         # The graph stores undirected navigation edges, but the MILP uses directed edge
-        # decisions so both travel directions are enumerated here.
+        # decisions so both travel directions are enumerated here for viewpoint-region
+        # and viewpoint-viewpoint connectivity alike.
         directed_edges = []
         edge_distance = {}  # (source_id, target_id) -> travel distance
         edge_risk = {}  # (source_id, target_id) -> uncertainty penalty
-        for source_id, target_id, edge in undirected_edges:
+        for edge in hypothesis_graph.edges.values():
+            source_id = edge.source_node_id
+            target_id = edge.target_node_id
             directed_edges.append((source_id, target_id))
             directed_edges.append((target_id, source_id))
             edge_distance[(source_id, target_id)] = edge.distance
@@ -62,7 +69,7 @@ class RollingHorizonOptimizer:
         node_reward = {}
         node_risk = {}
         resolution_weight = {}
-        for node_id in search_node_ids:
+        for node_id in rewarded_viewpoint_ids:
             node = hypothesis_graph.nodes[node_id]
             region_id = hypothesis_graph.viewpoint_to_region.get(node_id)
             region = (
@@ -94,28 +101,28 @@ class RollingHorizonOptimizer:
             for source_id, target_id in directed_edges
         }
 
-        # y[i] = 1 if viewpoint i is included in the selected route.
+        # y[i] = 1 if node i is included in the selected path.
         y = {
             node_id: model.addVar(vtype=GRB.BINARY, name=f"y_{node_id}")
-            for node_id in search_node_ids
+            for node_id in path_node_ids
         }
 
         # u[i] is the Miller-Tucker-Zemlin ordering variable used only to eliminate
-        # disconnected subtours among visited viewpoints.
+        # disconnected subtours among selected path nodes.
         u = {
             node_id: model.addVar(
                 lb=1.0,
-                ub=float(len(search_node_ids)),
+                ub=float(len(path_node_ids)),
                 vtype=GRB.CONTINUOUS,
                 name=f"u_{node_id}",
             )
-            for node_id in search_node_ids
+            for node_id in path_node_ids
         }
 
         model.setObjective(
             quicksum(
                 resolution_weight[node_id] * node_reward[node_id] * y[node_id]
-                for node_id in search_node_ids
+                for node_id in rewarded_viewpoint_ids
             )
             - self.alpha
             * quicksum(
@@ -124,7 +131,9 @@ class RollingHorizonOptimizer:
             - self.beta
             * quicksum(edge_risk[edge_id] * x[edge_id] for edge_id in directed_edges)
             - self.gamma
-            * quicksum(node_risk[node_id] * y[node_id] for node_id in search_node_ids),
+            * quicksum(
+                node_risk[node_id] * y[node_id] for node_id in rewarded_viewpoint_ids
+            ),
             GRB.MAXIMIZE,
         )
 
@@ -139,6 +148,18 @@ class RollingHorizonOptimizer:
             name="depart_current",
         )
 
+        # The first node after the current viewpoint must itself be a viewpoint.
+        model.addConstr(
+            quicksum(
+                x[(source_id, target_id)]
+                for source_id, target_id in directed_edges
+                if source_id == current_vp_node_id
+                and hypothesis_graph.nodes[target_id].type == TYPE_VP
+            )
+            == 1,
+            name="first_hop_is_viewpoint",
+        )
+
         # This is an open path, not a tour, so the planned route must not return to the
         # current viewpoint inside the same solve.
         model.addConstr(
@@ -151,8 +172,8 @@ class RollingHorizonOptimizer:
             name="do_not_return_current",
         )
 
-        for node_id in search_node_ids:
-            # Every visited viewpoint has exactly one predecessor in the path.
+        for node_id in path_node_ids:
+            # Every selected node has exactly one predecessor in the path.
             model.addConstr(
                 quicksum(
                     x[(source_id, target_id)]
@@ -163,7 +184,7 @@ class RollingHorizonOptimizer:
                 name=f"flow_in_{node_id}",
             )
 
-            # Internal path nodes have one successor, while the final node has none.
+            # Internal path nodes have one successor, while the terminal node has none.
             model.addConstr(
                 quicksum(
                     x[(source_id, target_id)]
@@ -174,36 +195,39 @@ class RollingHorizonOptimizer:
                 name=f"flow_out_{node_id}",
             )
 
-        # In an open path, every visited node except the terminal node contributes one
-        # outgoing edge. This makes the selected edges form a single ordered path.
+        # In an open path, every selected node except the terminal node contributes one
+        # outgoing edge. This makes the selected edges form a single ordered path even
+        # when region nodes appear as transit nodes.
         model.addConstr(
             quicksum(
                 x[(source_id, target_id)]
                 for source_id, target_id in directed_edges
-                if source_id in search_node_ids
+                if source_id in path_node_ids
             )
-            == quicksum(y[node_id] for node_id in search_node_ids) - 1,
+            == quicksum(y[node_id] for node_id in path_node_ids) - 1,
             name="open_path_edge_count",
         )
 
         model.addConstr(
             quicksum(edge_distance[edge_id] * x[edge_id] for edge_id in directed_edges)
-            + quicksum(self.service_cost * y[node_id] for node_id in search_node_ids)
+            + quicksum(
+                self.service_cost * y[node_id] for node_id in rewarded_viewpoint_ids
+            )
             <= self.budget,
             name="budget",
         )
 
-        for source_id in search_node_ids:
-            for target_id in search_node_ids:
+        for source_id in path_node_ids:
+            for target_id in path_node_ids:
                 if source_id == target_id or (source_id, target_id) not in x:
                     continue
-                # MTZ constraints suppress detached cycles that do not belong to the main
-                # route that starts at current_vp_node_id.
+                # MTZ constraints suppress detached cycles that do not belong to the
+                # main route that starts at current_vp_node_id.
                 model.addConstr(
                     u[source_id]
                     - u[target_id]
-                    + len(search_node_ids) * x[(source_id, target_id)]
-                    <= len(search_node_ids) - 1,
+                    + len(path_node_ids) * x[(source_id, target_id)]
+                    <= len(path_node_ids) - 1,
                     name=f"mtz_{source_id}_{target_id}",
                 )
 
@@ -215,9 +239,10 @@ class RollingHorizonOptimizer:
         )
 
         return {
-            # Ordered future viewpoints, excluding the current start viewpoint.
+            # Ordered future path nodes, excluding the current start viewpoint.
             "planned_path_node_ids": planned_path_node_ids,
-            # The control loop still executes only the first step of the plan.
+            # The control loop still executes only the first step of the plan, which is
+            # constrained to be a viewpoint node.
             "next_vp_node_id": planned_path_node_ids[0],
             # Full ordered path chosen by the MILP, including the current viewpoint.
             "route_node_ids": route_node_ids,
@@ -226,7 +251,7 @@ class RollingHorizonOptimizer:
         }
 
     def _extract_path_from_selected_edges(self, current_vp_node_id, selected_edges):
-        """Convert selected directed edges into the ordered path and future waypoints."""
+        """Convert selected directed edges into the ordered mixed-node path."""
         outgoing_by_source = {
             source_id: target_id for source_id, target_id in selected_edges
         }
@@ -235,8 +260,8 @@ class RollingHorizonOptimizer:
         route_node_ids = [current_vp_node_id]
         next_node_id = outgoing_by_source[current_vp_node_id]
 
-        # Follow the unique selected outgoing edge from each source until the path reaches
-        # its terminal viewpoint, which has no outgoing selected edge.
+        # Follow the unique selected outgoing edge from each source until the path
+        # reaches its terminal node, which has no outgoing selected edge.
         while True:
             planned_path_node_ids.append(next_node_id)
             route_node_ids.append(next_node_id)
@@ -245,33 +270,3 @@ class RollingHorizonOptimizer:
             next_node_id = outgoing_by_source[next_node_id]
 
         return planned_path_node_ids, route_node_ids
-
-    def _get_component(self, hypothesis_graph, current_vp_node_id):
-        # Region nodes are semantic annotations, not motion states. The motion planner only
-        # expands the connected component over viewpoint nodes.
-        adjacency = {}
-        undirected_edges = []
-        for edge in hypothesis_graph.edges.values():
-            source_node = hypothesis_graph.nodes[edge.source_node_id]
-            target_node = hypothesis_graph.nodes[edge.target_node_id]
-            if source_node.type != 1 or target_node.type != 1:
-                continue
-            adjacency.setdefault(source_node.node_id, set()).add(target_node.node_id)
-            adjacency.setdefault(target_node.node_id, set()).add(source_node.node_id)
-            undirected_edges.append((source_node.node_id, target_node.node_id, edge))
-
-        component_node_ids = set()
-        frontier = [current_vp_node_id]
-        while frontier:
-            node_id = frontier.pop()
-            if node_id in component_node_ids:
-                continue
-            component_node_ids.add(node_id)
-            frontier.extend(sorted(adjacency.get(node_id, set()) - component_node_ids))
-
-        component_edges = [
-            (source_id, target_id, edge)
-            for source_id, target_id, edge in undirected_edges
-            if source_id in component_node_ids and target_id in component_node_ids
-        ]
-        return component_node_ids, component_edges
