@@ -43,7 +43,6 @@ viewpoint_vp_label_by_index = (
 def init_render():
     cv2.namedWindow("Python RGB")
     cv2.namedWindow("Python Depth")
-    cv2.namedWindow("MLLM RGB")
 
     sim = MatterSim.Simulator()
     sim.setCameraResolution(WIDTH, HEIGHT)

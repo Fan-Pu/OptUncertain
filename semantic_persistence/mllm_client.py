@@ -423,8 +423,11 @@ class MLLMClient:
             """
         ).strip()
 
-        print("system_message = \n\n", system_message)
-        print("user_message = \n", user_message)
+        print("------------------system message------------------\n")
+        print(system_message)
+        print()
+        print("-------------------user message-------------------\n")
+        print(user_message)
 
         return system_message, user_message
 
@@ -623,20 +626,20 @@ class MLLMClient:
 
         decoded = {
             "current_region_node": {
-                "label": "modern living room area with curved sofa and TV wall beside kitchen bar",
-                "id": 45,
+                "id": 44,
+                "label": "modern living room area with curved sofa and TV wall near kitchen bar",
                 "target_prob": 0.4,
             },
             "new_visible_region_nodes": [
                 {
-                    "label": "minimalist bedroom area with large bed and window beyond doorway from living room",
-                    "id": 46,
+                    "id": 45,
+                    "label": "minimalist bedroom area with large bed and window beyond living room doorway",
                     "exist_prob": 0.95,
                     "target_prob": 0.3,
                 },
                 {
-                    "label": "open dining and kitchen bar area with stools and bright counter adjacent to TV wall",
-                    "id": 47,
+                    "id": 46,
+                    "label": "open dining and kitchen bar area with stools and bright counter beside TV wall",
                     "exist_prob": 0.97,
                     "target_prob": 0.3,
                 },
@@ -647,13 +650,13 @@ class MLLMClient:
                 {"id": 21, "target_prob": 0.25},
             ],
             "new_arcs": [
-                {"i": 16, "j": 45, "exist_prob": 0.9, "dist": 1.0},
-                {"i": 21, "j": 45, "exist_prob": 0.92, "dist": 1.2},
+                {"i": 16, "j": 44, "exist_prob": 0.9, "dist": 0.936},
+                {"i": 21, "j": 44, "exist_prob": 0.92, "dist": 1.155},
             ],
             "target": {"found": False, "confidence": 0.0, "view_id": -1},
             "viewpoint_node_assigns": [
-                {"id": 16, "assign_region_node_id": 46},
-                {"id": 21, "assign_region_node_id": 47},
+                {"id": 16, "assign_region_node_id": 45},
+                {"id": 21, "assign_region_node_id": 46},
             ],
             "region_merges": [],
         }
