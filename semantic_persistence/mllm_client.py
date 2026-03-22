@@ -429,14 +429,6 @@ class MLLMClient:
         return system_message, user_message
 
     @staticmethod
-    def _clamp_float(value, low: float, high: float, default: float) -> float:
-        try:
-            value = float(value)
-        except (TypeError, ValueError):
-            value = float(default)
-        return max(low, min(high, value))
-
-    @staticmethod
     def _remap_target_view_id(payload: dict, index_map: list[int]) -> dict:
         target = payload["target"]
         view_id = int(target["view_id"])

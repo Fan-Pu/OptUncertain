@@ -385,22 +385,6 @@ def explore_world(sim, location=0, heading=0, elevation=0):
             elevation = -DELTA_HEADING_RAD
 
 
-def put_detect_box(rgb, box, goal_text, dist_m):
-    """Utility to put a detection box with optional text on an RGB image."""
-    if box is not None:
-        x1, y1, x2, y2 = box
-        cv2.rectangle(rgb, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(
-            rgb,
-            f"{goal_text}: {dist_m:.2f}m",
-            (x1, max(20, y1 - 8)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 255, 0),
-            2,
-        )
-
-
 def target_detection(
     tgt: dict,
     target_object: str,
