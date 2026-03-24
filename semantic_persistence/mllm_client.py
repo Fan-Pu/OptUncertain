@@ -151,16 +151,39 @@ class MLLMClient:
         return f"data:image/png;base64,{encoded}"
 
     @staticmethod
-    def _select_evenly_spaced_indices(total_count: int, sample_count: int) -> list[int]:
-        if total_count <= 0 or sample_count <= 0:
+    def _select_evenly_spaced_indices(total_count: int, max_images: int) -> list[int]:
+        if total_count == 0 or max_images <= 0:
             return []
 
-        sample_count = min(total_count, sample_count)
-        if sample_count == total_count:
+        # if we need more or equal samples than available, just return all indices
+        if max_images >= total_count:
             return list(range(total_count))
 
-        sample_positions = np.linspace(0, total_count - 1, num=sample_count)
-        return [int(np.floor(position)) for position in sample_positions]
+        # uniform step over the circular list
+        step = total_count / max_images
+
+        sampled_indices = []
+        for k in range(max_images):
+            idx = int(round(k * step)) % total_count
+            sampled_indices.append(idx)
+
+        # ensure index 0 is included (replace the closest one if needed)
+        if 0 not in sampled_indices:
+            # find index with smallest value (closest to 0 in circular sense)
+            replace_i = min(
+                range(len(sampled_indices)), key=lambda i: sampled_indices[i]
+            )
+            sampled_indices[replace_i] = 0
+
+        # remove duplicates while preserving order
+        seen = set()
+        unique_indices = []
+        for idx in sampled_indices:
+            if idx not in seen:
+                unique_indices.append(idx)
+                seen.add(idx)
+
+        return unique_indices
 
     @staticmethod
     def _select_indices_with_viewpoint_coverage(
@@ -497,9 +520,9 @@ class MLLMClient:
 
         sampled_indices = self._select_evenly_spaced_indices(
             total_count=len(observation_images),
-            sample_count=MAX_MLLM_INPUT_IMAGES,
+            max_images=MAX_MLLM_INPUT_IMAGES,
         )
-
+        debugpy.breakpoint()
         pil_images = []
         pil_depths = []
         for index in sampled_indices:
@@ -516,9 +539,7 @@ class MLLMClient:
                 depth_image = depth_image[:, :, 0]
 
             if depth_image.dtype == np.float32 or depth_image.dtype == np.float64:
-                depth_image = np.clip(depth_image * 4000.0, 0, 65535).astype(
-                    np.uint16
-                )
+                depth_image = np.clip(depth_image * 4000.0, 0, 65535).astype(np.uint16)
             elif depth_image.dtype != np.uint16:
                 depth_image = depth_image.astype(np.uint16)
 
