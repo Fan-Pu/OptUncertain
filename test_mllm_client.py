@@ -3,6 +3,7 @@ import pathlib
 import sys
 import types
 import unittest
+import numpy as np
 
 
 helper_stub = types.ModuleType("Helper")
@@ -67,6 +68,67 @@ class MLLMClientViewIdRemapTest(unittest.TestCase):
         remapped = MLLMClient._remap_target_view_id(payload, [0, 8, 16, 24])
 
         self.assertEqual(remapped["target"]["view_id"], -1)
+
+
+class MLLMClientSamplingTest(unittest.TestCase):
+    def test_select_evenly_spaced_indices_starts_at_first_frame(self):
+        self.assertEqual(
+            MLLMClient._select_evenly_spaced_indices(12, 5),
+            [0, 2, 5, 8, 11],
+        )
+
+    def test_propose_semantic_nodes_samples_aligned_rgb_and_depth_frames(self):
+        client = MLLMClient.__new__(MLLMClient)
+        client.save_debug_images = False
+        client._build_instruction = lambda **kwargs: ("system", "user")
+        client._image_to_data_url = lambda image: "data:image/png;base64,test"
+
+        captured_index_map = {}
+
+        def _capture_remap(payload, index_map):
+            captured_index_map["value"] = list(index_map)
+            return payload
+
+        client._remap_target_view_id = _capture_remap
+
+        rgb_markers = []
+        depth_markers = []
+        original_fromarray = mllm_client_under_test.Image.fromarray
+
+        def _capture_fromarray(image, mode=None):
+            marker = int(image.reshape(-1)[0])
+            if mode == "I;16":
+                depth_markers.append(marker)
+            else:
+                rgb_markers.append(marker)
+            return types.SimpleNamespace(save=lambda path: None)
+
+        mllm_client_under_test.Image.fromarray = _capture_fromarray
+
+        try:
+            observation_images = [
+                (index * np.ones((1, 1, 3), dtype=np.uint8)) for index in range(12)
+            ]
+            depth_images = [
+                (index * np.ones((1, 1), dtype=np.uint16)) for index in range(12)
+            ]
+
+            client.propose_semantic_nodes(
+                observation_images=observation_images,
+                depth_images=depth_images,
+                target_object="chair",
+                viewpoint_context={
+                    "current_viewpoint_index": 7,
+                    "visible_viewpoints": [],
+                },
+                graph=None,
+            )
+        finally:
+            mllm_client_under_test.Image.fromarray = original_fromarray
+
+        self.assertEqual(captured_index_map["value"], [0, 2, 5, 8, 11])
+        self.assertEqual(rgb_markers, [0, 2, 5, 8, 11])
+        self.assertEqual(depth_markers, [0, 2, 5, 8, 11])
 
 
 if __name__ == "__main__":

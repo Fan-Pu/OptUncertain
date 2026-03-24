@@ -159,32 +159,8 @@ class MLLMClient:
         if sample_count == total_count:
             return list(range(total_count))
 
-        import Helper
-
-        step_rad = (2.0 * np.pi) / sample_count
-        used_indices = set()
-        selected_indices = []
-
-        for sample_idx in range(sample_count):
-            ideal_heading = sample_idx * step_rad
-            index = int(round(ideal_heading / Helper.DELTA_HEADING_RAD)) % total_count
-
-            if index in used_indices:
-                fallback_index = int(
-                    np.floor((sample_idx * total_count) / sample_count)
-                )
-                while (
-                    fallback_index in used_indices and fallback_index < total_count - 1
-                ):
-                    fallback_index += 1
-                while fallback_index in used_indices and fallback_index > 0:
-                    fallback_index -= 1
-                index = fallback_index
-
-            selected_indices.append(index)
-            used_indices.add(index)
-
-        return selected_indices
+        sample_positions = np.linspace(0, total_count - 1, num=sample_count)
+        return [int(np.floor(position)) for position in sample_positions]
 
     @staticmethod
     def _select_indices_with_viewpoint_coverage(
@@ -519,64 +495,36 @@ class MLLMClient:
 
         viewpoint_context = viewpoint_context or {}
 
+        sampled_indices = self._select_evenly_spaced_indices(
+            total_count=len(observation_images),
+            sample_count=MAX_MLLM_INPUT_IMAGES,
+        )
+
         pil_images = []
         pil_depths = []
-        for img in observation_images:
-            if img is None:
-                continue
-            if img.dtype != np.uint8:
-                img = img.astype(np.uint8)
-            pil_images.append(Image.fromarray(img))
+        for index in sampled_indices:
+            rgb_image = observation_images[index]
+            if rgb_image.dtype != np.uint8:
+                rgb_image = rgb_image.astype(np.uint8)
+            pil_images.append(Image.fromarray(rgb_image))
 
-        for depth_img in depth_images or []:
-            if depth_img is None:
+            if depth_images is None:
                 continue
 
-            if depth_img.ndim == 3:
-                depth_img = depth_img[:, :, 0]
+            depth_image = depth_images[index]
+            if depth_image.ndim == 3:
+                depth_image = depth_image[:, :, 0]
 
-            if depth_img.dtype == np.float32 or depth_img.dtype == np.float64:
-                depth_img = np.clip(depth_img * 4000.0, 0, 65535).astype(np.uint16)
-            elif depth_img.dtype != np.uint16:
-                depth_img = depth_img.astype(np.uint16)
-
-            pil_depths.append(Image.fromarray(depth_img, mode="I;16"))
-
-        index_map = list(range(len(pil_images)))
-
-        if self.h_fov > 0:
-            target_count = int(np.ceil((2.0 * np.pi) / self.h_fov))
-            target_count = max(1, min(MAX_MLLM_INPUT_IMAGES, target_count))
-
-            if len(pil_images) > target_count:
-                idx = self._select_indices_with_viewpoint_coverage(
-                    total_count=len(pil_images),
-                    sample_count=target_count,
-                    frame_viewpoint_indices=viewpoint_context.get(
-                        "frame_visible_viewpoint_indices", []
-                    ),
-                    required_viewpoint_indices=[
-                        int(item["viewpoint_index"])
-                        for item in viewpoint_context.get("visible_viewpoints", [])
-                        or []
-                        if item.get("viewpoint_index") is not None
-                    ],
+            if depth_image.dtype == np.float32 or depth_image.dtype == np.float64:
+                depth_image = np.clip(depth_image * 4000.0, 0, 65535).astype(
+                    np.uint16
                 )
-                idx = self._nudge_final_sample_right(
-                    indices=idx,
-                    total_count=len(pil_images),
-                    shift_steps=self.last_image_right_shift_steps,
-                )
-                pil_images = [pil_images[i] for i in idx]
-                index_map = [index_map[i] for i in idx]
-                if pil_depths:
-                    pil_depths = [pil_depths[i] for i in idx]
-        else:
-            idx = list(range(0, len(pil_images), 8))
-            pil_images = [pil_images[i] for i in idx]
-            index_map = [index_map[i] for i in idx]
-            if pil_depths:
-                pil_depths = [pil_depths[i] for i in idx]
+            elif depth_image.dtype != np.uint16:
+                depth_image = depth_image.astype(np.uint16)
+
+            pil_depths.append(Image.fromarray(depth_image, mode="I;16"))
+
+        index_map = sampled_indices
 
         if self.save_debug_images:
             for i, im in enumerate(pil_images):
