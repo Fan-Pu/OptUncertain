@@ -14,9 +14,6 @@ from textwrap import dedent
 from semantic_persistence import hypothesis_graph
 
 
-MAX_MLLM_INPUT_IMAGES = 5
-
-
 class MLLMClient:
     def __init__(
         self,
@@ -270,13 +267,14 @@ class MLLMClient:
 
     def _build_instruction(
         self,
-        num_obs_images: int,
+        num_panorama_images: int,
+        num_panorama_strips: int,
         target_object: str,
         graph: hypothesis_graph,
         current_vp_node_id: int,
         neighbor_vp_node_ids: list[int],
         neighbor_vp_distances_list: list[float],
-    ) -> str:
+    ) -> tuple[str, str]:
         """Build the instruction prompt for MLLM based on the current graph context and observations."""
         target_object = target_object.strip()
         graph_summary = graph.get_MLLM_summary()
@@ -299,7 +297,7 @@ class MLLMClient:
             )
 
         system_message = dedent(
-            """
+            f"""
             You are an indoor scene graph proposal module.
 
             Return compact JSON only.
@@ -310,7 +308,7 @@ class MLLMClient:
             Use True/False for booleans.
 
             Each figure may contain a text number indicating a potential next viewpoint.
-            The same text number can appear in multiple images, and the same text number always refers to the same viewpoint.
+            The same text number can appear multiple times across the panorama, and the same text number always refers to the same viewpoint.
 
             Region labels must be room or area labels only, not object names.
             Each region label must be descriptive and must include:
@@ -348,8 +346,10 @@ class MLLMClient:
             - viewpoint_target_probs must be provided for all neighboring viewpoint nodes listed by the user.
             - target_prob for viewpoint node i should not be larger than the target_prob of its assigned region node j.
 
-            If the target object is not directly observed in the current RGB observation, set:
-            "found": False, "confidence": 0.0, "view_id": -1. The view_id field is the index of the provided RGB image that contains the target. If multiple images contain the target, set view_id to the one where the target is most centered.
+            If the target object is not directly observed in the raw RGB panorama, set:
+            "found": False, "confidence": 0.0, "strip_index": -1.
+            The strip_index field is the panorama strip index of the target, using the original horizon scan steps 0-{max(0, num_panorama_strips - 1)}.
+            If multiple strips contain the target, set strip_index to the strip where the target is most centered.
             
             If at least one legal connection is supported by the observation and assignments, new_arcs must not be empty.
             """
@@ -357,7 +357,10 @@ class MLLMClient:
 
         user_message = dedent(
             f"""
-            You are given {num_obs_images} indoor images from one 360-degree viewpoint (indices 0-{max(0, num_obs_images - 1)}).
+            You are given {num_panorama_images} panorama images from one 360-degree viewpoint.
+            Image 0 is the raw RGB panorama.
+            Image 1 is the annotated panorama with viewpoint-number markers.
+            Valid target strip indices are 0-{max(0, num_panorama_strips - 1)}.
 
             The following is the condensed snapshot of the accumulated graph context.
 
@@ -402,7 +405,7 @@ class MLLMClient:
                 "new_invisible_region_nodes": [{{"label": "", "id": 0, "exist_prob": 0.0, "target_prob": 0.0}}],
                 "viewpoint_target_probs": [{{"id": 0, "target_prob": 0.0}}],
                 "new_arcs": [{{"i": 0, "j": 0, "exist_prob": 0.0, "dist": 0.0}}],
-                "target": {{"found": False, "confidence": 0.0, "view_id": 0}},
+                "target": {{"found": False, "confidence": 0.0, "strip_index": 0}},
                 "viewpoint_node_assigns": [{{"id": 0, "assign_region_node_id": 0}}],
                 "region_merges": []
             }}
@@ -429,14 +432,6 @@ class MLLMClient:
         print(user_message)
 
         return system_message, user_message
-
-    @staticmethod
-    def _remap_target_view_id(payload: dict, index_map: list[int]) -> dict:
-        target = payload["target"]
-        view_id = int(target["view_id"])
-        if view_id >= 0:
-            target["view_id"] = int(index_map[view_id])
-        return payload
 
     def _build_distance_instruction(self, target_object: str) -> str:
         """
@@ -504,13 +499,15 @@ class MLLMClient:
     def propose_semantic_nodes(
         self,
         observation_images: list[np.ndarray],
+        annotated_observation_images: list[np.ndarray] | None = None,
         depth_images: list[np.ndarray] | None = None,
         target_object: str | None = None,
         viewpoint_context: dict | None = None,
         graph: hypothesis_graph.HypothesisGraph | None = None,
     ):
         """
-        observation_images: list of RGB uint8 arrays (H,W,3), typically horizon scan frames.
+        observation_images: list of raw RGB panorama arrays.
+        annotated_observation_images: optional list of annotated panorama arrays.
 
         Returns a dict with grounded visible viewpoints separated from ungrounded
         hypothesis regions so downstream navigation can stay physically consistent.
@@ -518,40 +515,22 @@ class MLLMClient:
 
         viewpoint_context = viewpoint_context or {}
 
-        sampled_indices = self._select_evenly_spaced_indices(
-            total_count=len(observation_images),
-            max_images=MAX_MLLM_INPUT_IMAGES,
-        )
         debugpy.breakpoint()
         pil_images = []
-        pil_depths = []
-        for index in sampled_indices:
-            rgb_image = observation_images[index]
+        for rgb_image in observation_images:
             if rgb_image.dtype != np.uint8:
                 rgb_image = rgb_image.astype(np.uint8)
             pil_images.append(Image.fromarray(rgb_image))
 
-            if depth_images is None:
-                continue
-
-            depth_image = depth_images[index]
-            if depth_image.ndim == 3:
-                depth_image = depth_image[:, :, 0]
-
-            if depth_image.dtype == np.float32 or depth_image.dtype == np.float64:
-                depth_image = np.clip(depth_image * 4000.0, 0, 65535).astype(np.uint16)
-            elif depth_image.dtype != np.uint16:
-                depth_image = depth_image.astype(np.uint16)
-
-            pil_depths.append(Image.fromarray(depth_image, mode="I;16"))
-
-        index_map = sampled_indices
+        if annotated_observation_images is not None:
+            for annotated_image in annotated_observation_images:
+                if annotated_image.dtype != np.uint8:
+                    annotated_image = annotated_image.astype(np.uint8)
+                pil_images.append(Image.fromarray(annotated_image))
 
         if self.save_debug_images:
             for i, im in enumerate(pil_images):
                 im.save(f"debug_horizon_image_{i}.png")
-            for i, depth in enumerate(pil_depths):
-                depth.save(f"debug_horizon_depth_{i}.png")
 
         current_vp_node_id = viewpoint_context["current_viewpoint_index"]
         neighbor_vp_node_ids = [
@@ -560,10 +539,16 @@ class MLLMClient:
         neighbor_vp_distances = [
             vp["distance"] for vp in viewpoint_context["visible_viewpoints"]
         ]
+        num_panorama_strips = len(depth_images or [])
+        if num_panorama_strips == 0:
+            num_panorama_strips = len(
+                viewpoint_context.get("frame_visible_viewpoint_indices", [])
+            )
 
         num_obs_images = len(pil_images)
         system_message, user_message = self._build_instruction(
-            num_obs_images=num_obs_images,
+            num_panorama_images=num_obs_images,
+            num_panorama_strips=num_panorama_strips,
             target_object=target_object,
             graph=graph,
             current_vp_node_id=current_vp_node_id,
@@ -591,48 +576,7 @@ class MLLMClient:
             },
         ]
 
-        # decoded = self._request_completion(messages)
-
-        decoded = {
-            "current_region_node": {
-                "id": 44,
-                "label": "modern living room area with curved sofa and TV wall near kitchen bar",
-                "target_prob": 0.4,
-            },
-            "new_visible_region_nodes": [
-                {
-                    "id": 45,
-                    "label": "minimalist bedroom area with large bed and window beyond living room doorway",
-                    "exist_prob": 0.95,
-                    "target_prob": 0.3,
-                },
-                {
-                    "id": 46,
-                    "label": "open dining and kitchen bar area with stools and bright counter beside TV wall",
-                    "exist_prob": 0.97,
-                    "target_prob": 0.3,
-                },
-            ],
-            "new_invisible_region_nodes": [],
-            "viewpoint_target_probs": [
-                {"id": 16, "target_prob": 0.2},
-                {"id": 21, "target_prob": 0.25},
-            ],
-            "new_arcs": [
-                {"i": 16, "j": 44, "exist_prob": 0.9, "dist": 0.936},
-                {"i": 21, "j": 44, "exist_prob": 0.92, "dist": 1.155},
-            ],
-            "target": {"found": False, "confidence": 0.0, "view_id": -1},
-            "viewpoint_node_assigns": [
-                {"id": 16, "assign_region_node_id": 45},
-                {"id": 21, "assign_region_node_id": 46},
-            ],
-            "region_merges": [],
-        }
-
-        decoded["current_vp_id"] = current_vp_node_id
-        decoded["neighbor_vp_ids"] = neighbor_vp_node_ids
-        decoded["neighbor_vp_distances"] = neighbor_vp_distances
+        decoded = self._request_completion(messages)
 
         print("\n[MLLM RAW OUTPUT]\n", decoded)
         debugpy.breakpoint()
@@ -658,12 +602,15 @@ class MLLMClient:
                 "target": {
                     "found": False,
                     "confidence": 0.0,
+                    "strip_index": -1,
                 },
                 "viewpoint_node_assigns": [],
                 "region_merges": [],
             }
 
-        payload = self._remap_target_view_id(payload, index_map)
+        payload["current_vp_id"] = current_vp_node_id
+        payload["neighbor_vp_ids"] = neighbor_vp_node_ids
+        payload["neighbor_vp_distances"] = neighbor_vp_distances
 
         return payload
 

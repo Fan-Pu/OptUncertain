@@ -13,6 +13,24 @@ from semantic_persistence.mllm_client import MLLMClient
 Explore_mode = False  # True: manual keyboard control
 LAST_IMAGE_RIGHT_SHIFT_STEPS = 6
 
+
+def select_target_observation(
+    tgt,
+    horizon_headings,
+    horizon_rgb_frames,
+    horizon_depths,
+):
+    if not tgt["found"]:
+        return None, None, None
+
+    target_strip_index = int(tgt["strip_index"])
+    return (
+        float(horizon_headings[target_strip_index]),
+        horizon_rgb_frames[target_strip_index],
+        horizon_depths[target_strip_index],
+    )
+
+
 if __name__ == "__main__":
     # -------------------- Debugger --------------------
     debugpy.listen(("0.0.0.0", 5678))
@@ -70,8 +88,10 @@ if __name__ == "__main__":
         (
             best_heading_for_vp,
             _,
-            horizon_rgb_images,
-            horizon_mllm_images,
+            horizon_rgb_frames,
+            horizon_mllm_frames,
+            horizon_rgb_panorama,
+            horizon_mllm_panorama,
             horizon_headings,
             horizon_depths,
             observation_context,
@@ -92,9 +112,9 @@ if __name__ == "__main__":
         #    redundant semantic nodes for already-known locations.
         start_time = time.perf_counter()
         mllm_out = mllm.propose_semantic_nodes(
-            observation_images=horizon_rgb_images,
+            observation_images=[horizon_rgb_panorama],
+            annotated_observation_images=[horizon_mllm_panorama],
             target_object=target_object,
-            depth_images=horizon_depths,
             viewpoint_context=observation_context,
             graph=hypothesis_graph,
         )
@@ -118,14 +138,12 @@ if __name__ == "__main__":
         #     RGB frame, so the follow-up query only needs to estimate distance from
         #     the aligned RGB/depth pair.
         tgt = mllm_out.get("target")
-        target_heading = None
-        target_rgb_image = None
-        target_depth_image = None
-        if tgt["found"]:
-            target_view_id = int(tgt["view_id"])
-            target_heading = float(horizon_headings[target_view_id])
-            target_rgb_image = horizon_rgb_images[target_view_id]
-            target_depth_image = horizon_depths[target_view_id]
+        target_heading, target_rgb_image, target_depth_image = select_target_observation(
+            tgt,
+            horizon_headings,
+            horizon_rgb_frames,
+            horizon_depths,
+        )
         terminate = Helper.target_detection(
             tgt,
             target_object,

@@ -157,6 +157,19 @@ def render_sim_state(state, viewpoint_index_by_vp=None):
     cv2.waitKey(1)
 
 
+def build_truncated_panorama(horizon_frames):
+    """
+    Convert a full set of overlapping horizon frames into a stitched 360 panorama
+    by keeping only the central strip that corresponds to one scan step.
+    """
+    strip_width = int(round(horizon_frames[0].shape[1] * DELTA_HEADING_RAD / HFOV))
+    center_x = horizon_frames[0].shape[1] // 2
+    start_x = center_x - strip_width // 2
+    end_x = start_x + strip_width
+    strips = [frame[:, start_x:end_x].copy() for frame in horizon_frames]
+    return np.concatenate(strips, axis=1)
+
+
 def horizon_scan_return(sim, viewpoint_index_by_vp=None):
     """
     Perform a full 360 horizon scan at the current viewpoint and return to the
@@ -165,9 +178,10 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
     This function is intentionally "perception-only": it does NOT perform any
     target detection. It only collects:
       1) the locally observable moveable neighbors (from navigableLocations)
-      2) a list of raw RGB images for the full horizon scan
-      3) a second list of RGB images with visible `vp-N` markers for the MLLM
-      4) the heading (radians) associated with each image
+      2) a list of raw RGB frames for the full horizon scan
+      3) a list of annotated RGB frames with visible `vp-N` markers
+      4) stitched raw and annotated panoramas built from the scan
+      5) the heading (radians) associated with each frame
 
     Args:
         sim: initialized MatterSim.Simulator with an active episode.
@@ -176,9 +190,11 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
         best_heading_for_vp: dict mapping each reachable neighboring viewpoint ID
             to the best heading (radians) that faces it during the horizon scan.
         start_state: the initial simulator state before performing any rotations.
-        horizon_images: list of raw RGB images (numpy arrays) captured during the scan.
-        horizon_mllm_images: list of RGB images with stable viewpoint markers.
-        horizon_headings: list of headings (radians) aligned with horizon_images.
+        horizon_rgb_frames: list of raw RGB frames (numpy arrays) captured during the scan.
+        horizon_mllm_frames: list of RGB frames with stable viewpoint markers.
+        horizon_rgb_panorama: raw stitched panorama built from horizon_rgb_frames.
+        horizon_mllm_panorama: annotated stitched panorama built from horizon_mllm_frames.
+        horizon_headings: list of headings (radians) aligned with horizon_rgb_frames.
         horizon_depths: list of depth maps (numpy arrays) captured during the scan.
         observation_context: dict containing: current viewpoint id/index, list of visible viewpoints with their ids and indices, and list of visible viewpoint indices for each frame in the horizon scan.
     """
@@ -187,8 +203,8 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
     best_heading_for_vp = {}
     best_score_for_vp = defaultdict(lambda: 1e18)
 
-    horizon_images = []
-    horizon_mllm_images = []
+    horizon_rgb_frames = []
+    horizon_mllm_frames = []
     horizon_headings = []
     horizon_depths = []
     frame_visible_viewpoint_indices = []
@@ -206,8 +222,8 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
             viewpoint_index_by_vp=viewpoint_index_by_vp,
         )
 
-        horizon_images.append(raw_rgb)
-        horizon_mllm_images.append(annotated_rgb)
+        horizon_rgb_frames.append(raw_rgb)
+        horizon_mllm_frames.append(annotated_rgb)
         horizon_headings.append(cur_heading)
         horizon_depths.append(np.array(state.depth, copy=True))
         frame_visible_viewpoint_indices.append(
@@ -253,12 +269,16 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
         ],
         "frame_visible_viewpoint_indices": frame_visible_viewpoint_indices,
     }
+    horizon_rgb_panorama = build_truncated_panorama(horizon_rgb_frames)
+    horizon_mllm_panorama = build_truncated_panorama(horizon_mllm_frames)
 
     return (
         best_heading_for_vp,
         start_state,
-        horizon_images,
-        horizon_mllm_images,
+        horizon_rgb_frames,
+        horizon_mllm_frames,
+        horizon_rgb_panorama,
+        horizon_mllm_panorama,
         horizon_headings,
         horizon_depths,
         observation_context,
@@ -397,8 +417,11 @@ def target_detection(
     if not bool(tgt["found"]):
         return False
 
-    target_view_id = int(tgt["view_id"])
-    print(f"Target '{target_object}' detected by MLLM in view {target_view_id}.")
+    target_strip_index = int(tgt["strip_index"])
+    print(
+        f"Target '{target_object}' detected by MLLM in panorama strip "
+        f"{target_strip_index}."
+    )
     depth_start_time = time.perf_counter()
     distance_out = {"distance_m": 2.375}
     # distance_out = mllm.estimate_target_distance(

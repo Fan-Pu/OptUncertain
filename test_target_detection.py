@@ -39,7 +39,7 @@ class TargetDetectionTest(unittest.TestCase):
 
         with mock.patch.object(Helper, "rotate_to_target_heading_mov2vp") as rotate_mock:
             result = Helper.target_detection(
-                {"found": False, "view_id": -1},
+                {"found": False, "strip_index": -1},
                 "plant",
                 None,
                 None,
@@ -57,7 +57,7 @@ class TargetDetectionTest(unittest.TestCase):
         with mock.patch.object(Helper, "rotate_to_target_heading_mov2vp") as rotate_mock:
             with mock.patch.object(Helper, "render_sim_state") as render_mock:
                 result = Helper.target_detection(
-                    {"found": True, "view_id": 7},
+                    {"found": True, "strip_index": 7},
                     "plant",
                     1.25,
                     object(),
@@ -76,7 +76,7 @@ class TargetDetectionTest(unittest.TestCase):
         with mock.patch.object(Helper, "rotate_to_target_heading_mov2vp") as rotate_mock:
             with mock.patch.object(Helper, "render_sim_state") as render_mock:
                 result = Helper.target_detection(
-                    {"found": True, "view_id": 7},
+                    {"found": True, "strip_index": 7},
                     "plant",
                     1.25,
                     object(),
@@ -89,7 +89,7 @@ class TargetDetectionTest(unittest.TestCase):
         rotate_mock.assert_not_called()
         render_mock.assert_not_called()
 
-    def test_missing_view_id_crashes_when_found(self):
+    def test_missing_strip_index_crashes_when_found(self):
         sim = _FakeSim()
 
         with self.assertRaises(KeyError):
