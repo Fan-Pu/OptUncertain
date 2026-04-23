@@ -92,7 +92,7 @@ if __name__ == "__main__":
         #    redundant semantic nodes for already-known locations.
         start_time = time.perf_counter()
         mllm_out = mllm.propose_semantic_nodes(
-            observation_images=horizon_mllm_images,
+            observation_images=horizon_rgb_images,
             target_object=target_object,
             depth_images=horizon_depths,
             viewpoint_context=observation_context,
