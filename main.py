@@ -2,7 +2,7 @@
 import os
 import time
 import debugpy
-
+import cv2
 import Helper
 
 from optimization_model import RollingHorizonOptimizer
@@ -138,11 +138,13 @@ if __name__ == "__main__":
         #     RGB frame, so the follow-up query only needs to estimate distance from
         #     the aligned RGB/depth pair.
         tgt = mllm_out.get("target")
-        target_heading, target_rgb_image, target_depth_image = select_target_observation(
-            tgt,
-            horizon_headings,
-            horizon_rgb_frames,
-            horizon_depths,
+        target_heading, target_rgb_image, target_depth_image = (
+            select_target_observation(
+                tgt,
+                horizon_headings,
+                horizon_rgb_frames,
+                horizon_depths,
+            )
         )
         terminate = Helper.target_detection(
             tgt,
