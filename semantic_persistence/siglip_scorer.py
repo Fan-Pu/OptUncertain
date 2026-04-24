@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Dict, Iterable, List
-
+import torch
 import numpy as np
 from PIL import Image
 
@@ -9,7 +9,7 @@ from PIL import Image
 class SigLIPScorer:
     def __init__(
         self,
-        model_name: str = "google/siglip-base-patch16-224",
+        model_name: str = "google/siglip-large-patch16-256",
         device: str | None = None,
     ):
         import torch
@@ -65,3 +65,33 @@ class SigLIPScorer:
         image_embeddings = self._encode_images(images)
         similarities = image_embeddings @ text_embedding
         return float(similarities.max().item())
+
+    def test_score_images_text(self, image_path: str) -> None:
+        image = Image.open(image_path).convert("RGB")
+        texts = [
+            "a photo of a hallway",
+            "a photo of a kitchen",
+            "a photo of a bedroom",
+            "a photo of a bathroom",
+        ]
+        inputs = self.processor(
+            text=texts, images=image, padding="max_length", return_tensors="pt"
+        )
+
+        inputs = {
+            k: (
+                v.to(self.device, dtype=torch.float16)
+                if k == "pixel_values"
+                else v.to(self.device)
+            )
+            for k, v in inputs.items()
+        }
+
+        with torch.inference_mode():
+            outputs = self.model(**inputs)
+
+        logits = outputs.logits_per_image[0]
+        probs = torch.sigmoid(logits)
+
+        for text, prob in zip(texts, probs):
+            print(f"{text}: {prob.item():.4f}")

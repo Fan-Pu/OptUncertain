@@ -1,6 +1,9 @@
+﻿from doctest import debug
 import json
 import sys
 from typing import Dict, List
+
+import debugpy
 
 import Helper
 
@@ -42,9 +45,11 @@ def _best_detections_by_target(
                 continue
             if not bool(detection["found"]):
                 continue
-            target_heading, target_rgb_image, target_depth_image = select_detection_observation(
-                agent_observation=agent_observation,
-                detection=detection,
+            target_heading, target_rgb_image, target_depth_image = (
+                select_detection_observation(
+                    agent_observation=agent_observation,
+                    detection=detection,
+                )
             )
             candidate = {
                 "agent_id": agent_id,
@@ -75,7 +80,9 @@ def _mark_completed_targets(
         str(target["id"]): float(target["distance_threshold_m"]) for target in targets
     }
     unfound_target_ids = {
-        target_id for target_id, is_found in hypothesis_graph.target_found.items() if not is_found
+        target_id
+        for target_id, is_found in hypothesis_graph.target_found.items()
+        if not is_found
     }
     best_detections = _best_detections_by_target(
         mllm_output=mllm_output,
@@ -99,6 +106,12 @@ def _mark_completed_targets(
 def run_scenario(config_path: str) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
     from semantic_persistence import HypothesisGraph, MLLMClient, SigLIPScorer
+
+    # -------------------- Debugger --------------------
+    debugpy.listen(("0.0.0.0", 5678))
+    print("debugpy listening on 5678, waiting...")
+    debugpy.wait_for_client()
+    print("debugger attached, continuing...")
 
     scenario = load_scenario_config(config_path)
     agent_ids = [str(agent["id"]) for agent in scenario["agents"]]
@@ -126,6 +139,10 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         max_new_tokens=int(scenario["mllm"]["max_new_tokens"]),
     )
     scorer = SigLIPScorer()
+
+    # scorer.test_score_images_text("test.png")
+
+    debugpy.breakpoint()  # Set a breakpoint here to inspect initial state before the loop starts
 
     while True:
         if all(hypothesis_graph.target_found.values()):
@@ -162,7 +179,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             target_found_flags=hypothesis_graph.target_found,
         )
         observations_by_agent = {
-            str(observation["agent_id"]): observation for observation in agent_observations
+            str(observation["agent_id"]): observation
+            for observation in agent_observations
         }
         move_specs = []
         for agent_id in agent_ids:

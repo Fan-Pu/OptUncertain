@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import base64
+from doctest import debug
 import io
 import json
 import os
 from textwrap import dedent
 from typing import Dict, List
 
+import debugpy
 import numpy as np
 from openai import BadRequestError, OpenAI
 from PIL import Image
@@ -135,7 +137,9 @@ class MLLMClient:
                 {
                     "agent_id": str(observation["agent_id"]),
                     "image_index": image_index,
-                    "current_viewpoint_index": int(observation["current_viewpoint_index"]),
+                    "current_viewpoint_index": int(
+                        observation["current_viewpoint_index"]
+                    ),
                     "visible_viewpoints": [
                         {
                             "viewpoint_index": int(item["viewpoint_index"]),
@@ -231,14 +235,13 @@ class MLLMClient:
                 }
             ],
             "new_invisible_region_nodes": [],
-            "new_arcs": [
-                {"i": 13, "j": 101, "exist_prob": 0.6, "dist": 2.5}
-            ],
+            "new_arcs": [{"i": 13, "j": 101, "exist_prob": 0.6, "dist": 2.5}],
             "region_merges": [[101, 88]],
         }
 
-        user_message = dedent(
-            """
+        user_message = (
+            dedent(
+                """
             Shared target set:
             {targets_json}
 
@@ -258,11 +261,14 @@ class MLLMClient:
             - Keep ids consistent with the shared graph summary whenever a node already exists.
             - Reuse old region ids when the current evidence matches an existing region.
             """
-        ).strip().format(
-            targets_json=json.dumps(target_map, indent=2, sort_keys=True),
-            graph_summary_json=json.dumps(graph_summary, indent=2, sort_keys=True),
-            agent_context_json=json.dumps(agent_context, indent=2, sort_keys=True),
-            schema_json=json.dumps(schema, indent=2, sort_keys=True),
+            )
+            .strip()
+            .format(
+                targets_json=json.dumps(target_map, indent=2, sort_keys=True),
+                graph_summary_json=json.dumps(graph_summary, indent=2, sort_keys=True),
+                agent_context_json=json.dumps(agent_context, indent=2, sort_keys=True),
+                schema_json=json.dumps(schema, indent=2, sort_keys=True),
+            )
         )
         return system_message, user_message
 
@@ -281,13 +287,18 @@ class MLLMClient:
         }
         missing_top_level_keys = required_top_level_keys.difference(payload)
         if missing_top_level_keys:
-            raise KeyError("Missing top-level keys: %s" % sorted(missing_top_level_keys))
+            raise KeyError(
+                "Missing top-level keys: %s" % sorted(missing_top_level_keys)
+            )
 
         observation_by_agent = {
-            str(observation["agent_id"]): observation for observation in agent_observations
+            str(observation["agent_id"]): observation
+            for observation in agent_observations
         }
         expected_agent_ids = set(observation_by_agent)
-        returned_agent_ids = {str(agent_info["agent_id"]) for agent_info in payload["agents"]}
+        returned_agent_ids = {
+            str(agent_info["agent_id"]) for agent_info in payload["agents"]
+        }
         if returned_agent_ids != expected_agent_ids:
             raise ValueError(
                 "Returned agent ids %s do not match expected agent ids %s"
@@ -308,7 +319,8 @@ class MLLMClient:
                     raise KeyError("Missing key '%s' for agent %s" % (key, agent_id))
 
             expected_viewpoint_ids = {
-                int(item["viewpoint_index"]) for item in observation["visible_viewpoints"]
+                int(item["viewpoint_index"])
+                for item in observation["visible_viewpoints"]
             }
             returned_viewpoint_prob_ids = {
                 int(item["id"]) for item in agent_info["viewpoint_target_probs"]
@@ -391,7 +403,9 @@ class MLLMClient:
                 {
                     "type": "image_url",
                     "image_url": {
-                        "url": self._image_to_data_url(observation["annotated_panorama"])
+                        "url": self._image_to_data_url(
+                            observation["annotated_panorama"]
+                        )
                     },
                 }
             )
@@ -400,6 +414,8 @@ class MLLMClient:
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_content},
         ]
+
+        debugpy.breakpoint()  # Set a breakpoint here to inspect the messages before sending the request
         decoded = self._request_completion(messages)
         raw = self._strip_code_fences(decoded)
         payload = self._extract_json_object(raw)
@@ -438,14 +454,21 @@ class MLLMClient:
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": self._build_distance_instruction(target_object)},
+                    {
+                        "type": "text",
+                        "text": self._build_distance_instruction(target_object),
+                    },
                     {
                         "type": "image_url",
                         "image_url": {"url": self._image_to_data_url(rgb_image)},
                     },
                     {
                         "type": "image_url",
-                        "image_url": {"url": self._image_to_data_url(Image.fromarray(depth_image, mode="I;16"))},
+                        "image_url": {
+                            "url": self._image_to_data_url(
+                                Image.fromarray(depth_image, mode="I;16")
+                            )
+                        },
                     },
                 ],
             }
