@@ -1,12 +1,36 @@
-"""
-semantic_persistence package
+__all__ = [
+    "HypothesisGraph",
+    "MLLMClient",
+    "SigLIPScorer",
+    "load_nav_graph",
+    "shortest_path_next_hop",
+    "argmin_distance_to_set",
+]
 
-This package implements a lightweight semantic persistence component:
-  - propose semantic regions (via an MLLM client)
-  - ground labels to Matterport viewpoint sets (retrieval)
-  - match/merge nodes over time (persistence)
-"""
 
-from .mllm_client import MLLMClient
-from .nav_graph import load_nav_graph, shortest_path_next_hop, argmin_distance_to_set
-from .hypothesis_graph import HypothesisGraph
+def __getattr__(name):
+    if name == "HypothesisGraph":
+        from .hypothesis_graph import HypothesisGraph
+
+        return HypothesisGraph
+    if name == "MLLMClient":
+        from .mllm_client import MLLMClient
+
+        return MLLMClient
+    if name == "SigLIPScorer":
+        from .siglip_scorer import SigLIPScorer
+
+        return SigLIPScorer
+    if name in ("load_nav_graph", "shortest_path_next_hop", "argmin_distance_to_set"):
+        from .nav_graph import (
+            argmin_distance_to_set,
+            load_nav_graph,
+            shortest_path_next_hop,
+        )
+
+        return {
+            "load_nav_graph": load_nav_graph,
+            "shortest_path_next_hop": shortest_path_next_hop,
+            "argmin_distance_to_set": argmin_distance_to_set,
+        }[name]
+    raise AttributeError(name)

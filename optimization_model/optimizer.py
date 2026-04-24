@@ -1,246 +1,384 @@
+from __future__ import annotations
+
+from typing import Dict, List, Tuple
+
 from gurobipy import GRB, Model, quicksum
 
 from Helper import TYPE_VP
-from semantic_persistence.hypothesis_graph import HypothesisGraph, GraphNode, GraphEdge
 
 
 class RollingHorizonOptimizer:
-    def __init__(self):
-        self.alpha = 1.0  # weight for distance cost: the cost between the current viewpoint and the next viewpoint.
-        self.beta = 2.0  # weight for risk cost: the cost of traversing an edge with low existence probability.
-        self.gamma = 0.5  # weight for node risk cost: the cost of resolving a node with low existence probability.
-        self.service_cost = 0.5
-        self.budget = 20.0
-        self.grounded_resolution_weight = 1.25
-        self.ungrounded_resolution_weight = 1.0
+    def __init__(self, optimizer_config: dict | None = None):
+        optimizer_config = optimizer_config or {}
+        self.goal_weight = float(optimizer_config.get("goal_weight", 0.2222))
+        self.dist_weight = float(optimizer_config.get("dist_weight", 0.2222))
+        self.arc_weight = float(optimizer_config.get("arc_weight", 0.4444))
+        self.node_weight = float(optimizer_config.get("node_weight", 0.1111))
+        self.ungrounded_reward_weight = float(
+            optimizer_config.get("ungrounded_reward_weight", 0.8)
+        )
 
-    def solve(self, hypothesis_graph, current_vp_node_id):
-        """Plan a multi-step viewpoint route and expose its first hop."""
-
-        # Candidate path nodes include both viewpoint and region nodes. The current
-        # viewpoint is the fixed route start, so it does not get its own path variable.
-        path_node_ids = [
-            node_id
-            for node_id in sorted(hypothesis_graph.nodes)
-            if node_id != current_vp_node_id
+    def solve(
+        self,
+        hypothesis_graph,
+        agent_current_vp_ids: Dict[str, int],
+        target_found_flags: Dict[str, bool],
+    ) -> Dict[str, object]:
+        agent_ids = list(agent_current_vp_ids)
+        start_node_ids = {int(node_id) for node_id in agent_current_vp_ids.values()}
+        candidate_node_ids = [
+            node_id for node_id in sorted(hypothesis_graph.nodes) if node_id not in start_node_ids
         ]
-
-        # The graph stores undirected navigation edges, but the MILP uses directed edge
-        # decisions so both travel directions are enumerated here for viewpoint-region
-        # and viewpoint-viewpoint connectivity alike.
-        directed_edges = []
-        edge_distance = {}  # (source_id, target_id) -> travel distance
-        edge_risk = {}  # (source_id, target_id) -> uncertainty penalty
-        for edge in hypothesis_graph.edges.values():
-            source_id = edge.source_node_id
-            target_id = edge.target_node_id
-            directed_edges.append((source_id, target_id))
-            directed_edges.append((target_id, source_id))
-            edge_distance[(source_id, target_id)] = edge.distance
-            edge_distance[(target_id, source_id)] = edge.distance
-            edge_risk[(source_id, target_id)] = 1.0 - edge.exist_prob
-            edge_risk[(target_id, source_id)] = 1.0 - edge.exist_prob
-
-        # Reward and risk terms for visiting each viewpoint.
-        #
-        # node_reward[node_id]:
-        #   Expected value of visiting the viewpoint. This is based on the best target
-        #   probability attached either to the viewpoint itself or to its linked region,
-        #   discounted by how much of that viewpoint has already been seen.
-        #
-        # node_risk[node_id]:
-        #   Penalty for spending effort on a low-confidence node/region.
-        #
-        # resolution_weight[node_id]:
-        #   Extra reward multiplier for grounded nodes because they are backed by
-        #   stronger evidence than ungrounded hypotheses.
-        node_reward = {}
-        node_risk = {}
-        resolution_weight = {}
-        for node_id in path_node_ids:
-            node: GraphNode = hypothesis_graph.nodes[node_id]
-            target_prob = node.target_prob
-            node_reward[node_id] = target_prob
-            node_risk[node_id] = 1.0 - node.exist_prob
-            resolution_weight[node_id] = (
-                self.grounded_resolution_weight
-                if node.grounded
-                else self.ungrounded_resolution_weight
-            )
-
-        model = Model("rolling_horizon_milp")
-        model.Params.OutputFlag = 0
-
-        # x[(i, j)] = 1 if the route travels along directed edge i -> j.
-        x = {
-            (source_id, target_id): model.addVar(
-                vtype=GRB.BINARY, name=f"x_{source_id}_{target_id}"
-            )
+        directed_edges = self._build_directed_edges(
+            hypothesis_graph=hypothesis_graph,
+            start_node_ids=start_node_ids,
+        )
+        edge_distance = {
+            (source_id, target_id): hypothesis_graph.edges[tuple(sorted((source_id, target_id)))].distance_mean
             for source_id, target_id in directed_edges
         }
-
-        # y[i] = 1 if node i is included in the selected path.
-        y = {
-            node_id: model.addVar(vtype=GRB.BINARY, name=f"y_{node_id}")
-            for node_id in path_node_ids
+        edge_nonexist_penalty = {
+            (source_id, target_id): 1.0
+            - hypothesis_graph.edges[tuple(sorted((source_id, target_id)))].exist_prob
+            for source_id, target_id in directed_edges
         }
-
-        # u[i] is the Miller-Tucker-Zemlin ordering variable used only to eliminate
-        # disconnected subtours among selected path nodes.
-        u = {
-            node_id: model.addVar(
-                lb=1.0,
-                ub=float(len(path_node_ids)),
-                vtype=GRB.CONTINUOUS,
-                name=f"u_{node_id}",
-            )
-            for node_id in path_node_ids
+        node_nonexist_penalty = {
+            node_id: 1.0 - hypothesis_graph.nodes[node_id].exist_prob
+            for node_id in candidate_node_ids
         }
+        node_reward = {}
+        for node_id in candidate_node_ids:
+            node = hypothesis_graph.nodes[node_id]
+            reward_weight = 1.0 if node.grounded else self.ungrounded_reward_weight
+            node_reward[node_id] = {
+                target_id: reward_weight * node.target_probs[target_id]
+                for target_id in hypothesis_graph.target_descriptions
+            }
+
+        model = Model("multi_agent_many_to_many")
+        model.Params.OutputFlag = 0
+
+        x = {}
+        for agent_id in agent_ids:
+            for source_id, target_id in directed_edges:
+                x[(source_id, target_id, agent_id)] = model.addVar(
+                    vtype=GRB.BINARY,
+                    name="x_%s_%s_%s" % (source_id, target_id, agent_id),
+                )
+
+        y = {}
+        u = {}
+        for agent_id in agent_ids:
+            for node_id in candidate_node_ids:
+                y[(node_id, agent_id)] = model.addVar(
+                    vtype=GRB.BINARY,
+                    name="y_%s_%s" % (node_id, agent_id),
+                )
+                u[(node_id, agent_id)] = model.addVar(
+                    lb=1.0,
+                    ub=float(len(candidate_node_ids)),
+                    vtype=GRB.CONTINUOUS,
+                    name="u_%s_%s" % (node_id, agent_id),
+                )
+
+        alpha = {}
+        for agent_id in agent_ids:
+            for node_id in candidate_node_ids:
+                for target_id in hypothesis_graph.target_descriptions:
+                    alpha[(node_id, target_id, agent_id)] = model.addVar(
+                        vtype=GRB.BINARY,
+                        name="alpha_%s_%s_%s" % (node_id, target_id, agent_id),
+                    )
+
+        (
+            goal_lower_bound,
+            goal_upper_bound,
+            dist_lower_bound,
+            dist_upper_bound,
+            arc_lower_bound,
+            arc_upper_bound,
+            node_lower_bound,
+            node_upper_bound,
+        ) = self._objective_bounds(
+            hypothesis_graph=hypothesis_graph,
+            agent_current_vp_ids=agent_current_vp_ids,
+            target_found_flags=target_found_flags,
+            candidate_node_ids=candidate_node_ids,
+            directed_edges=directed_edges,
+            edge_distance=edge_distance,
+            edge_nonexist_penalty=edge_nonexist_penalty,
+            node_reward=node_reward,
+            node_nonexist_penalty=node_nonexist_penalty,
+        )
+
+        goal_term = quicksum(
+            node_reward[node_id][target_id] * alpha[(node_id, target_id, agent_id)]
+            for agent_id in agent_ids
+            for node_id in candidate_node_ids
+            for target_id in hypothesis_graph.target_descriptions
+        )
+        dist_term = quicksum(
+            edge_distance[(source_id, target_id)] * x[(source_id, target_id, agent_id)]
+            for agent_id in agent_ids
+            for source_id, target_id in directed_edges
+        )
+        arc_term = quicksum(
+            edge_nonexist_penalty[(source_id, target_id)]
+            * x[(source_id, target_id, agent_id)]
+            for agent_id in agent_ids
+            for source_id, target_id in directed_edges
+        )
+        node_term = quicksum(
+            node_nonexist_penalty[node_id] * y[(node_id, agent_id)]
+            for agent_id in agent_ids
+            for node_id in candidate_node_ids
+        )
 
         model.setObjective(
-            quicksum(
-                resolution_weight[node_id] * node_reward[node_id] * y[node_id]
-                for node_id in path_node_ids
-            )
-            - self.alpha
-            * quicksum(
-                edge_distance[edge_id] * x[edge_id] for edge_id in directed_edges
-            )
-            - self.beta
-            * quicksum(edge_risk[edge_id] * x[edge_id] for edge_id in directed_edges)
-            - self.gamma
-            * quicksum(node_risk[node_id] * y[node_id] for node_id in path_node_ids),
+            self.goal_weight
+            * ((goal_term - goal_lower_bound) / (goal_upper_bound - goal_lower_bound))
+            - self.dist_weight
+            * ((dist_term - dist_lower_bound) / (dist_upper_bound - dist_lower_bound))
+            - self.arc_weight
+            * ((arc_term - arc_lower_bound) / (arc_upper_bound - arc_lower_bound))
+            - self.node_weight
+            * ((node_term - node_lower_bound) / (node_upper_bound - node_lower_bound)),
             GRB.MAXIMIZE,
         )
 
-        # The optimizer must choose exactly one first move away from the current viewpoint.
-        model.addConstr(
-            quicksum(
-                x[(source_id, target_id)]
-                for source_id, target_id in directed_edges
-                if source_id == current_vp_node_id
-            )
-            == 1,
-            name="depart_current",
-        )
-
-        # The first node after the current viewpoint must itself be a viewpoint.
-        model.addConstr(
-            quicksum(
-                x[(source_id, target_id)]
-                for source_id, target_id in directed_edges
-                if source_id == current_vp_node_id
-                and hypothesis_graph.nodes[target_id].type == TYPE_VP
-            )
-            == 1,
-            name="first_hop_is_viewpoint",
-        )
-
-        # This is an open path, not a tour, so the planned route must not return to the
-        # current viewpoint inside the same solve.
-        model.addConstr(
-            quicksum(
-                x[(source_id, target_id)]
-                for source_id, target_id in directed_edges
-                if target_id == current_vp_node_id
-            )
-            == 0,
-            name="do_not_return_current",
-        )
-
-        for node_id in path_node_ids:
-            # Every selected node has exactly one predecessor in the path.
+        for agent_id in agent_ids:
+            start_node_id = int(agent_current_vp_ids[agent_id])
             model.addConstr(
                 quicksum(
-                    x[(source_id, target_id)]
+                    x[(source_id, target_id, agent_id)]
                     for source_id, target_id in directed_edges
-                    if target_id == node_id
+                    if source_id == start_node_id
                 )
-                == y[node_id],
-                name=f"flow_in_{node_id}",
+                == 1,
+                name="depart_%s" % agent_id,
             )
-
-            # Internal path nodes have one successor, while the terminal node has none.
             model.addConstr(
                 quicksum(
-                    x[(source_id, target_id)]
+                    x[(source_id, target_id, agent_id)]
                     for source_id, target_id in directed_edges
-                    if source_id == node_id
+                    if source_id == start_node_id
+                    and hypothesis_graph.nodes[target_id].type == TYPE_VP
                 )
-                <= y[node_id],
-                name=f"flow_out_{node_id}",
+                == 1,
+                name="first_hop_vp_%s" % agent_id,
+            )
+            model.addConstr(
+                quicksum(
+                    x[(source_id, target_id, agent_id)]
+                    for source_id, target_id in directed_edges
+                    if target_id == start_node_id
+                )
+                == 0,
+                name="no_return_%s" % agent_id,
             )
 
-        # In an open path, every selected node except the terminal node contributes one
-        # outgoing edge. This makes the selected edges form a single ordered path even
-        # when region nodes appear as transit nodes.
-        model.addConstr(
-            quicksum(
-                x[(source_id, target_id)]
-                for source_id, target_id in directed_edges
-                if source_id in path_node_ids
-            )
-            == quicksum(y[node_id] for node_id in path_node_ids) - 1,
-            name="open_path_edge_count",
-        )
-
-        # model.addConstr(
-        #     quicksum(edge_distance[edge_id] * x[edge_id] for edge_id in directed_edges)
-        #     + quicksum(self.service_cost * y[node_id] for node_id in path_node_ids)
-        #     <= self.budget,
-        #     name="budget",
-        # )
-
-        for source_id in path_node_ids:
-            for target_id in path_node_ids:
-                if source_id == target_id or (source_id, target_id) not in x:
-                    continue
-                # MTZ constraints suppress detached cycles that do not belong to the
-                # main route that starts at current_vp_node_id.
+            for node_id in candidate_node_ids:
                 model.addConstr(
-                    u[source_id]
-                    - u[target_id]
-                    + len(path_node_ids) * x[(source_id, target_id)]
-                    <= len(path_node_ids) - 1,
-                    name=f"mtz_{source_id}_{target_id}",
+                    quicksum(
+                        x[(source_id, target_id, agent_id)]
+                        for source_id, target_id in directed_edges
+                        if target_id == node_id
+                    )
+                    == y[(node_id, agent_id)],
+                    name="flow_in_%s_%s" % (node_id, agent_id),
                 )
+                model.addConstr(
+                    quicksum(
+                        x[(source_id, target_id, agent_id)]
+                        for source_id, target_id in directed_edges
+                        if source_id == node_id
+                    )
+                    <= y[(node_id, agent_id)],
+                    name="flow_out_%s_%s" % (node_id, agent_id),
+                )
+
+            model.addConstr(
+                quicksum(
+                    x[(source_id, target_id, agent_id)]
+                    for source_id, target_id in directed_edges
+                    if source_id in candidate_node_ids
+                )
+                == quicksum(y[(node_id, agent_id)] for node_id in candidate_node_ids) - 1,
+                name="open_path_%s" % agent_id,
+            )
+
+            for source_id, target_id in directed_edges:
+                if source_id not in candidate_node_ids or target_id not in candidate_node_ids:
+                    continue
+                model.addConstr(
+                    u[(source_id, agent_id)]
+                    - u[(target_id, agent_id)]
+                    + len(candidate_node_ids) * x[(source_id, target_id, agent_id)]
+                    <= len(candidate_node_ids) - 1,
+                    name="mtz_%s_%s_%s" % (source_id, target_id, agent_id),
+                )
+
+        for agent_id in agent_ids:
+            for node_id in candidate_node_ids:
+                for target_id in hypothesis_graph.target_descriptions:
+                    model.addConstr(
+                        alpha[(node_id, target_id, agent_id)]
+                        <= (1 - int(bool(target_found_flags[target_id])))
+                        * y[(node_id, agent_id)],
+                        name="alpha_link_%s_%s_%s" % (node_id, target_id, agent_id),
+                    )
+
+        for target_id in hypothesis_graph.target_descriptions:
+            model.addConstr(
+                quicksum(
+                    alpha[(node_id, target_id, agent_id)]
+                    for agent_id in agent_ids
+                    for node_id in candidate_node_ids
+                )
+                <= 1 - int(bool(target_found_flags[target_id])),
+                name="unique_target_%s" % target_id,
+            )
 
         model.optimize()
+        if model.Status != GRB.OPTIMAL:
+            raise RuntimeError("Optimizer did not find an optimal solution")
 
-        selected_edges = [edge_id for edge_id, var in x.items() if var.X > 0.5]
-        planned_path_node_ids, route_node_ids = self._extract_path_from_selected_edges(
-            current_vp_node_id, selected_edges
-        )
+        agent_paths = {}
+        selected_edges = {}
+        for agent_id in agent_ids:
+            chosen_edges = [
+                (source_id, target_id)
+                for source_id, target_id in directed_edges
+                if x[(source_id, target_id, agent_id)].X > 0.5
+            ]
+            selected_edges[agent_id] = chosen_edges
+            planned_path_node_ids, route_node_ids = self._extract_path(
+                start_node_id=int(agent_current_vp_ids[agent_id]),
+                selected_edges=chosen_edges,
+            )
+            agent_paths[agent_id] = {
+                "planned_path_node_ids": planned_path_node_ids,
+                "next_vp_node_id": planned_path_node_ids[0],
+                "route_node_ids": route_node_ids,
+            }
+
+        target_assignments = []
+        for agent_id in agent_ids:
+            for node_id in candidate_node_ids:
+                for target_id in hypothesis_graph.target_descriptions:
+                    if alpha[(node_id, target_id, agent_id)].X > 0.5:
+                        target_assignments.append(
+                            {
+                                "agent_id": agent_id,
+                                "node_id": node_id,
+                                "target_id": target_id,
+                            }
+                        )
 
         return {
-            # Ordered future path nodes, excluding the current start viewpoint.
-            "planned_path_node_ids": planned_path_node_ids,
-            # The control loop still executes only the first step of the plan, which is
-            # constrained to be a viewpoint node.
-            "next_vp_node_id": planned_path_node_ids[0],
-            # Full ordered path chosen by the MILP, including the current viewpoint.
-            "route_node_ids": route_node_ids,
+            "agent_paths": agent_paths,
+            "target_assignments": target_assignments,
             "objective_value": model.ObjVal,
             "selected_edges": selected_edges,
         }
 
-    def _extract_path_from_selected_edges(self, current_vp_node_id, selected_edges):
-        """Convert selected directed edges into the ordered mixed-node path."""
-        outgoing_by_source = {
-            source_id: target_id for source_id, target_id in selected_edges
-        }
+    def _build_directed_edges(
+        self,
+        hypothesis_graph,
+        start_node_ids,
+    ) -> List[Tuple[int, int]]:
+        directed_edges = []
+        for edge in hypothesis_graph.edges.values():
+            source_id = edge.source_node_id
+            target_id = edge.target_node_id
+            if target_id not in start_node_ids:
+                directed_edges.append((source_id, target_id))
+            if source_id not in start_node_ids:
+                directed_edges.append((target_id, source_id))
+        return sorted(set(directed_edges))
 
+    def _objective_bounds(
+        self,
+        hypothesis_graph,
+        agent_current_vp_ids,
+        target_found_flags,
+        candidate_node_ids,
+        directed_edges,
+        edge_distance,
+        edge_nonexist_penalty,
+        node_reward,
+        node_nonexist_penalty,
+    ):
+        goal_lower_bound = 0.0
+        goal_upper_bound = 0.0
+        for target_id, is_found in target_found_flags.items():
+            if is_found:
+                continue
+            goal_upper_bound += max(
+                node_reward[node_id][target_id] for node_id in candidate_node_ids
+            )
+
+        dist_lower_bound = 0.0
+        arc_lower_bound = 0.0
+        node_lower_bound = 0.0
+        for agent_id, start_node_id in agent_current_vp_ids.items():
+            viewpoint_outgoing_edges = [
+                (source_id, target_id)
+                for source_id, target_id in directed_edges
+                if source_id == start_node_id
+                and hypothesis_graph.nodes[target_id].type == TYPE_VP
+            ]
+            dist_lower_bound += min(
+                edge_distance[(source_id, target_id)]
+                for source_id, target_id in viewpoint_outgoing_edges
+            )
+            arc_lower_bound += min(
+                edge_nonexist_penalty[(source_id, target_id)]
+                for source_id, target_id in viewpoint_outgoing_edges
+            )
+            node_lower_bound += min(
+                node_nonexist_penalty[target_id]
+                for _, target_id in viewpoint_outgoing_edges
+            )
+
+        max_edge_distance = max(
+            edge_distance[(source_id, target_id)] for source_id, target_id in directed_edges
+        )
+        max_arc_penalty = max(
+            edge_nonexist_penalty[(source_id, target_id)]
+            for source_id, target_id in directed_edges
+        )
+        max_node_penalty = max(
+            node_nonexist_penalty[node_id] for node_id in candidate_node_ids
+        )
+        scale = float(len(agent_current_vp_ids) * len(candidate_node_ids))
+        dist_upper_bound = scale * max_edge_distance
+        arc_upper_bound = scale * max_arc_penalty
+        node_upper_bound = scale * max_node_penalty
+        return (
+            goal_lower_bound,
+            goal_upper_bound,
+            dist_lower_bound,
+            dist_upper_bound,
+            arc_lower_bound,
+            arc_upper_bound,
+            node_lower_bound,
+            node_upper_bound,
+        )
+
+    def _extract_path(
+        self,
+        start_node_id: int,
+        selected_edges: List[Tuple[int, int]],
+    ) -> Tuple[List[int], List[int]]:
+        outgoing_by_source = {source_id: target_id for source_id, target_id in selected_edges}
+        route_node_ids = [start_node_id]
         planned_path_node_ids = []
-        route_node_ids = [current_vp_node_id]
-        next_node_id = outgoing_by_source[current_vp_node_id]
-
-        # Follow the unique selected outgoing edge from each source until the path
-        # reaches its terminal node, which has no outgoing selected edge.
+        current_node_id = outgoing_by_source[start_node_id]
         while True:
-            planned_path_node_ids.append(next_node_id)
-            route_node_ids.append(next_node_id)
-            if next_node_id not in outgoing_by_source:
+            route_node_ids.append(current_node_id)
+            planned_path_node_ids.append(current_node_id)
+            if current_node_id not in outgoing_by_source:
                 break
-            next_node_id = outgoing_by_source[next_node_id]
-
+            current_node_id = outgoing_by_source[current_node_id]
         return planned_path_node_ids, route_node_ids

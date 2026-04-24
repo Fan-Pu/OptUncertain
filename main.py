@@ -1,180 +1,193 @@
-﻿from doctest import debug
-import os
-import time
-import debugpy
-import cv2
+import json
+import sys
+from typing import Dict, List
+
 import Helper
 
-from optimization_model import RollingHorizonOptimizer
-from semantic_persistence.hypothesis_graph import HypothesisGraph
-from semantic_persistence.mllm_client import MLLMClient
+
+def load_scenario_config(config_path: str) -> Dict[str, object]:
+    with open(config_path, "r", encoding="utf-8") as file_handle:
+        return json.load(file_handle)
 
 
-Explore_mode = False  # True: manual keyboard control
-LAST_IMAGE_RIGHT_SHIFT_STEPS = 6
-
-
-def select_target_observation(
-    tgt,
-    horizon_headings,
-    horizon_rgb_frames,
-    horizon_depths,
+def select_detection_observation(
+    agent_observation: Dict[str, object],
+    detection: Dict[str, object],
 ):
-    if not tgt["found"]:
+    if not bool(detection["found"]):
         return None, None, None
-
-    target_strip_index = int(tgt["strip_index"])
+    strip_index = int(detection["strip_index"])
     return (
-        float(horizon_headings[target_strip_index]),
-        horizon_rgb_frames[target_strip_index],
-        horizon_depths[target_strip_index],
+        float(agent_observation["horizon_headings"][strip_index]),
+        agent_observation["horizon_rgb_frames"][strip_index],
+        agent_observation["horizon_depths"][strip_index],
     )
+
+
+def _best_detections_by_target(
+    mllm_output: Dict[str, object],
+    agent_observations: List[Dict[str, object]],
+    unfound_target_ids,
+):
+    observations_by_agent = {
+        str(observation["agent_id"]): observation for observation in agent_observations
+    }
+    best_detections = {}
+    for agent_payload in mllm_output["agents"]:
+        agent_id = str(agent_payload["agent_id"])
+        agent_observation = observations_by_agent[agent_id]
+        for detection in agent_payload["detections"]:
+            target_id = str(detection["target_id"])
+            if target_id not in unfound_target_ids:
+                continue
+            if not bool(detection["found"]):
+                continue
+            target_heading, target_rgb_image, target_depth_image = select_detection_observation(
+                agent_observation=agent_observation,
+                detection=detection,
+            )
+            candidate = {
+                "agent_id": agent_id,
+                "confidence": float(detection["confidence"]),
+                "target_heading": target_heading,
+                "target_rgb_image": target_rgb_image,
+                "target_depth_image": target_depth_image,
+            }
+            if target_id not in best_detections:
+                best_detections[target_id] = candidate
+                continue
+            if candidate["confidence"] > best_detections[target_id]["confidence"]:
+                best_detections[target_id] = candidate
+    return best_detections
+
+
+def _mark_completed_targets(
+    mllm_client,
+    mllm_output: Dict[str, object],
+    agent_observations: List[Dict[str, object]],
+    targets: List[Dict[str, object]],
+    hypothesis_graph,
+) -> List[str]:
+    target_descriptions = {
+        str(target["id"]): str(target["description"]) for target in targets
+    }
+    target_thresholds = {
+        str(target["id"]): float(target["distance_threshold_m"]) for target in targets
+    }
+    unfound_target_ids = {
+        target_id for target_id, is_found in hypothesis_graph.target_found.items() if not is_found
+    }
+    best_detections = _best_detections_by_target(
+        mllm_output=mllm_output,
+        agent_observations=agent_observations,
+        unfound_target_ids=unfound_target_ids,
+    )
+
+    completed_target_ids = []
+    for target_id, detection in best_detections.items():
+        distance_output = mllm_client.estimate_target_distance(
+            rgb_image=detection["target_rgb_image"],
+            depth_image=detection["target_depth_image"],
+            target_object=target_descriptions[target_id],
+        )
+        if float(distance_output["distance_m"]) <= target_thresholds[target_id]:
+            hypothesis_graph.mark_target_found(target_id)
+            completed_target_ids.append(target_id)
+    return completed_target_ids
+
+
+def run_scenario(config_path: str) -> Dict[str, object]:
+    from optimization_model import RollingHorizonOptimizer
+    from semantic_persistence import HypothesisGraph, MLLMClient, SigLIPScorer
+
+    scenario = load_scenario_config(config_path)
+    agent_ids = [str(agent["id"]) for agent in scenario["agents"]]
+    scan_id = str(scenario["scan_id"])
+    sim = Helper.init_render(batch_size=len(agent_ids), enable_render=False)
+    sim.initialize()
+    Helper.build_viewpoint_index(scan_id)
+    sim.newEpisode(
+        [scan_id for _ in scenario["agents"]],
+        [str(agent["start_viewpoint_id"]) for agent in scenario["agents"]],
+        [float(agent.get("heading", 0.0)) for agent in scenario["agents"]],
+        [float(agent.get("elevation", 0.0)) for agent in scenario["agents"]],
+    )
+
+    target_descriptions = {
+        str(target["id"]): str(target["description"]) for target in scenario["targets"]
+    }
+    hypothesis_graph = HypothesisGraph(
+        target_descriptions=target_descriptions,
+        bayes_config=scenario["bayes"],
+    )
+    optimizer = RollingHorizonOptimizer(scenario["optimizer"])
+    mllm_client = MLLMClient(
+        model_name=str(scenario["mllm"]["model_name"]),
+        max_new_tokens=int(scenario["mllm"]["max_new_tokens"]),
+    )
+    scorer = SigLIPScorer()
+
+    while True:
+        if all(hypothesis_graph.target_found.values()):
+            return {"target_found": dict(hypothesis_graph.target_found)}
+
+        agent_observations = Helper.horizon_scan_batch_return(
+            sim=sim,
+            agent_ids=agent_ids,
+            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
+        )
+        mllm_output = mllm_client.propose_semantic_nodes(
+            agent_observations=agent_observations,
+            targets=scenario["targets"],
+            graph=hypothesis_graph,
+        )
+        hypothesis_graph.update_from_mllm(
+            mllm_output=mllm_output,
+            agent_observations=agent_observations,
+            scorer=scorer,
+        )
+        _mark_completed_targets(
+            mllm_client=mllm_client,
+            mllm_output=mllm_output,
+            agent_observations=agent_observations,
+            targets=scenario["targets"],
+            hypothesis_graph=hypothesis_graph,
+        )
+        if all(hypothesis_graph.target_found.values()):
+            return {"target_found": dict(hypothesis_graph.target_found)}
+
+        optimization_result = optimizer.solve(
+            hypothesis_graph=hypothesis_graph,
+            agent_current_vp_ids=hypothesis_graph.agent_current_vp_ids,
+            target_found_flags=hypothesis_graph.target_found,
+        )
+        observations_by_agent = {
+            str(observation["agent_id"]): observation for observation in agent_observations
+        }
+        move_specs = []
+        for agent_id in agent_ids:
+            agent_path = optimization_result["agent_paths"][agent_id]
+            next_vp_node_id = int(agent_path["next_vp_node_id"])
+            next_viewpoint_id = Helper.viewpoint_vp_label_by_index[next_vp_node_id]
+            agent_observation = observations_by_agent[agent_id]
+            move_specs.append(
+                {
+                    "target_heading": float(
+                        agent_observation["best_heading_for_vp"][next_viewpoint_id]
+                    ),
+                    "target_viewpoint_id": next_viewpoint_id,
+                }
+            )
+        Helper.execute_batched_first_hops(sim=sim, move_specs=move_specs)
+
+
+def main(argv: List[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if len(argv) != 1:
+        raise SystemExit("Usage: python main.py <scenario_config.json>")
+    run_scenario(argv[0])
+    return 0
 
 
 if __name__ == "__main__":
-    # -------------------- Debugger --------------------
-    debugpy.listen(("0.0.0.0", 5678))
-    print("debugpy listening on 5678, waiting...")
-    debugpy.wait_for_client()
-    print("debugger attached, continuing...")
-
-    # -------------------- Simulator --------------------
-    sim = Helper.init_render()
-    sim.initialize()
-
-    # -------------------- Episode --------------------
-    scan_id = "17DRP5sb8fy"
-    start_vp_id = "10c252c90fa24ef3b698c6f54d984c5c"
-    Helper.build_viewpoint_index(scan_id)
-    sim.newEpisode([scan_id], [start_vp_id], [0.0], [0.0])
-
-    # -------------------- Explore mode --------------------
-    if Explore_mode:
-        print("Explore mode: Use arrow keys to navigate. Ctrl+C to exit.")
-        Helper.explore_world(sim)
-        raise SystemExit(0)
-
-    # -------------------- MLLM --------------------
-    model_name = "meta-llama/Llama-4-Maverick-17B-128E-Instruct:cheapest"
-    # model_name = "meta-llama/Llama-4-Scout-17B-16E-Instruct:cheapest"
-    mllm = MLLMClient(
-        model_name=model_name,
-        max_new_tokens=160,
-        h_fov=Helper.HFOV,
-        last_image_right_shift_steps=LAST_IMAGE_RIGHT_SHIFT_STEPS,
-    )
-
-    # -------------------- Task --------------------
-    target_object = os.environ.get("TARGET_OBJECT", "green plant on the table").strip()
-    distance_threshold_m = float(
-        os.environ.get("TARGET_DISTANCE_THRESHOLD_M", "1.0").strip()
-    )
-    hypothesis_graph = HypothesisGraph()
-    optimizer = RollingHorizonOptimizer()
-    observation_step = 0
-
-    # -------------------- Loop --------------------
-    while True:
-        observation_step += 1
-        state = sim.getState()[0]
-        cur_vp = state.location.viewpointId
-
-        Helper.render_sim_state(
-            state, viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label
-        )
-
-        # 1) Scan the current viewpoint and keep the raw RGB frames, the annotated
-        #    MLLM frames, their headings, and the aligned depth maps together.
-        (
-            best_heading_for_vp,
-            _,
-            horizon_rgb_frames,
-            horizon_mllm_frames,
-            horizon_rgb_panorama,
-            horizon_mllm_panorama,
-            horizon_headings,
-            horizon_depths,
-            observation_context,
-        ) = Helper.horizon_scan_return(
-            sim,
-            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
-        )
-
-        if not best_heading_for_vp:
-            print("[STOP] No navigable neighbors returned by the scan.")
-            break
-
-        # 2) Ask the MLLM to label the current/neighboring regions and report which
-        #    RGB view contains the target object.
-        #
-        #    The prompt now receives a compact snapshot of the existing hypothesis
-        #    graph so the model can reuse old node ids instead of regenerating
-        #    redundant semantic nodes for already-known locations.
-        start_time = time.perf_counter()
-        mllm_out = mllm.propose_semantic_nodes(
-            observation_images=[horizon_rgb_panorama],
-            annotated_observation_images=[horizon_mllm_panorama],
-            target_object=target_object,
-            viewpoint_context=observation_context,
-            graph=hypothesis_graph,
-        )
-        runtime = time.perf_counter() - start_time
-        print(f"[MLLM] runtime: {runtime:.2f} seconds")
-
-        # debugpy.breakpoint()
-
-        # 2b) Convert the one-step MLLM output into a persistent hypothesis graph.
-        #     This preserves semantic nodes and uncertain structural edges across
-        #     multiple robot viewpoints instead of treating each scan independently.
-        hypothesis_graph.update_from_mllm(mllm_output=mllm_out)
-        print(
-            f"[HypothesisGraph] updated nodes={len(hypothesis_graph.nodes)} "
-            f"edges={len(hypothesis_graph.edges)}"
-        )
-
-        # debugpy.breakpoint()
-
-        # 2a) The detection step above already guarantees the target is in the chosen
-        #     RGB frame, so the follow-up query only needs to estimate distance from
-        #     the aligned RGB/depth pair.
-        tgt = mllm_out.get("target")
-        target_heading, target_rgb_image, target_depth_image = (
-            select_target_observation(
-                tgt,
-                horizon_headings,
-                horizon_rgb_frames,
-                horizon_depths,
-            )
-        )
-        terminate = Helper.target_detection(
-            tgt,
-            target_object,
-            target_heading,
-            target_rgb_image,
-            target_depth_image,
-            distance_threshold_m,
-            sim,
-        )
-        if terminate:
-            break
-
-        debugpy.breakpoint()
-
-        # 3) The optimizer plans a full route through the reachable viewpoint graph.
-        #    The control loop remains receding-horizon: execute only the first waypoint,
-        #    then rescan and replan from the new location on the next iteration.
-        current_vp_node_id = observation_context["current_viewpoint_index"]
-        optimization_result = optimizer.solve(hypothesis_graph, current_vp_node_id)
-        planned_path_node_ids = optimization_result["planned_path_node_ids"]
-        next_vp_node_id = planned_path_node_ids[0]
-        next_vp = Helper.viewpoint_vp_label_by_index[next_vp_node_id]
-        Helper.rotate_to_target_heading_mov2vp(
-            sim, best_heading_for_vp[next_vp], next_vp
-        )
-        print(
-            "[Move] "
-            f"path={optimization_result['route_node_ids']} "
-            f"execute_first_hop={cur_vp} -> {next_vp}"
-        )
-
-        debugpy.breakpoint()
+    raise SystemExit(main())
