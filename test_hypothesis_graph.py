@@ -120,7 +120,6 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
                 {"i": 2, "j": 3, "exist_prob": 0.5, "dist": 5.0},
                 {"i": 2, "j": 20, "exist_prob": 0.6, "dist": 3.0},
             ],
-            "region_merges": [],
         }
         graph.update_from_mllm(mllm_output, observations, scorer)
         return graph, scorer
@@ -212,7 +211,6 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
             "new_visible_region_nodes": [],
             "new_invisible_region_nodes": [],
             "new_arcs": [],
-            "region_merges": [],
         }
 
         graph.update_from_mllm(mllm_output, observations, scorer)

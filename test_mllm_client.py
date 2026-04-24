@@ -71,11 +71,17 @@ class JointMLLMClientTest(unittest.TestCase):
             graph_summary=_FakeGraph().get_mllm_summary(),
         )
 
-        self.assertIn("Image i always corresponds to the agent", system_message)
+        self.assertIn("Image i corresponds to the agent", system_message)
+        self.assertIn("Region labels must be room or area labels only", system_message)
+        self.assertIn("A maximum of 5 new region nodes", system_message)
+        self.assertIn("Generation priority:", user_message)
+        self.assertIn("Grounding rules:", user_message)
         self.assertIn('"agent_id": "agent0"', user_message)
         self.assertIn('"image_index": 0', user_message)
         self.assertIn('"agent_id": "agent1"', user_message)
         self.assertIn('"image_index": 1', user_message)
+        self.assertNotIn("region_merges", system_message)
+        self.assertNotIn("region_merges", user_message)
 
     def test_propose_semantic_nodes_sends_exactly_one_panorama_per_agent(self):
         client = MLLMClient.__new__(MLLMClient)
@@ -130,8 +136,7 @@ class JointMLLMClientTest(unittest.TestCase):
               ],
               "new_visible_region_nodes": [],
               "new_invisible_region_nodes": [],
-              "new_arcs": [],
-              "region_merges": []
+              "new_arcs": []
             }
             """
 

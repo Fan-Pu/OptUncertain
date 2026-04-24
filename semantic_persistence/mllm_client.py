@@ -156,21 +156,45 @@ class MLLMClient:
 
         system_message = dedent(
             """
-            You are a scene-graph proposal module for cooperative many-to-many vision-language navigation.
+            You are an indoor scene-graph proposal module for cooperative many-agent, many-target navigation.
 
-            Return JSON only.
-            Do not return markdown.
-            Do not explain your reasoning.
+            Return compact JSON only.
+            Do not output markdown or any explanation.
 
             Use the provided agent ids and target ids exactly.
-            Each input image is a single annotated panorama for one agent.
-            Image i always corresponds to the agent whose context says image_index = i.
+            Node ids and viewpoint ids must be integers.
+            Probabilities and distances must be numeric values, not strings.
+            Use JSON booleans for found.
 
-            Region labels must describe room/area semantics, not object names.
-            Region-region edges are forbidden.
-            All ids must be integers.
-            All probabilities and distances must be numeric.
-            Use booleans for found.
+            Each input image is one annotated panorama for one agent.
+            Image i corresponds to the agent whose context has image_index = i.
+            Text numbers in a panorama indicate visible neighboring viewpoints.
+            The same text number can appear multiple times and always refers to the same viewpoint.
+
+            Region labels must be room or area labels only, not object names.
+            Each region label must include:
+            1. a characteristic or appearance cue,
+            2. the room or area type,
+            3. a relative location cue.
+
+            Good examples:
+            - modern living room area with curved sofa near kitchen bar
+            - open dining and kitchen area with stools beside living room
+            - minimalist bedroom area with large bed near hallway
+
+            Bad examples:
+            - living room area
+            - kitchen area
+            - bedroom area
+
+            Do not generate too many region nodes.
+            A maximum of 5 new region nodes total may be proposed at each step.
+            When a region is revisited, reuse the previous region id and label.
+
+            No region-to-region arcs are allowed.
+            Do not propose arcs between an agent's current viewpoint and its visible neighboring viewpoints.
+            Do not propose an arc between a viewpoint node and its assigned region node.
+            Every visible neighboring viewpoint must be assigned to exactly one region node.
 
             For every agent:
             - current_region_node must be the region containing the agent's current viewpoint.
@@ -178,10 +202,23 @@ class MLLMClient:
             - viewpoint_node_assigns must contain one item for every visible neighboring viewpoint.
             - detections must contain one item for every target id.
 
-            The only panorama images you receive are the annotated panoramas, exactly one per agent.
+            Every target_probs dictionary must contain every target id.
+            If a target is not directly observed in the panorama, set found=false, confidence=0.0, strip_index=-1.
+            If a target is found, strip_index must be one of the valid strip indices for that agent.
+            If multiple strips contain the target, use the strip where the target is most centered.
             """
         ).strip()
 
+        target_prob_template = {target_id: 0.0 for target_id in sorted(target_map)}
+        detection_template = [
+            {
+                "target_id": target_id,
+                "found": False,
+                "confidence": 0.0,
+                "strip_index": -1,
+            }
+            for target_id in sorted(target_map)
+        ]
         schema = {
             "agents": [
                 {
@@ -190,37 +227,18 @@ class MLLMClient:
                         "id": 100,
                         "label": "bright kitchen area near dining table",
                         "exist_prob": 1.0,
-                        "target_probs": {
-                            "plant": 0.3,
-                            "glass": 0.1,
-                        },
+                        "target_probs": target_prob_template,
                     },
                     "viewpoint_target_probs": [
                         {
                             "id": 13,
-                            "target_probs": {
-                                "plant": 0.4,
-                                "glass": 0.05,
-                            },
+                            "target_probs": target_prob_template,
                         }
                     ],
                     "viewpoint_node_assigns": [
                         {"id": 13, "assign_region_node_id": 100}
                     ],
-                    "detections": [
-                        {
-                            "target_id": "plant",
-                            "found": True,
-                            "confidence": 0.91,
-                            "strip_index": 7,
-                        },
-                        {
-                            "target_id": "glass",
-                            "found": False,
-                            "confidence": 0.0,
-                            "strip_index": -1,
-                        },
-                    ],
+                    "detections": detection_template,
                 }
             ],
             "new_visible_region_nodes": [
@@ -228,15 +246,11 @@ class MLLMClient:
                     "id": 101,
                     "label": "open dining area beside kitchen bar",
                     "exist_prob": 0.7,
-                    "target_probs": {
-                        "plant": 0.2,
-                        "glass": 0.4,
-                    },
+                    "target_probs": target_prob_template,
                 }
             ],
             "new_invisible_region_nodes": [],
             "new_arcs": [{"i": 13, "j": 101, "exist_prob": 0.6, "dist": 2.5}],
-            "region_merges": [[101, 88]],
         }
 
         user_message = (
@@ -251,15 +265,36 @@ class MLLMClient:
             Per-agent observation context:
             {agent_context_json}
 
+            Grounding rules:
+            - a region node is grounded if any viewpoint is assigned to that region
+            - a viewpoint node is grounded if it has been visited by an agent
+            - an arc is grounded if both endpoint nodes are grounded
+
+            Generation priority:
+            1. identify the current region for each agent
+            2. identify distinct visible regions
+            3. infer hidden adjacent regions only when strong layout cues exist
+            4. assign each visible neighboring viewpoint to one region
+            5. estimate target probabilities and direct target detections
+            6. generate legal arcs supported by observation, assignments, and graph context
+
             Output JSON with exactly this top-level schema:
             {schema_json}
 
             Additional rules:
             - Use the visible neighboring viewpoint ids exactly as provided in each agent context.
+            - current_region_node is the region node assigned to the agent's current viewpoint.
+            - new_visible_region_nodes are new region nodes supported by the current panorama observations.
+            - new_invisible_region_nodes are plausible new region nodes not directly visible now but strongly suggested by layout cues.
+            - new_arcs may connect viewpoint-region or viewpoint-viewpoint, but never region-region.
+            - Only generate arcs supported by the current observations and graph context.
+            - Do not generate arcs between a current viewpoint and its visible neighboring viewpoints.
+            - Do not generate an arc between a viewpoint node and its assigned region node.
             - For each target detection, strip_index must be -1 if found is false.
             - If found is true, strip_index must be a valid strip index for that agent.
             - Keep ids consistent with the shared graph summary whenever a node already exists.
             - Reuse old region ids when the current evidence matches an existing region.
+            - Do not leave new_visible_region_nodes, new_invisible_region_nodes, or new_arcs empty by default if there is reasonable supporting evidence.
             """
             )
             .strip()
@@ -283,7 +318,6 @@ class MLLMClient:
             "new_visible_region_nodes",
             "new_invisible_region_nodes",
             "new_arcs",
-            "region_merges",
         }
         missing_top_level_keys = required_top_level_keys.difference(payload)
         if missing_top_level_keys:
