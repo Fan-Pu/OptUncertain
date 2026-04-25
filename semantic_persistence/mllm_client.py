@@ -131,6 +131,7 @@ class MLLMClient:
         target_map = {
             str(target["id"]): str(target["description"]) for target in targets
         }
+        debugpy.breakpoint()  # Set a breakpoint here to inspect the input data before building the instruction
         agent_context = []
         for image_index, observation in enumerate(agent_observations):
             agent_context.append(
@@ -249,7 +250,14 @@ class MLLMClient:
                     "target_probs": target_prob_template,
                 }
             ],
-            "new_invisible_region_nodes": [],
+            "new_invisible_region_nodes": [
+                {
+                    "id": 100,
+                    "label": "bright kitchen area near dining table",
+                    "exist_prob": 0.6,
+                    "target_probs": target_prob_template,
+                }
+            ],
             "new_arcs": [{"i": 13, "j": 101, "exist_prob": 0.6, "dist": 2.5}],
         }
 
