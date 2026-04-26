@@ -1,0 +1,44 @@
+{
+  "scan_id": "17DRP5sb8fy",
+  "agents": [
+    {
+      "id": "agent1",
+      "start_viewpoint_id": "6800f98e9e67463e9928a4253253bc2f",
+      "heading": 0.0,
+      "elevation": 0.0
+    }
+  ],
+  "targets": [
+    {
+      "description": "green plant on the table",
+      "distance_threshold_m": 1.0
+    },
+    {
+      "description": "glass on the dining table",
+      "distance_threshold_m": 1.0
+    }
+  ],
+  "mllm": {
+    "model_name": "meta-llama/Llama-4-Maverick-17B-128E-Instruct:cheapest",
+    "max_new_tokens": 160
+  },
+  "bayes": {
+    "eta_goal": 5.0,
+    "eta_exist": 5.0,
+    "sigma_vv2": 4.0,
+    "sigma_vz2": 9.0,
+    "kappa_vv": 1.0,
+    "kappa_vz": 1.0,
+    "varrho": 0.75,
+    "omega_vz": 0.7,
+    "eta_vz": 5.0,
+    "epsilon": 1e-6
+  },
+  "optimizer": {
+    "goal_weight": 0.2222,
+    "dist_weight": 0.2222,
+    "arc_weight": 0.4444,
+    "node_weight": 0.1111,
+    "ungrounded_reward_weight": 0.8
+  }
+}

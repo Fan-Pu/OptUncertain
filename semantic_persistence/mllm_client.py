@@ -786,6 +786,7 @@ class MLLMClient:
                 Image.fromarray(panorama_image).save(
                     "debug_agent_panorama_%s.png" % image_index
                 )
+        debugpy.breakpoint()  # Set a breakpoint here to inspect agent observations before building the instruction
 
         graph_summary = graph.get_mllm_summary()
         system_message, user_message = self._build_instruction(
@@ -806,11 +807,6 @@ class MLLMClient:
                     },
                 }
             )
-            if self.save_debug_images:
-                cv2.imwrite(
-                    "debug_agent_%s_panorama.png" % observation["agent_id"],
-                    observation["annotated_panorama"],
-                )
 
         debugpy.breakpoint()  # Set a breakpoint here to inspect the system and user messages before sending the request
 

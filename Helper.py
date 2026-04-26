@@ -276,6 +276,7 @@ def horizon_scan_batch_return(sim, agent_ids, viewpoint_index_by_vp=None):
                 viewpoint_index_by_vp=viewpoint_index_by_vp,
             )
         )
+
     return observations
 
 
