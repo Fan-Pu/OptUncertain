@@ -355,8 +355,6 @@ def explore_world(sim, location=0, heading=0, elevation=0):
     """Explore the world by using keyboard input to move around and look for objects. This is a manual mode for testing and debugging."""
 
     while True:
-        if location != 0:
-            debugpy.breakpoint()
         sim.makeAction([location], [heading], [elevation])
         location = 0
         heading = 0
@@ -365,6 +363,7 @@ def explore_world(sim, location=0, heading=0, elevation=0):
         state = sim.getState()[0]
         locations = state.navigableLocations
         rgb = np.array(state.rgb, copy=False)
+        print(f"current vp: {state.location.viewpointId}")
         for idx, loc in enumerate(locations[1:]):
             # Draw actions on the screen
             fontScale = 3.0 / loc.rel_distance
