@@ -6,14 +6,16 @@ import io
 import json
 import os
 from textwrap import dedent
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 import cv2
 
 import debugpy
 import numpy as np
 from openai import BadRequestError, OpenAI
 from PIL import Image
-from semantic_persistence import HypothesisGraph
+
+if TYPE_CHECKING:
+    from semantic_persistence import HypothesisGraph
 
 
 class MLLMClient:
@@ -671,6 +673,7 @@ class MLLMClient:
     ) -> None:
         required_top_level_keys = {
             "agents",
+            "detections",
             "new_visible_region_nodes",
             "new_invisible_region_nodes",
             "new_arcs",
@@ -695,7 +698,7 @@ class MLLMClient:
                 % (sorted(returned_agent_ids), sorted(expected_agent_ids))
             )
 
-        target_ids = {str(target["id"]) for target in targets}
+        target_descriptions = {str(target["description"]) for target in targets}
         for agent_info in payload["agents"]:
             agent_id = str(agent_info["agent_id"])
             observation = observation_by_agent[agent_id]
@@ -703,7 +706,6 @@ class MLLMClient:
                 "current_region_node",
                 "viewpoint_target_probs",
                 "viewpoint_node_assigns",
-                "detections",
             ):
                 if key not in agent_info:
                     raise KeyError("Missing key '%s' for agent %s" % (key, agent_id))
@@ -737,33 +739,38 @@ class MLLMClient:
                     )
                 )
 
-            returned_detection_ids = {
-                str(item["target_id"]) for item in agent_info["detections"]
-            }
-            if returned_detection_ids != target_ids:
-                raise ValueError(
-                    "Agent %s returned detections for %s, expected %s"
-                    % (
-                        agent_id,
-                        sorted(returned_detection_ids),
-                        sorted(target_ids),
-                    )
+        detection_keys = {"agent_id", "target", "found"}
+        returned_detection_pairs = set()
+        for detection in payload["detections"]:
+            if set(detection) != detection_keys:
+                raise KeyError(
+                    "Detection item keys %s do not match expected keys %s"
+                    % (sorted(detection), sorted(detection_keys))
                 )
-            max_strip_index = int(len(observation["horizon_depths"])) - 1
-            for detection in agent_info["detections"]:
-                if not bool(detection["found"]):
-                    if int(detection["strip_index"]) != -1:
-                        raise ValueError(
-                            "Agent %s target %s must use strip_index=-1 when found=false"
-                            % (agent_id, detection["target_id"])
-                        )
-                    continue
-                strip_index = int(detection["strip_index"])
-                if strip_index < 0 or strip_index > max_strip_index:
-                    raise ValueError(
-                        "Agent %s target %s uses invalid strip_index %s"
-                        % (agent_id, detection["target_id"], strip_index)
-                    )
+            agent_id = str(detection["agent_id"])
+            if agent_id not in expected_agent_ids:
+                raise ValueError("Detection uses unknown agent id %s" % agent_id)
+            target_description = str(detection["target"])
+            if target_description not in target_descriptions:
+                raise ValueError(
+                    "Detection target %s is not in expected targets %s"
+                    % (target_description, sorted(target_descriptions))
+                )
+            returned_detection_pairs.add((agent_id, target_description))
+
+        expected_detection_pairs = {
+            (agent_id, target_description)
+            for agent_id in expected_agent_ids
+            for target_description in target_descriptions
+        }
+        if returned_detection_pairs != expected_detection_pairs:
+            raise ValueError(
+                "Returned detection pairs %s do not match expected pairs %s"
+                % (
+                    sorted(returned_detection_pairs),
+                    sorted(expected_detection_pairs),
+                )
+            )
 
     def propose_semantic_nodes(
         self,
@@ -799,10 +806,11 @@ class MLLMClient:
                     },
                 }
             )
-            cv2.imwrite(
-                "debug_agent_%s_panorama.png" % observation["agent_id"],
-                observation["annotated_panorama"],
-            )
+            if self.save_debug_images:
+                cv2.imwrite(
+                    "debug_agent_%s_panorama.png" % observation["agent_id"],
+                    observation["annotated_panorama"],
+                )
 
         debugpy.breakpoint()  # Set a breakpoint here to inspect the system and user messages before sending the request
 

@@ -48,10 +48,7 @@ class _FakeScorer:
 class HypothesisGraphUpdateTest(unittest.TestCase):
     def _build_graph_and_step_one(self):
         graph = HypothesisGraph(
-            target_descriptions={
-                "plant": "green plant",
-                "glass": "glass on table",
-            }
+            target_descriptions=["green plant", "glass on table"]
         )
         scorer = _FakeScorer(
             {
@@ -84,19 +81,27 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
                         "id": 10,
                         "label": "living room",
                         "exist_prob": 1.0,
-                        "target_probs": {"plant": 0.4, "glass": 0.6},
+                        "target_probs": {"green plant": 0.4, "glass on table": 0.6},
                     },
                     "viewpoint_target_probs": [
-                        {"id": 2, "target_probs": {"plant": 0.7, "glass": 0.3}},
-                        {"id": 3, "target_probs": {"plant": 0.3, "glass": 0.7}},
+                        {
+                            "id": 2,
+                            "target_probs": {
+                                "green plant": 0.7,
+                                "glass on table": 0.3,
+                            },
+                        },
+                        {
+                            "id": 3,
+                            "target_probs": {
+                                "green plant": 0.3,
+                                "glass on table": 0.7,
+                            },
+                        },
                     ],
                     "viewpoint_node_assigns": [
                         {"id": 2, "assign_region_node_id": 11},
                         {"id": 3, "assign_region_node_id": 11},
-                    ],
-                    "detections": [
-                        {"target_id": "plant", "found": False, "confidence": 0.0, "strip_index": -1},
-                        {"target_id": "glass", "found": False, "confidence": 0.0, "strip_index": -1},
                     ],
                 }
             ],
@@ -105,7 +110,7 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
                     "id": 11,
                     "label": "dining room",
                     "exist_prob": 0.8,
-                    "target_probs": {"plant": 0.6, "glass": 0.4},
+                    "target_probs": {"green plant": 0.6, "glass on table": 0.4},
                 }
             ],
             "new_invisible_region_nodes": [
@@ -113,12 +118,16 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
                     "id": 20,
                     "label": "kitchen pantry",
                     "exist_prob": 0.4,
-                    "target_probs": {"plant": 0.2, "glass": 0.8},
+                    "target_probs": {"green plant": 0.2, "glass on table": 0.8},
                 }
             ],
             "new_arcs": [
                 {"i": 2, "j": 3, "exist_prob": 0.5, "dist": 5.0},
                 {"i": 2, "j": 20, "exist_prob": 0.6, "dist": 3.0},
+            ],
+            "detections": [
+                {"agent_id": "agent0", "target": "green plant", "found": False},
+                {"agent_id": "agent0", "target": "glass on table", "found": False},
             ],
         }
         graph.update_from_mllm(mllm_output, observations, scorer)
@@ -128,22 +137,22 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
         graph, _ = self._build_graph_and_step_one()
 
         viewpoint_plant_sum = sum(
-            node.target_probs["plant"]
+            node.target_probs["green plant"]
             for node in graph.nodes.values()
             if node.type == helper_stub.TYPE_VP
         )
         region_plant_sum = sum(
-            node.target_probs["plant"]
+            node.target_probs["green plant"]
             for node in graph.nodes.values()
             if node.type == helper_stub.TYPE_REGION
         )
         viewpoint_glass_sum = sum(
-            node.target_probs["glass"]
+            node.target_probs["glass on table"]
             for node in graph.nodes.values()
             if node.type == helper_stub.TYPE_VP
         )
         region_glass_sum = sum(
-            node.target_probs["glass"]
+            node.target_probs["glass on table"]
             for node in graph.nodes.values()
             if node.type == helper_stub.TYPE_REGION
         )
@@ -192,25 +201,37 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
                         "id": 12,
                         "label": "kitchen",
                         "exist_prob": 1.0,
-                        "target_probs": {"plant": 0.2, "glass": 0.8},
+                        "target_probs": {"green plant": 0.2, "glass on table": 0.8},
                     },
                     "viewpoint_target_probs": [
-                        {"id": 1, "target_probs": {"plant": 0.1, "glass": 0.9}},
-                        {"id": 3, "target_probs": {"plant": 0.5, "glass": 0.5}},
+                        {
+                            "id": 1,
+                            "target_probs": {
+                                "green plant": 0.1,
+                                "glass on table": 0.9,
+                            },
+                        },
+                        {
+                            "id": 3,
+                            "target_probs": {
+                                "green plant": 0.5,
+                                "glass on table": 0.5,
+                            },
+                        },
                     ],
                     "viewpoint_node_assigns": [
                         {"id": 1, "assign_region_node_id": 12},
                         {"id": 3, "assign_region_node_id": 12},
-                    ],
-                    "detections": [
-                        {"target_id": "plant", "found": False, "confidence": 0.0, "strip_index": -1},
-                        {"target_id": "glass", "found": False, "confidence": 0.0, "strip_index": -1},
                     ],
                 }
             ],
             "new_visible_region_nodes": [],
             "new_invisible_region_nodes": [],
             "new_arcs": [],
+            "detections": [
+                {"agent_id": "agent0", "target": "green plant", "found": False},
+                {"agent_id": "agent0", "target": "glass on table", "found": False},
+            ],
         }
 
         graph.update_from_mllm(mllm_output, observations, scorer)

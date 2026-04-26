@@ -33,7 +33,6 @@ The scenario file must contain:
   ],
   "targets": [
     {
-      "id": "plant",
       "description": "green plant on the table",
       "distance_threshold_m": 1.0
     }

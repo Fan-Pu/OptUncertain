@@ -113,6 +113,10 @@ class HorizonPanoramaBatchTest(unittest.TestCase):
             observations[1]["raw_panorama"].shape,
             (4, helper_under_test.HORIZON_LEN * strip_width, 3),
         )
+        self.assertEqual(
+            observations[0]["depth_panorama"].shape,
+            (4, helper_under_test.HORIZON_LEN * strip_width, 1),
+        )
         self.assertEqual(len(sim.actions), helper_under_test.HORIZON_LEN)
 
     def test_execute_batched_first_hops_uses_one_move_action_per_agent(self):

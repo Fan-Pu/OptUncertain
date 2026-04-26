@@ -23,19 +23,27 @@ def tearDownModule():
 
 
 class _FakeMLLMClient:
-    def __init__(self, distance_by_target):
-        self.distance_by_target = dict(distance_by_target)
+    def __init__(self, distance_by_target=None, distance_by_rgb=None):
+        self.distance_by_target = dict(distance_by_target or {})
+        self.distance_by_rgb = dict(distance_by_rgb or {})
+        self.calls = []
 
     def estimate_target_distance(self, rgb_image, depth_image, target_object):
+        self.calls.append((rgb_image, depth_image, target_object))
+        if rgb_image in self.distance_by_rgb:
+            return {"distance_m": self.distance_by_rgb[rgb_image]}
         return {"distance_m": self.distance_by_target[target_object]}
 
 
 class _FakeGraph:
     def __init__(self):
-        self.target_found = {"plant": False, "glass": False}
+        self.target_found = {
+            "green plant on the table": False,
+            "glass on the dining table": False,
+        }
 
-    def mark_target_found(self, target_id):
-        self.target_found[target_id] = True
+    def mark_target_found(self, target_description):
+        self.target_found[target_description] = True
 
 
 class MultiTargetDetectionTest(unittest.TestCase):
@@ -46,46 +54,73 @@ class MultiTargetDetectionTest(unittest.TestCase):
                 "horizon_headings": [0.1, 0.2],
                 "horizon_rgb_frames": ["rgb-a0-0", "rgb-a0-1"],
                 "horizon_depths": ["depth-a0-0", "depth-a0-1"],
+                "raw_panorama": "rgb-a0-panorama",
+                "depth_panorama": "depth-a0-panorama",
             },
             {
                 "agent_id": "agent1",
                 "horizon_headings": [0.3, 0.4],
                 "horizon_rgb_frames": ["rgb-a1-0", "rgb-a1-1"],
                 "horizon_depths": ["depth-a1-0", "depth-a1-1"],
+                "raw_panorama": "rgb-a1-panorama",
+                "depth_panorama": "depth-a1-panorama",
             },
         ]
 
     def _mllm_output(self):
         return {
-            "agents": [
+            "detections": [
                 {
                     "agent_id": "agent0",
-                    "detections": [
-                        {"target_id": "plant", "found": True, "confidence": 0.95, "strip_index": 1},
-                        {"target_id": "glass", "found": False, "confidence": 0.0, "strip_index": -1},
-                    ],
+                    "target": "green plant on the table",
+                    "found": True,
+                },
+                {
+                    "agent_id": "agent0",
+                    "target": "glass on the dining table",
+                    "found": False,
                 },
                 {
                     "agent_id": "agent1",
-                    "detections": [
-                        {"target_id": "plant", "found": False, "confidence": 0.0, "strip_index": -1},
-                        {"target_id": "glass", "found": True, "confidence": 0.92, "strip_index": 0},
-                    ],
+                    "target": "green plant on the table",
+                    "found": False,
                 },
+                {
+                    "agent_id": "agent1",
+                    "target": "glass on the dining table",
+                    "found": True,
+                },
+            ],
+            "agents": [
+                {"agent_id": "agent0"},
+                {"agent_id": "agent1"},
             ]
         }
 
-    def test_best_detections_are_selected_per_target(self):
-        best_detections = main_under_test._best_detections_by_target(
+    def test_found_detections_are_grouped_per_target_description(self):
+        found_detections = main_under_test._found_detections_by_target(
             mllm_output=self._mllm_output(),
             agent_observations=self._observations(),
-            unfound_target_ids={"plant", "glass"},
+            unfound_target_descriptions={
+                "green plant on the table",
+                "glass on the dining table",
+            },
         )
 
-        self.assertEqual(best_detections["plant"]["agent_id"], "agent0")
-        self.assertEqual(best_detections["plant"]["target_rgb_image"], "rgb-a0-1")
-        self.assertEqual(best_detections["glass"]["agent_id"], "agent1")
-        self.assertEqual(best_detections["glass"]["target_depth_image"], "depth-a1-0")
+        self.assertEqual(
+            found_detections["green plant on the table"][0]["agent_id"], "agent0"
+        )
+        self.assertEqual(
+            found_detections["green plant on the table"][0]["target_rgb_image"],
+            "rgb-a0-panorama",
+        )
+        self.assertEqual(
+            found_detections["glass on the dining table"][0]["agent_id"], "agent1"
+        )
+        self.assertEqual(
+            found_detections["glass on the dining table"][0]["target_depth_image"],
+            "depth-a1-panorama",
+        )
 
     def test_multiple_targets_can_complete_in_same_step(self):
         hypothesis_graph = _FakeGraph()
@@ -97,12 +132,10 @@ class MultiTargetDetectionTest(unittest.TestCase):
             agent_observations=self._observations(),
             targets=[
                 {
-                    "id": "plant",
                     "description": "green plant on the table",
                     "distance_threshold_m": 1.0,
                 },
                 {
-                    "id": "glass",
                     "description": "glass on the dining table",
                     "distance_threshold_m": 1.0,
                 },
@@ -110,9 +143,66 @@ class MultiTargetDetectionTest(unittest.TestCase):
             hypothesis_graph=hypothesis_graph,
         )
 
-        self.assertEqual(sorted(completed_target_ids), ["glass", "plant"])
-        self.assertTrue(hypothesis_graph.target_found["plant"])
-        self.assertTrue(hypothesis_graph.target_found["glass"])
+        self.assertEqual(
+            sorted(completed_target_ids),
+            ["glass on the dining table", "green plant on the table"],
+        )
+        self.assertTrue(hypothesis_graph.target_found["green plant on the table"])
+        self.assertTrue(hypothesis_graph.target_found["glass on the dining table"])
+
+    def test_multiple_agent_detections_for_same_target_are_distance_checked(self):
+        hypothesis_graph = _FakeGraph()
+        mllm_output = {
+            "detections": [
+                {
+                    "agent_id": "agent0",
+                    "target": "green plant on the table",
+                    "found": True,
+                },
+                {
+                    "agent_id": "agent1",
+                    "target": "green plant on the table",
+                    "found": True,
+                },
+                {
+                    "agent_id": "agent0",
+                    "target": "glass on the dining table",
+                    "found": False,
+                },
+                {
+                    "agent_id": "agent1",
+                    "target": "glass on the dining table",
+                    "found": False,
+                },
+            ],
+            "agents": [{"agent_id": "agent0"}, {"agent_id": "agent1"}],
+        }
+        mllm_client = _FakeMLLMClient(
+            distance_by_rgb={"rgb-a0-panorama": 2.0, "rgb-a1-panorama": 0.5}
+        )
+
+        completed_target_ids = main_under_test._mark_completed_targets(
+            mllm_client=mllm_client,
+            mllm_output=mllm_output,
+            agent_observations=self._observations(),
+            targets=[
+                {
+                    "description": "green plant on the table",
+                    "distance_threshold_m": 1.0,
+                },
+                {
+                    "description": "glass on the dining table",
+                    "distance_threshold_m": 1.0,
+                },
+            ],
+            hypothesis_graph=hypothesis_graph,
+        )
+
+        self.assertEqual(completed_target_ids, ["green plant on the table"])
+        self.assertEqual(
+            [call[0] for call in mllm_client.calls],
+            ["rgb-a0-panorama", "rgb-a1-panorama"],
+        )
 
 
 if __name__ == "__main__":

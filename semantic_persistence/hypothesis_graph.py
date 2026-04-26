@@ -37,7 +37,8 @@ class GraphNode:
         self.exist_prob = float(exist_prob)
         self.grounded = bool(grounded)
         self.target_probs = {
-            str(target_id): float(value) for target_id, value in target_probs.items()
+            str(target_description): float(value)
+            for target_description, value in target_probs.items()
         }
         self.node_visit_times = int(node_visit_times)
         self.connected_node_ids: Set[int] = set()
@@ -90,7 +91,9 @@ class HypothesisGraph:
         if bayes_config is not None:
             self.bayes_config.update(bayes_config)
 
-        self.target_descriptions = target_descriptions
+        self.target_descriptions = [
+            str(target_description) for target_description in target_descriptions
+        ]
         self.target_found = {
             target_description: False for target_description in target_descriptions
         }
@@ -120,7 +123,7 @@ class HypothesisGraph:
         if target_probs is None:
             target_probs = {}
         normalized_target_probs = {
-            target_description: float(target_probs.get(target_id, 0.0))
+            target_description: float(target_probs.get(target_description, 0.0))
             for target_description in self.target_descriptions
         }
 
@@ -146,8 +149,10 @@ class HypothesisGraph:
         if grounded is not None:
             node.grounded = bool(grounded)
         if target_probs is not None:
-            for target_id in self.target_descriptions:
-                node.target_probs[target_id] = float(normalized_target_probs[target_id])
+            for target_description in self.target_descriptions:
+                node.target_probs[target_description] = float(
+                    normalized_target_probs[target_description]
+                )
         if node_visit_times is not None:
             node.node_visit_times = int(node_visit_times)
         return node
@@ -337,10 +342,10 @@ class HypothesisGraph:
                 )
                 if vp_id not in viewpoint_initial_probs:
                     viewpoint_initial_probs[vp_id] = self._zero_target_probs()
-                for target_id in self.target_descriptions:
-                    viewpoint_initial_probs[vp_id][target_id] = max(
-                        viewpoint_initial_probs[vp_id][target_id],
-                        viewpoint_payload[vp_id][target_id],
+                for target_description in self.target_descriptions:
+                    viewpoint_initial_probs[vp_id][target_description] = max(
+                        viewpoint_initial_probs[vp_id][target_description],
+                        viewpoint_payload[vp_id][target_description],
                     )
 
             for visible_viewpoint in observation["visible_viewpoints"]:
@@ -513,14 +518,17 @@ class HypothesisGraph:
     get_MLLM_summary = get_mllm_summary
 
     def _zero_target_probs(self) -> Dict[str, float]:
-        return {target_id: 0.0 for target_id in self.target_descriptions}
+        return {
+            target_description: 0.0
+            for target_description in self.target_descriptions
+        }
 
     def _normalize_target_dict(
         self, target_probs: Dict[str, float]
     ) -> Dict[str, float]:
         return {
-            target_id: float(target_probs[target_id])
-            for target_id in self.target_descriptions
+            target_description: float(target_probs[target_description])
+            for target_description in self.target_descriptions
         }
 
     def _build_region_alias_map(
@@ -590,10 +598,10 @@ class HypothesisGraph:
             canonical_node.exist_prob, merged_node.exist_prob
         )
         canonical_node.grounded = canonical_node.grounded or merged_node.grounded
-        for target_id in self.target_descriptions:
-            canonical_node.target_probs[target_id] = max(
-                canonical_node.target_probs[target_id],
-                merged_node.target_probs[target_id],
+        for target_description in self.target_descriptions:
+            canonical_node.target_probs[target_description] = max(
+                canonical_node.target_probs[target_description],
+                merged_node.target_probs[target_description],
             )
         canonical_node.node_visit_times = max(
             canonical_node.node_visit_times, merged_node.node_visit_times
@@ -694,21 +702,21 @@ class HypothesisGraph:
                 return agent_id
         raise KeyError("No agent is currently at viewpoint %s" % viewpoint_id)
 
-    def _target_visual_score(self, node_id: int, target_id: str, scorer) -> float:
+    def _target_visual_score(
+        self, node_id: int, target_description: str, scorer
+    ) -> float:
         node = self.nodes[node_id]
         if node.type == TYPE_VP:
             images = self.viewpoint_rgb_evidence.get(node_id, [])
             if not images:
                 return 0.0
-            return float(
-                scorer.score_images_text(images, self.target_descriptions[target_id])
-            )
+            return float(scorer.score_images_text(images, target_description))
 
         assigned_viewpoints = self.region_to_viewpoints.get(node_id, set())
         if not assigned_viewpoints:
             return 0.0
         return max(
-            self._target_visual_score(viewpoint_id, target_id, scorer)
+            self._target_visual_score(viewpoint_id, target_description, scorer)
             for viewpoint_id in assigned_viewpoints
         )
 
@@ -728,42 +736,48 @@ class HypothesisGraph:
             node_id for node_id, node in self.nodes.items() if node.type == TYPE_REGION
         ]
 
-        for target_id in self.target_descriptions:
+        for target_description in self.target_descriptions:
             viewpoint_scores = {}
             for node_id in viewpoint_node_ids:
                 if node_id in existing_node_ids:
-                    prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
+                    prior_prob = previous_target_probs[node_id].get(
+                        target_description, 0.0
+                    )
                 else:
                     prior_prob = viewpoint_initial_probs.get(node_id, {}).get(
-                        target_id, 0.0
+                        target_description, 0.0
                     )
                 likelihood = math.exp(
-                    eta_goal * self._target_visual_score(node_id, target_id, scorer)
+                    eta_goal
+                    * self._target_visual_score(node_id, target_description, scorer)
                 )
                 viewpoint_scores[node_id] = prior_prob * likelihood
 
             viewpoint_norm = sum(viewpoint_scores.values())
             for node_id in viewpoint_node_ids:
-                self.nodes[node_id].target_probs[target_id] = (
+                self.nodes[node_id].target_probs[target_description] = (
                     viewpoint_scores[node_id] / viewpoint_norm
                 )
 
             region_scores = {}
             for node_id in region_node_ids:
                 if node_id in existing_node_ids:
-                    prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
+                    prior_prob = previous_target_probs[node_id].get(
+                        target_description, 0.0
+                    )
                 else:
                     prior_prob = region_initial_probs.get(node_id, {}).get(
-                        target_id, 0.0
+                        target_description, 0.0
                     )
                 likelihood = math.exp(
-                    eta_goal * self._target_visual_score(node_id, target_id, scorer)
+                    eta_goal
+                    * self._target_visual_score(node_id, target_description, scorer)
                 )
                 region_scores[node_id] = prior_prob * likelihood
 
             region_norm = sum(region_scores.values())
             for node_id in region_node_ids:
-                self.nodes[node_id].target_probs[target_id] = (
+                self.nodes[node_id].target_probs[target_description] = (
                     region_scores[node_id] / region_norm
                 )
 

@@ -23,21 +23,30 @@ def tearDownModule():
 
 
 class MainDetectionMappingTest(unittest.TestCase):
-    def test_select_detection_observation_maps_strip_index_to_heading_frame_and_depth(self):
-        agent_observation = {
-            "horizon_headings": [0.1, 0.2, 0.3],
-            "horizon_rgb_frames": ["frame-0", "frame-1", "frame-2"],
-            "horizon_depths": ["depth-0", "depth-1", "depth-2"],
-        }
-        detection = {"found": True, "strip_index": 1}
-
-        target_heading, target_rgb_image, target_depth_image = (
-            main_under_test.select_detection_observation(agent_observation, detection)
+    def test_found_detection_uses_full_aligned_panorama_images(self):
+        found_detections = main_under_test._found_detections_by_target(
+            mllm_output={
+                "detections": [
+                    {
+                        "agent_id": "agent0",
+                        "target": "green plant on the table",
+                        "found": True,
+                    }
+                ]
+            },
+            agent_observations=[
+                {
+                    "agent_id": "agent0",
+                    "raw_panorama": "rgb-panorama",
+                    "depth_panorama": "depth-panorama",
+                }
+            ],
+            unfound_target_descriptions={"green plant on the table"},
         )
 
-        self.assertEqual(target_heading, 0.2)
-        self.assertEqual(target_rgb_image, "frame-1")
-        self.assertEqual(target_depth_image, "depth-1")
+        detection = found_detections["green plant on the table"][0]
+        self.assertEqual(detection["target_rgb_image"], "rgb-panorama")
+        self.assertEqual(detection["target_depth_image"], "depth-panorama")
 
 
 if __name__ == "__main__":

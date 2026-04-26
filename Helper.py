@@ -177,6 +177,7 @@ def _scan_state_to_observation(
         "horizon_headings": horizon_headings,
         "horizon_depths": horizon_depths,
         "raw_panorama": build_truncated_panorama(horizon_rgb_frames),
+        "depth_panorama": build_truncated_panorama(horizon_depths),
         "annotated_panorama": build_truncated_panorama(horizon_mllm_frames),
     }
 
@@ -290,6 +291,7 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
         observation["horizon_rgb_frames"],
         observation["horizon_mllm_frames"],
         observation["raw_panorama"],
+        observation["depth_panorama"],
         observation["annotated_panorama"],
         observation["horizon_headings"],
         observation["horizon_depths"],

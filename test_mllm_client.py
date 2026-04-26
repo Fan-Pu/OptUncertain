@@ -36,8 +36,11 @@ class _FakeGraph:
     def get_mllm_summary(self):
         return {
             "observation_step": 3,
-            "targets": {"plant": "green plant", "glass": "glass on table"},
-            "target_found": {"plant": False, "glass": False},
+            "targets": ["green plant on the table", "glass on the dining table"],
+            "target_found": {
+                "green plant on the table": False,
+                "glass on the dining table": False,
+            },
             "agent_current_vp_ids": {"agent0": 7, "agent1": 9},
             "nodes": [],
             "edges": [],
@@ -65,15 +68,15 @@ class JointMLLMClientTest(unittest.TestCase):
                 },
             ],
             targets=[
-                {"id": "plant", "description": "green plant on the table"},
-                {"id": "glass", "description": "glass on the dining table"},
+                {"description": "green plant on the table"},
+                {"description": "glass on the dining table"},
             ],
             graph_summary=_FakeGraph().get_mllm_summary(),
         )
 
         self.assertIn("Image i corresponds to the agent", system_message)
         self.assertIn("Region labels must be room or area labels only", system_message)
-        self.assertIn("A maximum of 5 new region nodes", system_message)
+        self.assertIn("A maximum of 5 current-step semantic regions", system_message)
         self.assertIn("Generation priority:", user_message)
         self.assertIn("Grounding rules:", user_message)
         self.assertIn('"agent_id": "agent0"', user_message)
@@ -101,17 +104,13 @@ class JointMLLMClientTest(unittest.TestCase):
                     "id": 100,
                     "label": "living room",
                     "exist_prob": 1.0,
-                    "target_probs": {"plant": 0.6, "glass": 0.4}
+                    "target_probs": {"green plant on the table": 0.6, "glass on the dining table": 0.4}
                   },
                   "viewpoint_target_probs": [
-                    {"id": 8, "target_probs": {"plant": 0.6, "glass": 0.4}}
+                    {"id": 8, "target_probs": {"green plant on the table": 0.6, "glass on the dining table": 0.4}}
                   ],
                   "viewpoint_node_assigns": [
                     {"id": 8, "assign_region_node_id": 100}
-                  ],
-                  "detections": [
-                    {"target_id": "plant", "found": true, "confidence": 0.9, "strip_index": 7},
-                    {"target_id": "glass", "found": false, "confidence": 0.0, "strip_index": -1}
                   ]
                 },
                 {
@@ -120,19 +119,21 @@ class JointMLLMClientTest(unittest.TestCase):
                     "id": 101,
                     "label": "kitchen",
                     "exist_prob": 1.0,
-                    "target_probs": {"plant": 0.3, "glass": 0.7}
+                    "target_probs": {"green plant on the table": 0.3, "glass on the dining table": 0.7}
                   },
                   "viewpoint_target_probs": [
-                    {"id": 10, "target_probs": {"plant": 0.3, "glass": 0.7}}
+                    {"id": 10, "target_probs": {"green plant on the table": 0.3, "glass on the dining table": 0.7}}
                   ],
                   "viewpoint_node_assigns": [
                     {"id": 10, "assign_region_node_id": 101}
-                  ],
-                  "detections": [
-                    {"target_id": "plant", "found": false, "confidence": 0.0, "strip_index": -1},
-                    {"target_id": "glass", "found": true, "confidence": 0.8, "strip_index": 5}
                   ]
                 }
+              ],
+              "detections": [
+                {"agent_id": "agent0", "target": "green plant on the table", "found": true},
+                {"agent_id": "agent0", "target": "glass on the dining table", "found": false},
+                {"agent_id": "agent1", "target": "green plant on the table", "found": false},
+                {"agent_id": "agent1", "target": "glass on the dining table", "found": true}
               ],
               "new_visible_region_nodes": [],
               "new_invisible_region_nodes": [],
@@ -160,8 +161,8 @@ class JointMLLMClientTest(unittest.TestCase):
                 },
             ],
             targets=[
-                {"id": "plant", "description": "green plant on the table"},
-                {"id": "glass", "description": "glass on the dining table"},
+                {"description": "green plant on the table"},
+                {"description": "glass on the dining table"},
             ],
             graph=_FakeGraph(),
         )
@@ -169,8 +170,59 @@ class JointMLLMClientTest(unittest.TestCase):
         user_content = captured_messages["messages"][1]["content"]
         image_items = [item for item in user_content if item["type"] == "image_url"]
         self.assertEqual(len(image_items), 2)
-        self.assertEqual(payload["agents"][0]["detections"][0]["strip_index"], 7)
-        self.assertEqual(payload["agents"][1]["detections"][1]["target_id"], "glass")
+        self.assertEqual(payload["detections"][0]["target"], "green plant on the table")
+        self.assertTrue(payload["detections"][3]["found"])
+
+    def test_validate_payload_rejects_stale_target_id_detection_shape(self):
+        client = MLLMClient.__new__(MLLMClient)
+        payload = {
+            "agents": [
+                {
+                    "agent_id": "agent0",
+                    "current_region_node": {
+                        "id": 100,
+                        "label": "living room",
+                        "exist_prob": 1.0,
+                        "target_probs": {"green plant on the table": 0.6},
+                    },
+                    "viewpoint_target_probs": [
+                        {
+                            "id": 8,
+                            "target_probs": {"green plant on the table": 0.6},
+                        }
+                    ],
+                    "viewpoint_node_assigns": [
+                        {"id": 8, "assign_region_node_id": 100}
+                    ],
+                }
+            ],
+            "detections": [
+                {
+                    "agent_id": "agent0",
+                    "target_id": "plant",
+                    "found": True,
+                    "confidence": 0.9,
+                    "strip_index": 7,
+                }
+            ],
+            "new_visible_region_nodes": [],
+            "new_invisible_region_nodes": [],
+            "new_arcs": [],
+        }
+
+        with self.assertRaises(KeyError):
+            client._validate_payload(
+                payload=payload,
+                agent_observations=[
+                    {
+                        "agent_id": "agent0",
+                        "visible_viewpoints": [
+                            {"viewpoint_index": 8, "distance": 1.2}
+                        ],
+                    }
+                ],
+                targets=[{"description": "green plant on the table"}],
+            )
 
 
 if __name__ == "__main__":

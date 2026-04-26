@@ -48,16 +48,16 @@ class _FakeEdge:
 
 class _FakeGraph:
     def __init__(self):
-        self.target_descriptions = {"plant": "green plant", "glass": "glass on table"}
+        self.target_descriptions = ["green plant", "glass on table"]
         self.nodes = {
-            1: _FakeNode(1, True, 1.0, {"plant": 0.0, "glass": 0.0}),
-            2: _FakeNode(1, True, 1.0, {"plant": 0.0, "glass": 0.0}),
-            3: _FakeNode(1, True, 1.0, {"plant": 0.9, "glass": 0.1}),
-            4: _FakeNode(1, True, 1.0, {"plant": 0.1, "glass": 0.9}),
-            5: _FakeNode(0, False, 0.6, {"plant": 0.2, "glass": 0.2}),
-            6: _FakeNode(1, False, 1.0, {"plant": 0.95, "glass": 0.95}),
-            7: _FakeNode(1, False, 1.0, {"plant": 0.95, "glass": 0.95}),
-            8: _FakeNode(1, False, 1.0, {"plant": 0.95, "glass": 0.95}),
+            1: _FakeNode(1, True, 1.0, {"green plant": 0.0, "glass on table": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"green plant": 0.0, "glass on table": 0.0}),
+            3: _FakeNode(1, True, 1.0, {"green plant": 0.9, "glass on table": 0.1}),
+            4: _FakeNode(1, True, 1.0, {"green plant": 0.1, "glass on table": 0.9}),
+            5: _FakeNode(0, False, 0.6, {"green plant": 0.2, "glass on table": 0.2}),
+            6: _FakeNode(1, False, 1.0, {"green plant": 0.95, "glass on table": 0.95}),
+            7: _FakeNode(1, False, 1.0, {"green plant": 0.95, "glass on table": 0.95}),
+            8: _FakeNode(1, False, 1.0, {"green plant": 0.95, "glass on table": 0.95}),
         }
         self.edges = {
             (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
@@ -80,13 +80,13 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         result = optimizer.solve(
             hypothesis_graph=_FakeGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
-            target_found_flags={"plant": False, "glass": False},
+            target_found_flags={"green plant": False, "glass on table": False},
         )
 
         self.assertEqual(len(result["target_assignments"]), 2)
         self.assertEqual(
-            sorted(item["target_id"] for item in result["target_assignments"]),
-            ["glass", "plant"],
+            sorted(item["target"] for item in result["target_assignments"]),
+            ["glass on table", "green plant"],
         )
 
     def test_masks_found_targets_and_first_hop_is_viewpoint_for_each_agent(self):
@@ -94,12 +94,12 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         result = optimizer.solve(
             hypothesis_graph=_FakeGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
-            target_found_flags={"plant": True, "glass": False},
+            target_found_flags={"green plant": True, "glass on table": False},
         )
 
         self.assertEqual(
-            [item["target_id"] for item in result["target_assignments"]],
-            ["glass"],
+            [item["target"] for item in result["target_assignments"]],
+            ["glass on table"],
         )
         self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
         self.assertEqual(result["agent_paths"]["agent1"]["next_vp_node_id"], 4)
@@ -109,7 +109,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         result = optimizer.solve(
             hypothesis_graph=_FakeGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
-            target_found_flags={"plant": False, "glass": False},
+            target_found_flags={"green plant": False, "glass on table": False},
         )
 
         selected_cycle_nodes = {
@@ -125,7 +125,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         result = optimizer.solve(
             hypothesis_graph=_FakeGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
-            target_found_flags={"plant": False, "glass": False},
+            target_found_flags={"green plant": False, "glass on table": False},
         )
 
         self.assertGreaterEqual(result["objective_value"], -1.0)

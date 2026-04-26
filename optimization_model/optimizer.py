@@ -51,8 +51,9 @@ class RollingHorizonOptimizer:
             node = hypothesis_graph.nodes[node_id]
             reward_weight = 1.0 if node.grounded else self.ungrounded_reward_weight
             node_reward[node_id] = {
-                target_id: reward_weight * node.target_probs[target_id]
-                for target_id in hypothesis_graph.target_descriptions
+                target_description: reward_weight
+                * node.target_probs[target_description]
+                for target_description in hypothesis_graph.target_descriptions
             }
 
         model = Model("multi_agent_many_to_many")
@@ -84,10 +85,11 @@ class RollingHorizonOptimizer:
         alpha = {}
         for agent_id in agent_ids:
             for node_id in candidate_node_ids:
-                for target_id in hypothesis_graph.target_descriptions:
-                    alpha[(node_id, target_id, agent_id)] = model.addVar(
+                for target_description in hypothesis_graph.target_descriptions:
+                    alpha[(node_id, target_description, agent_id)] = model.addVar(
                         vtype=GRB.BINARY,
-                        name="alpha_%s_%s_%s" % (node_id, target_id, agent_id),
+                        name="alpha_%s_%s_%s"
+                        % (node_id, target_description, agent_id),
                     )
 
         (
@@ -112,10 +114,11 @@ class RollingHorizonOptimizer:
         )
 
         goal_term = quicksum(
-            node_reward[node_id][target_id] * alpha[(node_id, target_id, agent_id)]
+            node_reward[node_id][target_description]
+            * alpha[(node_id, target_description, agent_id)]
             for agent_id in agent_ids
             for node_id in candidate_node_ids
-            for target_id in hypothesis_graph.target_descriptions
+            for target_description in hypothesis_graph.target_descriptions
         )
         dist_term = quicksum(
             edge_distance[(source_id, target_id)] * x[(source_id, target_id, agent_id)]
@@ -220,23 +223,24 @@ class RollingHorizonOptimizer:
 
         for agent_id in agent_ids:
             for node_id in candidate_node_ids:
-                for target_id in hypothesis_graph.target_descriptions:
+                for target_description in hypothesis_graph.target_descriptions:
                     model.addConstr(
-                        alpha[(node_id, target_id, agent_id)]
-                        <= (1 - int(bool(target_found_flags[target_id])))
+                        alpha[(node_id, target_description, agent_id)]
+                        <= (1 - int(bool(target_found_flags[target_description])))
                         * y[(node_id, agent_id)],
-                        name="alpha_link_%s_%s_%s" % (node_id, target_id, agent_id),
+                        name="alpha_link_%s_%s_%s"
+                        % (node_id, target_description, agent_id),
                     )
 
-        for target_id in hypothesis_graph.target_descriptions:
+        for target_description in hypothesis_graph.target_descriptions:
             model.addConstr(
                 quicksum(
-                    alpha[(node_id, target_id, agent_id)]
+                    alpha[(node_id, target_description, agent_id)]
                     for agent_id in agent_ids
                     for node_id in candidate_node_ids
                 )
-                <= 1 - int(bool(target_found_flags[target_id])),
-                name="unique_target_%s" % target_id,
+                <= 1 - int(bool(target_found_flags[target_description])),
+                name="unique_target_%s" % target_description,
             )
 
         model.optimize()
@@ -265,13 +269,13 @@ class RollingHorizonOptimizer:
         target_assignments = []
         for agent_id in agent_ids:
             for node_id in candidate_node_ids:
-                for target_id in hypothesis_graph.target_descriptions:
-                    if alpha[(node_id, target_id, agent_id)].X > 0.5:
+                for target_description in hypothesis_graph.target_descriptions:
+                    if alpha[(node_id, target_description, agent_id)].X > 0.5:
                         target_assignments.append(
                             {
                                 "agent_id": agent_id,
                                 "node_id": node_id,
-                                "target_id": target_id,
+                                "target": target_description,
                             }
                         )
 
@@ -311,11 +315,12 @@ class RollingHorizonOptimizer:
     ):
         goal_lower_bound = 0.0
         goal_upper_bound = 0.0
-        for target_id, is_found in target_found_flags.items():
+        for target_description, is_found in target_found_flags.items():
             if is_found:
                 continue
             goal_upper_bound += max(
-                node_reward[node_id][target_id] for node_id in candidate_node_ids
+                node_reward[node_id][target_description]
+                for node_id in candidate_node_ids
             )
 
         dist_lower_bound = 0.0
