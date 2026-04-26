@@ -117,8 +117,6 @@ def run_scenario(config_path: str) -> Dict[str, object]:
 
     # scorer.test_score_images_text("test.png")
 
-    debugpy.breakpoint()  # Set a breakpoint here to inspect initial state before the loop starts
-
     while True:
         if all(hypothesis_graph.target_found.values()):
             return {"target_found": dict(hypothesis_graph.target_found)}
