@@ -126,9 +126,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         [float(agent.get("elevation", 0.0)) for agent in scenario["agents"]],
     )
 
-    target_descriptions = {
-        str(target["id"]): str(target["description"]) for target in scenario["targets"]
-    }
+    target_descriptions = [str(target["description"]) for target in scenario["targets"]]
     hypothesis_graph = HypothesisGraph(
         target_descriptions=target_descriptions,
         bayes_config=scenario["bayes"],

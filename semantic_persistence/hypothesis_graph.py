@@ -71,7 +71,7 @@ class GraphEdge:
 class HypothesisGraph:
     def __init__(
         self,
-        target_descriptions: Dict[str, str],
+        target_descriptions: list[str],
         bayes_config: Optional[Dict[str, float]] = None,
     ):
         defaults = {
@@ -90,11 +90,10 @@ class HypothesisGraph:
         if bayes_config is not None:
             self.bayes_config.update(bayes_config)
 
-        self.target_descriptions = {
-            str(target_id): str(description)
-            for target_id, description in target_descriptions.items()
+        self.target_descriptions = target_descriptions
+        self.target_found = {
+            target_description: False for target_description in target_descriptions
         }
-        self.target_found = {target_id: False for target_id in self.target_descriptions}
 
         self.nodes: Dict[int, GraphNode] = {}
         self.edges: Dict[Tuple[int, int], GraphEdge] = {}
@@ -104,8 +103,8 @@ class HypothesisGraph:
         self.viewpoint_rgb_evidence: Dict[int, List[object]] = {}
         self.observation_step = 0
 
-    def mark_target_found(self, target_id: str) -> None:
-        self.target_found[str(target_id)] = True
+    def mark_target_found(self, target_description: str) -> None:
+        self.target_found[target_description] = True
 
     def add_or_update_node(
         self,
@@ -121,8 +120,8 @@ class HypothesisGraph:
         if target_probs is None:
             target_probs = {}
         normalized_target_probs = {
-            str(target_id): float(target_probs.get(target_id, 0.0))
-            for target_id in self.target_descriptions
+            target_description: float(target_probs.get(target_id, 0.0))
+            for target_description in self.target_descriptions
         }
 
         if node_id not in self.nodes:
@@ -133,7 +132,9 @@ class HypothesisGraph:
                 exist_prob=1.0 if exist_prob is None else float(exist_prob),
                 grounded=False if grounded is None else bool(grounded),
                 target_probs=normalized_target_probs,
-                node_visit_times=0 if node_visit_times is None else int(node_visit_times),
+                node_visit_times=(
+                    0 if node_visit_times is None else int(node_visit_times)
+                ),
             )
             return self.nodes[node_id]
 
@@ -242,7 +243,8 @@ class HypothesisGraph:
         self._merge_existing_regions(alias_map)
 
         observation_by_agent = {
-            str(observation["agent_id"]): observation for observation in agent_observations
+            str(observation["agent_id"]): observation
+            for observation in agent_observations
         }
         agent_payloads = payload["agents"]
 
@@ -349,9 +351,13 @@ class HypothesisGraph:
                     label=visible_label,
                     node_type=TYPE_VP,
                     exist_prob=1.0,
-                    grounded=self.nodes.get(visible_vp_id, GraphNode(0, "", 0, 1, False, {})).grounded
-                    if visible_vp_id in self.nodes
-                    else False,
+                    grounded=(
+                        self.nodes.get(
+                            visible_vp_id, GraphNode(0, "", 0, 1, False, {})
+                        ).grounded
+                        if visible_vp_id in self.nodes
+                        else False
+                    ),
                     target_probs=self._zero_target_probs(),
                 )
                 candidate_viewpoint_ids.add(visible_vp_id)
@@ -370,18 +376,26 @@ class HypothesisGraph:
         for agent_payload in agent_payloads:
             for assign_info in agent_payload["viewpoint_node_assigns"]:
                 viewpoint_id = int(assign_info["id"])
-                proposed_assignments[viewpoint_id] = int(assign_info["assign_region_node_id"])
+                proposed_assignments[viewpoint_id] = int(
+                    assign_info["assign_region_node_id"]
+                )
 
         for agent_id, current_vp_id in self.agent_current_vp_ids.items():
             current_region_id = current_region_for_agent[agent_id]
-            if current_vp_id in self.viewpoint_to_region and current_vp_id not in newly_grounded_viewpoints:
+            if (
+                current_vp_id in self.viewpoint_to_region
+                and current_vp_id not in newly_grounded_viewpoints
+            ):
                 pass
             self._set_viewpoint_region(current_vp_id, current_region_id)
 
         for viewpoint_id in sorted(candidate_viewpoint_ids):
             if viewpoint_id in self.agent_current_vp_ids.values():
                 continue
-            if viewpoint_id in existing_node_ids and viewpoint_id not in newly_grounded_viewpoints:
+            if (
+                viewpoint_id in existing_node_ids
+                and viewpoint_id not in newly_grounded_viewpoints
+            ):
                 if viewpoint_id not in self.viewpoint_to_region:
                     self._set_viewpoint_region(
                         viewpoint_id, proposed_assignments[viewpoint_id]
@@ -389,7 +403,9 @@ class HypothesisGraph:
                 continue
             if viewpoint_id in newly_grounded_viewpoints:
                 agent_id = self._agent_for_current_viewpoint(viewpoint_id)
-                self._set_viewpoint_region(viewpoint_id, current_region_for_agent[agent_id])
+                self._set_viewpoint_region(
+                    viewpoint_id, current_region_for_agent[agent_id]
+                )
                 continue
             self._set_viewpoint_region(viewpoint_id, proposed_assignments[viewpoint_id])
 
@@ -403,7 +419,11 @@ class HypothesisGraph:
             if tuple(sorted((source_id, target_id))) in self.edges:
                 continue
             if self._edge_type_for_ids(source_id, target_id) == "vz":
-                region_id = source_id if self.nodes[source_id].type == TYPE_REGION else target_id
+                region_id = (
+                    source_id
+                    if self.nodes[source_id].type == TYPE_REGION
+                    else target_id
+                )
                 if self.region_to_viewpoints.get(region_id):
                     continue
                 distance_var = float(self.bayes_config["sigma_vz2"])
@@ -495,13 +515,17 @@ class HypothesisGraph:
     def _zero_target_probs(self) -> Dict[str, float]:
         return {target_id: 0.0 for target_id in self.target_descriptions}
 
-    def _normalize_target_dict(self, target_probs: Dict[str, float]) -> Dict[str, float]:
+    def _normalize_target_dict(
+        self, target_probs: Dict[str, float]
+    ) -> Dict[str, float]:
         return {
             target_id: float(target_probs[target_id])
             for target_id in self.target_descriptions
         }
 
-    def _build_region_alias_map(self, region_merges: Iterable[Iterable[int]]) -> Dict[int, int]:
+    def _build_region_alias_map(
+        self, region_merges: Iterable[Iterable[int]]
+    ) -> Dict[int, int]:
         alias_map = {}
         for raw_pair in region_merges:
             source_id, target_id = [int(value) for value in raw_pair]
@@ -523,7 +547,10 @@ class HypothesisGraph:
         if not alias_map:
             return copy.deepcopy(payload)
         updated = copy.deepcopy(payload)
-        for region_list_key in ("new_visible_region_nodes", "new_invisible_region_nodes"):
+        for region_list_key in (
+            "new_visible_region_nodes",
+            "new_invisible_region_nodes",
+        ):
             for region_info in updated[region_list_key]:
                 region_info["id"] = self._resolve_alias(region_info["id"], alias_map)
         for agent_info in updated["agents"]:
@@ -559,7 +586,9 @@ class HypothesisGraph:
     def _merge_region_nodes(self, canonical_id: int, merged_id: int) -> None:
         canonical_node = self.nodes[canonical_id]
         merged_node = self.nodes[merged_id]
-        canonical_node.exist_prob = max(canonical_node.exist_prob, merged_node.exist_prob)
+        canonical_node.exist_prob = max(
+            canonical_node.exist_prob, merged_node.exist_prob
+        )
         canonical_node.grounded = canonical_node.grounded or merged_node.grounded
         for target_id in self.target_descriptions:
             canonical_node.target_probs[target_id] = max(
@@ -580,7 +609,11 @@ class HypothesisGraph:
         ]
         for edge_id in affected_edges:
             edge = self.edges.pop(edge_id)
-            other_id = edge.source_node_id if edge.target_node_id == merged_id else edge.target_node_id
+            other_id = (
+                edge.source_node_id
+                if edge.target_node_id == merged_id
+                else edge.target_node_id
+            )
             if other_id == canonical_id:
                 continue
             new_edge_id = tuple(sorted((canonical_id, other_id)))
@@ -595,7 +628,9 @@ class HypothesisGraph:
                 existing_edge.cond_exist_prob = max(
                     existing_edge.cond_exist_prob, edge.cond_exist_prob
                 )
-                existing_edge.exist_prob = max(existing_edge.exist_prob, edge.exist_prob)
+                existing_edge.exist_prob = max(
+                    existing_edge.exist_prob, edge.exist_prob
+                )
                 existing_edge.grounded = existing_edge.grounded or edge.grounded
             else:
                 edge.source_node_id, edge.target_node_id = new_edge_id
@@ -620,7 +655,9 @@ class HypothesisGraph:
             old_region_id = self.viewpoint_to_region[viewpoint_id]
             if old_region_id == region_id:
                 return
-            self.region_to_viewpoints.setdefault(old_region_id, set()).discard(viewpoint_id)
+            self.region_to_viewpoints.setdefault(old_region_id, set()).discard(
+                viewpoint_id
+            )
         self.viewpoint_to_region[viewpoint_id] = region_id
         self.region_to_viewpoints.setdefault(region_id, set()).add(viewpoint_id)
 
@@ -630,7 +667,8 @@ class HypothesisGraph:
                 continue
             assigned_viewpoints = self.region_to_viewpoints.get(node.node_id, set())
             node.grounded = node.grounded or any(
-                self.nodes[viewpoint_id].grounded for viewpoint_id in assigned_viewpoints
+                self.nodes[viewpoint_id].grounded
+                for viewpoint_id in assigned_viewpoints
             )
             if node.grounded:
                 node.exist_prob = 1.0
@@ -696,7 +734,9 @@ class HypothesisGraph:
                 if node_id in existing_node_ids:
                     prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
                 else:
-                    prior_prob = viewpoint_initial_probs.get(node_id, {}).get(target_id, 0.0)
+                    prior_prob = viewpoint_initial_probs.get(node_id, {}).get(
+                        target_id, 0.0
+                    )
                 likelihood = math.exp(
                     eta_goal * self._target_visual_score(node_id, target_id, scorer)
                 )
@@ -713,7 +753,9 @@ class HypothesisGraph:
                 if node_id in existing_node_ids:
                     prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
                 else:
-                    prior_prob = region_initial_probs.get(node_id, {}).get(target_id, 0.0)
+                    prior_prob = region_initial_probs.get(node_id, {}).get(
+                        target_id, 0.0
+                    )
                 likelihood = math.exp(
                     eta_goal * self._target_visual_score(node_id, target_id, scorer)
                 )
@@ -764,7 +806,8 @@ class HypothesisGraph:
             exist_likelihood = math.exp(eta_exist * zone_visual_score)
             non_exist_likelihood = math.exp(-eta_exist * zone_visual_score)
             node.exist_prob = (
-                exist_likelihood * prior_prob
+                exist_likelihood
+                * prior_prob
                 / (
                     exist_likelihood * prior_prob
                     + non_exist_likelihood * (1.0 - prior_prob)
@@ -778,21 +821,19 @@ class HypothesisGraph:
             for edge in self.edges.values()
             if self._edge_type(edge) == "vv" and edge.grounded
         ]
-        mean_distance = (
-            sum(edge.distance_mean for edge in grounded_vv_edges)
-            / float(len(grounded_vv_edges))
+        mean_distance = sum(edge.distance_mean for edge in grounded_vv_edges) / float(
+            len(grounded_vv_edges)
         )
         variance = (
-            sum(
-                (edge.distance_mean - mean_distance) ** 2
-                for edge in grounded_vv_edges
-            )
+            sum((edge.distance_mean - mean_distance) ** 2 for edge in grounded_vv_edges)
             / float(len(grounded_vv_edges))
         ) + epsilon
         return mean_distance, variance
 
     def _vp_assignment_indicator(self, source_id: int, target_id: int) -> int:
-        if self.viewpoint_to_region.get(source_id) == self.viewpoint_to_region.get(target_id):
+        if self.viewpoint_to_region.get(source_id) == self.viewpoint_to_region.get(
+            target_id
+        ):
             return 1
         return 0
 
@@ -848,9 +889,7 @@ class HypothesisGraph:
             else:
                 semantic_score = self._vz_semantic_score(edge, scorer)
                 cue_mean = prior_mean * (1.0 - semantic_score)
-                cue_var = sigma_vz2 / (
-                    1.0 + kappa_vz * ((1.0 + semantic_score) / 2.0)
-                )
+                cue_var = sigma_vz2 / (1.0 + kappa_vz * ((1.0 + semantic_score) / 2.0))
 
             posterior_var = 1.0 / ((1.0 / prior_var) + (1.0 / cue_var))
             posterior_mean = posterior_var * (
@@ -899,24 +938,31 @@ class HypothesisGraph:
                     edge.distance_mean, empirical_mean, empirical_var
                 )
                 exist_likelihood = gaussian_term * (
-                    (varrho ** assignment_indicator)
+                    (varrho**assignment_indicator)
                     * ((1.0 - varrho) ** (1 - assignment_indicator))
                 )
-                non_exist_likelihood = gaussian_term * (
-                    1.0
-                    - math.exp(
-                        -((edge.distance_mean - empirical_mean) ** 2)
-                        / (2.0 * empirical_var)
+                non_exist_likelihood = (
+                    gaussian_term
+                    * (
+                        1.0
+                        - math.exp(
+                            -((edge.distance_mean - empirical_mean) ** 2)
+                            / (2.0 * empirical_var)
+                        )
                     )
-                ) * (
-                    ((1.0 - varrho) ** assignment_indicator)
-                    * (varrho ** (1 - assignment_indicator))
+                    * (
+                        ((1.0 - varrho) ** assignment_indicator)
+                        * (varrho ** (1 - assignment_indicator))
+                    )
                 )
             else:
                 semantic_score = self._vz_semantic_score(edge, scorer)
-                previous_distance = previous_distance_means.get(edge_id, edge.distance_mean)
+                previous_distance = previous_distance_means.get(
+                    edge_id, edge.distance_mean
+                )
                 approach_effort = math.tanh(
-                    (previous_distance - edge.distance_mean) / (empirical_mean + epsilon)
+                    (previous_distance - edge.distance_mean)
+                    / (empirical_mean + epsilon)
                 )
                 edge_comp_score = (
                     omega_vz * semantic_score + (1.0 - omega_vz) * approach_effort
@@ -925,7 +971,8 @@ class HypothesisGraph:
                 non_exist_likelihood = math.exp(-eta_vz * edge_comp_score)
 
             edge.cond_exist_prob = (
-                exist_likelihood * prior_cond_exist_prob
+                exist_likelihood
+                * prior_cond_exist_prob
                 / (
                     exist_likelihood * prior_cond_exist_prob
                     + non_exist_likelihood * (1.0 - prior_cond_exist_prob)

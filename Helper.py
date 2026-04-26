@@ -4,6 +4,8 @@ import os
 import time
 from collections import defaultdict
 
+import debugpy
+
 import cv2
 import MatterSim
 import numpy as np
@@ -46,7 +48,9 @@ def init_render(batch_size=1, enable_render=False):
 
 
 def get_viewpoints(scan_id):
-    connectivity_file = os.path.join(MP_ROOT, "connectivity", "%s_connectivity.json" % scan_id)
+    connectivity_file = os.path.join(
+        MP_ROOT, "connectivity", "%s_connectivity.json" % scan_id
+    )
     with open(connectivity_file, "r", encoding="utf-8") as file_handle:
         data = json.load(file_handle)
     return [item["image_id"] for item in data if item["included"]]
@@ -67,7 +71,10 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
 
     for fallback_index, location in enumerate(locations[1:], start=1):
         viewpoint_index = fallback_index
-        if viewpoint_index_by_vp is not None and location.viewpointId in viewpoint_index_by_vp:
+        if (
+            viewpoint_index_by_vp is not None
+            and location.viewpointId in viewpoint_index_by_vp
+        ):
             viewpoint_index = int(viewpoint_index_by_vp[location.viewpointId])
 
         x_coord = int(image_width / 2 + location.rel_heading / HFOV * image_width)
@@ -135,9 +142,19 @@ def build_truncated_panorama(horizon_frames):
     return np.concatenate(strips, axis=1)
 
 
-def _scan_state_to_observation(agent_id, start_state, best_heading_for_vp, best_score_for_vp,
-    horizon_rgb_frames, horizon_mllm_frames, horizon_headings, horizon_depths,
-    frame_visible_viewpoint_indices, visible_viewpoints_by_index, viewpoint_index_by_vp):
+def _scan_state_to_observation(
+    agent_id,
+    start_state,
+    best_heading_for_vp,
+    best_score_for_vp,
+    horizon_rgb_frames,
+    horizon_mllm_frames,
+    horizon_headings,
+    horizon_depths,
+    frame_visible_viewpoint_indices,
+    visible_viewpoints_by_index,
+    viewpoint_index_by_vp,
+):
     current_viewpoint_id = str(start_state.location.viewpointId)
     current_viewpoint_index = None
     if viewpoint_index_by_vp is not None:
@@ -207,7 +224,9 @@ def horizon_scan_batch_return(sim, agent_ids, viewpoint_index_by_vp=None):
             )
 
             for visible_viewpoint in visible_viewpoints:
-                record["visible_viewpoints_by_index"][int(visible_viewpoint["viewpoint_index"])] = {
+                record["visible_viewpoints_by_index"][
+                    int(visible_viewpoint["viewpoint_index"])
+                ] = {
                     "viewpoint_id": str(visible_viewpoint["viewpoint_id"]),
                     "viewpoint_index": int(visible_viewpoint["viewpoint_index"]),
                     "distance": round(float(visible_viewpoint["distance"]), 3),
@@ -218,7 +237,9 @@ def horizon_scan_batch_return(sim, agent_ids, viewpoint_index_by_vp=None):
                 score = abs(location.rel_heading) + 0.5 * abs(location.rel_elevation)
                 if score < record["best_score_for_vp"][location.viewpointId]:
                     record["best_score_for_vp"][location.viewpointId] = score
-                    record["best_heading_for_vp"][location.viewpointId] = current_heading
+                    record["best_heading_for_vp"][
+                        location.viewpointId
+                    ] = current_heading
 
         if horizon_index != HORIZON_LEN - 1:
             sim.makeAction(
@@ -233,6 +254,8 @@ def horizon_scan_batch_return(sim, agent_ids, viewpoint_index_by_vp=None):
         [0 for _ in agent_ids],
     )
 
+    debugpy.breakpoint()  # Set a breakpoint here to inspect the collected observations after the horizon scan
+
     observations = []
     for record in per_agent:
         observations.append(
@@ -245,7 +268,9 @@ def horizon_scan_batch_return(sim, agent_ids, viewpoint_index_by_vp=None):
                 horizon_mllm_frames=record["horizon_mllm_frames"],
                 horizon_headings=record["horizon_headings"],
                 horizon_depths=record["horizon_depths"],
-                frame_visible_viewpoint_indices=record["frame_visible_viewpoint_indices"],
+                frame_visible_viewpoint_indices=record[
+                    "frame_visible_viewpoint_indices"
+                ],
                 visible_viewpoints_by_index=record["visible_viewpoints_by_index"],
                 viewpoint_index_by_vp=viewpoint_index_by_vp,
             )
@@ -257,7 +282,11 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
     observation = horizon_scan_batch_return(sim, ["agent0"], viewpoint_index_by_vp)[0]
     return (
         observation["best_heading_for_vp"],
-        observation["start_state"] if "start_state" in observation else sim.getState()[0],
+        (
+            observation["start_state"]
+            if "start_state" in observation
+            else sim.getState()[0]
+        ),
         observation["horizon_rgb_frames"],
         observation["horizon_mllm_frames"],
         observation["raw_panorama"],
@@ -268,7 +297,9 @@ def horizon_scan_return(sim, viewpoint_index_by_vp=None):
             "current_viewpoint_id": observation["current_viewpoint_id"],
             "current_viewpoint_index": observation["current_viewpoint_index"],
             "visible_viewpoints": observation["visible_viewpoints"],
-            "frame_visible_viewpoint_indices": observation["frame_visible_viewpoint_indices"],
+            "frame_visible_viewpoint_indices": observation[
+                "frame_visible_viewpoint_indices"
+            ],
         },
     )
 
@@ -307,7 +338,11 @@ def execute_batched_first_hops(sim, move_specs, pause_time=0.0):
         sim.makeAction(
             [0 for _ in step_plans],
             [
-                plan["direction"] * DELTA_HEADING_RAD if step_index < plan["step_count"] else 0.0
+                (
+                    plan["direction"] * DELTA_HEADING_RAD
+                    if step_index < plan["step_count"]
+                    else 0.0
+                )
                 for plan in step_plans
             ],
             [0 for _ in step_plans],
