@@ -93,32 +93,12 @@ class MLLMClient:
         return parsed
 
     @staticmethod
-    def _image_to_data_url(
-        image,
-        max_size=(1280, 640),
-        quality: int = 75,
-    ) -> str:
-        if isinstance(image, np.ndarray):
-            if image.dtype != np.uint8:
-                image = image.astype(np.uint8)
-            pil_image = Image.fromarray(image)
-        else:
-            pil_image = image
+    def _image_to_data_url(image_bytes: bytes) -> str:
+        """Convert JPEG bytes to a data URL."""
+        if not isinstance(image_bytes, bytes):
+            raise TypeError("_image_to_data_url expects JPEG bytes.")
 
-        pil_image = pil_image.convert("RGB")
-
-        # Keep aspect ratio while limiting the maximum size.
-        pil_image.thumbnail(max_size, Image.Resampling.LANCZOS)
-
-        buffer = io.BytesIO()
-        pil_image.save(
-            buffer,
-            format="JPEG",
-            quality=quality,
-            optimize=True,
-        )
-
-        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+        encoded = base64.b64encode(image_bytes).decode("ascii")
         return "data:image/jpeg;base64,%s" % encoded
 
     def _request_completion(self, messages) -> str:
@@ -225,10 +205,9 @@ class MLLMClient:
         detection_template = [
             {
                 "agent_id": example_agent_id,
-                "target_id": target_id,
-                "found": False,
+                "target_indices": target_ids,
+                "founds": [False for _ in target_ids],
             }
-            for target_id in target_ids
         ]
 
         schema = {
@@ -266,12 +245,8 @@ class MLLMClient:
             ],
             "viewpoint_node_assigns": [
                 {
-                    "viewpoint_id": example_current_viewpoint_id,
-                    "assign_region_node_id": 100,
-                },
-                {
-                    "viewpoint_id": example_visible_viewpoint_id,
-                    "assign_region_node_id": 100,
+                    "region_node_id": 100,
+                    "assigned_viewpoint_node_indices": [example_current_viewpoint_id],
                 },
             ],
             "new_edges": [
@@ -384,23 +359,25 @@ class MLLMClient:
                 "normalized downstream on the semantic-zone layer."
             ),
             "viewpoint_node_assigns": (
-                "A top-level list of viewpoint-to-region assignments for viewpoint nodes in "
-                "the current step. It must contain exactly one assignment for each distinct "
-                "current viewpoint and each distinct visible neighboring viewpoint across all "
-                "agents. If the same viewpoint is observed by multiple agents, include it only "
-                "once and keep the assignment consistent."
+                "A top-level list of region-to-viewpoint assignments for viewpoint nodes in "
+                "the current step. Each item groups the viewpoint nodes assigned to one "
+                "semantic region. Each viewpoint node that needs a current-step assignment "
+                "must appear in exactly one assigned_viewpoint_node_indices list. If the same "
+                "viewpoint is observed by multiple agents, include it only once and keep the "
+                "assignment consistent."
             ),
-            "viewpoint_node_assigns[].viewpoint_id": (
-                "The integer id of a viewpoint node. It must be either an agent's current "
-                "viewpoint or a visible neighboring viewpoint from the per-agent observation "
-                "context."
+            "viewpoint_node_assigns[].region_node_id": (
+                "The integer id of the semantic region that contains the assigned viewpoint "
+                "nodes. This region may be an existing region from the shared graph summary "
+                "or a region returned in visible_region_nodes. If this region is an agent's "
+                "current_region_node_id, it must be included in visible_region_nodes."
             ),
-            "viewpoint_node_assigns[].assign_region_node_id": (
-                "The integer id of the semantic region that physically contains this viewpoint. "
-                "This region may be an existing region from the shared graph summary or a "
-                "region returned in visible_region_nodes. A current viewpoint must be assigned "
-                "to the current_region_node_id of the corresponding agent, and that "
-                "current_region_node_id must be included in visible_region_nodes."
+            "viewpoint_node_assigns[].assigned_viewpoint_node_indices": (
+                "A list of integer viewpoint node ids assigned to this semantic region. Each "
+                "viewpoint id must be either an agent's current viewpoint or a visible "
+                "neighboring viewpoint from the per-agent observation context. Skip thoes viewpoint nodes "
+                "that are already in the shared graph summary. A current "
+                "viewpoint must be assigned to the current_region_node_id of the corresponding agent."
             ),
             "new_edges": (
                 "Uncertain hypothesis edges for downstream optimization. The model should actively "
@@ -450,21 +427,25 @@ class MLLMClient:
                 "of viewpoint-region edges."
             ),
             "detections": (
-                "A top-level list of direct target-detection results. This field reports "
-                "direct visual detection only. Do not set found=true based only on semantic "
-                "guess or target-location probability."
+                "A top-level list of direct target-detection results. It must contain one "
+                "item per agent. This field reports direct visual detection only. Do not "
+                "set a found value to true based only on semantic guess or target-location "
+                "probability."
             ),
             "detections[].agent_id": (
                 "The agent id for this detection result. It must exactly match one of the "
                 "provided agent ids."
             ),
-            "detections[].target": (
-                "The target id for this detection result. It must exactly match one of the "
-                "provided target_ids in the shared target set."
+            "detections[].target_indices": (
+                "A list of target ids for this agent's detection result. It must contain "
+                "every target_id from the shared target set exactly once. The order must "
+                "match the order of detections[].founds."
             ),
-            "detections[].found": (
-                "Use true only if the target is directly visible in the panorama of the "
-                "corresponding agent. Use false if the target is not directly visible."
+            "detections[].founds": (
+                "A list of JSON booleans. founds[k] gives the direct detection result for "
+                "target_indices[k]. Use true only if that target is directly visible in "
+                "the panorama of the corresponding agent. Use false if the target is not "
+                "directly visible."
             ),
         }
 
@@ -490,11 +471,13 @@ class MLLMClient:
             The current viewpoint and visible neighboring viewpoints together form the current-step viewpoint set.
 
             A viewpoint assignment links a viewpoint node to the semantic region that physically contains it.
-            Every current viewpoint and every visible neighboring viewpoint must be assigned to exactly one semantic region.
+            The output field viewpoint_node_assigns groups these assignments by semantic region.
+            Each viewpoint node that needs a current-step assignment must appear in exactly one assigned_viewpoint_node_indices list.
+            Every current viewpoint and every visible neighboring viewpoint must be assigned to exactly one semantic region, unless its existing assignment is already fixed in the shared graph summary.
 
             Use the provided agent ids and target_ids exactly.
             Each target has a target_id and a description.
-            Use target_id as the identifier in target_probs and detections.
+            Use target_id as the key in target_probs. In detections, store target ids in target_indices.
             Use description only to understand what the target is.
             Node ids and viewpoint ids must be integers.
             Existence probabilities and edge-existence probabilities must be numeric values in (0, 1], not strings.
@@ -508,7 +491,9 @@ class MLLMClient:
             Do not output code fences.
             Do not output comments.
             Do not output explanations outside JSON.
-            Do not output restart text such as "Wait", "Let me restart", or "I must follow JSON strictly".
+            Output only the final JSON object.
+            No extra text is allowed inside or outside the JSON object.
+            Do not create extra keys that are not shown in the schema.
             Do not use trailing commas.
             Do not use non-JSON booleans. Use true and false only.
             Do not use Python values such as True, False, or None.
@@ -564,13 +549,15 @@ class MLLMClient:
             - Set detections[].found=true only when the target is directly visible.
 
             Detection rules:
-            - For every agent, detections must contain one item for every target_id.
-            - Each detection item must contain exactly agent_id, target_id, and found.
-            - detections[].target_id must be one of the provided target_ids.
-            - Do not output target or target_name in detections.
-            - Set found=true only when the target is directly visible in the panorama of the corresponding agent.
-            - Set found=false when the target is not directly visible.
-            - Do not set found=true based only on semantic plausibility or target-location probability.
+            - detections must contain exactly one item for every agent.
+            - Each detection item must contain exactly agent_id, target_indices, and founds.
+            - detections[].target_indices must contain every target_id from the shared target set exactly once.
+            - detections[].founds must have the same length and order as detections[].target_indices.
+            - founds[k] is the direct detection result for target_indices[k].
+            - Do not output target_id, target, target_name, or found as separate fields in detections.
+            - Use true only when the corresponding target is directly visible in the panorama of the corresponding agent.
+            - Use false when the corresponding target is not directly visible.
+            - Do not set any founds value to true based only on semantic plausibility or target-location probability.
 
             Edge rules:
             - Use new_edges for undirected hypothesis-graph edges.
@@ -580,7 +567,7 @@ class MLLMClient:
             - Do not propose a viewpoint-viewpoint edge if either endpoint is an agent's current viewpoint or any grounded or visited viewpoint indicated by the shared graph summary.
             - Do not propose edges between an agent's current viewpoint and its visible neighboring viewpoints.
             Those local action-space connections are already provided and verified by the navigation system.
-            - Do not propose an edge between a viewpoint node and its assigned region node.
+            - Do not propose an edge between a viewpoint node and its assigned region node. A viewpoint node is assigned to region_node_id if it appears in that region's assigned_viewpoint_node_indices list.
             The assignment already represents this relation.
             - A viewpoint-region edge should only be used for a semantic region with no assigned viewpoint nodes.
             Its distance is a surrogate approaching effort, not a literal executable motion.
@@ -595,14 +582,26 @@ class MLLMClient:
             - These values are provided by the MLLM for the current graph update.
             - Use larger variance when the distance estimate is more uncertain.
             - Use smaller variance only when visual layout evidence gives a clear distance cue.
+            edge_distance_variances must contain exactly these two keys:
+            - viewpoint_viewpoint
+            - viewpoint_region
+            Do not use viewpoint-viewpoint.
+            Do not use viewpoint-region.
+            Do not create any other key under edge_distance_variances.
 
             Agent-level completeness rules:
             - For every agent, agents[] must contain one item.
             - For every agent, current_region_node_id must be the region containing the agent's current viewpoint.
             - Every current_region_node_id must refer to a region node included in visible_region_nodes.
             - viewpoint_target_probs must contain one item for every distinct current viewpoint and every distinct visible neighboring viewpoint across all agents. If the viewpoint exist in the shared graph summary, skip it.
-            - viewpoint_node_assigns must contain one item for every distinct visible neighboring viewpoint across all agents. If the viewpoint exist in the shared graph summary, skip it.
-            - detections must contain one item for every agent and every target description.
+            - viewpoint_node_assigns must group viewpoint assignments by region_node_id.
+            - Each item must contain exactly region_node_id and assigned_viewpoint_node_indices.
+            - Each assigned_viewpoint_node_indices value must be a list of integer viewpoint ids.
+            - Each current-step viewpoint that needs an assignment must appear in exactly one assigned_viewpoint_node_indices list.
+            - If a viewpoint already exists in the shared graph summary, skip it.
+            - If a viewpoint is now an agent's current viewpoint, include it and assign it to that agent's current_region_node_id.
+            - detections must contain exactly one item for every agent.
+            - Each detections item must include all target_ids in target_indices and one matching boolean value in founds for each target_id.
             """
         ).strip()
 
@@ -621,7 +620,7 @@ class MLLMClient:
                 Meaning of the current input:
                 - The shared target set gives all targets that the agent team needs to find.
                 - Each target has a target_id and a description.
-                - Use target_id as the identifier in target_probs and detections.
+                - Use target_id as the key in target_probs. In detections, store target ids in target_indices.
                 - Use description only to understand what the target is.
                 - The shared graph summary is the accumulated graph context from previous steps.
                 - Each agent observation gives the image index, current viewpoint, and visible neighboring viewpoints.
@@ -650,7 +649,8 @@ class MLLMClient:
                 - Use the description only to understand the object or task target.
                 - All target_probs dictionaries must contain every target_id as a key.
                 - Estimate target-location scores for each target_id independently.
-                - Direct detections must also be reported independently for each target_id and each agent.
+                - Direct detections must be reported once per agent using target_indices and founds.
+                - For each agent, target_indices must contain every target_id, and founds must contain the matching direct detection result in the same order.
                 - Do not output target or target_name in detections.
 
                 Viewpoint-assignment interpretation:
@@ -663,9 +663,9 @@ class MLLMClient:
                 1. Identify the current semantic region for each agent.
                 2. Identify distinct visible semantic regions across all agent panoramas.
                 3. Hypothesize 1 to 2 invisible adjacent regions when the layout may imply unseen space, even if the cue is weak.
-                4. Assign every current viewpoint and every visible neighboring viewpoint to exactly one semantic region.
+                4. Group current-step viewpoint assignments by semantic region using viewpoint_node_assigns.
                 5. Estimate target-location scores for every target description at returned region and viewpoint nodes.
-                6. Report direct target detections for every agent and every target description.
+                6. Report direct target detections once per agent using target_indices and founds.
                 7. Generate legal candidate edges supported by observation, assignments, and graph context.
                 8. Provide step-level initial distance variances for MLLM-generated edge-distance estimates.
 
@@ -679,7 +679,7 @@ class MLLMClient:
                 - Use the current viewpoint ids and visible neighboring viewpoint ids exactly as provided in each agent context.
                 - Use each target_id exactly as provided in the shared target set.
                 - Use target_ids as keys in every target_probs dictionary.
-                - Use target_id, not target or target_name, in detections.
+                - Use target_indices and founds in detections.
                 - current_region_node_id is the region node assigned to the agent's current viewpoint.
                 - Every current_region_node_id must be included in visible_region_nodes. If it matches an existing region in the shared graph summary, reuse the existing id and label but still include it in visible_region_nodes.
                 - visible_region_nodes are semantic regions directly supported by current panorama observations.
@@ -693,14 +693,21 @@ class MLLMClient:
                 - Do not generate edges between a current viewpoint and its visible neighboring viewpoints.
                 - Do not generate an edge between a viewpoint node and its assigned region node.
                 - Return new_edges as an empty list when no legal edge is supported.
-                - Each detection item must contain exactly agent_id, target_id, and found.
-                - Each detection target_id value must exactly match one provided target_id.
-                - Do not include confidence, target, target_name, strip_index, or any strip-related field in detections.
+                - Each detection item must contain exactly agent_id, target_indices, and founds.
+                - Each target_indices list must contain every provided target_id exactly once.
+                - Each founds list must have the same length and order as target_indices.
+                - founds[k] must be the direct detection result for target_indices[k].
+                - Do not include confidence, target_id, target, target_name, found, strip_index, or any strip-related field in detections.
                 - Keep ids consistent with the shared graph summary whenever a node already exists.
                 - Reuse old region ids when the current evidence matches an existing region.
                 - Do not copy the example entries in the schema.
                 - Include only entries supported by the current observations or the shared graph summary.
                 - The current semantic region for each agent must be included or reused consistently.
+                - viewpoint_node_assigns must use the region-centered format.
+                - Each viewpoint_node_assigns item must contain exactly region_node_id and assigned_viewpoint_node_indices.
+                - Do not output viewpoint_id or assign_region_node_id in viewpoint_node_assigns.
+                - A viewpoint id must not appear in more than one assigned_viewpoint_node_indices list.
+                - A current viewpoint must be assigned to the current_region_node_id of the corresponding agent.
                 """
             )
             .strip()
@@ -954,6 +961,19 @@ class MLLMClient:
             graph_summary=graph_summary,
         )
 
+        # Resize panorama arrays to reduce input size while preserving visible neighboring viewpoint cues
+        for observation in agent_observations:
+            observation["annotated_panorama"] = self._resize_panorama_array(
+                observation["annotated_panorama"],
+                max_width=1280,
+                quality=95,
+            )
+            with open(
+                "debug_resized_agent_panorama_%s.jpg" % observation["agent_id"],
+                "wb",
+            ) as f:
+                f.write(observation["annotated_panorama"])
+        debugpy.breakpoint()  # Set a breakpoint here to inspect the resized panoramas before sending the request
         user_content = [{"type": "text", "text": user_message}]
         for observation in agent_observations:
             user_content.append(
@@ -966,6 +986,8 @@ class MLLMClient:
                     },
                 }
             )
+            print(self._image_to_data_url(observation["annotated_panorama"]))
+            debugpy.breakpoint()  # Set a breakpoint here to inspect the user_content before sending the request
 
         messages = [
             {"role": "system", "content": system_message},
@@ -974,9 +996,11 @@ class MLLMClient:
 
         debugpy.breakpoint()  # Set a breakpoint here to inspect the messages before sending the request
 
-        # decoded = self._request_completion(messages)
-        # raw = self._strip_code_fences(decoded)
-        raw = '{\n  "agents": [\n    {\n      "agent_id": "agent0",\n      "current_region_node_id": 100\n    },\n    {\n      "agent_id": "agent1",\n      "current_region_node_id": 101\n    }\n  ],\n  "detections": [\n    {\n      "agent_id": "agent0",\n      "found": false,\n      "target": "glass on the dining table"\n    },\n    {\n      "agent_id": "agent0",\n      "found": false,\n      "target": "green plant on the table"\n    },\n    {\n      "agent_id": "agent1",\n      "found": false,\n      "target": "glass on the dining table"\n    },\n    {\n      "agent_id": "agent1",\n      "found": false,\n      "target": "green plant on the table"\n    }\n  ],\n  "edge_distance_variances": {\n    "viewpoint_region": 4.0,\n    "viewpoint_viewpoint": 1.0\n  },\n  "invisible_region_nodes": [\n    {\n      "exist_prob": 0.5,\n      "id": 102,\n      "label": "dimly lit corridor area beyond the bedroom door",\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ],\n  "new_edges": [\n    {\n      "dist": 3.0,\n      "edge_type": "viewpoint_region",\n      "exist_prob": 0.5,\n      "i": 16,\n      "j": 102\n    },\n    {\n      "dist": 2.0,\n      "edge_type": "viewpoint_viewpoint",\n      "exist_prob": 0.3,\n      "i": 16,\n      "j": 18\n    }\n  ],\n  "viewpoint_node_assigns": [\n    {\n      "assign_region_node_id": 100,\n      "viewpoint_id": 0\n    },\n    {\n      "assign_region_node_id": 100,\n      "viewpoint_id": 21\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 16\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 9\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 18\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 40\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 41\n    }\n  ],\n  "viewpoint_target_probs": [\n    {\n      "id": 16,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 21,\n      "target_probs": {\n        "glass on the dining table": 0.1,\n        "green plant on the table": 0.1\n      }\n    },\n    {\n      "id": 18,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 40,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 41,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ],\n  "visible_region_nodes": [\n    {\n      "exist_prob": 1.0,\n      "id": 100,\n      "label": "modern living room area with curved sofa near dining bar",\n      "target_probs": {\n        "glass on the dining table": 0.2,\n        "green plant on the table": 0.2\n      }\n    },\n    {\n      "exist_prob": 1.0,\n      "id": 101,\n      "label": "minimalist bedroom area with grey tufted walls near hallway",\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ]\n}'
+        decoded = self._request_completion(messages)
+        raw = self._strip_code_fences(decoded)
+        debugpy.breakpoint()  # Set a breakpoint here to inspect the raw response before parsing
+
+        # raw = '{\n  "agents": [\n    {\n      "agent_id": "agent0",\n      "current_region_node_id": 100\n    },\n    {\n      "agent_id": "agent1",\n      "current_region_node_id": 101\n    }\n  ],\n  "detections": [\n    {\n      "agent_id": "agent0",\n      "found": false,\n      "target": "glass on the dining table"\n    },\n    {\n      "agent_id": "agent0",\n      "found": false,\n      "target": "green plant on the table"\n    },\n    {\n      "agent_id": "agent1",\n      "found": false,\n      "target": "glass on the dining table"\n    },\n    {\n      "agent_id": "agent1",\n      "found": false,\n      "target": "green plant on the table"\n    }\n  ],\n  "edge_distance_variances": {\n    "viewpoint_region": 4.0,\n    "viewpoint_viewpoint": 1.0\n  },\n  "invisible_region_nodes": [\n    {\n      "exist_prob": 0.5,\n      "id": 102,\n      "label": "dimly lit corridor area beyond the bedroom door",\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ],\n  "new_edges": [\n    {\n      "dist": 3.0,\n      "edge_type": "viewpoint_region",\n      "exist_prob": 0.5,\n      "i": 16,\n      "j": 102\n    },\n    {\n      "dist": 2.0,\n      "edge_type": "viewpoint_viewpoint",\n      "exist_prob": 0.3,\n      "i": 16,\n      "j": 18\n    }\n  ],\n  "viewpoint_node_assigns": [\n    {\n      "assign_region_node_id": 100,\n      "viewpoint_id": 0\n    },\n    {\n      "assign_region_node_id": 100,\n      "viewpoint_id": 21\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 16\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 9\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 18\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 40\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 41\n    }\n  ],\n  "viewpoint_target_probs": [\n    {\n      "id": 16,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 21,\n      "target_probs": {\n        "glass on the dining table": 0.1,\n        "green plant on the table": 0.1\n      }\n    },\n    {\n      "id": 18,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 40,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 41,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ],\n  "visible_region_nodes": [\n    {\n      "exist_prob": 1.0,\n      "id": 100,\n      "label": "modern living room area with curved sofa near dining bar",\n      "target_probs": {\n        "glass on the dining table": 0.2,\n        "green plant on the table": 0.2\n      }\n    },\n    {\n      "exist_prob": 1.0,\n      "id": 101,\n      "label": "minimalist bedroom area with grey tufted walls near hallway",\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ]\n}'
 
         payload = self._extract_json_object(raw)
         if payload is None:
@@ -984,6 +1008,38 @@ class MLLMClient:
         self._validate_payload(payload, agent_observations, targets)
         debugpy.breakpoint()  # Set a breakpoint here to inspect the MLLM response payload after parsing and validation
         return payload
+
+    @staticmethod
+    def _resize_panorama_array(
+        image: np.ndarray,
+        max_width: int = 1280,
+        quality: int = 75,
+    ) -> bytes:
+        """Resize and JPEG-compress a panorama image.
+
+        The returned value is JPEG bytes, not a NumPy array.
+        """
+        if image.dtype != np.uint8:
+            image = image.astype(np.uint8)
+
+        pil_image = Image.fromarray(image).convert("RGB")
+
+        if pil_image.width > max_width:
+            new_height = int(pil_image.height * max_width / pil_image.width)
+            pil_image = pil_image.resize(
+                (max_width, new_height),
+                Image.Resampling.LANCZOS,
+            )
+
+        buffer = io.BytesIO()
+        pil_image.save(
+            buffer,
+            format="JPEG",
+            quality=quality,
+            optimize=True,
+        )
+
+        return buffer.getvalue()
 
     @staticmethod
     def _extract_json_object(raw_text: str) -> Optional[Dict[str, object]]:
