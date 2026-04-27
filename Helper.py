@@ -255,8 +255,6 @@ def horizon_scan_batch_return(sim, agent_ids, viewpoint_index_by_vp=None):
         [0 for _ in agent_ids],
     )
 
-    debugpy.breakpoint()  # Set a breakpoint here to inspect the collected observations after the horizon scan
-
     observations = []
     for record in per_agent:
         observations.append(

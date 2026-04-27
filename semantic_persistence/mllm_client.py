@@ -6,7 +6,7 @@ import io
 import json
 import os
 from textwrap import dedent
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 import cv2
 
 import debugpy
@@ -21,10 +21,10 @@ if TYPE_CHECKING:
 class MLLMClient:
     def __init__(
         self,
-        model_name: str = "meta-llama/Llama-4-Maverick-17B-128E-Instruct:cheapest",
+        model_name: str = "",  # read from config
         base_url: str = "https://router.huggingface.co/v1",
         api_key_env: str = "HF_TOKEN",
-        max_new_tokens: int = 2000,
+        max_new_tokens: int = -1,  # read from config
         request_timeout: float = 120.0,
         save_debug_images: bool = True,
     ):
@@ -71,51 +71,80 @@ class MLLMClient:
         return str(message_content or "")
 
     @staticmethod
-    def _extract_json_object(candidate_raw: str):
-        try:
-            parsed = json.loads(candidate_raw)
-            if isinstance(parsed, dict):
-                return parsed
-        except Exception:
-            pass
+    def _parse_json_strict(raw_text: str) -> Dict[str, object]:
+        raw_text = raw_text.strip()
 
-        for start_index in range(len(candidate_raw)):
-            if candidate_raw[start_index] != "{":
-                continue
-            for end_index in range(len(candidate_raw), start_index, -1):
-                if candidate_raw[end_index - 1] != "}":
-                    continue
-                candidate = candidate_raw[start_index:end_index]
-                try:
-                    parsed = json.loads(candidate)
-                    if isinstance(parsed, dict):
-                        return parsed
-                except Exception:
-                    continue
-        return None
+        if not raw_text.startswith("{") or not raw_text.endswith("}"):
+            raise ValueError(
+                "The model output is not a pure JSON object. "
+                "It must start with '{' and end with '}'."
+            )
+
+        try:
+            parsed = json.loads(raw_text)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                "The model output is not valid JSON: %s" % str(exc)
+            ) from exc
+
+        if not isinstance(parsed, dict):
+            raise ValueError("The model output must be a JSON object.")
+
+        return parsed
 
     @staticmethod
-    def _image_to_data_url(image) -> str:
+    def _image_to_data_url(
+        image,
+        max_size=(1280, 640),
+        quality: int = 75,
+    ) -> str:
         if isinstance(image, np.ndarray):
             if image.dtype != np.uint8:
                 image = image.astype(np.uint8)
             pil_image = Image.fromarray(image)
         else:
             pil_image = image
+
+        pil_image = pil_image.convert("RGB")
+
+        # Keep aspect ratio while limiting the maximum size.
+        pil_image.thumbnail(max_size, Image.Resampling.LANCZOS)
+
         buffer = io.BytesIO()
-        pil_image.save(buffer, format="PNG")
+        pil_image.save(
+            buffer,
+            format="JPEG",
+            quality=quality,
+            optimize=True,
+        )
+
         encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-        return "data:image/png;base64,%s" % encoded
+        return "data:image/jpeg;base64,%s" % encoded
 
     def _request_completion(self, messages) -> str:
+        self._print_request_size_report(messages)
+
         try:
             completion = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
+                # Best practical reproducibility settings
                 temperature=0.0,
-                top_p=0.9,
+                top_p=1.0,
+                seed=42,
                 max_tokens=self.max_new_tokens,
+                # JSON-only output
+                response_format={"type": "json_object"},
+                reasoning_effort="none",  # try "minimal" if "none" is rejected
             )
+
+            print("usage:", completion.usage)
+            print("model:", completion.model)
+            print(
+                "system_fingerprint:", getattr(completion, "system_fingerprint", None)
+            )
+            print("finish_reason:", completion.choices[0].finish_reason)
+
         except BadRequestError as exc:
             message = str(exc)
             if "model_not_found" in message or "does not exist" in message:
@@ -124,6 +153,7 @@ class MLLMClient:
                     "Resolved model='%s'." % self.model_name
                 ) from exc
             raise
+
         return self._message_to_text(completion.choices[0].message.content)
 
     def _build_instruction(
@@ -134,13 +164,21 @@ class MLLMClient:
     ) -> tuple[str, str]:
         """Build the MLLM instruction prompt for multi-agent multi-target graph hypothesis generation."""
 
-        target_names = [str(target["description"]) for target in targets]
+        target_records = sorted(
+            [
+                {
+                    "target_id": str(target["target_id"]),
+                    "description": str(target["description"]),
+                }
+                for target in targets
+            ],
+            key=lambda item: item["target_id"],
+        )
 
-        if len(target_names) != len(set(target_names)):
-            raise ValueError(
-                "Target descriptions must be unique because each description is used "
-                "as the target name and id."
-            )
+        target_ids = [item["target_id"] for item in target_records]
+
+        if len(target_ids) != len(set(target_ids)):
+            raise ValueError("Target ids must be unique.")
 
         agent_context = []
 
@@ -165,9 +203,7 @@ class MLLMClient:
                 }
             )
 
-        target_prob_template = {
-            target_name: 0.01 for target_name in sorted(target_names)
-        }
+        target_prob_template = {target_id: 0.01 for target_id in target_ids}
 
         example_agent_id = (
             agent_context[0]["agent_id"] if len(agent_context) > 0 else "agent0"
@@ -189,10 +225,10 @@ class MLLMClient:
         detection_template = [
             {
                 "agent_id": example_agent_id,
-                "target": target_name,
+                "target_id": target_id,
                 "found": False,
             }
-            for target_name in sorted(target_names)
+            for target_id in target_ids
         ]
 
         schema = {
@@ -206,7 +242,7 @@ class MLLMClient:
                 {
                     "id": 100,
                     "label": "bright kitchen area near dining table",
-                    "exist_prob": 1.0,
+                    "exist_prob": 0.9,
                     "target_probs": target_prob_template,
                 }
             ],
@@ -242,7 +278,7 @@ class MLLMClient:
                 {
                     "i": example_visible_viewpoint_id,
                     "j": 102,
-                    "edge_type": "viewpoint_region",
+                    "edge_type": "VZ",
                     "exist_prob": 0.6,
                     "dist": 2.5,
                 }
@@ -276,7 +312,7 @@ class MLLMClient:
                 "must include the current semantic region for every agent. It may include "
                 "newly proposed visible regions and reused existing regions. Reuse an "
                 "existing region id and label when the observed place matches a region "
-                "already in the shared graph summary."
+                "already in the shared graph summary. If the region node exist in the shared graph summary, skip it."
             ),
             "visible_region_nodes[].id": (
                 "The integer id of a visible semantic region. Use a new id only when the "
@@ -295,17 +331,19 @@ class MLLMClient:
                 "regions, provide a probability in (0, 1] based on visual and layout evidence."
             ),
             "visible_region_nodes[].target_probs": (
-                "A dictionary from every target description to the initial target-location "
-                "score for this visible semantic region. The target description is used "
-                "directly as the target name and id. Although this field is named "
-                "target_probs, the values are unnormalized prior scores in (0, 1]. Include "
-                "all target descriptions as keys. Do not use 0.0. These scores will be "
+                "A dictionary from every target_id to the initial target-location "
+                "score for this visible semantic region. Although this field is named "
+                "target_probs, the values are unnormalized prior scores in (0, 1]. "
+                "Include all target_ids as keys. Do not use 0.0. These scores will be "
                 "normalized downstream on the semantic-zone layer."
             ),
             "invisible_region_nodes": (
-                "Semantic regions that are not directly visible but are strongly suggested "
-                "by layout cues, such as a doorway, corridor continuation, or partial room "
-                "opening. Do not create invisible regions without clear support."
+                "Hypothesized unseen semantic regions that may exist beyond the currently visible area. "
+                "The model should actively infer 1 to 2 invisible regions even when evidence is weak "
+                "or ambiguous, such as possible space beyond a doorway, wall boundary, opening, "
+                "corridor direction, occlusion, or layout continuation. Use low exist_prob for weak "
+                "hypotheses. Return [] only when generating an invisible region would clearly violate "
+                "the scene layout."
             ),
             "invisible_region_nodes[].id": (
                 "The integer id of an inferred invisible semantic region. Use a new id only "
@@ -322,17 +360,16 @@ class MLLMClient:
                 "very strong."
             ),
             "invisible_region_nodes[].target_probs": (
-                "A dictionary from every target description to the initial target-location "
-                "score for this inferred semantic region. The target description is used "
-                "directly as the target name and id. Although this field is named "
-                "target_probs, the values are unnormalized prior scores in (0, 1]. Include "
-                "all target descriptions as keys. Do not use 0.0. These scores will be "
+                "A dictionary from every target_id to the initial target-location "
+                "score for this visible semantic region. Although this field is named "
+                "target_probs, the values are unnormalized prior scores in (0, 1]. "
+                "Include all target_ids as keys. Do not use 0.0. These scores will be "
                 "normalized downstream on the semantic-zone layer."
             ),
             "viewpoint_target_probs": (
                 "A top-level list of target-location scores for viewpoint nodes in the current "
                 "step. It must include each distinct current viewpoint and each distinct visible "
-                "neighboring viewpoint across all agents."
+                "neighboring viewpoint across all agents. Do not include viewpoints that are agents' current viewpoints."
             ),
             "viewpoint_target_probs[].id": (
                 "The integer id of a viewpoint node. It must be either an agent's current "
@@ -340,12 +377,11 @@ class MLLMClient:
                 "context."
             ),
             "viewpoint_target_probs[].target_probs": (
-                "A dictionary from every target description to the initial target-location "
-                "score for this viewpoint node. The target description is used directly as "
-                "the target name and id. Although this field is named target_probs, the "
-                "values are unnormalized prior scores in (0, 1]. Include all target "
-                "descriptions as keys. Do not use 0.0. These scores will be normalized "
-                "downstream on the viewpoint layer."
+                "A dictionary from every target_id to the initial target-location "
+                "score for this visible semantic region. Although this field is named "
+                "target_probs, the values are unnormalized prior scores in (0, 1]. "
+                "Include all target_ids as keys. Do not use 0.0. These scores will be "
+                "normalized downstream on the semantic-zone layer."
             ),
             "viewpoint_node_assigns": (
                 "A top-level list of viewpoint-to-region assignments for viewpoint nodes in "
@@ -367,9 +403,11 @@ class MLLMClient:
                 "current_region_node_id must be included in visible_region_nodes."
             ),
             "new_edges": (
-                "Candidate undirected hypothesis-graph edges proposed from the current "
-                "observation and graph context. Each item represents one non-directional edge "
-                "{i,j}. Directed arcs are introduced later only by the optimization model."
+                "Uncertain hypothesis edges for downstream optimization. The model should actively "
+                "propose legal candidate edges, even when the evidence is weak. If an invisible_region_node "
+                "is returned, propose at least one viewpoint_region edge from a nearby visible neighboring "
+                "viewpoint to that invisible region. Use low exist_prob for weak hypotheses. "
+                "Return [] only when every possible edge would violate the edge rules."
             ),
             "new_edges[].i": (
                 "The integer id of one endpoint node. The endpoint may be a viewpoint node "
@@ -384,8 +422,8 @@ class MLLMClient:
                 "should not be included."
             ),
             "new_edges[].edge_type": (
-                "The edge type. Use viewpoint_viewpoint only for an edge between two unvisited "
-                "viewpoint nodes. Use viewpoint_region for an edge between a viewpoint node "
+                "The edge type. Use VV only for an edge between two unvisited "
+                "viewpoint nodes. Use VZ for an edge between a viewpoint node "
                 "and a semantic region node."
             ),
             "new_edges[].exist_prob": (
@@ -421,9 +459,8 @@ class MLLMClient:
                 "provided agent ids."
             ),
             "detections[].target": (
-                "The target description for this detection result. The target description is "
-                "used directly as the target name and id. It must exactly match one of the "
-                "provided target descriptions."
+                "The target id for this detection result. It must exactly match one of the "
+                "provided target_ids in the shared target set."
             ),
             "detections[].found": (
                 "Use true only if the target is directly visible in the panorama of the "
@@ -455,16 +492,27 @@ class MLLMClient:
             A viewpoint assignment links a viewpoint node to the semantic region that physically contains it.
             Every current viewpoint and every visible neighboring viewpoint must be assigned to exactly one semantic region.
 
-            Use the provided agent ids and target descriptions exactly.
-            Each target description is used directly as the target name and id.
+            Use the provided agent ids and target_ids exactly.
+            Each target has a target_id and a description.
+            Use target_id as the identifier in target_probs and detections.
+            Use description only to understand what the target is.
             Node ids and viewpoint ids must be integers.
             Existence probabilities and edge-existence probabilities must be numeric values in (0, 1], not strings.
             Every target_probs value must be a positive numeric value in (0, 1], not a string.
             Distances and variances must be positive numeric values, not strings.
             Use JSON booleans for found.
-            Return compact JSON only.
+            Return exactly one valid JSON object.
+            The first character of your response must be {.
+            The last character of your response must be }.
             Do not output markdown.
+            Do not output code fences.
+            Do not output comments.
             Do not output explanations outside JSON.
+            Do not output restart text such as "Wait", "Let me restart", or "I must follow JSON strictly".
+            Do not use trailing commas.
+            Do not use non-JSON booleans. Use true and false only.
+            Do not use Python values such as True, False, or None.
+            Do not use thinking mode.
 
             Each input image is one annotated panorama for one agent.
             Image i corresponds to the agent whose context has image_index = i.
@@ -502,12 +550,12 @@ class MLLMClient:
             - Do not duplicate two region nodes that refer to the same physical area.
 
             Target-probability rules:
-            - Every target_probs dictionary must contain every target description as a key.
-            - Each target description is used directly as the target name and id.
+            - Every target_probs dictionary must contain every target_id as a key.
+            - Use target_id as the key, not the target description.
             - Although this field is named target_probs, the values are unnormalized initial target-location scores.
             - Every target_probs value must be strictly larger than 0 and no larger than 1.
             - Do not output 0.0 for any target_probs value.
-            - Estimate target-location scores separately for each target description.
+            - Estimate target-location scores separately for each target_id by using its description.
             - Target-location scores are initial hypotheses for downstream Bayesian graph updating.
             - The scores do not need to sum to one in the MLLM output.
             - The downstream graph update will normalize target-location probabilities separately on the viewpoint layer and the semantic-region layer.
@@ -516,10 +564,10 @@ class MLLMClient:
             - Set detections[].found=true only when the target is directly visible.
 
             Detection rules:
-            - For every agent, detections must contain one item for every target description.
-            - Each detection item must contain exactly agent_id, target, and found.
-            - detections[].target must be one of the provided target descriptions.
-            - Do not output target_id in detections.
+            - For every agent, detections must contain one item for every target_id.
+            - Each detection item must contain exactly agent_id, target_id, and found.
+            - detections[].target_id must be one of the provided target_ids.
+            - Do not output target or target_name in detections.
             - Set found=true only when the target is directly visible in the panorama of the corresponding agent.
             - Set found=false when the target is not directly visible.
             - Do not set found=true based only on semantic plausibility or target-location probability.
@@ -537,8 +585,9 @@ class MLLMClient:
             - A viewpoint-region edge should only be used for a semantic region with no assigned viewpoint nodes.
             Its distance is a surrogate approaching effort, not a literal executable motion.
             - A viewpoint-viewpoint edge should only be proposed when layout evidence suggests a possible connection between two unvisited viewpoint nodes that is not already provided as a current local action-space edge.
-            - Return an empty new_edges list when no legal edge is supported by the observation and graph context.
-            - Do not add edges only to make the list non-empty.
+            - Prefer non-empty new_edges. Weak but legal hypothesis edges are useful.
+            - Use low exist_prob for weak edges instead of omitting them.
+            - Return [] only when all possible candidate edges violate the edge rules.
 
             Edge-variance rules:
             - edge_distance_variances.viewpoint_viewpoint is the step-level initial variance for MLLM-generated ungrounded viewpoint-viewpoint distance estimates.
@@ -551,8 +600,8 @@ class MLLMClient:
             - For every agent, agents[] must contain one item.
             - For every agent, current_region_node_id must be the region containing the agent's current viewpoint.
             - Every current_region_node_id must refer to a region node included in visible_region_nodes.
-            - viewpoint_target_probs must contain one item for every distinct current viewpoint and every distinct visible neighboring viewpoint across all agents.
-            - viewpoint_node_assigns must contain one item for every distinct current viewpoint and every distinct visible neighboring viewpoint across all agents.
+            - viewpoint_target_probs must contain one item for every distinct current viewpoint and every distinct visible neighboring viewpoint across all agents. If the viewpoint exist in the shared graph summary, skip it.
+            - viewpoint_node_assigns must contain one item for every distinct visible neighboring viewpoint across all agents. If the viewpoint exist in the shared graph summary, skip it.
             - detections must contain one item for every agent and every target description.
             """
         ).strip()
@@ -571,7 +620,9 @@ class MLLMClient:
 
                 Meaning of the current input:
                 - The shared target set gives all targets that the agent team needs to find.
-                - Each target description is used directly as the target name and id.
+                - Each target has a target_id and a description.
+                - Use target_id as the identifier in target_probs and detections.
+                - Use description only to understand what the target is.
                 - The shared graph summary is the accumulated graph context from previous steps.
                 - Each agent observation gives the image index, current viewpoint, and visible neighboring viewpoints.
                 - Visible neighboring viewpoints are feasible next viewpoints observed from the current panorama.
@@ -594,23 +645,24 @@ class MLLMClient:
                 - Do not create duplicate region nodes for the same physical region.
 
                 Multi-target interpretation:
-                - Each target description represents one object or task target.
-                - Each target description is used directly as the target name and id.
-                - All target_probs dictionaries must contain every target description as a key.
-                - Estimate target-location scores for each target description independently.
-                - Direct detections must also be reported independently for each target description and each agent.
-                - Do not output target_id anywhere.
+                - Each target has a target_id and a description.
+                - Use target_id as the identifier in target_probs and detections.
+                - Use the description only to understand the object or task target.
+                - All target_probs dictionaries must contain every target_id as a key.
+                - Estimate target-location scores for each target_id independently.
+                - Direct detections must also be reported independently for each target_id and each agent.
+                - Do not output target or target_name in detections.
 
                 Viewpoint-assignment interpretation:
                 - Assign every current viewpoint and every visible neighboring viewpoint to exactly one semantic region.
-                - If a viewpoint already exists in the shared graph summary and already has an assignment, keep that assignment unless the viewpoint is now an agent's current viewpoint.
+                - If a viewpoint already exists in the shared graph summary and already has an assignment, keep that assignment unless it was previously ungrounded and is now an agent's current viewpoint.
                 - If a viewpoint is now an agent's current viewpoint, assign it to that agent's current_region_node_id.
                 - If a viewpoint is newly observed, initialize its assignment based on the current panorama and graph context.
 
                 Generation priority:
                 1. Identify the current semantic region for each agent.
                 2. Identify distinct visible semantic regions across all agent panoramas.
-                3. Infer hidden adjacent regions only when strong layout cues exist.
+                3. Hypothesize 1 to 2 invisible adjacent regions when the layout may imply unseen space, even if the cue is weak.
                 4. Assign every current viewpoint and every visible neighboring viewpoint to exactly one semantic region.
                 5. Estimate target-location scores for every target description at returned region and viewpoint nodes.
                 6. Report direct target detections for every agent and every target description.
@@ -625,9 +677,9 @@ class MLLMClient:
 
                 Additional output rules:
                 - Use the current viewpoint ids and visible neighboring viewpoint ids exactly as provided in each agent context.
-                - Use each target description exactly as provided in the shared target set.
-                - Use target descriptions as keys in every target_probs dictionary.
-                - Do not output target_id anywhere.
+                - Use each target_id exactly as provided in the shared target set.
+                - Use target_ids as keys in every target_probs dictionary.
+                - Use target_id, not target or target_name, in detections.
                 - current_region_node_id is the region node assigned to the agent's current viewpoint.
                 - Every current_region_node_id must be included in visible_region_nodes. If it matches an existing region in the shared graph summary, reuse the existing id and label but still include it in visible_region_nodes.
                 - visible_region_nodes are semantic regions directly supported by current panorama observations.
@@ -641,9 +693,9 @@ class MLLMClient:
                 - Do not generate edges between a current viewpoint and its visible neighboring viewpoints.
                 - Do not generate an edge between a viewpoint node and its assigned region node.
                 - Return new_edges as an empty list when no legal edge is supported.
-                - Each detection item must contain exactly agent_id, target, and found.
-                - Each detection target value must exactly match one provided target description.
-                - Do not include confidence, target_id, strip_index, or any strip-related field in detections.
+                - Each detection item must contain exactly agent_id, target_id, and found.
+                - Each detection target_id value must exactly match one provided target_id.
+                - Do not include confidence, target, target_name, strip_index, or any strip-related field in detections.
                 - Keep ids consistent with the shared graph summary whenever a node already exists.
                 - Reuse old region ids when the current evidence matches an existing region.
                 - Do not copy the example entries in the schema.
@@ -653,7 +705,7 @@ class MLLMClient:
             )
             .strip()
             .format(
-                targets_json=json.dumps(sorted(target_names), indent=2, sort_keys=True),
+                targets_json=json.dumps(target_records, indent=2, sort_keys=True),
                 graph_summary_json=json.dumps(graph_summary, indent=2, sort_keys=True),
                 agent_context_json=json.dumps(agent_context, indent=2, sort_keys=True),
                 schema_json=json.dumps(schema, indent=2, sort_keys=True),
@@ -674,10 +726,20 @@ class MLLMClient:
         required_top_level_keys = {
             "agents",
             "detections",
-            "new_visible_region_nodes",
-            "new_invisible_region_nodes",
-            "new_arcs",
+            "visible_region_nodes",
+            "invisible_region_nodes",
+            "viewpoint_target_probs",
+            "viewpoint_node_assigns",
+            "new_edges",
+            "edge_distance_variances",
         }
+
+        extra_top_level_keys = set(payload).difference(required_top_level_keys)
+        if extra_top_level_keys:
+            raise KeyError(
+                "Unexpected top-level keys: %s" % sorted(extra_top_level_keys)
+            )
+
         missing_top_level_keys = required_top_level_keys.difference(payload)
         if missing_top_level_keys:
             raise KeyError(
@@ -689,6 +751,7 @@ class MLLMClient:
             for observation in agent_observations
         }
         expected_agent_ids = set(observation_by_agent)
+
         returned_agent_ids = {
             str(agent_info["agent_id"]) for agent_info in payload["agents"]
         }
@@ -699,63 +762,162 @@ class MLLMClient:
             )
 
         target_descriptions = {str(target["description"]) for target in targets}
-        for agent_info in payload["agents"]:
-            agent_id = str(agent_info["agent_id"])
-            observation = observation_by_agent[agent_id]
-            for key in (
-                "current_region_node",
-                "viewpoint_target_probs",
-                "viewpoint_node_assigns",
-            ):
-                if key not in agent_info:
-                    raise KeyError("Missing key '%s' for agent %s" % (key, agent_id))
 
-            expected_viewpoint_ids = {
-                int(item["viewpoint_index"])
-                for item in observation["visible_viewpoints"]
-            }
-            returned_viewpoint_prob_ids = {
-                int(item["id"]) for item in agent_info["viewpoint_target_probs"]
-            }
-            returned_assignment_ids = {
-                int(item["id"]) for item in agent_info["viewpoint_node_assigns"]
-            }
-            if returned_viewpoint_prob_ids != expected_viewpoint_ids:
-                raise ValueError(
-                    "Agent %s returned viewpoint_target_probs for %s, expected %s"
-                    % (
-                        agent_id,
-                        sorted(returned_viewpoint_prob_ids),
-                        sorted(expected_viewpoint_ids),
-                    )
+        visible_region_ids = {
+            int(region["id"]) for region in payload["visible_region_nodes"]
+        }
+
+        for agent_info in payload["agents"]:
+            if set(agent_info) != {"agent_id", "current_region_node_id"}:
+                raise KeyError(
+                    "Each agents[] item must contain exactly agent_id and current_region_node_id."
                 )
-            if returned_assignment_ids != expected_viewpoint_ids:
+
+            current_region_node_id = int(agent_info["current_region_node_id"])
+            if current_region_node_id not in visible_region_ids:
                 raise ValueError(
-                    "Agent %s returned viewpoint assignments for %s, expected %s"
-                    % (
-                        agent_id,
-                        sorted(returned_assignment_ids),
-                        sorted(expected_viewpoint_ids),
-                    )
+                    "current_region_node_id %s is not included in visible_region_nodes."
+                    % current_region_node_id
                 )
+
+        expected_viewpoint_ids = set()
+        for observation in agent_observations:
+            for item in observation["visible_viewpoints"]:
+                expected_viewpoint_ids.add(int(item["viewpoint_index"]))
+
+        returned_viewpoint_prob_ids = {
+            int(item["id"]) for item in payload["viewpoint_target_probs"]
+        }
+        if returned_viewpoint_prob_ids != expected_viewpoint_ids:
+            raise ValueError(
+                "Returned viewpoint_target_probs ids %s do not match expected ids %s"
+                % (sorted(returned_viewpoint_prob_ids), sorted(expected_viewpoint_ids))
+            )
+
+        returned_assignment_ids = {
+            int(item["viewpoint_id"]) for item in payload["viewpoint_node_assigns"]
+        }
+        if returned_assignment_ids != expected_viewpoint_ids:
+            raise ValueError(
+                "Returned viewpoint_node_assigns ids %s do not match expected ids %s"
+                % (sorted(returned_assignment_ids), sorted(expected_viewpoint_ids))
+            )
+
+        def validate_target_probs(
+            target_probs: Dict[str, object], context: str
+        ) -> None:
+            if set(target_probs) != target_descriptions:
+                raise ValueError(
+                    "%s target_probs keys %s do not match expected targets %s"
+                    % (context, sorted(target_probs), sorted(target_descriptions))
+                )
+
+            for target_name, value in target_probs.items():
+                if not isinstance(value, (int, float)):
+                    raise TypeError(
+                        "%s target_probs[%s] must be numeric." % (context, target_name)
+                    )
+                if not (0.0 < float(value) <= 1.0):
+                    raise ValueError(
+                        "%s target_probs[%s]=%s is outside (0, 1]."
+                        % (context, target_name, value)
+                    )
+
+        for region_key in ("visible_region_nodes", "invisible_region_nodes"):
+            for region in payload[region_key]:
+                required_region_keys = {"id", "label", "exist_prob", "target_probs"}
+                if set(region) != required_region_keys:
+                    raise KeyError(
+                        "%s item keys %s do not match expected keys %s"
+                        % (region_key, sorted(region), sorted(required_region_keys))
+                    )
+
+                exist_prob = region["exist_prob"]
+                if not isinstance(exist_prob, (int, float)):
+                    raise TypeError("%s exist_prob must be numeric." % region_key)
+                if not (0.0 < float(exist_prob) <= 1.0):
+                    raise ValueError("%s exist_prob must be in (0, 1]." % region_key)
+
+                validate_target_probs(
+                    region["target_probs"],
+                    "%s region %s" % (region_key, region["id"]),
+                )
+
+        for item in payload["viewpoint_target_probs"]:
+            if set(item) != {"id", "target_probs"}:
+                raise KeyError(
+                    "Each viewpoint_target_probs item must contain exactly id and target_probs."
+                )
+            validate_target_probs(
+                item["target_probs"],
+                "viewpoint %s" % item["id"],
+            )
+
+        for item in payload["viewpoint_node_assigns"]:
+            expected_keys = {"viewpoint_id", "assign_region_node_id"}
+            if set(item) != expected_keys:
+                raise KeyError(
+                    "Each viewpoint_node_assigns item must contain exactly %s."
+                    % sorted(expected_keys)
+                )
+
+        variances = payload["edge_distance_variances"]
+        if set(variances) != {"viewpoint_viewpoint", "viewpoint_region"}:
+            raise KeyError(
+                "edge_distance_variances must contain exactly viewpoint_viewpoint and viewpoint_region."
+            )
+
+        for key, value in variances.items():
+            if not isinstance(value, (int, float)):
+                raise TypeError("edge_distance_variances.%s must be numeric." % key)
+            if float(value) <= 0.0:
+                raise ValueError("edge_distance_variances.%s must be positive." % key)
+
+        for edge in payload["new_edges"]:
+            required_edge_keys = {"i", "j", "edge_type", "exist_prob", "dist"}
+            if set(edge) != required_edge_keys:
+                raise KeyError(
+                    "new_edges item keys %s do not match expected keys %s"
+                    % (sorted(edge), sorted(required_edge_keys))
+                )
+
+            if edge["edge_type"] not in {"viewpoint_viewpoint", "viewpoint_region"}:
+                raise ValueError("Invalid edge_type: %s" % edge["edge_type"])
+
+            if not isinstance(edge["exist_prob"], (int, float)):
+                raise TypeError("new_edges[].exist_prob must be numeric.")
+            if not (0.0 < float(edge["exist_prob"]) <= 1.0):
+                raise ValueError("new_edges[].exist_prob must be in (0, 1].")
+
+            if not isinstance(edge["dist"], (int, float)):
+                raise TypeError("new_edges[].dist must be numeric.")
+            if float(edge["dist"]) <= 0.0:
+                raise ValueError("new_edges[].dist must be positive.")
 
         detection_keys = {"agent_id", "target", "found"}
         returned_detection_pairs = set()
+
         for detection in payload["detections"]:
             if set(detection) != detection_keys:
                 raise KeyError(
                     "Detection item keys %s do not match expected keys %s"
                     % (sorted(detection), sorted(detection_keys))
                 )
+
             agent_id = str(detection["agent_id"])
             if agent_id not in expected_agent_ids:
                 raise ValueError("Detection uses unknown agent id %s" % agent_id)
+
             target_description = str(detection["target"])
             if target_description not in target_descriptions:
                 raise ValueError(
                     "Detection target %s is not in expected targets %s"
                     % (target_description, sorted(target_descriptions))
                 )
+
+            if not isinstance(detection["found"], bool):
+                raise TypeError("detections[].found must be a JSON boolean.")
+
             returned_detection_pairs.add((agent_id, target_description))
 
         expected_detection_pairs = {
@@ -763,13 +925,11 @@ class MLLMClient:
             for agent_id in expected_agent_ids
             for target_description in target_descriptions
         }
+
         if returned_detection_pairs != expected_detection_pairs:
             raise ValueError(
                 "Returned detection pairs %s do not match expected pairs %s"
-                % (
-                    sorted(returned_detection_pairs),
-                    sorted(expected_detection_pairs),
-                )
+                % (sorted(returned_detection_pairs), sorted(expected_detection_pairs))
             )
 
     def propose_semantic_nodes(
@@ -786,7 +946,6 @@ class MLLMClient:
                 Image.fromarray(panorama_image).save(
                     "debug_agent_panorama_%s.png" % image_index
                 )
-        debugpy.breakpoint()  # Set a breakpoint here to inspect agent observations before building the instruction
 
         graph_summary = graph.get_mllm_summary()
         system_message, user_message = self._build_instruction(
@@ -808,76 +967,145 @@ class MLLMClient:
                 }
             )
 
-        debugpy.breakpoint()  # Set a breakpoint here to inspect the system and user messages before sending the request
-
         messages = [
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_content},
         ]
 
         debugpy.breakpoint()  # Set a breakpoint here to inspect the messages before sending the request
-        decoded = self._request_completion(messages)
-        raw = self._strip_code_fences(decoded)
+
+        # decoded = self._request_completion(messages)
+        # raw = self._strip_code_fences(decoded)
+        raw = '{\n  "agents": [\n    {\n      "agent_id": "agent0",\n      "current_region_node_id": 100\n    },\n    {\n      "agent_id": "agent1",\n      "current_region_node_id": 101\n    }\n  ],\n  "detections": [\n    {\n      "agent_id": "agent0",\n      "found": false,\n      "target": "glass on the dining table"\n    },\n    {\n      "agent_id": "agent0",\n      "found": false,\n      "target": "green plant on the table"\n    },\n    {\n      "agent_id": "agent1",\n      "found": false,\n      "target": "glass on the dining table"\n    },\n    {\n      "agent_id": "agent1",\n      "found": false,\n      "target": "green plant on the table"\n    }\n  ],\n  "edge_distance_variances": {\n    "viewpoint_region": 4.0,\n    "viewpoint_viewpoint": 1.0\n  },\n  "invisible_region_nodes": [\n    {\n      "exist_prob": 0.5,\n      "id": 102,\n      "label": "dimly lit corridor area beyond the bedroom door",\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ],\n  "new_edges": [\n    {\n      "dist": 3.0,\n      "edge_type": "viewpoint_region",\n      "exist_prob": 0.5,\n      "i": 16,\n      "j": 102\n    },\n    {\n      "dist": 2.0,\n      "edge_type": "viewpoint_viewpoint",\n      "exist_prob": 0.3,\n      "i": 16,\n      "j": 18\n    }\n  ],\n  "viewpoint_node_assigns": [\n    {\n      "assign_region_node_id": 100,\n      "viewpoint_id": 0\n    },\n    {\n      "assign_region_node_id": 100,\n      "viewpoint_id": 21\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 16\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 9\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 18\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 40\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 41\n    }\n  ],\n  "viewpoint_target_probs": [\n    {\n      "id": 16,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 21,\n      "target_probs": {\n        "glass on the dining table": 0.1,\n        "green plant on the table": 0.1\n      }\n    },\n    {\n      "id": 18,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 40,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 41,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ],\n  "visible_region_nodes": [\n    {\n      "exist_prob": 1.0,\n      "id": 100,\n      "label": "modern living room area with curved sofa near dining bar",\n      "target_probs": {\n        "glass on the dining table": 0.2,\n        "green plant on the table": 0.2\n      }\n    },\n    {\n      "exist_prob": 1.0,\n      "id": 101,\n      "label": "minimalist bedroom area with grey tufted walls near hallway",\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ]\n}'
+
         payload = self._extract_json_object(raw)
         if payload is None:
             raise ValueError("Failed to parse joint MLLM JSON output")
         self._validate_payload(payload, agent_observations, targets)
+        debugpy.breakpoint()  # Set a breakpoint here to inspect the MLLM response payload after parsing and validation
         return payload
 
-    def _build_distance_instruction(self, target_object: str) -> str:
-        return (
-            'Target object: "%s". '
-            "Two aligned images are provided: RGB first, depth second. "
-            "The target is definitely present in the RGB image. "
-            "Use RGB to localize the target and the depth image to estimate metric distance. "
-            "Depth conversion rule: distance_m = pixel_value / 4000.0 using the last depth channel or the single channel image. "
-            'Return JSON only with exactly one key: {"distance_m": 2.37}.'
-            % target_object
-        )
+    @staticmethod
+    def _extract_json_object(raw_text: str) -> Optional[Dict[str, object]]:
+        """
+        Extract and parse one JSON object from the model output.
 
-    def estimate_target_distance(
-        self,
-        rgb_image: np.ndarray,
-        depth_image: np.ndarray,
-        target_object: str,
-    ) -> Dict[str, float]:
-        if rgb_image.dtype != np.uint8:
-            rgb_image = rgb_image.astype(np.uint8)
-        if depth_image.ndim == 3:
-            depth_image = depth_image[:, :, -1]
-        if depth_image.dtype == np.float32 or depth_image.dtype == np.float64:
-            depth_image = np.clip(depth_image * 4000.0, 0, 65535).astype(np.uint16)
-        elif depth_image.dtype != np.uint16:
-            depth_image = depth_image.astype(np.uint16)
+        Normal case:
+        - The model returns a pure JSON object.
 
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": self._build_distance_instruction(target_object),
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": self._image_to_data_url(rgb_image)},
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": self._image_to_data_url(
-                                Image.fromarray(depth_image, mode="I;16")
-                            )
-                        },
-                    },
-                ],
-            }
-        ]
-        decoded = self._request_completion(messages)
-        raw = self._strip_code_fences(decoded)
-        payload = self._extract_json_object(raw)
-        if payload is None:
-            raise ValueError("Failed to parse distance JSON output")
-        if "distance_m" not in payload:
-            raise KeyError("distance_m is missing from distance JSON output")
-        return {"distance_m": float(payload["distance_m"])}
+        Fallback case:
+        - The model accidentally adds text before or after the JSON object.
+        - This function finds the first valid JSON object and parses it.
+
+        Returns:
+            A parsed Python dictionary if successful.
+            None if no valid JSON object can be extracted.
+        """
+        if raw_text is None:
+            return None
+
+        text = str(raw_text).strip()
+        text = MLLMClient._strip_code_fences(text).strip()
+
+        if not text:
+            return None
+
+        # First try the strict path.
+        # This should work when response_format={"type": "json_object"} is respected.
+        try:
+            return MLLMClient._parse_json_strict(text)
+        except ValueError:
+            pass
+
+        # Fallback: try to parse a JSON object starting from each "{".
+        # json.JSONDecoder handles nested objects and braces inside strings correctly.
+        decoder = json.JSONDecoder()
+
+        for start_index, char in enumerate(text):
+            if char != "{":
+                continue
+
+            candidate_text = text[start_index:]
+
+            try:
+                parsed, end_index = decoder.raw_decode(candidate_text)
+            except json.JSONDecodeError:
+                continue
+
+            if isinstance(parsed, dict):
+                return parsed
+
+        return None
+
+    @staticmethod
+    def _format_bytes(num_bytes: int) -> str:
+        value = float(num_bytes)
+        for unit in ["B", "KB", "MB", "GB"]:
+            if value < 1024.0 or unit == "GB":
+                return f"{value:.2f} {unit}"
+            value /= 1024.0
+        return f"{num_bytes} B"
+
+    def _print_request_size_report(self, messages) -> None:
+        payload = {
+            "model": self.model_name,
+            "messages": messages,
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "seed": 42,
+            "max_tokens": self.max_new_tokens,
+            "response_format": {"type": "json_object"},
+        }
+
+        payload_text = json.dumps(payload, ensure_ascii=False)
+        total_bytes = len(payload_text.encode("utf-8"))
+
+        print("\n========== MLLM request size report ==========")
+        print(f"Total JSON payload size: {self._format_bytes(total_bytes)}")
+
+        for message_index, message in enumerate(messages):
+            role = message.get("role", "unknown")
+            content = message.get("content", "")
+
+            if isinstance(content, str):
+                size = len(content.encode("utf-8"))
+                print(
+                    f"message[{message_index}] role={role}, "
+                    f"text size={self._format_bytes(size)}"
+                )
+
+            elif isinstance(content, list):
+                print(
+                    f"message[{message_index}] role={role}, "
+                    f"content items={len(content)}"
+                )
+
+                for item_index, item in enumerate(content):
+                    item_type = item.get("type")
+
+                    if item_type == "text":
+                        text = item.get("text", "")
+                        size = len(text.encode("utf-8"))
+                        print(
+                            f"  item[{item_index}] text size="
+                            f"{self._format_bytes(size)}"
+                        )
+
+                    elif item_type == "image_url":
+                        url = item.get("image_url", {}).get("url", "")
+                        data_url_size = len(url.encode("utf-8"))
+
+                        if "," in url:
+                            base64_part = url.split(",", 1)[1]
+                            approximate_raw_image_size = int(len(base64_part) * 3 / 4)
+                        else:
+                            approximate_raw_image_size = 0
+
+                        print(
+                            f"  item[{item_index}] image data-url size="
+                            f"{self._format_bytes(data_url_size)}, "
+                            f"approx raw image size="
+                            f"{self._format_bytes(approximate_raw_image_size)}"
+                        )
+
+        print("=============================================\n")

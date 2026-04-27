@@ -127,7 +127,6 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
         )
 
-        debugpy.breakpoint()  # Set a breakpoint here to inspect agent observations before processing with MLLM
         mllm_output = mllm_client.propose_semantic_nodes(
             agent_observations=agent_observations,
             targets=scenario["targets"],
