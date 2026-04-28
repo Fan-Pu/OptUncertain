@@ -303,6 +303,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
                     "target_viewpoint_id": next_viewpoint_id,
                 }
             )
+            # The graph is updated with the new viewpoint assignment before executing the move.
             hypothesis_graph.nodes[next_vp_node_id].grounded = True
             hypothesis_graph.nodes[next_vp_node_id].node_visit_times += 1
             print(f"Move spec for {agent_id}: {next_vp_node_id}")
