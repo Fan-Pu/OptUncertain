@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import base64
-from doctest import debug
 import io
 import json
 import os
 from textwrap import dedent
 from typing import TYPE_CHECKING, Dict, List, Optional
-import cv2
-
 import debugpy
 import numpy as np
 from openai import BadRequestError, OpenAI
@@ -142,7 +139,12 @@ class MLLMClient:
         targets: List[Dict[str, object]],
         graph_summary: Dict[str, object],
     ) -> tuple[str, str]:
-        """Build the MLLM instruction prompt for multi-agent multi-target graph hypothesis generation."""
+        """Build a concise prompt for multi-agent multi-target graph hypotheses.
+
+        Stable task rules are placed in the system message. The user message contains
+        step-specific data, a compact schema example, field descriptions, and a
+        short request. This avoids repeating long rule blocks in both messages.
+        """
 
         target_records = sorted(
             [
@@ -156,16 +158,11 @@ class MLLMClient:
         )
 
         target_ids = [item["target_id"] for item in target_records]
-
         if len(target_ids) != len(set(target_ids)):
             raise ValueError("Target ids must be unique.")
 
         agent_context = []
-
         for image_index, observation in enumerate(agent_observations):
-            agent_id = str(observation["agent_id"])
-            current_viewpoint_index = int(observation["current_viewpoint_index"])
-
             visible_viewpoints = [
                 {
                     "viewpoint_index": int(item["viewpoint_index"]),
@@ -173,42 +170,27 @@ class MLLMClient:
                 }
                 for item in observation["visible_viewpoints"]
             ]
-
             agent_context.append(
                 {
-                    "agent_id": agent_id,
+                    "agent_id": str(observation["agent_id"]),
                     "image_index": image_index,
-                    "current_viewpoint_index": current_viewpoint_index,
+                    "current_viewpoint_index": int(
+                        observation["current_viewpoint_index"]
+                    ),
                     "visible_viewpoints": visible_viewpoints,
                 }
             )
 
         target_prob_template = {target_id: 0.01 for target_id in target_ids}
-
-        example_agent_id = (
-            agent_context[0]["agent_id"] if len(agent_context) > 0 else "agent0"
-        )
-
+        example_agent_id = agent_context[0]["agent_id"] if agent_context else "agent0"
         example_current_viewpoint_id = (
-            agent_context[0]["current_viewpoint_index"]
-            if len(agent_context) > 0
-            else 10
+            agent_context[0]["current_viewpoint_index"] if agent_context else 10
         )
-
         example_visible_viewpoint_id = (
             agent_context[0]["visible_viewpoints"][0]["viewpoint_index"]
-            if len(agent_context) > 0
-            and len(agent_context[0]["visible_viewpoints"]) > 0
+            if agent_context and agent_context[0]["visible_viewpoints"]
             else 13
         )
-
-        detection_template = [
-            {
-                "agent_id": example_agent_id,
-                "target_indices": target_ids,
-                "founds": [False for _ in target_ids],
-            }
-        ]
 
         schema = {
             "agents": [
@@ -221,7 +203,7 @@ class MLLMClient:
                 {
                     "id": 100,
                     "label": "bright kitchen area near dining table",
-                    "exist_prob": 0.9,
+                    "exist_prob": 1.0,
                     "target_probs": target_prob_template,
                 }
             ],
@@ -235,19 +217,18 @@ class MLLMClient:
             ],
             "viewpoint_target_probs": [
                 {
-                    "id": example_current_viewpoint_id,
-                    "target_probs": target_prob_template,
-                },
-                {
                     "id": example_visible_viewpoint_id,
                     "target_probs": target_prob_template,
-                },
+                }
             ],
             "viewpoint_node_assigns": [
                 {
                     "region_node_id": 100,
-                    "assigned_viewpoint_node_indices": [example_current_viewpoint_id],
-                },
+                    "assigned_viewpoint_node_indices": [
+                        example_current_viewpoint_id,
+                        example_visible_viewpoint_id,
+                    ],
+                }
             ],
             "new_edges": [
                 {
@@ -262,7 +243,13 @@ class MLLMClient:
                 "viewpoint_viewpoint": 1.0,
                 "viewpoint_region": 4.0,
             },
-            "detections": detection_template,
+            "detections": [
+                {
+                    "agent_id": example_agent_id,
+                    "target_indices": target_ids,
+                    "founds": [False for _ in target_ids],
+                }
+            ],
         }
 
         field_descriptions = {
@@ -296,8 +283,10 @@ class MLLMClient:
             ),
             "visible_region_nodes[].label": (
                 "A descriptive room or area label. It must not be an object name. It "
-                "should include an appearance cue, a room or area type, and a relative "
-                "location cue."
+                "must include an appearance cue, a room or area type, and a physical relative "
+                "location cue, such as near the doorway, beside the window, beyond the hallway, "
+                "adjacent to the kitchen, or at the end of the room. Do not mention agent ids "
+                "or agent names such as agent0 or agent1."
             ),
             "visible_region_nodes[].exist_prob": (
                 "The estimated probability that this visible semantic region exists. Use "
@@ -310,7 +299,9 @@ class MLLMClient:
                 "score for this visible semantic region. Although this field is named "
                 "target_probs, the values are unnormalized prior scores in (0, 1]. "
                 "Include all target_ids as keys. Do not use 0.0. These scores will be "
-                "normalized downstream on the semantic-zone layer."
+                "normalized downstream on the semantic-zone layer. Use the target descriptions to "
+                "make target-specific scores when the scene gives semantic evidence. Do not "
+                "assign identical scores to all targets unless the evidence is equally weak."
             ),
             "invisible_region_nodes": (
                 "Hypothesized unseen semantic regions that may exist beyond the currently visible area. "
@@ -326,8 +317,10 @@ class MLLMClient:
             ),
             "invisible_region_nodes[].label": (
                 "A descriptive room or area label for the inferred region. It must not be "
-                "an object name. It should include an appearance cue, a room or area type, "
-                "and a relative location cue."
+                "an object name. It must include an appearance cue, a room or area type, "
+                "and a physical relative location cue, such as beyond the doorway, past the hallway, "
+                "behind the wall opening, or adjacent to the visible room. Do not mention agent ids "
+                "or agent names such as agent0 or agent1."
             ),
             "invisible_region_nodes[].exist_prob": (
                 "The estimated probability that this inferred semantic region exists. Use "
@@ -342,21 +335,22 @@ class MLLMClient:
                 "normalized downstream on the semantic-zone layer."
             ),
             "viewpoint_target_probs": (
-                "A top-level list of target-location scores for viewpoint nodes in the current "
-                "step. It must include each distinct current viewpoint and each distinct visible "
-                "neighboring viewpoint across all agents. Do not include viewpoints that are agents' current viewpoints."
+                "A top-level list of target-location scores for visible neighboring viewpoint "
+                "nodes in the current step. It must include each distinct visible neighboring "
+                "viewpoint across all agents. It must not include any agent's current viewpoint, "
+                "because current viewpoints are grounded and are updated from direct visual evidence."
             ),
             "viewpoint_target_probs[].id": (
-                "The integer id of a viewpoint node. It must be either an agent's current "
-                "viewpoint or a visible neighboring viewpoint from the per-agent observation "
-                "context."
+                "The integer id of a visible neighboring viewpoint from the per-agent "
+                "observation context. It must not be an agent's current viewpoint."
             ),
             "viewpoint_target_probs[].target_probs": (
                 "A dictionary from every target_id to the initial target-location "
-                "score for this visible semantic region. Although this field is named "
+                "score for this visible neighboring viewpoint node. Although this field is named "
                 "target_probs, the values are unnormalized prior scores in (0, 1]. "
                 "Include all target_ids as keys. Do not use 0.0. These scores will be "
-                "normalized downstream on the semantic-zone layer."
+                "normalized downstream on the viewpoint layer. Do not use identical scores "
+                "for all targets unless the visual and semantic evidence is equally weak."
             ),
             "viewpoint_node_assigns": (
                 "A top-level list of region-to-viewpoint assignments for viewpoint nodes in "
@@ -449,159 +443,83 @@ class MLLMClient:
             ),
         }
 
+        def round_json_value(value):
+            if isinstance(value, bool) or value is None:
+                return value
+            if isinstance(value, float):
+                return round(value, 4)
+            if isinstance(value, list):
+                return [round_json_value(item) for item in value]
+            if isinstance(value, dict):
+                return {
+                    key: round_json_value(item)
+                    for key, item in value.items()
+                    if key
+                    not in {
+                        "targets",
+                        "agent_current_vp_ids",
+                        "current_observation_context",
+                    }
+                }
+            return value
+
+        prompt_graph_summary = round_json_value(graph_summary)
+
+        # Viewpoint labels are usually long scan ids and do not help the MLLM.
+        # Region labels are kept because they carry semantic meaning.
+        for node in prompt_graph_summary.get("nodes", []):
+            if node.get("type") == "viewpoint":
+                node.pop("label", None)
+
         system_message = dedent(
             """
             You are an indoor hypothesis-graph proposal module for cooperative many-agent, many-target navigation.
 
-            Your task is to analyze one annotated panorama per agent and the accumulated graph summary.
-            You must propose uncertain graph hypotheses for downstream optimization.
-            You are not directly selecting robot actions.
-            You are not producing a final map.
-            Your output is an uncertain hypothesis graph update.
+            Analyze one annotated RGB panorama per agent and the compact shared graph summary.
+            Propose an uncertain graph update for downstream optimization.
+            Do not select robot actions and do not produce a final map.
 
-            The graph has two spatial layers.
+            The graph has two layers:
+            - viewpoint nodes are executable robot poses.
+            - region nodes are semantic zones such as a kitchen area, hallway area, or bedroom area.
 
-            The semantic layer contains region nodes.
-            A region node represents a room or area, such as a kitchen area, hallway area, or bedroom area.
-            Region nodes provide high-level semantic information but are not directly executable robot poses.
+            Use the provided agent ids, target_ids, viewpoint ids, and region ids exactly.
+            Use target_id as the key in target_probs and as the value in detections[].target_indices.
+            Use target descriptions only to understand what the targets are.
 
-            The viewpoint layer contains viewpoint nodes.
-            A viewpoint node represents a feasible robot pose.
-            Current viewpoint nodes and visible neighboring viewpoint nodes are provided by the navigation system.
-            The current viewpoint and visible neighboring viewpoints together form the current-step viewpoint set.
+            Return exactly one valid JSON object matching the schema in the user message.
+            Do not output markdown, code fences, comments, or text outside JSON.
+            Do not create extra top-level keys.
+            Use JSON booleans true and false only.
 
-            A viewpoint assignment links a viewpoint node to the semantic region that physically contains it.
-            The output field viewpoint_node_assigns groups these assignments by semantic region.
-            Each viewpoint node that needs a current-step assignment must appear in exactly one assigned_viewpoint_node_indices list.
-            Every current viewpoint and every visible neighboring viewpoint must be assigned to exactly one semantic region, unless its existing assignment is already fixed in the shared graph summary.
+            Required top-level keys:
+            agents, visible_region_nodes, invisible_region_nodes, viewpoint_target_probs,
+            viewpoint_node_assigns, new_edges, edge_distance_variances, detections.
 
-            Use the provided agent ids and target_ids exactly.
-            Each target has a target_id and a description.
-            Use target_id as the key in target_probs. In detections, store target ids in target_indices.
-            Use description only to understand what the target is.
-            Node ids and viewpoint ids must be integers.
-            Existence probabilities and edge-existence probabilities must be numeric values in (0, 1], not strings.
-            Every target_probs value must be a positive numeric value in (0, 1], not a string.
-            Distances and variances must be positive numeric values, not strings.
-            Use JSON booleans for found.
-            Return exactly one valid JSON object.
-            The first character of your response must be {.
-            The last character of your response must be }.
-            Do not output markdown.
-            Do not output code fences.
-            Do not output comments.
-            Do not output explanations outside JSON.
-            Output only the final JSON object.
-            No extra text is allowed inside or outside the JSON object.
-            Do not create extra keys that are not shown in the schema.
-            Do not use trailing commas.
-            Do not use non-JSON booleans. Use true and false only.
-            Do not use Python values such as True, False, or None.
-            Do not use thinking mode.
-
-            Each input image is one annotated panorama for one agent.
-            Image i corresponds to the agent whose context has image_index = i.
-            Text numbers in a panorama indicate visible neighboring viewpoints.
-            The same text number can appear multiple times and always refers to the same viewpoint.
-
-            The MLLM input does not include depth images.
-            The current implementation provides annotated RGB panoramas and known local distances.
-            Depth information and local action-space distances are handled by the navigation system.
-            Do not assume, infer, or request depth images.
-            Do not infer local distances between a current viewpoint and its visible neighboring viewpoints; those distances are already provided.
-
-            Region-label rules:
-            - Region labels must be room or area labels only.
-            - Region labels must not be object names.
-            - Each region label must include an appearance cue, a room or area type, and a relative location cue.
-
-            Good region-label examples:
-            - modern living room area with curved sofa near kitchen bar
-            - open dining and kitchen area with stools beside living room
-            - minimalist bedroom area with large bed near hallway
-
-            Bad region-label examples:
-            - living room area
-            - kitchen area
-            - bedroom area
-            - sofa
-            - table
-
-            Region-generation rules:
-            - Do not generate too many region nodes.
-            - A maximum of 5 current-step semantic regions total may be returned at each step.
-            - When a region is revisited, reuse the previous region id and label from the shared graph summary.
-            - Only propose a new region when the evidence suggests a different physical area.
-            - Do not duplicate two region nodes that refer to the same physical area.
-
-            Target-probability rules:
-            - Every target_probs dictionary must contain every target_id as a key.
-            - Use target_id as the key, not the target description.
-            - Although this field is named target_probs, the values are unnormalized initial target-location scores.
-            - Every target_probs value must be strictly larger than 0 and no larger than 1.
-            - Do not output 0.0 for any target_probs value.
-            - Estimate target-location scores separately for each target_id by using its description.
-            - Target-location scores are initial hypotheses for downstream Bayesian graph updating.
-            - The scores do not need to sum to one in the MLLM output.
-            - The downstream graph update will normalize target-location probabilities separately on the viewpoint layer and the semantic-region layer.
-            - A target can have low but positive probability in a semantically plausible region even when it is not directly detected.
-            - Direct detection and target-location probability are different fields.
-            - Set detections[].found=true only when the target is directly visible.
-
-            Detection rules:
-            - detections must contain exactly one item for every agent.
-            - Each detection item must contain exactly agent_id, target_indices, and founds.
-            - detections[].target_indices must contain every target_id from the shared target set exactly once.
-            - detections[].founds must have the same length and order as detections[].target_indices.
-            - founds[k] is the direct detection result for target_indices[k].
-            - Do not output target_id, target, target_name, or found as separate fields in detections.
-            - Use true only when the corresponding target is directly visible in the panorama of the corresponding agent.
-            - Use false when the corresponding target is not directly visible.
-            - Do not set any founds value to true based only on semantic plausibility or target-location probability.
-
-            Edge rules:
-            - Use new_edges for undirected hypothesis-graph edges.
-            - No region-to-region edges are allowed.
-            - new_edges may contain viewpoint-viewpoint edges or viewpoint-region edges.
-            - A viewpoint-viewpoint edge proposed by the MLLM must connect two unvisited viewpoint nodes only.
-            - Do not propose a viewpoint-viewpoint edge if either endpoint is an agent's current viewpoint or any grounded or visited viewpoint indicated by the shared graph summary.
-            - Do not propose edges between an agent's current viewpoint and its visible neighboring viewpoints.
-            Those local action-space connections are already provided and verified by the navigation system.
-            - Do not propose an edge between a viewpoint node and its assigned region node. A viewpoint node is assigned to region_node_id if it appears in that region's assigned_viewpoint_node_indices list.
-            The assignment already represents this relation.
-            - A viewpoint-region edge should only be used for a semantic region with no assigned viewpoint nodes.
-            Its distance is a surrogate approaching effort, not a literal executable motion.
-            - A viewpoint-viewpoint edge should only be proposed when layout evidence suggests a possible connection between two unvisited viewpoint nodes that is not already provided as a current local action-space edge.
-            - Prefer non-empty new_edges. Weak but legal hypothesis edges are useful.
-            - Use low exist_prob for weak edges instead of omitting them.
-            - Return [] only when all possible candidate edges violate the edge rules.
-
-            Edge-variance rules:
-            - edge_distance_variances.viewpoint_viewpoint is the step-level initial variance for MLLM-generated ungrounded viewpoint-viewpoint distance estimates.
-            - edge_distance_variances.viewpoint_region is the step-level initial variance for MLLM-generated viewpoint-region surrogate distance estimates.
-            - These values are provided by the MLLM for the current graph update.
-            - Use larger variance when the distance estimate is more uncertain.
-            - Use smaller variance only when visual layout evidence gives a clear distance cue.
-            edge_distance_variances must contain exactly these two keys:
-            - viewpoint_viewpoint
-            - viewpoint_region
-            Do not use viewpoint-viewpoint.
-            Do not use viewpoint-region.
-            Do not create any other key under edge_distance_variances.
-
-            Agent-level completeness rules:
-            - For every agent, agents[] must contain one item.
-            - For every agent, current_region_node_id must be the region containing the agent's current viewpoint.
-            - Every current_region_node_id must refer to a region node included in visible_region_nodes.
-            - viewpoint_target_probs must contain one item for every distinct current viewpoint and every distinct visible neighboring viewpoint across all agents. If the viewpoint exist in the shared graph summary, skip it.
-            - viewpoint_node_assigns must group viewpoint assignments by region_node_id.
-            - Each item must contain exactly region_node_id and assigned_viewpoint_node_indices.
-            - Each assigned_viewpoint_node_indices value must be a list of integer viewpoint ids.
-            - Each current-step viewpoint that needs an assignment must appear in exactly one assigned_viewpoint_node_indices list.
-            - If a viewpoint already exists in the shared graph summary, skip it.
-            - If a viewpoint is now an agent's current viewpoint, include it and assign it to that agent's current_region_node_id.
-            - detections must contain exactly one item for every agent.
-            - Each detections item must include all target_ids in target_indices and one matching boolean value in founds for each target_id.
+            Output rules:
+            - agents must contain one item per agent.
+            - current_region_node_id is the semantic region containing the agent's current viewpoint.
+            - Every current_region_node_id must appear in visible_region_nodes.
+            - visible_region_nodes are directly supported by the current panoramas.
+            - invisible_region_nodes are unseen but layout-supported adjacent regions. Return [] only when no plausible unseen region is supported.
+            - Region labels must be room or area labels, not object names. Include an appearance cue, area type, and physical relative location cue, such as near doorway, beside window, beyond hallway, adjacent to kitchen, or at the end of the room.
+            - Do not mention agent ids or agent names in region labels. For example, do not write near agent0 or near agent1. Use physical cues such as near doorway, beside bed, beyond bedroom doorway, or adjacent to hallway instead.
+            - Do not use generic labels such as "living area with seating" or "bedroom area with bed" unless a relative location cue and an appearance cue are also included.
+            - Use at most 5 current-step region nodes in total.
+            - target_probs must contain every target_id, with numeric values in (0, 1]. Values do not need to sum to one.
+            - Use the target descriptions to create target-specific target_probs. Do not give all targets the same target_probs unless visual and semantic evidence is equally weak for all targets.
+            - viewpoint_target_probs must include only current-step visible neighboring viewpoints that need new target scores. Never include current agent viewpoints in viewpoint_target_probs.
+            - viewpoint_node_assigns must use the region-centered format with region_node_id and assigned_viewpoint_node_indices.
+            - Each current-step viewpoint that needs assignment must appear in exactly one assigned_viewpoint_node_indices list.
+            - Current agent viewpoints must be assigned to their agents' current_region_node_id.
+            - If a viewpoint or region already exists in the shared graph summary, reuse its existing assignment or region id unless the current observation grounds a previously ungrounded current viewpoint.
+            - new_edges may contain only VV or VZ edges. Region-region edges are not allowed.
+            - Do not add edges between a current viewpoint and its visible neighboring viewpoints. Those local edges are already provided by the navigation system.
+            - Do not add an edge between a viewpoint and its assigned region.
+            - A VZ edge should connect a viewpoint to a semantic region with no assigned viewpoints.
+            - edge_distance_variances must contain exactly viewpoint_viewpoint and viewpoint_region, both positive.
+            - detections must contain exactly one item per agent, using target_indices and founds.
+            - Set founds[k]=true only when target_indices[k] is directly visible in that agent's panorama.
             """
         ).strip()
 
@@ -611,109 +529,38 @@ class MLLMClient:
                 Shared target set:
                 {targets_json}
 
-                Shared graph summary:
+                Compact shared graph summary:
                 {graph_summary_json}
 
                 Per-agent observation context:
                 {agent_context_json}
 
-                Meaning of the current input:
-                - The shared target set gives all targets that the agent team needs to find.
-                - Each target has a target_id and a description.
-                - Use target_id as the key in target_probs. In detections, store target ids in target_indices.
-                - Use description only to understand what the target is.
-                - The shared graph summary is the accumulated graph context from previous steps.
-                - Each agent observation gives the image index, current viewpoint, and visible neighboring viewpoints.
-                - Visible neighboring viewpoints are feasible next viewpoints observed from the current panorama.
-                - Distances attached to visible neighboring viewpoints are known local distances from the current viewpoint.
-                - No depth images are passed to the MLLM.
-
-                Grounding rules:
-                - A viewpoint node is grounded if it has been visited by an agent.
-                - The current viewpoint of each agent is grounded.
-                - A semantic region node is grounded if at least one grounded viewpoint is assigned to that region.
-                - A local viewpoint-viewpoint connection from a current viewpoint to a visible neighboring viewpoint is already physically supported by the navigation system.
-                - MLLM-generated viewpoint-viewpoint edges between unvisited viewpoints remain uncertain hypotheses.
-                - MLLM-generated viewpoint-region edges remain uncertain hypotheses and are not literal executable motions.
-
-                Multi-agent interpretation:
-                - Each agent has its own current viewpoint and panorama.
-                - The output must contain one agents[] item per input agent.
-                - Different agents may be in the same semantic region. In that case, reuse the same region id.
-                - Different agents may observe overlapping regions or viewpoints. In that case, keep ids consistent.
-                - Do not create duplicate region nodes for the same physical region.
-
-                Multi-target interpretation:
-                - Each target has a target_id and a description.
-                - Use target_id as the identifier in target_probs and detections.
-                - Use the description only to understand the object or task target.
-                - All target_probs dictionaries must contain every target_id as a key.
-                - Estimate target-location scores for each target_id independently.
-                - Direct detections must be reported once per agent using target_indices and founds.
-                - For each agent, target_indices must contain every target_id, and founds must contain the matching direct detection result in the same order.
-                - Do not output target or target_name in detections.
-
-                Viewpoint-assignment interpretation:
-                - Assign every current viewpoint and every visible neighboring viewpoint to exactly one semantic region.
-                - If a viewpoint already exists in the shared graph summary and already has an assignment, keep that assignment unless it was previously ungrounded and is now an agent's current viewpoint.
-                - If a viewpoint is now an agent's current viewpoint, assign it to that agent's current_region_node_id.
-                - If a viewpoint is newly observed, initialize its assignment based on the current panorama and graph context.
-
-                Generation priority:
-                1. Identify the current semantic region for each agent.
-                2. Identify distinct visible semantic regions across all agent panoramas.
-                3. Hypothesize 1 to 2 invisible adjacent regions when the layout may imply unseen space, even if the cue is weak.
-                4. Group current-step viewpoint assignments by semantic region using viewpoint_node_assigns.
-                5. Estimate target-location scores for every target description at returned region and viewpoint nodes.
-                6. Report direct target detections once per agent using target_indices and founds.
-                7. Generate legal candidate edges supported by observation, assignments, and graph context.
-                8. Provide step-level initial distance variances for MLLM-generated edge-distance estimates.
-
-                Output JSON with exactly this top-level schema:
+                Output schema example. Use the keys and value types, but do not copy example values unless supported by the current step:
                 {schema_json}
 
-                Field descriptions:
+                Field descriptions. Use this as the authoritative reference for each output field:
                 {field_descriptions_json}
 
-                Additional output rules:
-                - Use the current viewpoint ids and visible neighboring viewpoint ids exactly as provided in each agent context.
-                - Use each target_id exactly as provided in the shared target set.
-                - Use target_ids as keys in every target_probs dictionary.
-                - Use target_indices and founds in detections.
-                - current_region_node_id is the region node assigned to the agent's current viewpoint.
-                - Every current_region_node_id must be included in visible_region_nodes. If it matches an existing region in the shared graph summary, reuse the existing id and label but still include it in visible_region_nodes.
-                - visible_region_nodes are semantic regions directly supported by current panorama observations.
-                - invisible_region_nodes are plausible semantic regions not directly visible now but strongly suggested by layout cues.
-                - Every target_probs value must be strictly larger than 0 and no larger than 1.
-                - Do not output 0.0 for any target_probs value.
-                - new_edges may connect viewpoint-region or viewpoint-viewpoint, but never region-region.
-                - A viewpoint-viewpoint edge in new_edges must connect two unvisited viewpoint nodes only.
-                - Do not generate a viewpoint-viewpoint edge if either endpoint is an agent's current viewpoint or any grounded or visited viewpoint indicated by the shared graph summary.
-                - Only generate new_edges supported by the current observations and graph context.
-                - Do not generate edges between a current viewpoint and its visible neighboring viewpoints.
-                - Do not generate an edge between a viewpoint node and its assigned region node.
-                - Return new_edges as an empty list when no legal edge is supported.
-                - Each detection item must contain exactly agent_id, target_indices, and founds.
-                - Each target_indices list must contain every provided target_id exactly once.
-                - Each founds list must have the same length and order as target_indices.
-                - founds[k] must be the direct detection result for target_indices[k].
-                - Do not include confidence, target_id, target, target_name, found, strip_index, or any strip-related field in detections.
-                - Keep ids consistent with the shared graph summary whenever a node already exists.
-                - Reuse old region ids when the current evidence matches an existing region.
-                - Do not copy the example entries in the schema.
-                - Include only entries supported by the current observations or the shared graph summary.
-                - The current semantic region for each agent must be included or reused consistently.
-                - viewpoint_node_assigns must use the region-centered format.
-                - Each viewpoint_node_assigns item must contain exactly region_node_id and assigned_viewpoint_node_indices.
-                - Do not output viewpoint_id or assign_region_node_id in viewpoint_node_assigns.
-                - A viewpoint id must not appear in more than one assigned_viewpoint_node_indices list.
-                - A current viewpoint must be assigned to the current_region_node_id of the corresponding agent.
+                Current step request:
+                - Identify each agent's current semantic region.
+                - Assign all current-step viewpoints that need assignment.
+                - Estimate target-location scores using target_id keys.
+                - In viewpoint_target_probs, include only visible neighboring viewpoints, not current agent viewpoints.
+                - Make region labels specific by including an appearance cue, area type, and physical relative location cue.
+                - Do not mention agent ids or agent names in region labels.
+                - Use target descriptions to make target-specific target_probs when semantic evidence differs.
+                - Avoid identical target_probs for all targets unless evidence is equally weak.
+                - Report direct detections using target_indices and founds.
+                - Propose legal uncertain edges only when supported by observations and graph context.
+                - Return compact JSON only.
                 """
             )
             .strip()
             .format(
                 targets_json=json.dumps(target_records, indent=2, sort_keys=True),
-                graph_summary_json=json.dumps(graph_summary, indent=2, sort_keys=True),
+                graph_summary_json=json.dumps(
+                    prompt_graph_summary, indent=2, sort_keys=True
+                ),
                 agent_context_json=json.dumps(agent_context, indent=2, sort_keys=True),
                 schema_json=json.dumps(schema, indent=2, sort_keys=True),
                 field_descriptions_json=json.dumps(
@@ -741,6 +588,9 @@ class MLLMClient:
             "edge_distance_variances",
         }
 
+        if not isinstance(payload, dict):
+            raise TypeError("payload must be a dictionary.")
+
         extra_top_level_keys = set(payload).difference(required_top_level_keys)
         if extra_top_level_keys:
             raise KeyError(
@@ -753,190 +603,422 @@ class MLLMClient:
                 "Missing top-level keys: %s" % sorted(missing_top_level_keys)
             )
 
+        def require_list(value, context: str) -> list:
+            if not isinstance(value, list):
+                raise TypeError("%s must be a list." % context)
+            return value
+
+        def require_dict(value, context: str) -> dict:
+            if not isinstance(value, dict):
+                raise TypeError("%s must be a dictionary." % context)
+            return value
+
+        def is_number(value) -> bool:
+            return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+        def validate_probability(value, context: str) -> None:
+            if not is_number(value):
+                raise TypeError("%s must be numeric." % context)
+            if not (0.0 < float(value) <= 1.0):
+                raise ValueError("%s=%s is outside (0, 1]." % (context, value))
+
+        def validate_positive_number(value, context: str) -> None:
+            if not is_number(value):
+                raise TypeError("%s must be numeric." % context)
+            if float(value) <= 0.0:
+                raise ValueError("%s=%s must be positive." % (context, value))
+
         observation_by_agent = {
             str(observation["agent_id"]): observation
             for observation in agent_observations
         }
         expected_agent_ids = set(observation_by_agent)
 
-        returned_agent_ids = {
-            str(agent_info["agent_id"]) for agent_info in payload["agents"]
-        }
+        target_ids = {str(target["target_id"]) for target in targets}
+        if len(target_ids) != len(targets):
+            raise ValueError("Target ids must be unique.")
+
+        agents = require_list(payload["agents"], "agents")
+        detections = require_list(payload["detections"], "detections")
+        visible_region_nodes = require_list(
+            payload["visible_region_nodes"], "visible_region_nodes"
+        )
+        invisible_region_nodes = require_list(
+            payload["invisible_region_nodes"], "invisible_region_nodes"
+        )
+        viewpoint_target_probs = require_list(
+            payload["viewpoint_target_probs"], "viewpoint_target_probs"
+        )
+        viewpoint_node_assigns = require_list(
+            payload["viewpoint_node_assigns"], "viewpoint_node_assigns"
+        )
+        new_edges = require_list(payload["new_edges"], "new_edges")
+        edge_distance_variances = require_dict(
+            payload["edge_distance_variances"], "edge_distance_variances"
+        )
+
+        returned_agent_ids = set()
+        for agent_info in agents:
+            agent_info = require_dict(agent_info, "agents[] item")
+
+            expected_keys = {"agent_id", "current_region_node_id"}
+            if set(agent_info) != expected_keys:
+                raise KeyError(
+                    "Each agents[] item must contain exactly %s, got %s."
+                    % (sorted(expected_keys), sorted(agent_info))
+                )
+
+            agent_id = str(agent_info["agent_id"])
+            returned_agent_ids.add(agent_id)
+
         if returned_agent_ids != expected_agent_ids:
             raise ValueError(
-                "Returned agent ids %s do not match expected agent ids %s"
+                "Returned agent ids %s do not match expected agent ids %s."
                 % (sorted(returned_agent_ids), sorted(expected_agent_ids))
-            )
-
-        target_descriptions = {str(target["description"]) for target in targets}
-
-        visible_region_ids = {
-            int(region["id"]) for region in payload["visible_region_nodes"]
-        }
-
-        for agent_info in payload["agents"]:
-            if set(agent_info) != {"agent_id", "current_region_node_id"}:
-                raise KeyError(
-                    "Each agents[] item must contain exactly agent_id and current_region_node_id."
-                )
-
-            current_region_node_id = int(agent_info["current_region_node_id"])
-            if current_region_node_id not in visible_region_ids:
-                raise ValueError(
-                    "current_region_node_id %s is not included in visible_region_nodes."
-                    % current_region_node_id
-                )
-
-        expected_viewpoint_ids = set()
-        for observation in agent_observations:
-            for item in observation["visible_viewpoints"]:
-                expected_viewpoint_ids.add(int(item["viewpoint_index"]))
-
-        returned_viewpoint_prob_ids = {
-            int(item["id"]) for item in payload["viewpoint_target_probs"]
-        }
-        if returned_viewpoint_prob_ids != expected_viewpoint_ids:
-            raise ValueError(
-                "Returned viewpoint_target_probs ids %s do not match expected ids %s"
-                % (sorted(returned_viewpoint_prob_ids), sorted(expected_viewpoint_ids))
-            )
-
-        returned_assignment_ids = {
-            int(item["viewpoint_id"]) for item in payload["viewpoint_node_assigns"]
-        }
-        if returned_assignment_ids != expected_viewpoint_ids:
-            raise ValueError(
-                "Returned viewpoint_node_assigns ids %s do not match expected ids %s"
-                % (sorted(returned_assignment_ids), sorted(expected_viewpoint_ids))
             )
 
         def validate_target_probs(
             target_probs: Dict[str, object], context: str
         ) -> None:
-            if set(target_probs) != target_descriptions:
+            target_probs = require_dict(target_probs, context + ".target_probs")
+
+            returned_target_ids = {str(key) for key in target_probs}
+            if returned_target_ids != target_ids:
                 raise ValueError(
-                    "%s target_probs keys %s do not match expected targets %s"
-                    % (context, sorted(target_probs), sorted(target_descriptions))
+                    "%s target_probs keys %s do not match expected target ids %s."
+                    % (context, sorted(returned_target_ids), sorted(target_ids))
                 )
 
-            for target_name, value in target_probs.items():
-                if not isinstance(value, (int, float)):
-                    raise TypeError(
-                        "%s target_probs[%s] must be numeric." % (context, target_name)
-                    )
-                if not (0.0 < float(value) <= 1.0):
-                    raise ValueError(
-                        "%s target_probs[%s]=%s is outside (0, 1]."
-                        % (context, target_name, value)
-                    )
+            for target_id, value in target_probs.items():
+                validate_probability(
+                    value,
+                    "%s.target_probs[%s]" % (context, target_id),
+                )
 
-        for region_key in ("visible_region_nodes", "invisible_region_nodes"):
-            for region in payload[region_key]:
-                required_region_keys = {"id", "label", "exist_prob", "target_probs"}
-                if set(region) != required_region_keys:
+        def validate_region_label(label: str, context: str) -> None:
+            normalized_label = " ".join(label.lower().split())
+
+            if "agent" in normalized_label:
+                raise ValueError(
+                    "%s label must not mention agent ids or agent names: %s"
+                    % (context, label)
+                )
+
+            relative_terms = (
+                "near",
+                "beside",
+                "beyond",
+                "adjacent",
+                "next to",
+                "behind",
+                "in front of",
+                "at the end",
+                "along",
+                "past",
+                "by",
+                "around",
+                "across",
+                "through",
+            )
+            if not any(term in normalized_label for term in relative_terms):
+                raise ValueError(
+                    "%s label must include a physical relative location cue, "
+                    "such as near doorway, beside window, beyond hallway, "
+                    "or adjacent to kitchen: %s" % (context, label)
+                )
+
+        visible_region_ids = set()
+        invisible_region_ids = set()
+
+        for region_key, region_list, region_id_set in (
+            ("visible_region_nodes", visible_region_nodes, visible_region_ids),
+            ("invisible_region_nodes", invisible_region_nodes, invisible_region_ids),
+        ):
+            for region in region_list:
+                region = require_dict(region, "%s[] item" % region_key)
+
+                expected_keys = {"id", "label", "exist_prob", "target_probs"}
+                if set(region) != expected_keys:
                     raise KeyError(
-                        "%s item keys %s do not match expected keys %s"
-                        % (region_key, sorted(region), sorted(required_region_keys))
+                        "%s item keys %s do not match expected keys %s."
+                        % (region_key, sorted(region), sorted(expected_keys))
                     )
 
-                exist_prob = region["exist_prob"]
-                if not isinstance(exist_prob, (int, float)):
-                    raise TypeError("%s exist_prob must be numeric." % region_key)
-                if not (0.0 < float(exist_prob) <= 1.0):
-                    raise ValueError("%s exist_prob must be in (0, 1]." % region_key)
+                region_id = int(region["id"])
+                if region_id in region_id_set:
+                    raise ValueError(
+                        "Duplicated region id %s in %s." % (region_id, region_key)
+                    )
+                region_id_set.add(region_id)
+
+                if not isinstance(region["label"], str) or not region["label"].strip():
+                    raise ValueError(
+                        "%s region %s has an empty label." % (region_key, region_id)
+                    )
+
+                validate_region_label(
+                    str(region["label"]).strip(),
+                    "%s region %s" % (region_key, region_id),
+                )
+
+                validate_probability(
+                    region["exist_prob"],
+                    "%s region %s exist_prob" % (region_key, region_id),
+                )
 
                 validate_target_probs(
                     region["target_probs"],
-                    "%s region %s" % (region_key, region["id"]),
+                    "%s region %s" % (region_key, region_id),
                 )
 
-        for item in payload["viewpoint_target_probs"]:
-            if set(item) != {"id", "target_probs"}:
-                raise KeyError(
-                    "Each viewpoint_target_probs item must contain exactly id and target_probs."
-                )
-            validate_target_probs(
-                item["target_probs"],
-                "viewpoint %s" % item["id"],
-            )
+        all_region_ids = visible_region_ids | invisible_region_ids
 
-        for item in payload["viewpoint_node_assigns"]:
-            expected_keys = {"viewpoint_id", "assign_region_node_id"}
+        for agent_info in agents:
+            agent_id = str(agent_info["agent_id"])
+            current_region_node_id = int(agent_info["current_region_node_id"])
+
+            if current_region_node_id not in visible_region_ids:
+                raise ValueError(
+                    "Agent %s has current_region_node_id %s, but this id is not "
+                    "included in visible_region_nodes."
+                    % (agent_id, current_region_node_id)
+                )
+
+        current_viewpoint_ids = {
+            int(observation["current_viewpoint_index"])
+            for observation in agent_observations
+        }
+
+        visible_viewpoint_ids = set()
+        for observation in agent_observations:
+            for item in observation["visible_viewpoints"]:
+                visible_viewpoint_ids.add(int(item["viewpoint_index"]))
+
+        # viewpoint_target_probs must exclude agents' current viewpoints.
+        # It should contain only visible neighboring viewpoints.
+        returned_viewpoint_prob_ids = set()
+        for item in viewpoint_target_probs:
+            item = require_dict(item, "viewpoint_target_probs[] item")
+
+            expected_keys = {"id", "target_probs"}
             if set(item) != expected_keys:
                 raise KeyError(
-                    "Each viewpoint_node_assigns item must contain exactly %s."
-                    % sorted(expected_keys)
+                    "Each viewpoint_target_probs item must contain exactly %s, got %s."
+                    % (sorted(expected_keys), sorted(item))
                 )
 
-        variances = payload["edge_distance_variances"]
-        if set(variances) != {"viewpoint_viewpoint", "viewpoint_region"}:
-            raise KeyError(
-                "edge_distance_variances must contain exactly viewpoint_viewpoint and viewpoint_region."
+            viewpoint_id = int(item["id"])
+            if viewpoint_id in returned_viewpoint_prob_ids:
+                raise ValueError(
+                    "Duplicated viewpoint_target_probs id %s." % viewpoint_id
+                )
+            returned_viewpoint_prob_ids.add(viewpoint_id)
+
+            validate_target_probs(
+                item["target_probs"],
+                "viewpoint %s" % viewpoint_id,
             )
 
-        for key, value in variances.items():
-            if not isinstance(value, (int, float)):
-                raise TypeError("edge_distance_variances.%s must be numeric." % key)
-            if float(value) <= 0.0:
-                raise ValueError("edge_distance_variances.%s must be positive." % key)
+        if returned_viewpoint_prob_ids != visible_viewpoint_ids:
+            raise ValueError(
+                "Returned viewpoint_target_probs ids %s do not match expected "
+                "visible viewpoint ids %s."
+                % (sorted(returned_viewpoint_prob_ids), sorted(visible_viewpoint_ids))
+            )
 
-        for edge in payload["new_edges"]:
-            required_edge_keys = {"i", "j", "edge_type", "exist_prob", "dist"}
-            if set(edge) != required_edge_keys:
+        expected_assignment_viewpoint_ids = (
+            current_viewpoint_ids | visible_viewpoint_ids
+        )
+        assigned_viewpoint_to_region = {}
+
+        for item in viewpoint_node_assigns:
+            item = require_dict(item, "viewpoint_node_assigns[] item")
+
+            expected_keys = {"region_node_id", "assigned_viewpoint_node_indices"}
+            if set(item) != expected_keys:
                 raise KeyError(
-                    "new_edges item keys %s do not match expected keys %s"
-                    % (sorted(edge), sorted(required_edge_keys))
+                    "Each viewpoint_node_assigns item must contain exactly %s, got %s."
+                    % (sorted(expected_keys), sorted(item))
                 )
 
-            if edge["edge_type"] not in {"viewpoint_viewpoint", "viewpoint_region"}:
-                raise ValueError("Invalid edge_type: %s" % edge["edge_type"])
+            region_node_id = int(item["region_node_id"])
+            if region_node_id not in all_region_ids:
+                raise ValueError(
+                    "viewpoint_node_assigns uses unknown region_node_id %s."
+                    % region_node_id
+                )
 
-            if not isinstance(edge["exist_prob"], (int, float)):
-                raise TypeError("new_edges[].exist_prob must be numeric.")
-            if not (0.0 < float(edge["exist_prob"]) <= 1.0):
-                raise ValueError("new_edges[].exist_prob must be in (0, 1].")
+            assigned_ids = require_list(
+                item["assigned_viewpoint_node_indices"],
+                "assigned_viewpoint_node_indices",
+            )
 
-            if not isinstance(edge["dist"], (int, float)):
-                raise TypeError("new_edges[].dist must be numeric.")
-            if float(edge["dist"]) <= 0.0:
-                raise ValueError("new_edges[].dist must be positive.")
+            for viewpoint_id_raw in assigned_ids:
+                viewpoint_id = int(viewpoint_id_raw)
 
-        detection_keys = {"agent_id", "target", "found"}
-        returned_detection_pairs = set()
+                if viewpoint_id in assigned_viewpoint_to_region:
+                    raise ValueError(
+                        "Viewpoint id %s appears in more than one "
+                        "assigned_viewpoint_node_indices list." % viewpoint_id
+                    )
 
-        for detection in payload["detections"]:
-            if set(detection) != detection_keys:
+                assigned_viewpoint_to_region[viewpoint_id] = region_node_id
+
+        returned_assignment_viewpoint_ids = set(assigned_viewpoint_to_region)
+
+        if returned_assignment_viewpoint_ids != expected_assignment_viewpoint_ids:
+            raise ValueError(
+                "Returned assigned viewpoint ids %s do not match expected ids %s."
+                % (
+                    sorted(returned_assignment_viewpoint_ids),
+                    sorted(expected_assignment_viewpoint_ids),
+                )
+            )
+
+        for observation in agent_observations:
+            agent_id = str(observation["agent_id"])
+            current_viewpoint_id = int(observation["current_viewpoint_index"])
+
+            agent_region_id = None
+            for agent_info in agents:
+                if str(agent_info["agent_id"]) == agent_id:
+                    agent_region_id = int(agent_info["current_region_node_id"])
+                    break
+
+            assigned_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
+
+            if assigned_region_id != agent_region_id:
+                raise ValueError(
+                    "Agent %s current viewpoint %s is assigned to region %s, "
+                    "but its current_region_node_id is %s."
+                    % (
+                        agent_id,
+                        current_viewpoint_id,
+                        assigned_region_id,
+                        agent_region_id,
+                    )
+                )
+
+        expected_variance_keys = {"viewpoint_viewpoint", "viewpoint_region"}
+        if set(edge_distance_variances) != expected_variance_keys:
+            raise KeyError(
+                "edge_distance_variances must contain exactly %s, got %s."
+                % (sorted(expected_variance_keys), sorted(edge_distance_variances))
+            )
+
+        for key, value in edge_distance_variances.items():
+            validate_positive_number(
+                value,
+                "edge_distance_variances.%s" % key,
+            )
+
+        all_viewpoint_ids = current_viewpoint_ids | visible_viewpoint_ids
+
+        for edge in new_edges:
+            edge = require_dict(edge, "new_edges[] item")
+
+            expected_keys = {"i", "j", "edge_type", "exist_prob", "dist"}
+            if set(edge) != expected_keys:
                 raise KeyError(
-                    "Detection item keys %s do not match expected keys %s"
-                    % (sorted(detection), sorted(detection_keys))
+                    "new_edges item keys %s do not match expected keys %s."
+                    % (sorted(edge), sorted(expected_keys))
+                )
+
+            i = int(edge["i"])
+            j = int(edge["j"])
+            edge_type = str(edge["edge_type"])
+
+            if edge_type not in {"VV", "VZ"}:
+                raise ValueError(
+                    "Invalid edge_type %s. Expected 'VV' or 'VZ'." % edge_type
+                )
+
+            validate_probability(edge["exist_prob"], "new_edges[].exist_prob")
+            validate_positive_number(edge["dist"], "new_edges[].dist")
+
+            i_is_viewpoint = i in all_viewpoint_ids
+            j_is_viewpoint = j in all_viewpoint_ids
+            i_is_region = i in all_region_ids
+            j_is_region = j in all_region_ids
+
+            if edge_type == "VV":
+                if not (i_is_viewpoint and j_is_viewpoint):
+                    raise ValueError(
+                        "VV edge (%s, %s) must connect two viewpoint nodes." % (i, j)
+                    )
+                if i == j:
+                    raise ValueError(
+                        "VV edge cannot be a self-edge: (%s, %s)." % (i, j)
+                    )
+
+            if edge_type == "VZ":
+                valid_vz = (i_is_viewpoint and j_is_region) or (
+                    i_is_region and j_is_viewpoint
+                )
+                if not valid_vz:
+                    raise ValueError(
+                        "VZ edge (%s, %s) must connect one viewpoint node and one "
+                        "region node." % (i, j)
+                    )
+
+        returned_detection_agent_ids = set()
+
+        for detection in detections:
+            detection = require_dict(detection, "detections[] item")
+
+            expected_keys = {"agent_id", "target_indices", "founds"}
+            if set(detection) != expected_keys:
+                raise KeyError(
+                    "Detection item keys %s do not match expected keys %s."
+                    % (sorted(detection), sorted(expected_keys))
                 )
 
             agent_id = str(detection["agent_id"])
             if agent_id not in expected_agent_ids:
-                raise ValueError("Detection uses unknown agent id %s" % agent_id)
+                raise ValueError("Detection uses unknown agent id %s." % agent_id)
 
-            target_description = str(detection["target"])
-            if target_description not in target_descriptions:
+            if agent_id in returned_detection_agent_ids:
+                raise ValueError("Duplicated detection item for agent %s." % agent_id)
+            returned_detection_agent_ids.add(agent_id)
+
+            target_indices = require_list(
+                detection["target_indices"],
+                "detections[].target_indices",
+            )
+            founds = require_list(
+                detection["founds"],
+                "detections[].founds",
+            )
+
+            returned_target_ids = {str(target_id) for target_id in target_indices}
+            if returned_target_ids != target_ids:
                 raise ValueError(
-                    "Detection target %s is not in expected targets %s"
-                    % (target_description, sorted(target_descriptions))
+                    "Detection target_indices %s do not match expected target ids %s."
+                    % (sorted(returned_target_ids), sorted(target_ids))
                 )
 
-            if not isinstance(detection["found"], bool):
-                raise TypeError("detections[].found must be a JSON boolean.")
+            if len(target_indices) != len(founds):
+                raise ValueError(
+                    "detections[].target_indices and detections[].founds must have "
+                    "the same length for agent %s." % agent_id
+                )
 
-            returned_detection_pairs.add((agent_id, target_description))
+            if len(target_indices) != len(returned_target_ids):
+                raise ValueError(
+                    "detections[].target_indices contains duplicated target ids for "
+                    "agent %s." % agent_id
+                )
 
-        expected_detection_pairs = {
-            (agent_id, target_description)
-            for agent_id in expected_agent_ids
-            for target_description in target_descriptions
-        }
+            for found in founds:
+                if not isinstance(found, bool):
+                    raise TypeError(
+                        "All detections[].founds values must be JSON booleans."
+                    )
 
-        if returned_detection_pairs != expected_detection_pairs:
+        if returned_detection_agent_ids != expected_agent_ids:
             raise ValueError(
-                "Returned detection pairs %s do not match expected pairs %s"
-                % (sorted(returned_detection_pairs), sorted(expected_detection_pairs))
+                "Returned detection agent ids %s do not match expected agent ids %s."
+                % (sorted(returned_detection_agent_ids), sorted(expected_agent_ids))
             )
 
     def propose_semantic_nodes(
@@ -973,7 +1055,7 @@ class MLLMClient:
                 "wb",
             ) as f:
                 f.write(observation["annotated_panorama"])
-        debugpy.breakpoint()  # Set a breakpoint here to inspect the resized panoramas before sending the request
+
         user_content = [{"type": "text", "text": user_message}]
         for observation in agent_observations:
             user_content.append(
@@ -986,27 +1068,24 @@ class MLLMClient:
                     },
                 }
             )
-            print(self._image_to_data_url(observation["annotated_panorama"]))
-            debugpy.breakpoint()  # Set a breakpoint here to inspect the user_content before sending the request
 
         messages = [
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_content},
         ]
 
-        debugpy.breakpoint()  # Set a breakpoint here to inspect the messages before sending the request
+        # decoded = self._request_completion(messages)
+        # raw = self._strip_code_fences(decoded)
 
-        decoded = self._request_completion(messages)
-        raw = self._strip_code_fences(decoded)
-        debugpy.breakpoint()  # Set a breakpoint here to inspect the raw response before parsing
-
-        # raw = '{\n  "agents": [\n    {\n      "agent_id": "agent0",\n      "current_region_node_id": 100\n    },\n    {\n      "agent_id": "agent1",\n      "current_region_node_id": 101\n    }\n  ],\n  "detections": [\n    {\n      "agent_id": "agent0",\n      "found": false,\n      "target": "glass on the dining table"\n    },\n    {\n      "agent_id": "agent0",\n      "found": false,\n      "target": "green plant on the table"\n    },\n    {\n      "agent_id": "agent1",\n      "found": false,\n      "target": "glass on the dining table"\n    },\n    {\n      "agent_id": "agent1",\n      "found": false,\n      "target": "green plant on the table"\n    }\n  ],\n  "edge_distance_variances": {\n    "viewpoint_region": 4.0,\n    "viewpoint_viewpoint": 1.0\n  },\n  "invisible_region_nodes": [\n    {\n      "exist_prob": 0.5,\n      "id": 102,\n      "label": "dimly lit corridor area beyond the bedroom door",\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ],\n  "new_edges": [\n    {\n      "dist": 3.0,\n      "edge_type": "viewpoint_region",\n      "exist_prob": 0.5,\n      "i": 16,\n      "j": 102\n    },\n    {\n      "dist": 2.0,\n      "edge_type": "viewpoint_viewpoint",\n      "exist_prob": 0.3,\n      "i": 16,\n      "j": 18\n    }\n  ],\n  "viewpoint_node_assigns": [\n    {\n      "assign_region_node_id": 100,\n      "viewpoint_id": 0\n    },\n    {\n      "assign_region_node_id": 100,\n      "viewpoint_id": 21\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 16\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 9\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 18\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 40\n    },\n    {\n      "assign_region_node_id": 101,\n      "viewpoint_id": 41\n    }\n  ],\n  "viewpoint_target_probs": [\n    {\n      "id": 16,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 21,\n      "target_probs": {\n        "glass on the dining table": 0.1,\n        "green plant on the table": 0.1\n      }\n    },\n    {\n      "id": 18,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 40,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    },\n    {\n      "id": 41,\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ],\n  "visible_region_nodes": [\n    {\n      "exist_prob": 1.0,\n      "id": 100,\n      "label": "modern living room area with curved sofa near dining bar",\n      "target_probs": {\n        "glass on the dining table": 0.2,\n        "green plant on the table": 0.2\n      }\n    },\n    {\n      "exist_prob": 1.0,\n      "id": 101,\n      "label": "minimalist bedroom area with grey tufted walls near hallway",\n      "target_probs": {\n        "glass on the dining table": 0.01,\n        "green plant on the table": 0.01\n      }\n    }\n  ]\n}'
+        raw = '{\n  "agents": [\n    {\n      "agent_id": "agent0",\n      "current_region_node_id": 100\n    },\n    {\n      "agent_id": "agent1",\n      "current_region_node_id": 101\n    }\n  ],\n  "detections": [\n    {\n      "agent_id": "agent0",\n      "founds": [\n        false,\n        false\n      ],\n      "target_indices": [\n        "0",\n        "1"\n      ]\n    },\n    {\n      "agent_id": "agent1",\n      "founds": [\n        false,\n        false\n      ],\n      "target_indices": [\n        "0",\n        "1"\n      ]\n    }\n  ],\n  "edge_distance_variances": {\n    "viewpoint_region": 4.0,\n    "viewpoint_viewpoint": 1.0\n  },\n  "invisible_region_nodes": [\n    {\n      "exist_prob": 0.5,\n      "id": 102,\n      "label": "dimly lit hallway area beyond the bedroom doorway",\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    }\n  ],\n  "new_edges": [\n    {\n      "dist": 3.0,\n      "edge_type": "VZ",\n      "exist_prob": 0.5,\n      "i": 40,\n      "j": 102\n    }\n  ],\n  "viewpoint_node_assigns": [\n    {\n      "assigned_viewpoint_node_indices": [\n        0,\n        16,\n        21\n      ],\n      "region_node_id": 100\n    },\n    {\n      "assigned_viewpoint_node_indices": [\n        9,\n        18,\n        40,\n        41\n      ],\n      "region_node_id": 101\n    }\n  ],\n  "viewpoint_target_probs": [\n    {\n      "id": 16,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "id": 21,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "id": 18,\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    },\n    {\n      "id": 40,\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    },\n    {\n      "id": 41,\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    }\n  ],\n  "visible_region_nodes": [\n    {\n      "exist_prob": 1.0,\n      "id": 100,\n      "label": "brightly lit living area near the television",\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "exist_prob": 1.0,\n      "id": 101,\n      "label": "darker bedroom area beside the bed",\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    }\n  ]\n}'
 
         payload = self._extract_json_object(raw)
         if payload is None:
             raise ValueError("Failed to parse joint MLLM JSON output")
+
+        debugpy.breakpoint()  # Set a breakpoint here to inspect the raw payload before validation
+
         self._validate_payload(payload, agent_observations, targets)
-        debugpy.breakpoint()  # Set a breakpoint here to inspect the MLLM response payload after parsing and validation
         return payload
 
     @staticmethod
