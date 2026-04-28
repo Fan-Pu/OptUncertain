@@ -303,6 +303,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
                     "target_viewpoint_id": next_viewpoint_id,
                 }
             )
+            hypothesis_graph.nodes[next_vp_node_id].grounded = True
+            hypothesis_graph.nodes[next_vp_node_id].node_visit_times += 1
             print(f"Move spec for {agent_id}: {next_vp_node_id}")
 
         Helper.execute_batched_first_hops(sim=sim, move_specs=move_specs)
