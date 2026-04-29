@@ -139,11 +139,9 @@ class MLLMClient:
         targets: List[Dict[str, object]],
         graph_summary: Dict[str, object],
     ) -> tuple[str, str]:
-        """Build a concise prompt for multi-agent multi-target graph hypotheses.
+        """Build a token-reduced prompt for multi-agent, multi-target graph hypotheses.
 
-        Stable task rules are placed in the system message. The user message contains
-        step-specific data, a compact schema example, field descriptions, and a
-        short request. This avoids repeating long rule blocks in both messages.
+        The rules and restrictions are kept, but repeated wording is merged.
         """
 
         target_records = sorted(
@@ -182,6 +180,10 @@ class MLLMClient:
             )
 
         target_prob_template = {target_id: 0.01 for target_id in target_ids}
+        current_viewpoint_detection_template = {
+            target_id: 0.0 for target_id in target_ids
+        }
+
         example_agent_id = agent_context[0]["agent_id"] if agent_context else "agent0"
         example_current_viewpoint_id = (
             agent_context[0]["current_viewpoint_index"] if agent_context else 10
@@ -217,9 +219,13 @@ class MLLMClient:
             ],
             "viewpoint_target_probs": [
                 {
+                    "id": example_current_viewpoint_id,
+                    "target_probs": current_viewpoint_detection_template,
+                },
+                {
                     "id": example_visible_viewpoint_id,
                     "target_probs": target_prob_template,
-                }
+                },
             ],
             "viewpoint_node_assigns": [
                 {
@@ -253,193 +259,129 @@ class MLLMClient:
         }
 
         field_descriptions = {
-            "agents": (
-                "A list with one output item per agent. Each item summarizes the "
-                "MLLM interpretation of that agent's current panorama."
-            ),
-            "agents[].agent_id": (
-                "The agent id. It must exactly match one of the provided agent ids."
-            ),
+            "agents": "One item per agent.",
+            "agents[].agent_id": "Must match an input agent id exactly.",
             "agents[].current_region_node_id": (
-                "The integer id of the semantic region containing this agent's current "
-                "viewpoint. This is the proximal semantic zone for the agent. Since the "
-                "agent is physically located at the current viewpoint, this region is "
-                "grounded by the observation. The id must refer to a region node listed "
-                "in visible_region_nodes. If the region already exists in the shared graph "
-                "summary, reuse the existing id and label, but still include it in "
-                "visible_region_nodes."
+                "Region id containing the agent current viewpoint. It must appear in "
+                "visible_region_nodes. If this region already exists, reuse its id and "
+                "label and still include it."
             ),
             "visible_region_nodes": (
-                "Semantic regions directly supported by the current panoramas. This list "
-                "must include the current semantic region for every agent. It may include "
-                "newly proposed visible regions and reused existing regions. Reuse an "
-                "existing region id and label when the observed place matches a region "
-                "already in the shared graph summary. If the region node exist in the shared graph summary, skip it."
+                "Visible semantic regions directly supported by current panoramas. "
+                "Include every current semantic region. Reuse existing region ids and "
+                "labels when the observed place matches the graph summary. Do not "
+                "duplicate the same physical area."
             ),
             "visible_region_nodes[].id": (
-                "The integer id of a visible semantic region. Use a new id only when the "
-                "region is not already represented in the shared graph summary. Reuse an "
-                "existing id when the observation matches an existing region."
+                "Integer region id. Use a new id only for a new physical region."
             ),
             "visible_region_nodes[].label": (
-                "A descriptive room or area label. It must not be an object name. It "
-                "must include an appearance cue, a room or area type, and a physical relative "
-                "location cue, such as near the doorway, beside the window, beyond the hallway, "
-                "adjacent to the kitchen, or at the end of the room. Do not mention agent ids "
-                "or agent names such as agent0 or agent1."
+                "Room or area label only, not an object name. Include appearance cue, "
+                "area type, and physical relative location cue, such as near doorway, "
+                "beside window, beyond hallway, adjacent to kitchen, or at the end of "
+                "the room. Do not mention agent ids or names."
             ),
             "visible_region_nodes[].exist_prob": (
-                "The estimated probability that this visible semantic region exists. Use "
-                "1.0 only for a region that contains an agent's current viewpoint, because "
-                "that region is grounded by the agent's physical location. For other visible "
-                "regions, provide a probability in (0, 1] based on visual and layout evidence."
+                "Existence probability in (0, 1]. Use 1.0 only for a region containing "
+                "a current viewpoint."
             ),
             "visible_region_nodes[].target_probs": (
-                "A dictionary from every target_id to the initial target-location "
-                "score for this visible semantic region. Although this field is named "
-                "target_probs, the values are unnormalized prior scores in (0, 1]. "
-                "Include all target_ids as keys. Do not use 0.0. These scores will be "
-                "normalized downstream on the semantic-zone layer. Use the target descriptions to "
-                "make target-specific scores when the scene gives semantic evidence. Do not "
-                "assign identical scores to all targets unless the evidence is equally weak."
+                "Unnormalized target-location scores keyed by every target_id. Values "
+                "must be in (0, 1]. Do not use 0.0. Use target descriptions to make "
+                "target-specific scores when evidence differs. Equal scores are allowed "
+                "only when evidence is equally weak."
             ),
             "invisible_region_nodes": (
-                "Hypothesized unseen semantic regions that may exist beyond the currently visible area. "
-                "The model should actively infer 1 to 2 invisible regions even when evidence is weak "
-                "or ambiguous, such as possible space beyond a doorway, wall boundary, opening, "
-                "corridor direction, occlusion, or layout continuation. Use low exist_prob for weak "
-                "hypotheses. Return [] only when generating an invisible region would clearly violate "
-                "the scene layout."
+                "Unseen but layout-supported semantic regions. Infer 1 to 2 when there "
+                "is plausible unseen space, such as beyond a doorway, opening, corridor, "
+                "wall boundary, or occlusion. Return [] only when no plausible unseen "
+                "region is supported."
             ),
             "invisible_region_nodes[].id": (
-                "The integer id of an inferred invisible semantic region. Use a new id only "
-                "when this region is not already represented in the shared graph summary."
+                "Integer region id. Use a new id only if the region is not represented "
+                "in the graph summary."
             ),
             "invisible_region_nodes[].label": (
-                "A descriptive room or area label for the inferred region. It must not be "
-                "an object name. It must include an appearance cue, a room or area type, "
-                "and a physical relative location cue, such as beyond the doorway, past the hallway, "
-                "behind the wall opening, or adjacent to the visible room. Do not mention agent ids "
-                "or agent names such as agent0 or agent1."
+                "Room or area label only, not an object name. Include appearance cue, "
+                "area type, and physical relative location cue. Do not mention agent ids "
+                "or names."
             ),
             "invisible_region_nodes[].exist_prob": (
-                "The estimated probability that this inferred semantic region exists. Use "
-                "lower values than directly visible regions unless the layout evidence is "
-                "very strong."
+                "Existence probability in (0, 1]. Use lower values for weak layout cues."
             ),
             "invisible_region_nodes[].target_probs": (
-                "A dictionary from every target_id to the initial target-location "
-                "score for this visible semantic region. Although this field is named "
-                "target_probs, the values are unnormalized prior scores in (0, 1]. "
-                "Include all target_ids as keys. Do not use 0.0. These scores will be "
-                "normalized downstream on the semantic-zone layer."
+                "Unnormalized target-location scores keyed by every target_id. Values "
+                "must be in (0, 1]. Do not use 0.0."
             ),
             "viewpoint_target_probs": (
-                "A top-level list of target-location scores for visible neighboring viewpoint "
-                "nodes in the current step. It must include each distinct visible neighboring "
-                "viewpoint across all agents. It must not include any agent's current viewpoint, "
-                "because current viewpoints are grounded and are updated from direct visual evidence."
+                "Target-location scores for every distinct current viewpoint and visible "
+                "neighboring viewpoint in the current step. Current viewpoint entries are "
+                "binary direct-detection evidence. Visible-neighbor entries are soft "
+                "prior scores."
             ),
             "viewpoint_target_probs[].id": (
-                "The integer id of a visible neighboring viewpoint from the per-agent "
-                "observation context. It must not be an agent's current viewpoint."
+                "Integer viewpoint id. It must be either a current viewpoint or a visible "
+                "neighboring viewpoint from the observation context."
             ),
             "viewpoint_target_probs[].target_probs": (
-                "A dictionary from every target_id to the initial target-location "
-                "score for this visible neighboring viewpoint node. Although this field is named "
-                "target_probs, the values are unnormalized prior scores in (0, 1]. "
-                "Include all target_ids as keys. Do not use 0.0. These scores will be "
-                "normalized downstream on the viewpoint layer. Do not use identical scores "
-                "for all targets unless the visual and semantic evidence is equally weak."
+                "Dictionary keyed by every target_id. For a current viewpoint, use 1.0 "
+                "if the target is directly detected there, otherwise 0.0. This binary "
+                "rule applies only to current viewpoints. For visible neighboring "
+                "viewpoints that are not current, use soft scores in (0, 1] and do not "
+                "use 0.0."
             ),
             "viewpoint_node_assigns": (
-                "A top-level list of region-to-viewpoint assignments for viewpoint nodes in "
-                "the current step. Each item groups the viewpoint nodes assigned to one "
-                "semantic region. Each viewpoint node that needs a current-step assignment "
-                "must appear in exactly one assigned_viewpoint_node_indices list. If the same "
-                "viewpoint is observed by multiple agents, include it only once and keep the "
-                "assignment consistent."
+                "Region-centered viewpoint assignments for the current step. Every "
+                "current viewpoint and every distinct visible neighboring viewpoint must "
+                "appear exactly once. Reuse fixed non-current assignments from the graph "
+                "summary and avoid conflicts."
             ),
             "viewpoint_node_assigns[].region_node_id": (
-                "The integer id of the semantic region that contains the assigned viewpoint "
-                "nodes. This region may be an existing region from the shared graph summary "
-                "or a region returned in visible_region_nodes. If this region is an agent's "
-                "current_region_node_id, it must be included in visible_region_nodes."
+                "Region id containing the assigned viewpoints. If it is a current_region_node_id, "
+                "it must be listed in visible_region_nodes."
             ),
             "viewpoint_node_assigns[].assigned_viewpoint_node_indices": (
-                "A list of integer viewpoint node ids assigned to this semantic region. Each "
-                "viewpoint id must be either an agent's current viewpoint or a visible "
-                "neighboring viewpoint from the per-agent observation context. Skip thoes viewpoint nodes "
-                "that are already in the shared graph summary. A current "
-                "viewpoint must be assigned to the current_region_node_id of the corresponding agent."
+                "Integer viewpoint ids assigned to this region. Current viewpoints must "
+                "be assigned to their agents' current_region_node_id."
             ),
             "new_edges": (
-                "Uncertain hypothesis edges for downstream optimization. The model should actively "
-                "propose legal candidate edges, even when the evidence is weak. If an invisible_region_node "
-                "is returned, propose at least one viewpoint_region edge from a nearby visible neighboring "
-                "viewpoint to that invisible region. Use low exist_prob for weak hypotheses. "
-                "Return [] only when every possible edge would violate the edge rules."
+                "Uncertain hypothesis edges. Use legal VV or VZ edges only. If an "
+                "invisible region is returned, add at least one nearby VZ edge unless all "
+                "possible edges violate the rules. Use low exist_prob for weak edges."
             ),
             "new_edges[].i": (
-                "The integer id of one endpoint node. The endpoint may be a viewpoint node "
-                "or a semantic region node. For a viewpoint_viewpoint edge, this endpoint "
-                "must be an unvisited viewpoint node."
+                "One endpoint id. It may be a viewpoint or region. For VV, it must be an "
+                "unvisited viewpoint."
             ),
             "new_edges[].j": (
-                "The integer id of the other endpoint node. The edge may connect "
-                "viewpoint-viewpoint or viewpoint-region, but never region-region. For a "
-                "viewpoint_viewpoint edge, this endpoint must be an unvisited viewpoint node. "
-                "Because the edge is undirected, if edge {i,j} is included, the reverse {j,i} "
-                "should not be included."
+                "Other endpoint id. Never region-region. For VV, it must be an unvisited "
+                "viewpoint. Because edges are undirected, do not output both directions."
             ),
-            "new_edges[].edge_type": (
-                "The edge type. Use VV only for an edge between two unvisited "
-                "viewpoint nodes. Use VZ for an edge between a viewpoint node "
-                "and a semantic region node."
-            ),
-            "new_edges[].exist_prob": (
-                "The estimated probability that this edge exists, in (0, 1]."
-            ),
+            "new_edges[].edge_type": "Use VV only for a hypothesized direct connection between two unvisited non-current viewpoint nodes with clear layout evidence. Use VZ for a viewpoint-region edge.",
+            "new_edges[].exist_prob": "Edge existence probability in (0, 1].",
             "new_edges[].dist": (
-                "The estimated travel distance in meters. For viewpoint-viewpoint edges, "
-                "this is a hypothesized motion distance between two unvisited viewpoint nodes. "
-                "For viewpoint-region edges, this is a surrogate approaching effort, not a "
-                "literal executable motion."
+                "Estimated distance in meters. For VZ, this is surrogate approach effort, "
+                "not literal executable motion."
             ),
             "edge_distance_variances": (
-                "Step-level type variance values provided by the MLLM for MLLM-generated "
-                "distance estimates in the current output. These correspond to the paper's "
-                "variance parameters for ungrounded viewpoint-viewpoint edges and "
-                "viewpoint-region edges."
+                "Step-level variances for MLLM-generated distances. Must contain exactly "
+                "viewpoint_viewpoint and viewpoint_region."
             ),
             "edge_distance_variances.viewpoint_viewpoint": (
-                "A positive numeric variance for the initial distance estimates of "
-                "ungrounded viewpoint-viewpoint edges."
+                "Positive variance for ungrounded VV distance estimates."
             ),
             "edge_distance_variances.viewpoint_region": (
-                "A positive numeric variance for the initial surrogate distance estimates "
-                "of viewpoint-region edges."
+                "Positive variance for VZ surrogate distance estimates."
             ),
             "detections": (
-                "A top-level list of direct target-detection results. It must contain one "
-                "item per agent. This field reports direct visual detection only. Do not "
-                "set a found value to true based only on semantic guess or target-location "
-                "probability."
+                "Direct visual detections only. One item per agent. Do not set true from "
+                "semantic guess or target-location probability."
             ),
-            "detections[].agent_id": (
-                "The agent id for this detection result. It must exactly match one of the "
-                "provided agent ids."
-            ),
-            "detections[].target_indices": (
-                "A list of target ids for this agent's detection result. It must contain "
-                "every target_id from the shared target set exactly once. The order must "
-                "match the order of detections[].founds."
-            ),
+            "detections[].agent_id": "Must match an input agent id exactly.",
+            "detections[].target_indices": "Every target_id exactly once. Order must match founds.",
             "detections[].founds": (
-                "A list of JSON booleans. founds[k] gives the direct detection result for "
-                "target_indices[k]. Use true only if that target is directly visible in "
-                "the panorama of the corresponding agent. Use false if the target is not "
-                "directly visible."
+                "JSON booleans. founds[k] is true only if target_indices[k] is directly "
+                "visible in that agent panorama."
             ),
         }
 
@@ -457,7 +399,6 @@ class MLLMClient:
                     if key
                     not in {
                         "targets",
-                        "agent_current_vp_ids",
                         "current_observation_context",
                     }
                 }
@@ -473,53 +414,27 @@ class MLLMClient:
 
         system_message = dedent(
             """
-            You are an indoor hypothesis-graph proposal module for cooperative many-agent, many-target navigation.
+            You are an indoor hypothesis-graph proposal module for cooperative many-agent, many-target navigation. Analyze one annotated RGB panorama per agent and the compact shared graph summary. Propose an uncertain graph update for downstream optimization. Do not select robot actions or produce a final map.
 
-            Analyze one annotated RGB panorama per agent and the compact shared graph summary.
-            Propose an uncertain graph update for downstream optimization.
-            Do not select robot actions and do not produce a final map.
+            The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, target_ids, viewpoint ids, and region ids exactly. Use target_id in target_probs and detections[].target_indices. Use target descriptions only to understand the targets.
 
-            The graph has two layers:
-            - viewpoint nodes are executable robot poses.
-            - region nodes are semantic zones such as a kitchen area, hallway area, or bedroom area.
-
-            Use the provided agent ids, target_ids, viewpoint ids, and region ids exactly.
-            Use target_id as the key in target_probs and as the value in detections[].target_indices.
-            Use target descriptions only to understand what the targets are.
-
-            Return exactly one valid JSON object matching the schema in the user message.
-            Do not output markdown, code fences, comments, or text outside JSON.
-            Do not create extra top-level keys.
-            Use JSON booleans true and false only.
+            Return exactly one valid JSON object matching the user schema. Do not output markdown, code fences, comments, text outside JSON, extra top-level keys, trailing commas, or non-JSON booleans.
 
             Required top-level keys:
-            agents, visible_region_nodes, invisible_region_nodes, viewpoint_target_probs,
-            viewpoint_node_assigns, new_edges, edge_distance_variances, detections.
+            agents, visible_region_nodes, invisible_region_nodes, viewpoint_target_probs, viewpoint_node_assigns, new_edges, edge_distance_variances, detections.
 
-            Output rules:
-            - agents must contain one item per agent.
-            - current_region_node_id is the semantic region containing the agent's current viewpoint.
-            - Every current_region_node_id must appear in visible_region_nodes.
-            - visible_region_nodes are directly supported by the current panoramas.
-            - invisible_region_nodes are unseen but layout-supported adjacent regions. Return [] only when no plausible unseen region is supported.
-            - Region labels must be room or area labels, not object names. Include an appearance cue, area type, and physical relative location cue, such as near doorway, beside window, beyond hallway, adjacent to kitchen, or at the end of the room.
-            - Do not mention agent ids or agent names in region labels. For example, do not write near agent0 or near agent1. Use physical cues such as near doorway, beside bed, beyond bedroom doorway, or adjacent to hallway instead.
-            - Do not use generic labels such as "living area with seating" or "bedroom area with bed" unless a relative location cue and an appearance cue are also included.
-            - Use at most 5 current-step region nodes in total.
-            - target_probs must contain every target_id, with numeric values in (0, 1]. Values do not need to sum to one.
-            - Use the target descriptions to create target-specific target_probs. Do not give all targets the same target_probs unless visual and semantic evidence is equally weak for all targets.
-            - viewpoint_target_probs must include only current-step visible neighboring viewpoints that need new target scores. Never include current agent viewpoints in viewpoint_target_probs.
-            - viewpoint_node_assigns must use the region-centered format with region_node_id and assigned_viewpoint_node_indices.
-            - Each current-step viewpoint that needs assignment must appear in exactly one assigned_viewpoint_node_indices list.
-            - Current agent viewpoints must be assigned to their agents' current_region_node_id.
-            - If a viewpoint or region already exists in the shared graph summary, reuse its existing assignment or region id unless the current observation grounds a previously ungrounded current viewpoint.
-            - new_edges may contain only VV or VZ edges. Region-region edges are not allowed.
-            - Do not add edges between a current viewpoint and its visible neighboring viewpoints. Those local edges are already provided by the navigation system.
-            - Do not add an edge between a viewpoint and its assigned region.
+            Core rules:
+            - The per-agent observation context is the source of truth for current agent locations, even if the compact graph summary has older node status values.
+            - agents has one item per agent. current_region_node_id is the region containing the agent current viewpoint and must appear in visible_region_nodes. Reuse existing region ids and labels when matched.
+            - visible_region_nodes are directly supported by current panoramas. invisible_region_nodes are unseen but layout-supported adjacent regions. Use at most 5 current-step region nodes total.
+            - Region labels must be room or area labels, not object names. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names. Avoid generic labels unless they include both appearance and relative location cues.
+            - Region target_probs and non-current viewpoint target_probs must contain every target_id with values in (0, 1]. Current viewpoint target_probs are binary direct-detection evidence: 1.0 if directly detected there, otherwise 0.0.
+            - Use target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak or when current-viewpoint binary evidence gives the same value.
+            - viewpoint_target_probs must include every current agent viewpoint and every distinct visible neighboring viewpoint.
+            - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id. Reuse fixed non-current assignments from the graph summary.
+            - new_edges may contain only VV or VZ edges. Never use region-region edges. Do not add edges between a current viewpoint and its visible neighboring viewpoints, because those local edges are already provided by the navigation system. Do not add an edge between a viewpoint and its assigned region.
+            - A VV edge may be proposed only between two unvisited non-current viewpoint nodes when the current panoramas provide clear layout evidence that they are directly connected, such as the same open room area, a continuous corridor, or an unobstructed doorway. Do not infer a VV edge only because both viewpoints are visible from the same current viewpoint. If evidence is weak but plausible, use low exist_prob. If evidence is unclear, omit the VV edge.
             - A VZ edge should connect a viewpoint to a semantic region with no assigned viewpoints.
-            - edge_distance_variances must contain exactly viewpoint_viewpoint and viewpoint_region, both positive.
-            - detections must contain exactly one item per agent, using target_indices and founds.
-            - Set founds[k]=true only when target_indices[k] is directly visible in that agent's panorama.
             """
         ).strip()
 
@@ -535,23 +450,27 @@ class MLLMClient:
                 Per-agent observation context:
                 {agent_context_json}
 
-                Output schema example. Use the keys and value types, but do not copy example values unless supported by the current step:
+                Current-step interpretation note:
+                - The observation context is the source of truth for current agent locations.
+                - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
+                - If a current region already appears in the graph summary, reuse its id and label and still include it in visible_region_nodes.
+
+                Output schema example. Use keys and value types only. Do not copy example values unless supported:
                 {schema_json}
 
-                Field descriptions. Use this as the authoritative reference for each output field:
+                Field descriptions:
                 {field_descriptions_json}
 
                 Current step request:
-                - Identify each agent's current semantic region.
-                - Assign all current-step viewpoints that need assignment.
-                - Estimate target-location scores using target_id keys.
-                - In viewpoint_target_probs, include only visible neighboring viewpoints, not current agent viewpoints.
-                - Make region labels specific by including an appearance cue, area type, and physical relative location cue.
-                - Do not mention agent ids or agent names in region labels.
-                - Use target descriptions to make target-specific target_probs when semantic evidence differs.
-                - Avoid identical target_probs for all targets unless evidence is equally weak.
+                - Identify each agent current semantic region.
+                - Include every current viewpoint and every distinct visible neighboring viewpoint exactly once in viewpoint_node_assigns.
+                - Include every current viewpoint and every distinct visible neighboring viewpoint in viewpoint_target_probs.
+                - For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.
+                - For visible neighboring viewpoint target_probs, use soft positive target-location scores.
+                - Estimate region target_probs using target_id keys and target descriptions.
                 - Report direct detections using target_indices and founds.
-                - Propose legal uncertain edges only when supported by observations and graph context.
+                - Propose only legal uncertain edges supported by observation and graph context.
+                - Propose VV edges only when two unvisited non-current viewpoints are directly connected by clear layout evidence; do not add VV edges only because they are both visible from the same current viewpoint.
                 - Return compact JSON only.
                 """
             )
@@ -1074,10 +993,10 @@ class MLLMClient:
             {"role": "user", "content": user_content},
         ]
 
-        # decoded = self._request_completion(messages)
-        # raw = self._strip_code_fences(decoded)
+        decoded = self._request_completion(messages)
+        raw = self._strip_code_fences(decoded)
 
-        raw = '{\n  "agents": [\n    {\n      "agent_id": "agent0",\n      "current_region_node_id": 100\n    },\n    {\n      "agent_id": "agent1",\n      "current_region_node_id": 101\n    }\n  ],\n  "detections": [\n    {\n      "agent_id": "agent0",\n      "founds": [\n        false,\n        false\n      ],\n      "target_indices": [\n        "0",\n        "1"\n      ]\n    },\n    {\n      "agent_id": "agent1",\n      "founds": [\n        false,\n        false\n      ],\n      "target_indices": [\n        "0",\n        "1"\n      ]\n    }\n  ],\n  "edge_distance_variances": {\n    "viewpoint_region": 4.0,\n    "viewpoint_viewpoint": 1.0\n  },\n  "invisible_region_nodes": [\n    {\n      "exist_prob": 0.5,\n      "id": 102,\n      "label": "dimly lit hallway area beyond the bedroom doorway",\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    }\n  ],\n  "new_edges": [\n    {\n      "dist": 3.0,\n      "edge_type": "VZ",\n      "exist_prob": 0.5,\n      "i": 40,\n      "j": 102\n    }\n  ],\n  "viewpoint_node_assigns": [\n    {\n      "assigned_viewpoint_node_indices": [\n        0,\n        16,\n        21\n      ],\n      "region_node_id": 100\n    },\n    {\n      "assigned_viewpoint_node_indices": [\n        9,\n        18,\n        40,\n        41\n      ],\n      "region_node_id": 101\n    }\n  ],\n  "viewpoint_target_probs": [\n    {\n      "id": 16,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "id": 21,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "id": 18,\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    },\n    {\n      "id": 40,\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    },\n    {\n      "id": 41,\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    }\n  ],\n  "visible_region_nodes": [\n    {\n      "exist_prob": 1.0,\n      "id": 100,\n      "label": "brightly lit living area near the television",\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "exist_prob": 1.0,\n      "id": 101,\n      "label": "darker bedroom area beside the bed",\n      "target_probs": {\n        "0": 0.05,\n        "1": 0.05\n      }\n    }\n  ]\n}'
+        # raw = '{\n "agents": [\n {\n "agent_id": "agent0",\n "current_region_node_id": 100\n },\n {\n "agent_id": "agent1",\n "current_region_node_id": 101\n }\n ],\n "detections": [\n {\n "agent_id": "agent0",\n "founds": [\n false,\n false\n ],\n "target_indices": [\n "0",\n "1"\n ]\n },\n {\n "agent_id": "agent1",\n "founds": [\n false,\n false\n ],\n "target_indices": [\n "0",\n "1"\n ]\n }\n ],\n "edge_distance_variances": {\n "viewpoint_region": 3.5,\n "viewpoint_viewpoint": 1.5\n },\n "invisible_region_nodes": [\n {\n "exist_prob": 0.7,\n "id": 102,\n "label": "dimly lit bedroom area beyond doorway",\n "target_probs": {\n "0": 0.1,\n "1": 0.1\n }\n }\n ],\n "new_edges": [\n {\n "dist": 3.0,\n "edge_type": "VZ",\n "exist_prob": 0.7,\n "i": 18,\n "j": 102\n },\n {\n "dist": 3.0,\n "edge_type": "VZ",\n "exist_prob": 0.7,\n "i": 40,\n "j": 102\n }\n ],\n "viewpoint_node_assigns": [\n {\n "assigned_viewpoint_node_indices": [\n 0,\n 16,\n 21\n ],\n "region_node_id": 100\n },\n {\n "assigned_viewpoint_node_indices": [\n 9,\n 18,\n 40,\n 41\n ],\n "region_node_id": 101\n }\n ],\n "viewpoint_target_probs": [\n {\n "id": 0,\n "target_probs": {\n "0": 0.0,\n "1": 0.0\n }\n },\n {\n "id": 16,\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n },\n {\n "id": 21,\n "target_probs": {\n "0": 0.1,\n "1": 0.1\n }\n },\n {\n "id": 9,\n "target_probs": {\n "0": 0.0,\n "1": 0.0\n }\n },\n {\n "id": 18,\n "target_probs": {\n "0": 0.3,\n "1": 0.3\n }\n },\n {\n "id": 40,\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n },\n {\n "id": 41,\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n }\n ],\n "visible_region_nodes": [\n {\n "exist_prob": 1.0,\n "id": 100,\n "label": "bright living area with sofa and TV",\n "target_probs": {\n "0": 0.1,\n "1": 0.1\n }\n },\n {\n "exist_prob": 1.0,\n "id": 101,\n "label": "darker lounge area with seating",\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n }\n ]\n}'
 
         payload = self._extract_json_object(raw)
         if payload is None:
