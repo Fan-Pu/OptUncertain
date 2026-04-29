@@ -39,7 +39,9 @@ The scenario file must contain:
   ],
   "mllm": {
     "model_name": "meta-llama/Llama-4-Maverick-17B-128E-Instruct:cheapest",
-    "max_new_tokens": 160
+    "max_new_tokens": 160,
+    "read_saved_raw_outputs": false,
+    "raw_output_dir": "mllm_raw_outputs"
   },
   "bayes": {
     "eta_goal": 5.0,

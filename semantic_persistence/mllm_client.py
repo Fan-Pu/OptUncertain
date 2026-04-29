@@ -24,7 +24,22 @@ class MLLMClient:
         max_new_tokens: int = -1,  # read from config
         request_timeout: float = 120.0,
         save_debug_images: bool = True,
+        read_saved_raw_outputs: bool = False,
+        raw_output_dir: str = "mllm_raw_outputs",
     ):
+        self.model_name = model_name
+        self.base_url = base_url
+        self.max_new_tokens = int(max_new_tokens)
+        self.request_timeout = float(request_timeout)
+        self.save_debug_images = bool(save_debug_images)
+        self.read_saved_raw_outputs = bool(read_saved_raw_outputs)
+        self.raw_output_dir = str(raw_output_dir)
+        self.semantic_raw_output_index = 0
+
+        if self.read_saved_raw_outputs:
+            self.client = None
+            return
+
         api_key = os.environ.get(api_key_env)
         if not api_key:
             raise RuntimeError(
@@ -32,11 +47,6 @@ class MLLMClient:
                 % api_key_env
             )
 
-        self.model_name = model_name
-        self.base_url = base_url
-        self.max_new_tokens = int(max_new_tokens)
-        self.request_timeout = float(request_timeout)
-        self.save_debug_images = bool(save_debug_images)
         self.client = OpenAI(
             base_url=self.base_url,
             api_key=api_key,
@@ -132,6 +142,30 @@ class MLLMClient:
             raise
 
         return self._message_to_text(completion.choices[0].message.content)
+
+    def _semantic_raw_output_path(self, step_index: int) -> str:
+        return os.path.join(
+            getattr(self, "raw_output_dir", "mllm_raw_outputs"),
+            "semantic_step_%04d.json" % int(step_index),
+        )
+
+    def _read_semantic_raw_output(self, step_index: int) -> str:
+        with open(
+            self._semantic_raw_output_path(step_index),
+            "r",
+            encoding="utf-8",
+        ) as file_handle:
+            return file_handle.read()
+
+    def _write_semantic_raw_output(self, step_index: int, decoded: str) -> None:
+        raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
+        os.makedirs(raw_output_dir, exist_ok=True)
+        with open(
+            self._semantic_raw_output_path(step_index),
+            "w",
+            encoding="utf-8",
+        ) as file_handle:
+            file_handle.write(decoded)
 
     def _build_instruction(
         self,
@@ -993,7 +1027,14 @@ class MLLMClient:
             {"role": "user", "content": user_content},
         ]
 
-        decoded = self._request_completion(messages)
+        step_index = getattr(self, "semantic_raw_output_index", 0)
+        if getattr(self, "read_saved_raw_outputs", False):
+            decoded = self._read_semantic_raw_output(step_index)
+        else:
+            decoded = self._request_completion(messages)
+            self._write_semantic_raw_output(step_index, decoded)
+        self.semantic_raw_output_index = step_index + 1
+
         raw = self._strip_code_fences(decoded)
 
         # raw = '{\n "agents": [\n {\n "agent_id": "agent0",\n "current_region_node_id": 100\n },\n {\n "agent_id": "agent1",\n "current_region_node_id": 101\n }\n ],\n "detections": [\n {\n "agent_id": "agent0",\n "founds": [\n false,\n false\n ],\n "target_indices": [\n "0",\n "1"\n ]\n },\n {\n "agent_id": "agent1",\n "founds": [\n false,\n false\n ],\n "target_indices": [\n "0",\n "1"\n ]\n }\n ],\n "edge_distance_variances": {\n "viewpoint_region": 3.5,\n "viewpoint_viewpoint": 1.5\n },\n "invisible_region_nodes": [\n {\n "exist_prob": 0.7,\n "id": 102,\n "label": "dimly lit bedroom area beyond doorway",\n "target_probs": {\n "0": 0.1,\n "1": 0.1\n }\n }\n ],\n "new_edges": [\n {\n "dist": 3.0,\n "edge_type": "VZ",\n "exist_prob": 0.7,\n "i": 18,\n "j": 102\n },\n {\n "dist": 3.0,\n "edge_type": "VZ",\n "exist_prob": 0.7,\n "i": 40,\n "j": 102\n }\n ],\n "viewpoint_node_assigns": [\n {\n "assigned_viewpoint_node_indices": [\n 0,\n 16,\n 21\n ],\n "region_node_id": 100\n },\n {\n "assigned_viewpoint_node_indices": [\n 9,\n 18,\n 40,\n 41\n ],\n "region_node_id": 101\n }\n ],\n "viewpoint_target_probs": [\n {\n "id": 0,\n "target_probs": {\n "0": 0.0,\n "1": 0.0\n }\n },\n {\n "id": 16,\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n },\n {\n "id": 21,\n "target_probs": {\n "0": 0.1,\n "1": 0.1\n }\n },\n {\n "id": 9,\n "target_probs": {\n "0": 0.0,\n "1": 0.0\n }\n },\n {\n "id": 18,\n "target_probs": {\n "0": 0.3,\n "1": 0.3\n }\n },\n {\n "id": 40,\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n },\n {\n "id": 41,\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n }\n ],\n "visible_region_nodes": [\n {\n "exist_prob": 1.0,\n "id": 100,\n "label": "bright living area with sofa and TV",\n "target_probs": {\n "0": 0.1,\n "1": 0.1\n }\n },\n {\n "exist_prob": 1.0,\n "id": 101,\n "label": "darker lounge area with seating",\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n }\n ]\n}'
