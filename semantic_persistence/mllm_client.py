@@ -55,6 +55,7 @@ class MLLMClient:
 
     @staticmethod
     def _strip_code_fences(raw_text: str) -> str:
+        """Strip markdown code fences from the raw text if they exist."""
         raw_text = raw_text.strip()
         if "```" not in raw_text:
             return raw_text
@@ -1028,16 +1029,18 @@ class MLLMClient:
         ]
 
         step_index = getattr(self, "semantic_raw_output_index", 0)
+        # if the setting is enabled, read the saved raw outputs
         if getattr(self, "read_saved_raw_outputs", False):
             decoded = self._read_semantic_raw_output(step_index)
         else:
             decoded = self._request_completion(messages)
+            # write raw output before parsing to preserve original text for debugging
             self._write_semantic_raw_output(step_index, decoded)
         self.semantic_raw_output_index = step_index + 1
 
-        raw = self._strip_code_fences(decoded)
+        # decoded = '{\n  "agents": [\n    {\n      "agent_id": "agent0",\n      "current_region_node_id": 100\n    },\n    {\n      "agent_id": "agent1",\n      "current_region_node_id": 101\n    }\n  ],\n  "detections": [\n    {\n      "agent_id": "agent0",\n      "founds": [\n        false,\n        false\n      ],\n      "target_indices": [\n        "0",\n        "1"\n      ]\n    },\n    {\n      "agent_id": "agent1",\n      "founds": [\n        false,\n        false\n      ],\n      "target_indices": [\n        "0",\n        "1"\n      ]\n    }\n  ],\n  "edge_distance_variances": {\n    "viewpoint_region": 3.5,\n    "viewpoint_viewpoint": 1.5\n  },\n  "invisible_region_nodes": [\n    {\n      "exist_prob": 0.7,\n      "id": 102,\n      "label": "dimly lit bedroom area beyond doorway",\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    }\n  ],\n  "new_edges": [\n    {\n      "dist": 3.0,\n      "edge_type": "VZ",\n      "exist_prob": 0.7,\n      "i": 40,\n      "j": 102\n    }\n  ],\n  "viewpoint_node_assigns": [\n    {\n      "assigned_viewpoint_node_indices": [\n        0,\n        16,\n        21\n      ],\n      "region_node_id": 100\n    },\n    {\n      "assigned_viewpoint_node_indices": [\n        9,\n        18,\n        40,\n        41\n      ],\n      "region_node_id": 101\n    }\n  ],\n  "viewpoint_target_probs": [\n    {\n      "id": 0,\n      "target_probs": {\n        "0": 0.0,\n        "1": 0.0\n      }\n    },\n    {\n      "id": 16,\n      "target_probs": {\n        "0": 0.2,\n        "1": 0.2\n      }\n    },\n    {\n      "id": 21,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "id": 9,\n      "target_probs": {\n        "0": 0.0,\n        "1": 0.0\n      }\n    },\n    {\n      "id": 18,\n      "target_probs": {\n        "0": 0.3,\n        "1": 0.3\n      }\n    },\n    {\n      "id": 40,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "id": 41,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    }\n  ],\n  "visible_region_nodes": [\n    {\n      "exist_prob": 1.0,\n      "id": 100,\n      "label": "bright living area with sofa and window",\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "exist_prob": 1.0,\n      "id": 101,\n      "label": "darker lounge area with seating",\n      "target_probs": {\n        "0": 0.2,\n        "1": 0.2\n      }\n    }\n  ]\n}'
 
-        # raw = '{\n "agents": [\n {\n "agent_id": "agent0",\n "current_region_node_id": 100\n },\n {\n "agent_id": "agent1",\n "current_region_node_id": 101\n }\n ],\n "detections": [\n {\n "agent_id": "agent0",\n "founds": [\n false,\n false\n ],\n "target_indices": [\n "0",\n "1"\n ]\n },\n {\n "agent_id": "agent1",\n "founds": [\n false,\n false\n ],\n "target_indices": [\n "0",\n "1"\n ]\n }\n ],\n "edge_distance_variances": {\n "viewpoint_region": 3.5,\n "viewpoint_viewpoint": 1.5\n },\n "invisible_region_nodes": [\n {\n "exist_prob": 0.7,\n "id": 102,\n "label": "dimly lit bedroom area beyond doorway",\n "target_probs": {\n "0": 0.1,\n "1": 0.1\n }\n }\n ],\n "new_edges": [\n {\n "dist": 3.0,\n "edge_type": "VZ",\n "exist_prob": 0.7,\n "i": 18,\n "j": 102\n },\n {\n "dist": 3.0,\n "edge_type": "VZ",\n "exist_prob": 0.7,\n "i": 40,\n "j": 102\n }\n ],\n "viewpoint_node_assigns": [\n {\n "assigned_viewpoint_node_indices": [\n 0,\n 16,\n 21\n ],\n "region_node_id": 100\n },\n {\n "assigned_viewpoint_node_indices": [\n 9,\n 18,\n 40,\n 41\n ],\n "region_node_id": 101\n }\n ],\n "viewpoint_target_probs": [\n {\n "id": 0,\n "target_probs": {\n "0": 0.0,\n "1": 0.0\n }\n },\n {\n "id": 16,\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n },\n {\n "id": 21,\n "target_probs": {\n "0": 0.1,\n "1": 0.1\n }\n },\n {\n "id": 9,\n "target_probs": {\n "0": 0.0,\n "1": 0.0\n }\n },\n {\n "id": 18,\n "target_probs": {\n "0": 0.3,\n "1": 0.3\n }\n },\n {\n "id": 40,\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n },\n {\n "id": 41,\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n }\n ],\n "visible_region_nodes": [\n {\n "exist_prob": 1.0,\n "id": 100,\n "label": "bright living area with sofa and TV",\n "target_probs": {\n "0": 0.1,\n "1": 0.1\n }\n },\n {\n "exist_prob": 1.0,\n "id": 101,\n "label": "darker lounge area with seating",\n "target_probs": {\n "0": 0.2,\n "1": 0.2\n }\n }\n ]\n}'
+        raw = self._strip_code_fences(decoded)
 
         payload = self._extract_json_object(raw)
         if payload is None:
