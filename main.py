@@ -238,9 +238,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         read_saved_raw_outputs=bool(
             scenario["mllm"].get("read_saved_raw_outputs", False)
         ),
-        raw_output_dir=str(
-            scenario["mllm"].get("raw_output_dir", "mllm_raw_outputs")
-        ),
+        raw_output_dir=str(scenario["mllm"].get("raw_output_dir", "mllm_raw_outputs")),
     )
 
     scorer = SigLIPScorer()
