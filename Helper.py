@@ -272,6 +272,22 @@ def horizon_scan_batch_return(sim, agent_ids, viewpoint_index_by_vp=None):
     return observations
 
 
+def horizon_scan_individual_sims_return(sims, agent_ids, viewpoint_index_by_vp=None):
+    if len(sims) != len(agent_ids):
+        raise ValueError("sims and agent_ids must have the same length.")
+
+    observations = []
+    for sim, agent_id in zip(sims, agent_ids):
+        observations.extend(
+            horizon_scan_batch_return(
+                sim=sim,
+                agent_ids=[agent_id],
+                viewpoint_index_by_vp=viewpoint_index_by_vp,
+            )
+        )
+    return observations
+
+
 def horizon_scan_return(sim, viewpoint_index_by_vp=None):
     observation = horizon_scan_batch_return(sim, ["agent0"], viewpoint_index_by_vp)[0]
     return (
@@ -361,6 +377,51 @@ def execute_batched_first_hops(sim, move_specs, pause_time=0.0):
         [0.0 for _ in step_plans],
         [0.0 for _ in step_plans],
     )
+    if pause_time > 0.0:
+        time.sleep(pause_time)
+
+
+def execute_individual_first_hops(sims, move_specs, pause_time=0.0):
+    if len(sims) != len(move_specs):
+        raise ValueError("sims and move_specs must have the same length.")
+
+    states = [sim.getState()[0] for sim in sims]
+    step_plans = []
+    for state, spec in zip(states, move_specs):
+        direction, step_count = compute_rotation(
+            math.degrees(state.heading),
+            math.degrees(float(spec["target_heading"])),
+            DELTA_HEADING_DEG,
+        )
+        step_plans.append(
+            {
+                "direction": direction,
+                "step_count": step_count,
+                "target_viewpoint_id": str(spec["target_viewpoint_id"]),
+            }
+        )
+
+    max_step_count = max(plan["step_count"] for plan in step_plans)
+    for step_index in range(max_step_count):
+        for sim, plan in zip(sims, step_plans):
+            heading = (
+                plan["direction"] * DELTA_HEADING_RAD
+                if step_index < plan["step_count"]
+                else 0.0
+            )
+            sim.makeAction([0], [heading], [0.0])
+        if pause_time > 0.0:
+            time.sleep(pause_time)
+
+    rotated_states = [sim.getState()[0] for sim in sims]
+    for sim, state, plan in zip(sims, rotated_states, step_plans):
+        target_viewpoint_id = plan["target_viewpoint_id"]
+        location_index = [
+            index
+            for index, location in enumerate(state.navigableLocations)
+            if str(location.viewpointId) == target_viewpoint_id
+        ][0]
+        sim.makeAction([location_index], [0.0], [0.0])
     if pause_time > 0.0:
         time.sleep(pause_time)
 

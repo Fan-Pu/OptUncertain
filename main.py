@@ -197,6 +197,25 @@ def _mark_completed_targets(
     return completed_target_ids
 
 
+def _init_agent_sims(scenario: Dict[str, object], scan_id: str):
+    sims = []
+    for agent in scenario["agents"]:
+        sim = Helper.init_render(batch_size=1, enable_render=False)
+        sim.initialize()
+        sim.newEpisode(
+            [scan_id],
+            [str(agent["start_viewpoint_id"])],
+            [float(agent.get("heading", 0.0))],
+            [float(agent.get("elevation", 0.0))],
+        )
+        sims.append(sim)
+    return sims
+
+
+def _current_agent_states(agent_sims):
+    return [sim.getState()[0] for sim in agent_sims]
+
+
 def run_scenario(config_path: str) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
     from semantic_persistence import HypothesisGraph, MLLMClient, SigLIPScorer
@@ -211,16 +230,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
     agent_ids = [str(agent["id"]) for agent in scenario["agents"]]
     scan_id = str(scenario["scan_id"])
 
-    sim = Helper.init_render(batch_size=len(agent_ids), enable_render=False)
-    sim.initialize()
     Helper.build_viewpoint_index(scan_id)
-
-    sim.newEpisode(
-        [scan_id for _ in scenario["agents"]],
-        [str(agent["start_viewpoint_id"]) for agent in scenario["agents"]],
-        [float(agent.get("heading", 0.0)) for agent in scenario["agents"]],
-        [float(agent.get("elevation", 0.0)) for agent in scenario["agents"]],
-    )
+    agent_sims = _init_agent_sims(scenario=scenario, scan_id=scan_id)
 
     targets = _normalize_targets(scenario["targets"])
     graph_targets = _target_records_for_graph(targets)
@@ -247,9 +258,13 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         if all(hypothesis_graph.target_found.values()):
             return {"target_found": dict(hypothesis_graph.target_found)}
 
-        agent_observations = Helper.horizon_scan_batch_return(
-            sim=sim,
+        agent_observations = Helper.horizon_scan_individual_sims_return(
+            sims=agent_sims,
             agent_ids=agent_ids,
+            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
+        )
+        Helper.render_sim_state(
+            _current_agent_states(agent_sims),
             viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
         )
 
@@ -312,7 +327,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             hypothesis_graph.nodes[next_vp_node_id].node_visit_times += 1
             print(f"Move spec for {agent_id}: {next_vp_node_id}")
 
-        Helper.execute_batched_first_hops(sim=sim, move_specs=move_specs)
+        Helper.execute_individual_first_hops(sims=agent_sims, move_specs=move_specs)
 
 
 def main(argv: List[str] | None = None) -> int:

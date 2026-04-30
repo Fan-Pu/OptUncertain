@@ -76,6 +76,18 @@ class _FakeSim:
         self.actions.append((list(locations), list(headings), list(elevations)))
 
 
+class _SingleFakeSim:
+    def __init__(self, state):
+        self.actions = []
+        self.states = [state]
+
+    def getState(self):
+        return self.states
+
+    def makeAction(self, locations, headings, elevations):
+        self.actions.append((list(locations), list(headings), list(elevations)))
+
+
 class HorizonPanoramaBatchTest(unittest.TestCase):
     def test_batch_horizon_scan_returns_one_panorama_per_agent(self):
         helper_under_test.viewpoint_index_by_vp_label.clear()
@@ -119,6 +131,24 @@ class HorizonPanoramaBatchTest(unittest.TestCase):
         )
         self.assertEqual(len(sim.actions), helper_under_test.HORIZON_LEN)
 
+    def test_individual_horizon_scan_uses_one_sim_per_agent(self):
+        sims = [
+            _SingleFakeSim(_FakeState("vp-root-0", 0.0, 11, 1.0)),
+            _SingleFakeSim(_FakeState("vp-root-1", 0.1, 22, 2.0)),
+        ]
+
+        observations = helper_under_test.horizon_scan_individual_sims_return(
+            sims=sims,
+            agent_ids=["agent0", "agent1"],
+            viewpoint_index_by_vp=None,
+        )
+
+        self.assertEqual([item["agent_id"] for item in observations], ["agent0", "agent1"])
+        self.assertEqual(len(sims[0].actions), helper_under_test.HORIZON_LEN)
+        self.assertEqual(len(sims[1].actions), helper_under_test.HORIZON_LEN)
+        self.assertEqual(sims[0].actions[0][0], [0])
+        self.assertEqual(sims[1].actions[0][0], [0])
+
     def test_execute_batched_first_hops_uses_one_move_action_per_agent(self):
         sim = _FakeSim()
         sim.states[0].navigableLocations = [
@@ -140,6 +170,31 @@ class HorizonPanoramaBatchTest(unittest.TestCase):
         )
 
         self.assertEqual(sim.actions[-1][0], [1, 2])
+
+    def test_execute_individual_first_hops_moves_each_sim_once(self):
+        sims = [
+            _SingleFakeSim(_FakeState("vp-root-0", 0.0, 11, 1.0)),
+            _SingleFakeSim(_FakeState("vp-root-1", 0.0, 22, 2.0)),
+        ]
+        sims[0].states[0].navigableLocations = [
+            types.SimpleNamespace(viewpointId="vp-root-0", rel_heading=0.0, rel_elevation=0.0, rel_distance=0.0),
+            _FakeLocation("vp-a", 0.0, 1.0),
+        ]
+        sims[1].states[0].navigableLocations = [
+            types.SimpleNamespace(viewpointId="vp-root-1", rel_heading=0.0, rel_elevation=0.0, rel_distance=0.0),
+            _FakeLocation("vp-b", 0.0, 1.5),
+        ]
+
+        helper_under_test.execute_individual_first_hops(
+            sims=sims,
+            move_specs=[
+                {"target_heading": 0.0, "target_viewpoint_id": "vp-a"},
+                {"target_heading": 0.0, "target_viewpoint_id": "vp-b"},
+            ],
+        )
+
+        self.assertEqual(sims[0].actions[-1][0], [1])
+        self.assertEqual(sims[1].actions[-1][0], [1])
 
 
 if __name__ == "__main__":
