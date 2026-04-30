@@ -116,8 +116,8 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
     return annotated_rgb, visible_viewpoints
 
 
-def render_sim_state(state, viewpoint_index_by_vp=None):
-    for batch_index, state in enumerate([state]):
+def render_sim_state(state_list, viewpoint_index_by_vp=None):
+    for batch_index, state in enumerate(state_list):
         rgb_image, _ = annotate_rgb_with_viewpoints(
             state.rgb,
             state.navigableLocations,
