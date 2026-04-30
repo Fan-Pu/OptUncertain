@@ -250,6 +250,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             scenario["mllm"].get("read_saved_raw_outputs", False)
         ),
         raw_output_dir=str(scenario["mllm"].get("raw_output_dir", "mllm_raw_outputs")),
+        max_validation_retries=int(scenario["mllm"].get("max_validation_retries", 2)),
     )
 
     scorer = SigLIPScorer()
@@ -257,6 +258,11 @@ def run_scenario(config_path: str) -> Dict[str, object]:
     while True:
         if all(hypothesis_graph.target_found.values()):
             return {"target_found": dict(hypothesis_graph.target_found)}
+
+        # print target finding status
+        print("Target finding status:")
+        for target_id, found in hypothesis_graph.target_found.items():
+            print(f"  {target_id}: {'Found' if found else 'Not found'}")
 
         agent_observations = Helper.horizon_scan_individual_sims_return(
             sims=agent_sims,

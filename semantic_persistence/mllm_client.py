@@ -26,6 +26,7 @@ class MLLMClient:
         save_debug_images: bool = True,
         read_saved_raw_outputs: bool = False,
         raw_output_dir: str = "mllm_raw_outputs",
+        max_validation_retries: int = 2,
     ):
         self.model_name = model_name
         self.base_url = base_url
@@ -34,6 +35,7 @@ class MLLMClient:
         self.save_debug_images = bool(save_debug_images)
         self.read_saved_raw_outputs = bool(read_saved_raw_outputs)
         self.raw_output_dir = str(raw_output_dir)
+        self.max_validation_retries = max(0, int(max_validation_retries))
         self.semantic_raw_output_index = 0
 
         api_key = os.environ.get(api_key_env)
@@ -146,26 +148,76 @@ class MLLMClient:
             "semantic_step_%04d.json" % int(step_index),
         )
 
-    def _read_semantic_raw_output(self, step_index: int) -> str:
-        with open(
-            self._semantic_raw_output_path(step_index),
-            "r",
-            encoding="utf-8",
-        ) as file_handle:
-            return file_handle.read()
+    def _semantic_raw_output_path_for_attempt(
+        self,
+        step_index: int,
+        attempt_index: int,
+    ) -> str:
+        """Return the raw-output path for the first attempt or a retry attempt."""
+        if int(attempt_index) <= 0:
+            return self._semantic_raw_output_path(step_index)
 
-    def _check_semantic_raw_output_exists(self, step_index: int) -> bool:
-        return os.path.exists(self._semantic_raw_output_path(step_index))
+        return os.path.join(
+            getattr(self, "raw_output_dir", "mllm_raw_outputs"),
+            "semantic_step_%04d_retry_%02d.json"
+            % (int(step_index), int(attempt_index)),
+        )
 
-    def _write_semantic_raw_output(self, step_index: int, decoded: str) -> None:
+    def _write_semantic_raw_output_for_attempt(
+        self,
+        step_index: int,
+        attempt_index: int,
+        decoded: str,
+    ) -> None:
         raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
         os.makedirs(raw_output_dir, exist_ok=True)
         with open(
-            self._semantic_raw_output_path(step_index),
+            self._semantic_raw_output_path_for_attempt(step_index, attempt_index),
             "w",
             encoding="utf-8",
         ) as file_handle:
             file_handle.write(decoded)
+
+    @staticmethod
+    def _build_validation_retry_user_message(
+        user_message: str,
+        validation_errors: List[str],
+        attempt_index: int,
+        max_validation_retries: int,
+    ) -> str:
+        """Append accumulated validation feedback to the original user message."""
+        if not validation_errors:
+            error_list = "No validation error details were captured."
+        else:
+            error_list = "\n".join(
+                "%d. %s" % (index + 1, error)
+                for index, error in enumerate(validation_errors)
+            )
+
+        feedback = dedent(
+            """
+            Validation feedback for retry {attempt_index} of {max_validation_retries}:
+            The previous JSON output failed validation.
+
+            All validation errors observed so far:
+            {error_list}
+
+            Return a corrected complete JSON object only.
+            Do not explain the errors.
+            Keep the same schema and all original rules.
+            Fix all listed validation errors at the same time.
+            """
+        ).strip()
+
+        return (
+            user_message
+            + "\n\n"
+            + feedback.format(
+                attempt_index=int(attempt_index),
+                max_validation_retries=int(max_validation_retries),
+                error_list=error_list,
+            )
+        )
 
     def _build_instruction(
         self,
@@ -1102,7 +1154,8 @@ class MLLMClient:
             graph_summary=graph_summary,
         )
 
-        # Resize panorama arrays to reduce input size while preserving visible neighboring viewpoint cues
+        # Resize panorama arrays to reduce input size while preserving visible
+        # neighboring viewpoint cues.
         for observation in agent_observations:
             observation["annotated_panorama"] = self._resize_panorama_array(
                 observation["annotated_panorama"],
@@ -1112,12 +1165,12 @@ class MLLMClient:
             with open(
                 "debug_resized_agent_panorama_%s.jpg" % observation["agent_id"],
                 "wb",
-            ) as f:
-                f.write(observation["annotated_panorama"])
+            ) as file_handle:
+                file_handle.write(observation["annotated_panorama"])
 
-        user_content = [{"type": "text", "text": user_message}]
+        image_content = []
         for observation in agent_observations:
-            user_content.append(
+            image_content.append(
                 {
                     "type": "image_url",
                     "image_url": {
@@ -1128,37 +1181,125 @@ class MLLMClient:
                 }
             )
 
-        messages = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_content},
-        ]
-
         step_index = getattr(self, "semantic_raw_output_index", 0)
-        # if the setting is enabled, read the saved raw outputs
-        if getattr(
-            self, "read_saved_raw_outputs", False
-        ) and self._check_semantic_raw_output_exists(step_index):
-            print(f"Reading saved raw output for step {step_index}")
-            decoded = self._read_semantic_raw_output(step_index)
-        else:
-            print(f"Requesting completion for step {step_index}")
-            decoded = self._request_completion(messages)
-            # write raw output before parsing to preserve original text for debugging
-            self._write_semantic_raw_output(step_index, decoded)
-        self.semantic_raw_output_index = step_index + 1
+        max_validation_retries = getattr(self, "max_validation_retries", 0)
+        validation_errors: List[str] = []
+        last_error = None
 
-        # decoded = '{\n  "agents": [\n    {\n      "agent_id": "agent0",\n      "current_region_node_id": 100\n    },\n    {\n      "agent_id": "agent1",\n      "current_region_node_id": 101\n    }\n  ],\n  "detections": [\n    {\n      "agent_id": "agent0",\n      "founds": [\n        false,\n        false\n      ],\n      "target_indices": [\n        "0",\n        "1"\n      ]\n    },\n    {\n      "agent_id": "agent1",\n      "founds": [\n        false,\n        false\n      ],\n      "target_indices": [\n        "0",\n        "1"\n      ]\n    }\n  ],\n  "edge_distance_variances": {\n    "viewpoint_region": 3.5,\n    "viewpoint_viewpoint": 1.5\n  },\n  "invisible_region_nodes": [\n    {\n      "exist_prob": 0.7,\n      "id": 102,\n      "label": "dimly lit bedroom area beyond doorway",\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    }\n  ],\n  "new_edges": [\n    {\n      "dist": 3.0,\n      "edge_type": "VZ",\n      "exist_prob": 0.7,\n      "i": 40,\n      "j": 102\n    }\n  ],\n  "viewpoint_node_assigns": [\n    {\n      "assigned_viewpoint_node_indices": [\n        0,\n        16,\n        21\n      ],\n      "region_node_id": 100\n    },\n    {\n      "assigned_viewpoint_node_indices": [\n        9,\n        18,\n        40,\n        41\n      ],\n      "region_node_id": 101\n    }\n  ],\n  "viewpoint_target_probs": [\n    {\n      "id": 0,\n      "target_probs": {\n        "0": 0.0,\n        "1": 0.0\n      }\n    },\n    {\n      "id": 16,\n      "target_probs": {\n        "0": 0.2,\n        "1": 0.2\n      }\n    },\n    {\n      "id": 21,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "id": 9,\n      "target_probs": {\n        "0": 0.0,\n        "1": 0.0\n      }\n    },\n    {\n      "id": 18,\n      "target_probs": {\n        "0": 0.3,\n        "1": 0.3\n      }\n    },\n    {\n      "id": 40,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "id": 41,\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    }\n  ],\n  "visible_region_nodes": [\n    {\n      "exist_prob": 1.0,\n      "id": 100,\n      "label": "bright living area with sofa and window",\n      "target_probs": {\n        "0": 0.1,\n        "1": 0.1\n      }\n    },\n    {\n      "exist_prob": 1.0,\n      "id": 101,\n      "label": "darker lounge area with seating",\n      "target_probs": {\n        "0": 0.2,\n        "1": 0.2\n      }\n    }\n  ]\n}'
+        for attempt_index in range(max_validation_retries + 1):
+            if attempt_index == 0:
+                attempt_user_message = user_message
+            else:
+                attempt_user_message = self._build_validation_retry_user_message(
+                    user_message=user_message,
+                    validation_errors=validation_errors,
+                    attempt_index=attempt_index,
+                    max_validation_retries=max_validation_retries,
+                )
 
-        raw = self._strip_code_fences(decoded)
+                debugpy.breakpoint()  # Debug before retrying the MLLM with validation feedback.
 
-        payload = self._extract_json_object(raw)
-        if payload is None:
-            raise ValueError("Failed to parse joint MLLM JSON output")
+            user_content = [{"type": "text", "text": attempt_user_message}]
+            user_content.extend(image_content)
 
-        debugpy.breakpoint()  # Set a breakpoint here to inspect the raw payload before validation
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_content},
+            ]
 
-        self._validate_payload(payload, agent_observations, targets)
-        return payload
+            # Attempt 0 may read a saved raw output. Retry attempts always call
+            # the MLLM again because they need the validation error feedback.
+            if (
+                attempt_index == 0
+                and getattr(self, "read_saved_raw_outputs", False)
+                and self._check_semantic_raw_output_exists(step_index)
+            ):
+                print(f"Reading saved raw output for step {step_index}")
+                decoded = self._read_semantic_raw_output(step_index)
+            else:
+                if attempt_index == 0:
+                    print(f"Requesting completion for step {step_index}")
+                else:
+                    print(
+                        "Retrying MLLM completion for step %s after validation "
+                        "failure, attempt %s of %s"
+                        % (step_index, attempt_index, max_validation_retries)
+                    )
+
+                decoded = self._request_completion(messages)
+            try:
+                raw = self._strip_code_fences(decoded)
+                payload = self._extract_json_object(raw)
+                if payload is None:
+                    raise ValueError("Failed to parse joint MLLM JSON output")
+
+                self._validate_payload(payload, agent_observations, targets)
+
+                # Save only the accepted raw output as the final log for this step.
+                # If a retry succeeds, it overwrites the failed attempt under the
+                # normal step filename, without a retry suffix.
+                self._write_semantic_raw_output(step_index, decoded)
+
+                self.semantic_raw_output_index = step_index + 1
+                return payload
+
+            except Exception as exc:
+                last_error = exc
+                error_message = str(exc)
+
+                if error_message not in validation_errors:
+                    validation_errors.append(error_message)
+
+                if attempt_index >= max_validation_retries:
+                    self.semantic_raw_output_index = step_index + 1
+                    accumulated_errors_text = "\n".join(
+                        "%d. %s" % (index + 1, error)
+                        for index, error in enumerate(validation_errors)
+                    )
+                    raise ValueError(
+                        "MLLM output failed validation after %s attempt(s). "
+                        "Accumulated validation errors:\n%s"
+                        % (
+                            max_validation_retries + 1,
+                            accumulated_errors_text,
+                        )
+                    ) from exc
+
+                print(
+                    "MLLM output validation failed on attempt %s of %s: %s"
+                    % (
+                        attempt_index + 1,
+                        max_validation_retries + 1,
+                        str(last_error),
+                    )
+                )
+
+        if step_index == 0:
+            debugpy.breakpoint()  # Debug before the first MLLM attempt for the step.
+
+        raise RuntimeError("Unexpected retry loop exit.")
+
+    def _check_semantic_raw_output_exists(self, step_index: int) -> bool:
+        return os.path.exists(self._semantic_raw_output_path(step_index))
+
+    def _read_semantic_raw_output(self, step_index: int) -> str:
+        with open(
+            self._semantic_raw_output_path(step_index),
+            "r",
+            encoding="utf-8",
+        ) as file_handle:
+            return file_handle.read()
+
+    def _write_semantic_raw_output(self, step_index: int, decoded: str) -> None:
+        raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
+        os.makedirs(raw_output_dir, exist_ok=True)
+
+        with open(
+            self._semantic_raw_output_path(step_index),
+            "w",
+            encoding="utf-8",
+        ) as file_handle:
+            file_handle.write(decoded)
 
     @staticmethod
     def _resize_panorama_array(

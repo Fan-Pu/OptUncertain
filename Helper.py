@@ -32,7 +32,7 @@ viewpoint_vp_label_by_index = {}
 def init_render(batch_size=1, enable_render=False):
     if enable_render:
         for batch_index in range(int(batch_size)):
-            cv2.namedWindow("Python RGB %s" % batch_index)
+            cv2.namedWindow("Agent %s" % batch_index)
 
     sim = MatterSim.Simulator()
     sim.setCameraResolution(WIDTH, HEIGHT)
@@ -123,7 +123,7 @@ def render_sim_state(state_list, viewpoint_index_by_vp=None):
             state.navigableLocations,
             viewpoint_index_by_vp=viewpoint_index_by_vp,
         )
-        cv2.imshow("Python RGB %s" % batch_index, rgb_image)
+        cv2.imshow("Agent %s" % batch_index, rgb_image)
     cv2.waitKey(1)
 
 
@@ -381,7 +381,7 @@ def execute_batched_first_hops(sim, move_specs, pause_time=0.0):
         time.sleep(pause_time)
 
 
-def execute_individual_first_hops(sims, move_specs, pause_time=0.0):
+def execute_individual_first_hops(sims, move_specs, pause_time=0.05):
     if len(sims) != len(move_specs):
         raise ValueError("sims and move_specs must have the same length.")
 
@@ -401,6 +401,7 @@ def execute_individual_first_hops(sims, move_specs, pause_time=0.0):
             }
         )
 
+    # rotate all sims in sync, then move towards target viewpoint in sync
     max_step_count = max(plan["step_count"] for plan in step_plans)
     for step_index in range(max_step_count):
         for sim, plan in zip(sims, step_plans):
@@ -412,7 +413,12 @@ def execute_individual_first_hops(sims, move_specs, pause_time=0.0):
             sim.makeAction([0], [heading], [0.0])
         if pause_time > 0.0:
             time.sleep(pause_time)
+        render_sim_state(
+            [sim.getState()[0] for sim in sims],
+            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+        )
 
+    # Update the states after rotation
     rotated_states = [sim.getState()[0] for sim in sims]
     for sim, state, plan in zip(sims, rotated_states, step_plans):
         target_viewpoint_id = plan["target_viewpoint_id"]
@@ -424,6 +430,10 @@ def execute_individual_first_hops(sims, move_specs, pause_time=0.0):
         sim.makeAction([location_index], [0.0], [0.0])
     if pause_time > 0.0:
         time.sleep(pause_time)
+    render_sim_state(
+        [sim.getState()[0] for sim in sims],
+        viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+    )
 
 
 def rotate_to_target_heading_mov2vp(sim, selected_heading, target_vp_id):
@@ -461,7 +471,7 @@ def explore_world(sim, location=0, heading=0, elevation=0):
                 TEXT_COLOR,
                 thickness=3,
             )
-        cv2.imshow("Python RGB 0", rgb)
+        cv2.imshow("Agent 0", rgb)
         key_code = cv2.waitKey(1)
         if key_code == -1:
             continue
