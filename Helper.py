@@ -1,3 +1,4 @@
+from doctest import debug
 import json
 import math
 import os
@@ -32,7 +33,6 @@ def init_render(batch_size=1, enable_render=False):
     if enable_render:
         for batch_index in range(int(batch_size)):
             cv2.namedWindow("Python RGB %s" % batch_index)
-            cv2.namedWindow("Python Depth %s" % batch_index)
 
     sim = MatterSim.Simulator()
     sim.setCameraResolution(WIDTH, HEIGHT)
@@ -116,21 +116,15 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
     return annotated_rgb, visible_viewpoints
 
 
-def render_state_batch(states, viewpoint_index_by_vp=None):
-    for batch_index, state in enumerate(states):
+def render_sim_state(state, viewpoint_index_by_vp=None):
+    for batch_index, state in enumerate([state]):
         rgb_image, _ = annotate_rgb_with_viewpoints(
             state.rgb,
             state.navigableLocations,
             viewpoint_index_by_vp=viewpoint_index_by_vp,
         )
-        depth_image = np.array(state.depth, copy=False)
         cv2.imshow("Python RGB %s" % batch_index, rgb_image)
-        cv2.imshow("Python Depth %s" % batch_index, depth_image)
     cv2.waitKey(1)
-
-
-def render_sim_state(state, viewpoint_index_by_vp=None):
-    render_state_batch([state], viewpoint_index_by_vp=viewpoint_index_by_vp)
 
 
 def build_truncated_panorama(horizon_frames):
@@ -407,7 +401,6 @@ def explore_world(sim, location=0, heading=0, elevation=0):
                 thickness=3,
             )
         cv2.imshow("Python RGB 0", rgb)
-        cv2.imshow("Python Depth 0", np.array(state.depth, copy=False))
         key_code = cv2.waitKey(1)
         if key_code == -1:
             continue
