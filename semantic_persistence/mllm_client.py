@@ -150,6 +150,9 @@ class MLLMClient:
             "semantic_step_%04d.json" % int(step_index),
         )
 
+    def _check_semantic_raw_output_exists(self, step_index: int) -> bool:
+        return os.path.exists(self._semantic_raw_output_path(step_index))
+
     def _read_semantic_raw_output(self, step_index: int) -> str:
         with open(
             self._semantic_raw_output_path(step_index),
