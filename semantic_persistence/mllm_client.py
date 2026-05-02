@@ -23,7 +23,7 @@ class MLLMClient:
         api_key_env: str = "HF_TOKEN",
         max_new_tokens: int = -1,  # read from config
         request_timeout: float = 120.0,
-        save_debug_images: bool = True,
+        save_debug_images: bool = False,
         read_saved_raw_outputs: bool = False,
         raw_output_dir: str = "mllm_raw_outputs",
         max_validation_retries: int = 2,
@@ -114,14 +114,11 @@ class MLLMClient:
             completion = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
-                # Best practical reproducibility settings
                 temperature=0.0,
                 top_p=1.0,
                 seed=42,
                 max_tokens=self.max_new_tokens,
-                # JSON-only output
                 response_format={"type": "json_object"},
-                reasoning_effort="none",  # try "minimal" if "none" is rejected
             )
 
             print("usage:", completion.usage)
@@ -133,11 +130,27 @@ class MLLMClient:
 
         except BadRequestError as exc:
             message = str(exc)
+
+            if "chat_template_kwargs" in message or "enable_thinking" in message:
+                raise RuntimeError(
+                    "The current Hugging Face router provider did not accept "
+                    "'%s' thinking-mode parameters. Try a provider that supports "
+                    "'%s' chat_template_kwargs, or run '%s' through vLLM with "
+                    "--reasoning-parser '%s'."
+                    % (
+                        self.model_name,
+                        self.model_name,
+                        self.model_name,
+                        self.model_name,
+                    )
+                ) from exc
+
             if "model_not_found" in message or "does not exist" in message:
                 raise RuntimeError(
                     "The configured Hugging Face router model was not found. "
                     "Resolved model='%s'." % self.model_name
                 ) from exc
+
             raise
 
         return self._message_to_text(completion.choices[0].message.content)
@@ -194,8 +207,7 @@ class MLLMClient:
                 for index, error in enumerate(validation_errors)
             )
 
-        feedback = dedent(
-            """
+        feedback = dedent("""
             Validation feedback for retry {attempt_index} of {max_validation_retries}:
             The previous JSON output failed validation.
 
@@ -206,8 +218,7 @@ class MLLMClient:
             Do not explain the errors.
             Keep the same schema and all original rules.
             Fix all listed validation errors at the same time.
-            """
-        ).strip()
+            """).strip()
 
         return (
             user_message
@@ -498,8 +509,7 @@ class MLLMClient:
             if node.get("type") == "viewpoint":
                 node.pop("label", None)
 
-        system_message = dedent(
-            """
+        system_message = dedent("""
             You are an indoor hypothesis-graph proposal module for cooperative many-agent, many-target navigation. Analyze one annotated RGB panorama per agent and the compact shared graph summary. Propose an uncertain graph update for downstream optimization. Do not select robot actions or produce a final map.
 
             The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, target_ids, viewpoint ids, and region ids exactly. Use target_id in target_probs and detections[].target_indices. Use target descriptions only to understand the targets.
@@ -521,12 +531,10 @@ class MLLMClient:
             - new_edges may contain only VV or VZ edges. Never use region-region edges. Do not add edges between a current viewpoint and its visible neighboring viewpoints, because those local edges are already provided by the navigation system. Do not add an edge between a viewpoint and its assigned region.
             - A VV edge may be proposed only between two unvisited non-current viewpoint nodes when the current panoramas provide clear layout evidence that they are directly connected, such as the same open room area, a continuous corridor, or an unobstructed doorway. Do not infer a VV edge only because both viewpoints are visible from the same current viewpoint. If evidence is weak but plausible, use low exist_prob. If evidence is unclear, omit the VV edge.
             - A VZ edge should connect a viewpoint to a semantic region with no assigned viewpoints.
-            """
-        ).strip()
+            """).strip()
 
         user_message = (
-            dedent(
-                """
+            dedent("""
                 Shared target set:
                 {targets_json}
 
@@ -558,8 +566,7 @@ class MLLMClient:
                 - Propose only legal uncertain edges supported by observation and graph context.
                 - Propose VV edges only when two unvisited non-current viewpoints are directly connected by clear layout evidence; do not add VV edges only because they are both visible from the same current viewpoint.
                 - Return compact JSON only.
-                """
-            )
+                """)
             .strip()
             .format(
                 targets_json=json.dumps(target_records, indent=2, sort_keys=True),
@@ -575,562 +582,6 @@ class MLLMClient:
         )
 
         return system_message, user_message
-
-    def _validate_payload(
-        self,
-        payload: Dict[str, object],
-        agent_observations: List[Dict[str, object]],
-        targets: List[Dict[str, object]],
-    ) -> None:
-        required_top_level_keys = {
-            "agents",
-            "detections",
-            "visible_region_nodes",
-            "invisible_region_nodes",
-            "viewpoint_target_probs",
-            "viewpoint_node_assigns",
-            "new_edges",
-            "edge_distance_variances",
-        }
-
-        if not isinstance(payload, dict):
-            raise TypeError("payload must be a dictionary.")
-
-        extra_top_level_keys = set(payload).difference(required_top_level_keys)
-        if extra_top_level_keys:
-            raise KeyError(
-                "Unexpected top-level keys: %s" % sorted(extra_top_level_keys)
-            )
-
-        missing_top_level_keys = required_top_level_keys.difference(payload)
-        if missing_top_level_keys:
-            raise KeyError(
-                "Missing top-level keys: %s" % sorted(missing_top_level_keys)
-            )
-
-        def require_list(value, context: str) -> list:
-            if not isinstance(value, list):
-                raise TypeError("%s must be a list." % context)
-            return value
-
-        def require_dict(value, context: str) -> dict:
-            if not isinstance(value, dict):
-                raise TypeError("%s must be a dictionary." % context)
-            return value
-
-        def is_number(value) -> bool:
-            return isinstance(value, (int, float)) and not isinstance(value, bool)
-
-        def validate_probability(value, context: str) -> None:
-            if not is_number(value):
-                raise TypeError("%s must be numeric." % context)
-            if not (0.0 < float(value) <= 1.0):
-                raise ValueError("%s=%s is outside (0, 1]." % (context, value))
-
-        def validate_binary_probability(value, context: str) -> None:
-            if not is_number(value):
-                raise TypeError("%s must be numeric." % context)
-            if float(value) not in {0.0, 1.0}:
-                raise ValueError(
-                    "%s=%s must be binary, either 0.0 or 1.0." % (context, value)
-                )
-
-        def validate_positive_number(value, context: str) -> None:
-            if not is_number(value):
-                raise TypeError("%s must be numeric." % context)
-            if float(value) <= 0.0:
-                raise ValueError("%s=%s must be positive." % (context, value))
-
-        observation_by_agent = {
-            str(observation["agent_id"]): observation
-            for observation in agent_observations
-        }
-        expected_agent_ids = set(observation_by_agent)
-
-        target_ids = {str(target["target_id"]) for target in targets}
-        if len(target_ids) != len(targets):
-            raise ValueError("Target ids must be unique.")
-
-        agents = require_list(payload["agents"], "agents")
-        detections = require_list(payload["detections"], "detections")
-        visible_region_nodes = require_list(
-            payload["visible_region_nodes"], "visible_region_nodes"
-        )
-        invisible_region_nodes = require_list(
-            payload["invisible_region_nodes"], "invisible_region_nodes"
-        )
-        viewpoint_target_probs = require_list(
-            payload["viewpoint_target_probs"], "viewpoint_target_probs"
-        )
-        viewpoint_node_assigns = require_list(
-            payload["viewpoint_node_assigns"], "viewpoint_node_assigns"
-        )
-        new_edges = require_list(payload["new_edges"], "new_edges")
-        edge_distance_variances = require_dict(
-            payload["edge_distance_variances"], "edge_distance_variances"
-        )
-
-        returned_agent_ids = set()
-        agent_current_region = {}
-
-        for agent_info in agents:
-            agent_info = require_dict(agent_info, "agents[] item")
-
-            expected_keys = {"agent_id", "current_region_node_id"}
-            if set(agent_info) != expected_keys:
-                raise KeyError(
-                    "Each agents[] item must contain exactly %s, got %s."
-                    % (sorted(expected_keys), sorted(agent_info))
-                )
-
-            agent_id = str(agent_info["agent_id"])
-            returned_agent_ids.add(agent_id)
-            agent_current_region[agent_id] = int(agent_info["current_region_node_id"])
-
-        if returned_agent_ids != expected_agent_ids:
-            raise ValueError(
-                "Returned agent ids %s do not match expected agent ids %s."
-                % (sorted(returned_agent_ids), sorted(expected_agent_ids))
-            )
-
-        # ------------------------------------------------------------------
-        # Validate detections first, because current-viewpoint target_probs must
-        # match direct detection evidence.
-        # ------------------------------------------------------------------
-        detection_by_agent = {}
-        returned_detection_agent_ids = set()
-
-        for detection in detections:
-            detection = require_dict(detection, "detections[] item")
-
-            expected_keys = {"agent_id", "target_indices", "founds"}
-            if set(detection) != expected_keys:
-                raise KeyError(
-                    "Detection item keys %s do not match expected keys %s."
-                    % (sorted(detection), sorted(expected_keys))
-                )
-
-            agent_id = str(detection["agent_id"])
-            if agent_id not in expected_agent_ids:
-                raise ValueError("Detection uses unknown agent id %s." % agent_id)
-
-            if agent_id in returned_detection_agent_ids:
-                raise ValueError("Duplicated detection item for agent %s." % agent_id)
-            returned_detection_agent_ids.add(agent_id)
-
-            target_indices = require_list(
-                detection["target_indices"],
-                "detections[].target_indices",
-            )
-            founds = require_list(
-                detection["founds"],
-                "detections[].founds",
-            )
-
-            returned_target_ids = {str(target_id) for target_id in target_indices}
-            if returned_target_ids != target_ids:
-                raise ValueError(
-                    "Detection target_indices %s do not match expected target ids %s."
-                    % (sorted(returned_target_ids), sorted(target_ids))
-                )
-
-            if len(target_indices) != len(founds):
-                raise ValueError(
-                    "detections[].target_indices and detections[].founds must have "
-                    "the same length for agent %s." % agent_id
-                )
-
-            if len(target_indices) != len(returned_target_ids):
-                raise ValueError(
-                    "detections[].target_indices contains duplicated target ids for "
-                    "agent %s." % agent_id
-                )
-
-            detection_by_agent[agent_id] = {}
-            for target_id, found in zip(target_indices, founds):
-                if not isinstance(found, bool):
-                    raise TypeError(
-                        "All detections[].founds values must be JSON booleans."
-                    )
-                detection_by_agent[agent_id][str(target_id)] = bool(found)
-
-        if returned_detection_agent_ids != expected_agent_ids:
-            raise ValueError(
-                "Returned detection agent ids %s do not match expected agent ids %s."
-                % (sorted(returned_detection_agent_ids), sorted(expected_agent_ids))
-            )
-
-        current_viewpoint_ids = {
-            int(observation["current_viewpoint_index"])
-            for observation in agent_observations
-        }
-
-        visible_viewpoint_ids = set()
-        for observation in agent_observations:
-            for item in observation["visible_viewpoints"]:
-                visible_viewpoint_ids.add(int(item["viewpoint_index"]))
-
-        all_current_step_viewpoint_ids = current_viewpoint_ids | visible_viewpoint_ids
-
-        current_viewpoint_detection = {}
-        for observation in agent_observations:
-            agent_id = str(observation["agent_id"])
-            current_viewpoint_id = int(observation["current_viewpoint_index"])
-            agent_detection = detection_by_agent[agent_id]
-
-            if current_viewpoint_id in current_viewpoint_detection:
-                if current_viewpoint_detection[current_viewpoint_id] != agent_detection:
-                    raise ValueError(
-                        "Current viewpoint %s is shared by multiple agents with "
-                        "inconsistent detection results." % current_viewpoint_id
-                    )
-
-            current_viewpoint_detection[current_viewpoint_id] = agent_detection
-
-        def validate_target_probs_positive(
-            target_probs: Dict[str, object],
-            context: str,
-        ) -> None:
-            target_probs = require_dict(target_probs, context + ".target_probs")
-
-            returned_target_ids = {str(key) for key in target_probs}
-            if returned_target_ids != target_ids:
-                raise ValueError(
-                    "%s target_probs keys %s do not match expected target ids %s."
-                    % (context, sorted(returned_target_ids), sorted(target_ids))
-                )
-
-            for target_id, value in target_probs.items():
-                validate_probability(
-                    value,
-                    "%s.target_probs[%s]" % (context, target_id),
-                )
-
-        def validate_target_probs_current_viewpoint(
-            viewpoint_id: int,
-            target_probs: Dict[str, object],
-            context: str,
-        ) -> None:
-            target_probs = require_dict(target_probs, context + ".target_probs")
-
-            returned_target_ids = {str(key) for key in target_probs}
-            if returned_target_ids != target_ids:
-                raise ValueError(
-                    "%s target_probs keys %s do not match expected target ids %s."
-                    % (context, sorted(returned_target_ids), sorted(target_ids))
-                )
-
-            expected_detection = current_viewpoint_detection[viewpoint_id]
-
-            for target_id, value in target_probs.items():
-                validate_binary_probability(
-                    value,
-                    "%s.target_probs[%s]" % (context, target_id),
-                )
-
-                expected_value = 1.0 if expected_detection[str(target_id)] else 0.0
-                if float(value) != expected_value:
-                    raise ValueError(
-                        "%s.target_probs[%s]=%s does not match direct detection. "
-                        "Expected %.1f for current viewpoint %s."
-                        % (context, target_id, value, expected_value, viewpoint_id)
-                    )
-
-        def validate_region_label(label: str, context: str) -> None:
-            normalized_label = " ".join(label.lower().split())
-
-            if "agent" in normalized_label:
-                raise ValueError(
-                    "%s label must not mention agent ids or agent names: %s"
-                    % (context, label)
-                )
-
-        visible_region_ids = set()
-        invisible_region_ids = set()
-
-        total_region_count = len(visible_region_nodes) + len(invisible_region_nodes)
-        if total_region_count > 5:
-            raise ValueError(
-                "At most 5 current-step semantic regions are allowed, got %s."
-                % total_region_count
-            )
-
-        for region_key, region_list, region_id_set in (
-            ("visible_region_nodes", visible_region_nodes, visible_region_ids),
-            ("invisible_region_nodes", invisible_region_nodes, invisible_region_ids),
-        ):
-            for region in region_list:
-                region = require_dict(region, "%s[] item" % region_key)
-
-                expected_keys = {"id", "label", "exist_prob", "target_probs"}
-                if set(region) != expected_keys:
-                    raise KeyError(
-                        "%s item keys %s do not match expected keys %s."
-                        % (region_key, sorted(region), sorted(expected_keys))
-                    )
-
-                region_id = int(region["id"])
-                if region_id in region_id_set:
-                    raise ValueError(
-                        "Duplicated region id %s in %s." % (region_id, region_key)
-                    )
-                region_id_set.add(region_id)
-
-                if not isinstance(region["label"], str) or not region["label"].strip():
-                    raise ValueError(
-                        "%s region %s has an empty label." % (region_key, region_id)
-                    )
-
-                validate_region_label(
-                    str(region["label"]).strip(),
-                    "%s region %s" % (region_key, region_id),
-                )
-
-                validate_probability(
-                    region["exist_prob"],
-                    "%s region %s exist_prob" % (region_key, region_id),
-                )
-
-                validate_target_probs_positive(
-                    region["target_probs"],
-                    "%s region %s" % (region_key, region_id),
-                )
-
-        if visible_region_ids & invisible_region_ids:
-            raise ValueError(
-                "Region ids cannot appear in both visible_region_nodes and "
-                "invisible_region_nodes: %s"
-                % sorted(visible_region_ids & invisible_region_ids)
-            )
-
-        all_region_ids = visible_region_ids | invisible_region_ids
-
-        for agent_id, current_region_node_id in agent_current_region.items():
-            if current_region_node_id not in visible_region_ids:
-                raise ValueError(
-                    "Agent %s has current_region_node_id %s, but this id is not "
-                    "included in visible_region_nodes."
-                    % (agent_id, current_region_node_id)
-                )
-
-        # ------------------------------------------------------------------
-        # Validate viewpoint_target_probs under the revised rule:
-        # current viewpoints use binary detection evidence, while visible
-        # neighboring viewpoints use soft positive scores.
-        # ------------------------------------------------------------------
-        returned_viewpoint_prob_ids = set()
-
-        for item in viewpoint_target_probs:
-            item = require_dict(item, "viewpoint_target_probs[] item")
-
-            expected_keys = {"id", "target_probs"}
-            if set(item) != expected_keys:
-                raise KeyError(
-                    "Each viewpoint_target_probs item must contain exactly %s, got %s."
-                    % (sorted(expected_keys), sorted(item))
-                )
-
-            viewpoint_id = int(item["id"])
-
-            if viewpoint_id not in all_current_step_viewpoint_ids:
-                raise ValueError(
-                    "viewpoint_target_probs id %s is not a current viewpoint or "
-                    "visible neighboring viewpoint." % viewpoint_id
-                )
-
-            if viewpoint_id in returned_viewpoint_prob_ids:
-                raise ValueError(
-                    "Duplicated viewpoint_target_probs id %s." % viewpoint_id
-                )
-            returned_viewpoint_prob_ids.add(viewpoint_id)
-
-            if viewpoint_id in current_viewpoint_ids:
-                validate_target_probs_current_viewpoint(
-                    viewpoint_id,
-                    item["target_probs"],
-                    "current viewpoint %s" % viewpoint_id,
-                )
-            else:
-                validate_target_probs_positive(
-                    item["target_probs"],
-                    "visible neighboring viewpoint %s" % viewpoint_id,
-                )
-
-        if returned_viewpoint_prob_ids != all_current_step_viewpoint_ids:
-            raise ValueError(
-                "Returned viewpoint_target_probs ids %s do not match expected "
-                "current-step viewpoint ids %s."
-                % (
-                    sorted(returned_viewpoint_prob_ids),
-                    sorted(all_current_step_viewpoint_ids),
-                )
-            )
-
-        # ------------------------------------------------------------------
-        # Validate viewpoint assignments.
-        # ------------------------------------------------------------------
-        assigned_viewpoint_to_region = {}
-
-        for item in viewpoint_node_assigns:
-            item = require_dict(item, "viewpoint_node_assigns[] item")
-
-            expected_keys = {"region_node_id", "assigned_viewpoint_node_indices"}
-            if set(item) != expected_keys:
-                raise KeyError(
-                    "Each viewpoint_node_assigns item must contain exactly %s, got %s."
-                    % (sorted(expected_keys), sorted(item))
-                )
-
-            region_node_id = int(item["region_node_id"])
-            if region_node_id not in all_region_ids:
-                raise ValueError(
-                    "viewpoint_node_assigns uses unknown region_node_id %s."
-                    % region_node_id
-                )
-
-            assigned_ids = require_list(
-                item["assigned_viewpoint_node_indices"],
-                "assigned_viewpoint_node_indices",
-            )
-
-            for viewpoint_id_raw in assigned_ids:
-                viewpoint_id = int(viewpoint_id_raw)
-
-                if viewpoint_id not in all_current_step_viewpoint_ids:
-                    raise ValueError(
-                        "Assigned viewpoint id %s is not a current viewpoint or "
-                        "visible neighboring viewpoint." % viewpoint_id
-                    )
-
-                if viewpoint_id in assigned_viewpoint_to_region:
-                    raise ValueError(
-                        "Viewpoint id %s appears in more than one "
-                        "assigned_viewpoint_node_indices list." % viewpoint_id
-                    )
-
-                assigned_viewpoint_to_region[viewpoint_id] = region_node_id
-
-        returned_assignment_viewpoint_ids = set(assigned_viewpoint_to_region)
-
-        if returned_assignment_viewpoint_ids != all_current_step_viewpoint_ids:
-            raise ValueError(
-                "Returned assigned viewpoint ids %s do not match expected ids %s."
-                % (
-                    sorted(returned_assignment_viewpoint_ids),
-                    sorted(all_current_step_viewpoint_ids),
-                )
-            )
-
-        for observation in agent_observations:
-            agent_id = str(observation["agent_id"])
-            current_viewpoint_id = int(observation["current_viewpoint_index"])
-            agent_region_id = agent_current_region[agent_id]
-            assigned_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
-
-            if assigned_region_id != agent_region_id:
-                raise ValueError(
-                    "Agent %s current viewpoint %s is assigned to region %s, "
-                    "but its current_region_node_id is %s."
-                    % (
-                        agent_id,
-                        current_viewpoint_id,
-                        assigned_region_id,
-                        agent_region_id,
-                    )
-                )
-
-        region_to_assigned_viewpoints = {}
-        for viewpoint_id, region_id in assigned_viewpoint_to_region.items():
-            region_to_assigned_viewpoints.setdefault(region_id, set()).add(viewpoint_id)
-
-        expected_variance_keys = {"viewpoint_viewpoint", "viewpoint_region"}
-        if set(edge_distance_variances) != expected_variance_keys:
-            raise KeyError(
-                "edge_distance_variances must contain exactly %s, got %s."
-                % (sorted(expected_variance_keys), sorted(edge_distance_variances))
-            )
-
-        for key, value in edge_distance_variances.items():
-            validate_positive_number(
-                value,
-                "edge_distance_variances.%s" % key,
-            )
-
-        # ------------------------------------------------------------------
-        # Validate new_edges.
-        # ------------------------------------------------------------------
-        for edge in new_edges:
-            edge = require_dict(edge, "new_edges[] item")
-
-            expected_keys = {"i", "j", "edge_type", "exist_prob", "dist"}
-            if set(edge) != expected_keys:
-                raise KeyError(
-                    "new_edges item keys %s do not match expected keys %s."
-                    % (sorted(edge), sorted(expected_keys))
-                )
-
-            i = int(edge["i"])
-            j = int(edge["j"])
-            edge_type = str(edge["edge_type"])
-
-            if edge_type not in {"VV", "VZ"}:
-                raise ValueError(
-                    "Invalid edge_type %s. Expected 'VV' or 'VZ'." % edge_type
-                )
-
-            validate_probability(edge["exist_prob"], "new_edges[].exist_prob")
-            validate_positive_number(edge["dist"], "new_edges[].dist")
-
-            i_is_viewpoint = i in all_current_step_viewpoint_ids
-            j_is_viewpoint = j in all_current_step_viewpoint_ids
-            i_is_region = i in all_region_ids
-            j_is_region = j in all_region_ids
-
-            if edge_type == "VV":
-                if not (i_is_viewpoint and j_is_viewpoint):
-                    raise ValueError(
-                        "VV edge (%s, %s) must connect two viewpoint nodes." % (i, j)
-                    )
-                if i == j:
-                    raise ValueError(
-                        "VV edge cannot be a self-edge: (%s, %s)." % (i, j)
-                    )
-                if i in current_viewpoint_ids or j in current_viewpoint_ids:
-                    raise ValueError(
-                        "VV edge (%s, %s) cannot use a current viewpoint." % (i, j)
-                    )
-
-            if edge_type == "VZ":
-                valid_vz = (i_is_viewpoint and j_is_region) or (
-                    i_is_region and j_is_viewpoint
-                )
-                if not valid_vz:
-                    raise ValueError(
-                        "VZ edge (%s, %s) must connect one viewpoint node and one "
-                        "region node." % (i, j)
-                    )
-
-                viewpoint_id = i if i_is_viewpoint else j
-                region_id = i if i_is_region else j
-
-                assigned_region_id = assigned_viewpoint_to_region.get(viewpoint_id)
-                if assigned_region_id == region_id:
-                    raise ValueError(
-                        "VZ edge (%s, %s) cannot connect a viewpoint to its assigned "
-                        "region." % (i, j)
-                    )
-
-                if region_to_assigned_viewpoints.get(region_id):
-                    raise ValueError(
-                        "VZ edge (%s, %s) connects to region %s, but that region "
-                        "already has assigned viewpoints %s."
-                        % (
-                            i,
-                            j,
-                            region_id,
-                            sorted(region_to_assigned_viewpoints[region_id]),
-                        )
-                    )
 
     def propose_semantic_nodes(
         self,
@@ -1167,6 +618,11 @@ class MLLMClient:
                 "wb",
             ) as file_handle:
                 file_handle.write(observation["annotated_panorama"])
+            # print agent's current location
+            print(
+                "Agent %s current viewpoint: %s"
+                % (observation["agent_id"], observation["current_viewpoint_index"])
+            )
 
         image_content = []
         for observation in agent_observations:
@@ -1186,6 +642,11 @@ class MLLMClient:
         validation_errors: List[str] = []
         last_error = None
 
+        # debugpy.breakpoint()  # Debug before the first MLLM attempt for the step.
+
+        # if step_index == 4:
+        #     debugpy.breakpoint()  # Debug before the first MLLM attempt for the step.
+
         for attempt_index in range(max_validation_retries + 1):
             if attempt_index == 0:
                 attempt_user_message = user_message
@@ -1197,15 +658,21 @@ class MLLMClient:
                     max_validation_retries=max_validation_retries,
                 )
 
-                debugpy.breakpoint()  # Debug before retrying the MLLM with validation feedback.
-
-            user_content = [{"type": "text", "text": attempt_user_message}]
+            # user_content = [{"type": "text", "text": attempt_user_message}]
+            user_content = [
+                {
+                    "type": "text",
+                    "text": "detect whether the target 'bed' is visible in the current uploaded panorama images. Return True of False.",
+                }
+            ]
             user_content.extend(image_content)
 
-            messages = [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_content},
-            ]
+            # messages = [
+            #     {"role": "system", "content": system_message},
+            #     {"role": "user", "content": user_content},
+            # ]
+
+            messages = [{"role": "user", "content": user_content}]
 
             # Attempt 0 may read a saved raw output. Retry attempts always call
             # the MLLM again because they need the validation error feedback.
@@ -1227,13 +694,19 @@ class MLLMClient:
                     )
 
                 decoded = self._request_completion(messages)
+            debugpy.breakpoint()  # Debug if the retry loop exits unexpectedly.
             try:
                 raw = self._strip_code_fences(decoded)
                 payload = self._extract_json_object(raw)
                 if payload is None:
                     raise ValueError("Failed to parse joint MLLM JSON output")
 
-                self._validate_payload(payload, agent_observations, targets)
+                self._validate_payload(
+                    payload=payload,
+                    agent_observations=agent_observations,
+                    targets=targets,
+                    graph_summary=graph_summary,
+                )
 
                 # Save only the accepted raw output as the final log for this step.
                 # If a retry succeeds, it overwrites the failed attempt under the
@@ -1274,8 +747,7 @@ class MLLMClient:
                     )
                 )
 
-        if step_index == 0:
-            debugpy.breakpoint()  # Debug before the first MLLM attempt for the step.
+        debugpy.breakpoint()  # Debug if the retry loop exits unexpectedly.
 
         raise RuntimeError("Unexpected retry loop exit.")
 
@@ -1457,3 +929,604 @@ class MLLMClient:
                         )
 
         print("=============================================\n")
+
+    def _validate_payload(
+        self,
+        payload: Dict[str, object],
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph_summary: Optional[Dict[str, object]] = None,
+    ) -> None:
+        required_top_level_keys = {
+            "agents",
+            "detections",
+            "visible_region_nodes",
+            "invisible_region_nodes",
+            "viewpoint_target_probs",
+            "viewpoint_node_assigns",
+            "new_edges",
+            "edge_distance_variances",
+        }
+
+        if not isinstance(payload, dict):
+            raise TypeError("payload must be a dictionary.")
+
+        extra_top_level_keys = set(payload).difference(required_top_level_keys)
+        if extra_top_level_keys:
+            raise KeyError(
+                "Unexpected top-level keys: %s" % sorted(extra_top_level_keys)
+            )
+
+        missing_top_level_keys = required_top_level_keys.difference(payload)
+        if missing_top_level_keys:
+            raise KeyError(
+                "Missing top-level keys: %s" % sorted(missing_top_level_keys)
+            )
+
+        def require_list(value, context: str) -> list:
+            if not isinstance(value, list):
+                raise TypeError("%s must be a list." % context)
+            return value
+
+        def require_dict(value, context: str) -> dict:
+            if not isinstance(value, dict):
+                raise TypeError("%s must be a dictionary." % context)
+            return value
+
+        def is_number(value) -> bool:
+            return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+        def validate_probability(value, context: str) -> None:
+            if not is_number(value):
+                raise TypeError("%s must be numeric." % context)
+            if not (0.0 < float(value) <= 1.0):
+                raise ValueError("%s=%s is outside (0, 1]." % (context, value))
+
+        def validate_zero_one_probability(value, context: str) -> None:
+            if not is_number(value):
+                raise TypeError("%s must be numeric." % context)
+            if not (0.0 <= float(value) <= 1.0):
+                raise ValueError("%s=%s is outside [0, 1]." % (context, value))
+
+        def validate_binary_probability(value, context: str) -> None:
+            if not is_number(value):
+                raise TypeError("%s must be numeric." % context)
+            if float(value) not in {0.0, 1.0}:
+                raise ValueError(
+                    "%s=%s must be binary, either 0.0 or 1.0." % (context, value)
+                )
+
+        def validate_positive_number(value, context: str) -> None:
+            if not is_number(value):
+                raise TypeError("%s must be numeric." % context)
+            if float(value) <= 0.0:
+                raise ValueError("%s=%s must be positive." % (context, value))
+
+        def is_grounded_value(value) -> bool:
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return float(value) != 0.0
+            if isinstance(value, str):
+                return value.strip().lower() in {"1", "true", "yes"}
+            return False
+
+        observation_by_agent = {
+            str(observation["agent_id"]): observation
+            for observation in agent_observations
+        }
+        expected_agent_ids = set(observation_by_agent)
+
+        target_ids = {str(target["target_id"]) for target in targets}
+        if len(target_ids) != len(targets):
+            raise ValueError("Target ids must be unique.")
+
+        agents = require_list(payload["agents"], "agents")
+        detections = require_list(payload["detections"], "detections")
+        visible_region_nodes = require_list(
+            payload["visible_region_nodes"], "visible_region_nodes"
+        )
+        invisible_region_nodes = require_list(
+            payload["invisible_region_nodes"], "invisible_region_nodes"
+        )
+        viewpoint_target_probs = require_list(
+            payload["viewpoint_target_probs"], "viewpoint_target_probs"
+        )
+        viewpoint_node_assigns = require_list(
+            payload["viewpoint_node_assigns"], "viewpoint_node_assigns"
+        )
+        new_edges = require_list(payload["new_edges"], "new_edges")
+        edge_distance_variances = require_dict(
+            payload["edge_distance_variances"], "edge_distance_variances"
+        )
+
+        returned_agent_ids = set()
+        agent_current_region = {}
+
+        for agent_info in agents:
+            agent_info = require_dict(agent_info, "agents[] item")
+
+            expected_keys = {"agent_id", "current_region_node_id"}
+            if set(agent_info) != expected_keys:
+                raise KeyError(
+                    "Each agents[] item must contain exactly %s, got %s."
+                    % (sorted(expected_keys), sorted(agent_info))
+                )
+
+            agent_id = str(agent_info["agent_id"])
+            returned_agent_ids.add(agent_id)
+            agent_current_region[agent_id] = int(agent_info["current_region_node_id"])
+
+        if returned_agent_ids != expected_agent_ids:
+            raise ValueError(
+                "Returned agent ids %s do not match expected agent ids %s."
+                % (sorted(returned_agent_ids), sorted(expected_agent_ids))
+            )
+
+        detection_by_agent = {}
+        returned_detection_agent_ids = set()
+
+        for detection in detections:
+            detection = require_dict(detection, "detections[] item")
+
+            expected_keys = {"agent_id", "target_indices", "founds"}
+            if set(detection) != expected_keys:
+                raise KeyError(
+                    "Detection item keys %s do not match expected keys %s."
+                    % (sorted(detection), sorted(expected_keys))
+                )
+
+            agent_id = str(detection["agent_id"])
+            if agent_id not in expected_agent_ids:
+                raise ValueError("Detection uses unknown agent id %s." % agent_id)
+
+            if agent_id in returned_detection_agent_ids:
+                raise ValueError("Duplicated detection item for agent %s." % agent_id)
+            returned_detection_agent_ids.add(agent_id)
+
+            target_indices = require_list(
+                detection["target_indices"],
+                "detections[].target_indices",
+            )
+            founds = require_list(
+                detection["founds"],
+                "detections[].founds",
+            )
+
+            returned_target_ids = {str(target_id) for target_id in target_indices}
+            if returned_target_ids != target_ids:
+                raise ValueError(
+                    "Detection target_indices %s do not match expected target ids %s."
+                    % (sorted(returned_target_ids), sorted(target_ids))
+                )
+
+            if len(target_indices) != len(founds):
+                raise ValueError(
+                    "detections[].target_indices and detections[].founds must have "
+                    "the same length for agent %s." % agent_id
+                )
+
+            if len(target_indices) != len(returned_target_ids):
+                raise ValueError(
+                    "detections[].target_indices contains duplicated target ids for "
+                    "agent %s." % agent_id
+                )
+
+            detection_by_agent[agent_id] = {}
+            for target_id, found in zip(target_indices, founds):
+                if not isinstance(found, bool):
+                    raise TypeError(
+                        "All detections[].founds values must be JSON booleans."
+                    )
+                detection_by_agent[agent_id][str(target_id)] = bool(found)
+
+        if returned_detection_agent_ids != expected_agent_ids:
+            raise ValueError(
+                "Returned detection agent ids %s do not match expected agent ids %s."
+                % (sorted(returned_detection_agent_ids), sorted(expected_agent_ids))
+            )
+
+        current_viewpoint_ids = {
+            int(observation["current_viewpoint_index"])
+            for observation in agent_observations
+        }
+
+        visible_viewpoint_ids = set()
+        for observation in agent_observations:
+            for item in observation["visible_viewpoints"]:
+                visible_viewpoint_ids.add(int(item["viewpoint_index"]))
+
+        all_current_step_viewpoint_ids = current_viewpoint_ids | visible_viewpoint_ids
+
+        previously_visited_viewpoint_ids = set()
+
+        if graph_summary is not None:
+            for node in graph_summary.get("nodes", []):
+                if node.get("type") != "viewpoint":
+                    continue
+
+                node_id = int(node["id"])
+                grounded = is_grounded_value(node.get("grounded", 0))
+
+                try:
+                    visit_times = int(node.get("node_visit_times", 0) or 0)
+                except (TypeError, ValueError):
+                    visit_times = 0
+
+                if grounded or visit_times > 0:
+                    previously_visited_viewpoint_ids.add(node_id)
+
+        current_viewpoint_detection = {}
+        for observation in agent_observations:
+            agent_id = str(observation["agent_id"])
+            current_viewpoint_id = int(observation["current_viewpoint_index"])
+            agent_detection = detection_by_agent[agent_id]
+
+            if current_viewpoint_id in current_viewpoint_detection:
+                if current_viewpoint_detection[current_viewpoint_id] != agent_detection:
+                    raise ValueError(
+                        "Current viewpoint %s is shared by multiple agents with "
+                        "inconsistent detection results." % current_viewpoint_id
+                    )
+
+            current_viewpoint_detection[current_viewpoint_id] = agent_detection
+
+        def validate_target_probs_positive(
+            target_probs: Dict[str, object],
+            context: str,
+        ) -> None:
+            target_probs = require_dict(target_probs, context + ".target_probs")
+
+            returned_target_ids = {str(key) for key in target_probs}
+            if returned_target_ids != target_ids:
+                raise ValueError(
+                    "%s target_probs keys %s do not match expected target ids %s."
+                    % (context, sorted(returned_target_ids), sorted(target_ids))
+                )
+
+            for target_id, value in target_probs.items():
+                validate_probability(
+                    value,
+                    "%s.target_probs[%s]" % (context, target_id),
+                )
+
+        def validate_target_probs_allow_zero(
+            target_probs: Dict[str, object],
+            context: str,
+        ) -> None:
+            target_probs = require_dict(target_probs, context + ".target_probs")
+
+            returned_target_ids = {str(key) for key in target_probs}
+            if returned_target_ids != target_ids:
+                raise ValueError(
+                    "%s target_probs keys %s do not match expected target ids %s."
+                    % (context, sorted(returned_target_ids), sorted(target_ids))
+                )
+
+            for target_id, value in target_probs.items():
+                validate_zero_one_probability(
+                    value,
+                    "%s.target_probs[%s]" % (context, target_id),
+                )
+
+        def validate_target_probs_current_viewpoint(
+            viewpoint_id: int,
+            target_probs: Dict[str, object],
+            context: str,
+        ) -> None:
+            target_probs = require_dict(target_probs, context + ".target_probs")
+
+            returned_target_ids = {str(key) for key in target_probs}
+            if returned_target_ids != target_ids:
+                raise ValueError(
+                    "%s target_probs keys %s do not match expected target ids %s."
+                    % (context, sorted(returned_target_ids), sorted(target_ids))
+                )
+
+            expected_detection = current_viewpoint_detection[viewpoint_id]
+
+            for target_id, value in target_probs.items():
+                validate_binary_probability(
+                    value,
+                    "%s.target_probs[%s]" % (context, target_id),
+                )
+
+                expected_value = 1.0 if expected_detection[str(target_id)] else 0.0
+                if float(value) != expected_value:
+                    raise ValueError(
+                        "%s.target_probs[%s]=%s does not match direct detection. "
+                        "Expected %.1f for current viewpoint %s."
+                        % (context, target_id, value, expected_value, viewpoint_id)
+                    )
+
+        def validate_region_label(label: str, context: str) -> None:
+            normalized_label = " ".join(label.lower().split())
+
+            if "agent" in normalized_label:
+                raise ValueError(
+                    "%s label must not mention agent ids or agent names: %s"
+                    % (context, label)
+                )
+
+        visible_region_ids = set()
+        invisible_region_ids = set()
+
+        total_region_count = len(visible_region_nodes) + len(invisible_region_nodes)
+        if total_region_count > 5:
+            raise ValueError(
+                "At most 5 current-step semantic regions are allowed, got %s."
+                % total_region_count
+            )
+
+        for region_key, region_list, region_id_set in (
+            ("visible_region_nodes", visible_region_nodes, visible_region_ids),
+            ("invisible_region_nodes", invisible_region_nodes, invisible_region_ids),
+        ):
+            for region in region_list:
+                region = require_dict(region, "%s[] item" % region_key)
+
+                expected_keys = {"id", "label", "exist_prob", "target_probs"}
+                if set(region) != expected_keys:
+                    raise KeyError(
+                        "%s item keys %s do not match expected keys %s."
+                        % (region_key, sorted(region), sorted(expected_keys))
+                    )
+
+                region_id = int(region["id"])
+                if region_id in region_id_set:
+                    raise ValueError(
+                        "Duplicated region id %s in %s." % (region_id, region_key)
+                    )
+                region_id_set.add(region_id)
+
+                if not isinstance(region["label"], str) or not region["label"].strip():
+                    raise ValueError(
+                        "%s region %s has an empty label." % (region_key, region_id)
+                    )
+
+                validate_region_label(
+                    str(region["label"]).strip(),
+                    "%s region %s" % (region_key, region_id),
+                )
+
+                validate_probability(
+                    region["exist_prob"],
+                    "%s region %s exist_prob" % (region_key, region_id),
+                )
+
+                validate_target_probs_positive(
+                    region["target_probs"],
+                    "%s region %s" % (region_key, region_id),
+                )
+
+        if visible_region_ids & invisible_region_ids:
+            raise ValueError(
+                "Region ids cannot appear in both visible_region_nodes and "
+                "invisible_region_nodes: %s"
+                % sorted(visible_region_ids & invisible_region_ids)
+            )
+
+        all_region_ids = visible_region_ids | invisible_region_ids
+
+        for agent_id, current_region_node_id in agent_current_region.items():
+            if current_region_node_id not in visible_region_ids:
+                raise ValueError(
+                    "Agent %s has current_region_node_id %s, but this id is not "
+                    "included in visible_region_nodes."
+                    % (agent_id, current_region_node_id)
+                )
+
+        returned_viewpoint_prob_ids = set()
+
+        for item in viewpoint_target_probs:
+            item = require_dict(item, "viewpoint_target_probs[] item")
+
+            expected_keys = {"id", "target_probs"}
+            if set(item) != expected_keys:
+                raise KeyError(
+                    "Each viewpoint_target_probs item must contain exactly %s, got %s."
+                    % (sorted(expected_keys), sorted(item))
+                )
+
+            viewpoint_id = int(item["id"])
+
+            if viewpoint_id not in all_current_step_viewpoint_ids:
+                debugpy.breakpoint()  # Debug invalid viewpoint_id in viewpoint_target_probs.
+                raise ValueError(
+                    "viewpoint_target_probs id %s is not a current viewpoint or "
+                    "visible neighboring viewpoint." % viewpoint_id
+                )
+
+            if viewpoint_id in returned_viewpoint_prob_ids:
+                raise ValueError(
+                    "Duplicated viewpoint_target_probs id %s." % viewpoint_id
+                )
+            returned_viewpoint_prob_ids.add(viewpoint_id)
+
+            if viewpoint_id in current_viewpoint_ids:
+                validate_target_probs_current_viewpoint(
+                    viewpoint_id,
+                    item["target_probs"],
+                    "current viewpoint %s" % viewpoint_id,
+                )
+            elif viewpoint_id in previously_visited_viewpoint_ids:
+                validate_target_probs_allow_zero(
+                    item["target_probs"],
+                    "previously visited visible neighboring viewpoint %s"
+                    % viewpoint_id,
+                )
+            else:
+                validate_target_probs_positive(
+                    item["target_probs"],
+                    "unvisited visible neighboring viewpoint %s" % viewpoint_id,
+                )
+
+        if returned_viewpoint_prob_ids != all_current_step_viewpoint_ids:
+            raise ValueError(
+                "Returned viewpoint_target_probs ids %s do not match expected "
+                "current-step viewpoint ids %s."
+                % (
+                    sorted(returned_viewpoint_prob_ids),
+                    sorted(all_current_step_viewpoint_ids),
+                )
+            )
+
+        assigned_viewpoint_to_region = {}
+
+        for item in viewpoint_node_assigns:
+            item = require_dict(item, "viewpoint_node_assigns[] item")
+
+            expected_keys = {"region_node_id", "assigned_viewpoint_node_indices"}
+            if set(item) != expected_keys:
+                raise KeyError(
+                    "Each viewpoint_node_assigns item must contain exactly %s, got %s."
+                    % (sorted(expected_keys), sorted(item))
+                )
+
+            region_node_id = int(item["region_node_id"])
+            if region_node_id not in all_region_ids:
+                raise ValueError(
+                    "viewpoint_node_assigns uses unknown region_node_id %s."
+                    % region_node_id
+                )
+
+            assigned_ids = require_list(
+                item["assigned_viewpoint_node_indices"],
+                "assigned_viewpoint_node_indices",
+            )
+
+            for viewpoint_id_raw in assigned_ids:
+                viewpoint_id = int(viewpoint_id_raw)
+
+                if viewpoint_id not in all_current_step_viewpoint_ids:
+                    raise ValueError(
+                        "Assigned viewpoint id %s is not a current viewpoint or "
+                        "visible neighboring viewpoint." % viewpoint_id
+                    )
+
+                if viewpoint_id in assigned_viewpoint_to_region:
+                    raise ValueError(
+                        "Viewpoint id %s appears in more than one "
+                        "assigned_viewpoint_node_indices list." % viewpoint_id
+                    )
+
+                assigned_viewpoint_to_region[viewpoint_id] = region_node_id
+
+        returned_assignment_viewpoint_ids = set(assigned_viewpoint_to_region)
+
+        if returned_assignment_viewpoint_ids != all_current_step_viewpoint_ids:
+            raise ValueError(
+                "Returned assigned viewpoint ids %s do not match expected ids %s."
+                % (
+                    sorted(returned_assignment_viewpoint_ids),
+                    sorted(all_current_step_viewpoint_ids),
+                )
+            )
+
+        for observation in agent_observations:
+            agent_id = str(observation["agent_id"])
+            current_viewpoint_id = int(observation["current_viewpoint_index"])
+            agent_region_id = agent_current_region[agent_id]
+            assigned_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
+
+            if assigned_region_id != agent_region_id:
+                raise ValueError(
+                    "Agent %s current viewpoint %s is assigned to region %s, "
+                    "but its current_region_node_id is %s."
+                    % (
+                        agent_id,
+                        current_viewpoint_id,
+                        assigned_region_id,
+                        agent_region_id,
+                    )
+                )
+
+        region_to_assigned_viewpoints = {}
+        for viewpoint_id, region_id in assigned_viewpoint_to_region.items():
+            region_to_assigned_viewpoints.setdefault(region_id, set()).add(viewpoint_id)
+
+        expected_variance_keys = {"viewpoint_viewpoint", "viewpoint_region"}
+        if set(edge_distance_variances) != expected_variance_keys:
+            raise KeyError(
+                "edge_distance_variances must contain exactly %s, got %s."
+                % (sorted(expected_variance_keys), sorted(edge_distance_variances))
+            )
+
+        for key, value in edge_distance_variances.items():
+            validate_positive_number(
+                value,
+                "edge_distance_variances.%s" % key,
+            )
+
+        for edge in new_edges:
+            edge = require_dict(edge, "new_edges[] item")
+
+            expected_keys = {"i", "j", "edge_type", "exist_prob", "dist"}
+            if set(edge) != expected_keys:
+                raise KeyError(
+                    "new_edges item keys %s do not match expected keys %s."
+                    % (sorted(edge), sorted(expected_keys))
+                )
+
+            i = int(edge["i"])
+            j = int(edge["j"])
+            edge_type = str(edge["edge_type"])
+
+            if edge_type not in {"VV", "VZ"}:
+                raise ValueError(
+                    "Invalid edge_type %s. Expected 'VV' or 'VZ'." % edge_type
+                )
+
+            validate_probability(edge["exist_prob"], "new_edges[].exist_prob")
+            validate_positive_number(edge["dist"], "new_edges[].dist")
+
+            i_is_viewpoint = i in all_current_step_viewpoint_ids
+            j_is_viewpoint = j in all_current_step_viewpoint_ids
+            i_is_region = i in all_region_ids
+            j_is_region = j in all_region_ids
+
+            if edge_type == "VV":
+                if not (i_is_viewpoint and j_is_viewpoint):
+                    raise ValueError(
+                        "VV edge (%s, %s) must connect two viewpoint nodes." % (i, j)
+                    )
+                if i == j:
+                    raise ValueError(
+                        "VV edge cannot be a self-edge: (%s, %s)." % (i, j)
+                    )
+                if i in current_viewpoint_ids or j in current_viewpoint_ids:
+                    raise ValueError(
+                        "VV edge (%s, %s) cannot use a current viewpoint." % (i, j)
+                    )
+
+            if edge_type == "VZ":
+                valid_vz = (i_is_viewpoint and j_is_region) or (
+                    i_is_region and j_is_viewpoint
+                )
+                if not valid_vz:
+                    raise ValueError(
+                        "VZ edge (%s, %s) must connect one viewpoint node and one "
+                        "region node." % (i, j)
+                    )
+
+                viewpoint_id = i if i_is_viewpoint else j
+                region_id = i if i_is_region else j
+
+                assigned_region_id = assigned_viewpoint_to_region.get(viewpoint_id)
+                if assigned_region_id == region_id:
+                    raise ValueError(
+                        "VZ edge (%s, %s) cannot connect a viewpoint to its assigned "
+                        "region." % (i, j)
+                    )
+
+                if region_to_assigned_viewpoints.get(region_id):
+                    raise ValueError(
+                        "VZ edge (%s, %s) connects to region %s, but that region "
+                        "already has assigned viewpoints %s."
+                        % (
+                            i,
+                            j,
+                            region_id,
+                            sorted(region_to_assigned_viewpoints[region_id]),
+                        )
+                    )

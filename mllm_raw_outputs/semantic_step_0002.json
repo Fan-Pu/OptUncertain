@@ -6,7 +6,7 @@
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 200
+      "current_region_node_id": 101
     }
   ],
   "detections": [
@@ -39,9 +39,9 @@
   },
   "invisible_region_nodes": [
     {
-      "exist_prob": 0.7,
-      "id": 102,
-      "label": "brightly lit hallway area beyond the doorway",
+      "exist_prob": 0.6,
+      "id": 103,
+      "label": "dimly lit hallway area beyond the doorway",
       "target_probs": {
         "0": 0.1,
         "1": 0.1
@@ -53,35 +53,38 @@
       "dist": 3.0,
       "edge_type": "VZ",
       "exist_prob": 0.5,
-      "i": 17,
-      "j": 102
+      "i": 23,
+      "j": 103
     }
   ],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        32,
-        2,
-        16,
-        17,
         20,
-        35
+        2,
+        23,
+        26,
+        34,
+        32
       ],
       "region_node_id": 100
     },
     {
       "assigned_viewpoint_node_indices": [
-        9,
-        18,
+        25,
+        3,
+        5,
+        19,
+        37,
         40,
         41
       ],
-      "region_node_id": 200
+      "region_node_id": 101
     }
   ],
   "viewpoint_target_probs": [
     {
-      "id": 32,
+      "id": 20,
       "target_probs": {
         "0": 0.0,
         "1": 0.0
@@ -90,64 +93,85 @@
     {
       "id": 2,
       "target_probs": {
+        "0": 0.1,
+        "1": 0.1
+      }
+    },
+    {
+      "id": 23,
+      "target_probs": {
         "0": 0.2,
         "1": 0.1
       }
     },
     {
-      "id": 16,
-      "target_probs": {
-        "0": 0.18,
-        "1": 0.07
-      }
-    },
-    {
-      "id": 17,
+      "id": 26,
       "target_probs": {
         "0": 0.1,
         "1": 0.1
       }
     },
     {
-      "id": 20,
+      "id": 34,
       "target_probs": {
         "0": 0.1,
         "1": 0.1
       }
     },
     {
-      "id": 35,
+      "id": 32,
       "target_probs": {
-        "0": 0.08,
-        "1": 0.15
+        "0": 0.05,
+        "1": 0.05
       }
     },
     {
-      "id": 9,
+      "id": 25,
       "target_probs": {
         "0": 0.0,
         "1": 0.0
       }
     },
     {
-      "id": 18,
+      "id": 3,
       "target_probs": {
-        "0": 0.28,
-        "1": 0.07
+        "0": 0.1,
+        "1": 0.2
+      }
+    },
+    {
+      "id": 5,
+      "target_probs": {
+        "0": 0.1,
+        "1": 0.2
+      }
+    },
+    {
+      "id": 19,
+      "target_probs": {
+        "0": 0.2,
+        "1": 0.3
+      }
+    },
+    {
+      "id": 37,
+      "target_probs": {
+        "0": 0.3,
+        "1": 0.1
       }
     },
     {
       "id": 40,
       "target_probs": {
-        "0": 0.1,
-        "1": 0.31
+        "0": 0.2,
+        "1": 0.2
       }
     },
     {
       "id": 41,
       "target_probs": {
         "0": 0.1,
-        "1": 0.23
+        "1": 0.1
       }
     }
   ],
@@ -155,19 +179,19 @@
     {
       "exist_prob": 1.0,
       "id": 100,
-      "label": "spacious living area with blue sofa",
+      "label": "brightly lit living area with sofa near window",
       "target_probs": {
-        "0": 0.1,
-        "1": 0.2
+        "0": 0.0667,
+        "1": 0.375
       }
     },
     {
       "exist_prob": 1.0,
-      "id": 200,
-      "label": "darker lounge area near seating",
+      "id": 101,
+      "label": "darker dining or lounge area near bed",
       "target_probs": {
-        "0": 0.16,
-        "1": 0.43
+        "0": 0.4,
+        "1": 0.5
       }
     }
   ]

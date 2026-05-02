@@ -259,11 +259,6 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         if all(hypothesis_graph.target_found.values()):
             return {"target_found": dict(hypothesis_graph.target_found)}
 
-        # print target finding status
-        print("Target finding status:")
-        for target_id, found in hypothesis_graph.target_found.items():
-            print(f"  {target_id}: {'Found' if found else 'Not found'}")
-
         agent_observations = Helper.horizon_scan_individual_sims_return(
             sims=agent_sims,
             agent_ids=agent_ids,
@@ -298,6 +293,11 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             targets=targets,
             hypothesis_graph=hypothesis_graph,
         )
+
+        # print target finding status
+        print("Target finding status:")
+        for target_id, found in hypothesis_graph.target_found.items():
+            print(f"  {target_id}: {'Found' if found else 'Not found'}")
 
         if all(hypothesis_graph.target_found.values()):
             return {"target_found": dict(hypothesis_graph.target_found)}
@@ -334,6 +334,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             print(f"Move spec for {agent_id}: {next_vp_node_id}")
 
         Helper.execute_individual_first_hops(sims=agent_sims, move_specs=move_specs)
+        for _ in range(2):
+            print()
 
 
 def main(argv: List[str] | None = None) -> int:
