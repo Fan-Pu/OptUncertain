@@ -230,11 +230,262 @@ class MLLMClient:
             )
         )
 
+    def _build_detection_instruction(
+        self,
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+    ) -> tuple[str, str]:
+        """Build a short prompt for direct visual target detection only."""
+        target_records = sorted(
+            [
+                {
+                    "target_id": str(target["target_id"]),
+                    "description": str(target["description"]),
+                }
+                for target in targets
+            ],
+            key=lambda item: item["target_id"],
+        )
+
+        agent_records = [
+            {
+                "agent_id": str(observation["agent_id"]),
+                "image_index": image_index,
+                "current_viewpoint_index": int(observation["current_viewpoint_index"]),
+            }
+            for image_index, observation in enumerate(agent_observations)
+        ]
+
+        system_message = dedent("""
+            You are doing only direct visual target detection from indoor panorama images.
+            Return exactly one JSON object and nothing else.
+            Do not infer a target from room type. Set found=true only when the target object itself is visible in the image.
+            """).strip()
+
+        user_message = (
+            dedent("""
+                Targets:
+                {targets_json}
+
+                Agent-image mapping:
+                {agents_json}
+
+                Task:
+                For each agent image, inspect the entire panorama and decide whether each target is directly visible anywhere in that image.
+                A target can be small, off-center, partly far away, or near a viewpoint marker.
+                Use false only when the target object itself is not visible or is too ambiguous.
+
+                Return JSON only in this exact structure:
+                {{
+                  "detections": [
+                    {{
+                      "agent_id": "agent0",
+                      "target_indices": ["0"],
+                      "founds": [false]
+                    }}
+                  ]
+                }}
+                """)
+            .strip()
+            .format(
+                targets_json=json.dumps(target_records, indent=2, sort_keys=True),
+                agents_json=json.dumps(agent_records, indent=2, sort_keys=True),
+            )
+        )
+
+        return system_message, user_message
+
+    def _validate_detection_payload(
+        self,
+        payload: Dict[str, object],
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+    ) -> List[Dict[str, object]]:
+        """Validate and normalize the detection-only MLLM output."""
+        if not isinstance(payload, dict):
+            raise TypeError("Detection payload must be a dictionary.")
+
+        if set(payload) != {"detections"}:
+            raise KeyError(
+                "Detection payload must contain exactly ['detections'], got %s."
+                % sorted(payload)
+            )
+
+        detections = payload["detections"]
+        if not isinstance(detections, list):
+            raise TypeError("detections must be a list.")
+
+        expected_agent_ids = {
+            str(observation["agent_id"]) for observation in agent_observations
+        }
+        target_ids = {str(target["target_id"]) for target in targets}
+
+        normalized_detections = []
+        returned_agent_ids = set()
+
+        for detection in detections:
+            if not isinstance(detection, dict):
+                raise TypeError("Each detection item must be a dictionary.")
+
+            expected_keys = {"agent_id", "target_indices", "founds"}
+            if set(detection) != expected_keys:
+                raise KeyError(
+                    "Each detection item must contain exactly %s, got %s."
+                    % (sorted(expected_keys), sorted(detection))
+                )
+
+            agent_id = str(detection["agent_id"])
+            if agent_id not in expected_agent_ids:
+                raise ValueError("Detection uses unknown agent id %s." % agent_id)
+            if agent_id in returned_agent_ids:
+                raise ValueError("Duplicated detection item for agent %s." % agent_id)
+            returned_agent_ids.add(agent_id)
+
+            target_indices = detection["target_indices"]
+            founds = detection["founds"]
+
+            if not isinstance(target_indices, list):
+                raise TypeError("detections[].target_indices must be a list.")
+            if not isinstance(founds, list):
+                raise TypeError("detections[].founds must be a list.")
+            if len(target_indices) != len(founds):
+                raise ValueError(
+                    "detections[].target_indices and detections[].founds must have "
+                    "the same length for agent %s." % agent_id
+                )
+
+            returned_target_ids = {str(target_id) for target_id in target_indices}
+            if returned_target_ids != target_ids:
+                raise ValueError(
+                    "Detection target_indices %s do not match expected target ids %s."
+                    % (sorted(returned_target_ids), sorted(target_ids))
+                )
+            if len(target_indices) != len(returned_target_ids):
+                raise ValueError(
+                    "detections[].target_indices contains duplicated target ids for "
+                    "agent %s." % agent_id
+                )
+
+            normalized_founds = []
+            normalized_target_indices = []
+            for target_id, found in zip(target_indices, founds):
+                if not isinstance(found, bool):
+                    raise TypeError(
+                        "All detections[].founds values must be JSON booleans."
+                    )
+                normalized_target_indices.append(str(target_id))
+                normalized_founds.append(bool(found))
+
+            normalized_detections.append(
+                {
+                    "agent_id": agent_id,
+                    "target_indices": normalized_target_indices,
+                    "founds": normalized_founds,
+                }
+            )
+
+        if returned_agent_ids != expected_agent_ids:
+            raise ValueError(
+                "Returned detection agent ids %s do not match expected agent ids %s."
+                % (sorted(returned_agent_ids), sorted(expected_agent_ids))
+            )
+
+        return sorted(normalized_detections, key=lambda item: item["agent_id"])
+
+    @staticmethod
+    def _build_detection_retry_user_message(
+        user_message: str,
+        validation_error: str,
+        attempt_index: int,
+        max_validation_retries: int,
+    ) -> str:
+        feedback = dedent("""
+            Detection output failed validation on retry {attempt_index} of {max_validation_retries}.
+            Error: {validation_error}
+
+            Return a corrected complete JSON object only. Keep the same detection schema.
+            """).strip()
+
+        return (
+            user_message
+            + "\n\n"
+            + feedback.format(
+                attempt_index=int(attempt_index),
+                max_validation_retries=int(max_validation_retries),
+                validation_error=str(validation_error),
+            )
+        )
+
+    def _detect_targets(
+        self,
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        image_content: List[Dict[str, object]],
+    ) -> List[Dict[str, object]]:
+        """Run a short detection-only MLLM call before graph generation."""
+        system_message, user_message = self._build_detection_instruction(
+            agent_observations=agent_observations,
+            targets=targets,
+        )
+
+        max_validation_retries = getattr(self, "max_validation_retries", 0)
+        last_error = None
+
+        for attempt_index in range(max_validation_retries + 1):
+            if attempt_index == 0:
+                attempt_user_message = user_message
+            else:
+                attempt_user_message = self._build_detection_retry_user_message(
+                    user_message=user_message,
+                    validation_error=str(last_error),
+                    attempt_index=attempt_index,
+                    max_validation_retries=max_validation_retries,
+                )
+
+            user_content = [{"type": "text", "text": attempt_user_message}]
+            user_content.extend(image_content)
+
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_content},
+            ]
+
+            decoded = self._request_completion(messages)
+
+            try:
+                raw = self._strip_code_fences(decoded)
+                payload = self._extract_json_object(raw)
+                if payload is None:
+                    raise ValueError("Failed to parse detection JSON output")
+                return self._validate_detection_payload(
+                    payload=payload,
+                    agent_observations=agent_observations,
+                    targets=targets,
+                )
+            except Exception as exc:
+                last_error = exc
+                if attempt_index >= max_validation_retries:
+                    raise ValueError(
+                        "Detection output failed validation after %s attempt(s). "
+                        "Last error: %s" % (max_validation_retries + 1, str(last_error))
+                    ) from exc
+                print(
+                    "Detection output validation failed on attempt %s of %s: %s"
+                    % (
+                        attempt_index + 1,
+                        max_validation_retries + 1,
+                        str(last_error),
+                    )
+                )
+
+        raise RuntimeError("Unexpected detection retry loop exit.")
+
     def _build_instruction(
         self,
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         graph_summary: Dict[str, object],
+        fixed_detections: List[Dict[str, object]],
     ) -> tuple[str, str]:
         """Build a token-reduced prompt for multi-agent, multi-target graph hypotheses.
 
@@ -471,14 +722,14 @@ class MLLMClient:
                 "Positive variance for VZ surrogate distance estimates."
             ),
             "detections": (
-                "Direct visual detections only. One item per agent. Do not set true from "
-                "semantic guess or target-location probability."
+                "Copy the fixed direct detections from the separate detection step exactly. "
+                "Do not revise founds during graph generation."
             ),
             "detections[].agent_id": "Must match an input agent id exactly.",
             "detections[].target_indices": "Every target_id exactly once. Order must match founds.",
             "detections[].founds": (
-                "JSON booleans. founds[k] is true only if target_indices[k] is directly "
-                "visible in that agent panorama."
+                "JSON booleans copied exactly from the fixed direct detections. "
+                "Order must match target_indices."
             ),
         }
 
@@ -524,7 +775,8 @@ class MLLMClient:
             - agents has one item per agent. current_region_node_id is the region containing the agent current viewpoint and must appear in visible_region_nodes. Reuse existing region ids and labels when matched.
             - visible_region_nodes are directly supported by current panoramas. invisible_region_nodes are unseen but layout-supported adjacent regions. Use at most 5 current-step region nodes total.
             - Region labels must be room or area labels, not object names. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names. Avoid generic labels unless they include both appearance and relative location cues.
-            - Region target_probs and non-current viewpoint target_probs must contain every target_id with values in (0, 1]. Current viewpoint target_probs are binary direct-detection evidence: 1.0 if directly detected there, otherwise 0.0.
+            - Detections are fixed by a separate detection step. Copy detections exactly from the fixed direct detections in the user message.
+            - Region target_probs and non-current viewpoint target_probs must contain every target_id with values in (0, 1]. Current viewpoint target_probs are binary direct-detection evidence: 1.0 if fixed detections mark the target as found for that agent, otherwise 0.0.
             - Use target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak or when current-viewpoint binary evidence gives the same value.
             - viewpoint_target_probs must include every current agent viewpoint and every distinct visible neighboring viewpoint.
             - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id. Reuse fixed non-current assignments from the graph summary.
@@ -544,6 +796,9 @@ class MLLMClient:
                 Per-agent observation context:
                 {agent_context_json}
 
+                Fixed direct detections from the separate detection step:
+                {fixed_detections_json}
+
                 Current-step interpretation note:
                 - The observation context is the source of truth for current agent locations.
                 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
@@ -562,7 +817,7 @@ class MLLMClient:
                 - For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.
                 - For visible neighboring viewpoint target_probs, use soft positive target-location scores.
                 - Estimate region target_probs using target_id keys and target descriptions.
-                - Report direct detections using target_indices and founds.
+                - Copy the fixed direct detections exactly into detections. Do not change founds.
                 - Propose only legal uncertain edges supported by observation and graph context.
                 - Propose VV edges only when two unvisited non-current viewpoints are directly connected by clear layout evidence; do not add VV edges only because they are both visible from the same current viewpoint.
                 - Return compact JSON only.
@@ -574,6 +829,9 @@ class MLLMClient:
                     prompt_graph_summary, indent=2, sort_keys=True
                 ),
                 agent_context_json=json.dumps(agent_context, indent=2, sort_keys=True),
+                fixed_detections_json=json.dumps(
+                    fixed_detections, indent=2, sort_keys=True
+                ),
                 schema_json=json.dumps(schema, indent=2, sort_keys=True),
                 field_descriptions_json=json.dumps(
                     field_descriptions, indent=2, sort_keys=True
@@ -599,19 +857,14 @@ class MLLMClient:
                 )
 
         graph_summary = graph.get_mllm_summary()
-        system_message, user_message = self._build_instruction(
-            agent_observations=agent_observations,
-            targets=targets,
-            graph_summary=graph_summary,
-        )
 
-        # Resize panorama arrays to reduce input size while preserving visible
-        # neighboring viewpoint cues.
+        # Resize panorama arrays once. The resized images are used by both the
+        # detection-only call and the graph-generation call.
         for observation in agent_observations:
             observation["annotated_panorama"] = self._resize_panorama_array(
                 observation["annotated_panorama"],
                 max_width=1280,
-                quality=95,
+                quality=85,
             )
             with open(
                 "debug_resized_agent_panorama_%s.jpg" % observation["agent_id"],
@@ -625,7 +878,20 @@ class MLLMClient:
             )
 
         image_content = []
-        for observation in agent_observations:
+        for image_index, observation in enumerate(agent_observations):
+            image_content.append(
+                {
+                    "type": "text",
+                    "text": (
+                        "Image index %s. Agent %s. Current viewpoint %s."
+                        % (
+                            image_index,
+                            observation["agent_id"],
+                            observation["current_viewpoint_index"],
+                        )
+                    ),
+                }
+            )
             image_content.append(
                 {
                     "type": "image_url",
@@ -637,15 +903,23 @@ class MLLMClient:
                 }
             )
 
+        fixed_detections = self._detect_targets(
+            agent_observations=agent_observations,
+            targets=targets,
+            image_content=image_content,
+        )
+
+        system_message, user_message = self._build_instruction(
+            agent_observations=agent_observations,
+            targets=targets,
+            graph_summary=graph_summary,
+            fixed_detections=fixed_detections,
+        )
+
         step_index = getattr(self, "semantic_raw_output_index", 0)
         max_validation_retries = getattr(self, "max_validation_retries", 0)
         validation_errors: List[str] = []
         last_error = None
-
-        # debugpy.breakpoint()  # Debug before the first MLLM attempt for the step.
-
-        # if step_index == 4:
-        #     debugpy.breakpoint()  # Debug before the first MLLM attempt for the step.
 
         for attempt_index in range(max_validation_retries + 1):
             if attempt_index == 0:
@@ -658,21 +932,13 @@ class MLLMClient:
                     max_validation_retries=max_validation_retries,
                 )
 
-            # user_content = [{"type": "text", "text": attempt_user_message}]
-            user_content = [
-                {
-                    "type": "text",
-                    "text": "detect whether the target 'bed' is visible in the current uploaded panorama images. Return True of False.",
-                }
-            ]
+            user_content = [{"type": "text", "text": attempt_user_message}]
             user_content.extend(image_content)
 
-            # messages = [
-            #     {"role": "system", "content": system_message},
-            #     {"role": "user", "content": user_content},
-            # ]
-
-            messages = [{"role": "user", "content": user_content}]
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_content},
+            ]
 
             # Attempt 0 may read a saved raw output. Retry attempts always call
             # the MLLM again because they need the validation error feedback.
@@ -706,6 +972,7 @@ class MLLMClient:
                     agent_observations=agent_observations,
                     targets=targets,
                     graph_summary=graph_summary,
+                    fixed_detections=fixed_detections,
                 )
 
                 # Save only the accepted raw output as the final log for this step.
@@ -936,6 +1203,7 @@ class MLLMClient:
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         graph_summary: Optional[Dict[str, object]] = None,
+        fixed_detections: Optional[List[Dict[str, object]]] = None,
     ) -> None:
         required_top_level_keys = {
             "agents",
@@ -1125,6 +1393,36 @@ class MLLMClient:
                 "Returned detection agent ids %s do not match expected agent ids %s."
                 % (sorted(returned_detection_agent_ids), sorted(expected_agent_ids))
             )
+
+        if fixed_detections is not None:
+            fixed_detection_by_agent = {}
+            for fixed_detection in fixed_detections:
+                fixed_agent_id = str(fixed_detection["agent_id"])
+                fixed_target_indices = fixed_detection["target_indices"]
+                fixed_founds = fixed_detection["founds"]
+
+                fixed_detection_by_agent[fixed_agent_id] = {
+                    str(target_id): bool(found)
+                    for target_id, found in zip(fixed_target_indices, fixed_founds)
+                }
+
+            if set(fixed_detection_by_agent) != expected_agent_ids:
+                raise ValueError(
+                    "Fixed detection agent ids %s do not match expected agent ids %s."
+                    % (sorted(fixed_detection_by_agent), sorted(expected_agent_ids))
+                )
+
+            for agent_id in sorted(expected_agent_ids):
+                if detection_by_agent[agent_id] != fixed_detection_by_agent[agent_id]:
+                    raise ValueError(
+                        "Graph output detections for agent %s do not match fixed "
+                        "detections. Got %s, expected %s."
+                        % (
+                            agent_id,
+                            detection_by_agent[agent_id],
+                            fixed_detection_by_agent[agent_id],
+                        )
+                    )
 
         current_viewpoint_ids = {
             int(observation["current_viewpoint_index"])
