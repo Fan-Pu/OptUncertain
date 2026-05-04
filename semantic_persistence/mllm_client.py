@@ -18,7 +18,8 @@ if TYPE_CHECKING:
 class MLLMClient:
     def __init__(
         self,
-        model_name: str = "",  # read from config
+        graph_model_name: str = "",  # read from config
+        detection_model_name: str = "",  # read from config
         base_url: str = "https://router.huggingface.co/v1",
         api_key_env: str = "HF_TOKEN",
         max_new_tokens: int = -1,  # read from config
@@ -28,7 +29,8 @@ class MLLMClient:
         raw_output_dir: str = "mllm_raw_outputs",
         max_validation_retries: int = 2,
     ):
-        self.model_name = model_name
+        self.graph_model_name = graph_model_name
+        self.detection_model_name = detection_model_name
         self.base_url = base_url
         self.max_new_tokens = int(max_new_tokens)
         self.request_timeout = float(request_timeout)
@@ -113,7 +115,7 @@ class MLLMClient:
         encoded = base64.b64encode(image_bytes).decode("ascii")
         return "data:image/jpeg;base64,%s" % encoded
 
-    def _request_completion(self, messages) -> str:
+    def _request_completion(self, messages, model_name: str) -> str:
         if self.client is None:
             raise RuntimeError(
                 "No MLLM API client is available. A saved raw output file was "
@@ -121,11 +123,11 @@ class MLLMClient:
                 "environment variable %s is not set." % self.api_key_env
             )
 
-        self._print_request_size_report(messages)
+        self._print_request_size_report(messages=messages, model_name=model_name)
 
         try:
             completion = self.client.chat.completions.create(
-                model=self.model_name,
+                model=model_name,
                 messages=messages,
                 temperature=0.0,
                 top_p=1.0,
@@ -151,17 +153,17 @@ class MLLMClient:
                     "'%s' chat_template_kwargs, or run '%s' through vLLM with "
                     "--reasoning-parser '%s'."
                     % (
-                        self.model_name,
-                        self.model_name,
-                        self.model_name,
-                        self.model_name,
+                        model_name,
+                        model_name,
+                        model_name,
+                        model_name,
                     )
                 ) from exc
 
             if "model_not_found" in message or "does not exist" in message:
                 raise RuntimeError(
                     "The configured Hugging Face router model was not found. "
-                    "Resolved model='%s'." % self.model_name
+                    "Resolved model='%s'." % model_name
                 ) from exc
 
             raise
@@ -550,7 +552,9 @@ class MLLMClient:
                 {"role": "user", "content": user_content},
             ]
 
-            decoded = self._request_completion(messages)
+            decoded = self._request_completion(
+                messages=messages, model_name=self.detection_model_name
+            )
             debugpy.breakpoint()  # Set a breakpoint here to inspect the raw MLLM output during development.
             try:
                 raw = self._strip_code_fences(decoded)
@@ -1084,7 +1088,9 @@ class MLLMClient:
                     % (step_index, attempt_index, max_validation_retries)
                 )
 
-            decoded = self._request_completion(messages)
+            decoded = self._request_completion(
+                messages=messages, model_name=self.graph_model_name
+            )
             debugpy.breakpoint()  # Debug if the retry loop exits unexpectedly.
             try:
                 raw = self._strip_code_fences(decoded)
@@ -1282,9 +1288,9 @@ class MLLMClient:
             value /= 1024.0
         return f"{num_bytes} B"
 
-    def _print_request_size_report(self, messages) -> None:
+    def _print_request_size_report(self, messages, model_name: str) -> None:
         payload = {
-            "model": self.model_name,
+            "model": model_name,
             "messages": messages,
             "temperature": 0.0,
             "top_p": 1.0,

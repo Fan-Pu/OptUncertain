@@ -259,7 +259,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
     optimizer = RollingHorizonOptimizer(scenario["optimizer"])
 
     mllm_client = MLLMClient(
-        model_name=str(scenario["mllm"]["model_name"]),
+        graph_model_name=str(scenario["mllm"]["graph_model_name"]),
+        detection_model_name=str(scenario["mllm"]["detection_model_name"]),
         max_new_tokens=int(scenario["mllm"]["max_new_tokens"]),
         read_saved_raw_outputs=bool(
             scenario["mllm"].get("read_saved_raw_outputs", False)
