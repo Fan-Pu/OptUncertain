@@ -6,6 +6,8 @@ import unittest
 
 
 helper_stub = types.ModuleType("Helper")
+helper_stub.TYPE_VP = 1
+helper_stub.panorama_center_x_to_heading = lambda target_center_x, horizon_headings: target_center_x
 _original_helper = sys.modules.get("Helper")
 sys.modules["Helper"] = helper_stub
 
@@ -38,12 +40,12 @@ class _FakeMLLMClient:
 class _FakeGraph:
     def __init__(self):
         self.target_found = {
-            "green plant on the table": False,
-            "glass on the dining table": False,
+            "0": False,
+            "1": False,
         }
 
-    def mark_target_found(self, target_description):
-        self.target_found[target_description] = True
+    def mark_target_found(self, target_id):
+        self.target_found[target_id] = True
 
 
 class MultiTargetDetectionTest(unittest.TestCase):
@@ -72,23 +74,15 @@ class MultiTargetDetectionTest(unittest.TestCase):
             "detections": [
                 {
                     "agent_id": "agent0",
-                    "target": "green plant on the table",
-                    "found": True,
-                },
-                {
-                    "agent_id": "agent0",
-                    "target": "glass on the dining table",
-                    "found": False,
+                    "target_indices": ["0", "1"],
+                    "founds": [True, False],
+                    "target_center_xs": [0.25, None],
                 },
                 {
                     "agent_id": "agent1",
-                    "target": "green plant on the table",
-                    "found": False,
-                },
-                {
-                    "agent_id": "agent1",
-                    "target": "glass on the dining table",
-                    "found": True,
+                    "target_indices": ["0", "1"],
+                    "founds": [False, True],
+                    "target_center_xs": [None, 0.75],
                 },
             ],
             "agents": [
@@ -101,24 +95,21 @@ class MultiTargetDetectionTest(unittest.TestCase):
         found_detections = main_under_test._found_detections_by_target(
             mllm_output=self._mllm_output(),
             agent_observations=self._observations(),
-            unfound_target_descriptions={
-                "green plant on the table",
-                "glass on the dining table",
-            },
+            unfound_target_ids={"0", "1"},
         )
 
         self.assertEqual(
-            found_detections["green plant on the table"][0]["agent_id"], "agent0"
+            found_detections["0"][0]["agent_id"], "agent0"
         )
         self.assertEqual(
-            found_detections["green plant on the table"][0]["target_rgb_image"],
+            found_detections["0"][0]["target_rgb_image"],
             "rgb-a0-panorama",
         )
         self.assertEqual(
-            found_detections["glass on the dining table"][0]["agent_id"], "agent1"
+            found_detections["1"][0]["agent_id"], "agent1"
         )
         self.assertEqual(
-            found_detections["glass on the dining table"][0]["target_depth_image"],
+            found_detections["1"][0]["target_depth_image"],
             "depth-a1-panorama",
         )
 
@@ -132,10 +123,12 @@ class MultiTargetDetectionTest(unittest.TestCase):
             agent_observations=self._observations(),
             targets=[
                 {
+                    "target_id": "0",
                     "description": "green plant on the table",
                     "distance_threshold_m": 1.0,
                 },
                 {
+                    "target_id": "1",
                     "description": "glass on the dining table",
                     "distance_threshold_m": 1.0,
                 },
@@ -144,11 +137,11 @@ class MultiTargetDetectionTest(unittest.TestCase):
         )
 
         self.assertEqual(
-            sorted(completed_target_ids),
-            ["glass on the dining table", "green plant on the table"],
+            [item["target_id"] for item in completed_target_ids],
+            ["0", "1"],
         )
-        self.assertTrue(hypothesis_graph.target_found["green plant on the table"])
-        self.assertTrue(hypothesis_graph.target_found["glass on the dining table"])
+        self.assertTrue(hypothesis_graph.target_found["0"])
+        self.assertTrue(hypothesis_graph.target_found["1"])
 
     def test_multiple_agent_detections_for_same_target_are_distance_checked(self):
         hypothesis_graph = _FakeGraph()
@@ -156,23 +149,15 @@ class MultiTargetDetectionTest(unittest.TestCase):
             "detections": [
                 {
                     "agent_id": "agent0",
-                    "target": "green plant on the table",
-                    "found": True,
+                    "target_indices": ["0", "1"],
+                    "founds": [True, False],
+                    "target_center_xs": [0.25, None],
                 },
                 {
                     "agent_id": "agent1",
-                    "target": "green plant on the table",
-                    "found": True,
-                },
-                {
-                    "agent_id": "agent0",
-                    "target": "glass on the dining table",
-                    "found": False,
-                },
-                {
-                    "agent_id": "agent1",
-                    "target": "glass on the dining table",
-                    "found": False,
+                    "target_indices": ["0", "1"],
+                    "founds": [True, False],
+                    "target_center_xs": [0.75, None],
                 },
             ],
             "agents": [{"agent_id": "agent0"}, {"agent_id": "agent1"}],
@@ -187,10 +172,12 @@ class MultiTargetDetectionTest(unittest.TestCase):
             agent_observations=self._observations(),
             targets=[
                 {
+                    "target_id": "0",
                     "description": "green plant on the table",
                     "distance_threshold_m": 1.0,
                 },
                 {
+                    "target_id": "1",
                     "description": "glass on the dining table",
                     "distance_threshold_m": 1.0,
                 },
@@ -198,7 +185,10 @@ class MultiTargetDetectionTest(unittest.TestCase):
             hypothesis_graph=hypothesis_graph,
         )
 
-        self.assertEqual(completed_target_ids, ["green plant on the table"])
+        self.assertEqual(
+            [item["target_id"] for item in completed_target_ids],
+            ["0"],
+        )
         self.assertEqual(
             [call[0] for call in mllm_client.calls],
             ["rgb-a0-panorama", "rgb-a1-panorama"],

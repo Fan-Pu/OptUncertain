@@ -327,6 +327,55 @@ def compute_rotation(current_heading_deg, target_heading_deg, step_size_deg):
     return 1, int(round(clockwise_distance / step_size_deg))
 
 
+def panorama_center_x_to_heading(target_center_x, horizon_headings):
+    panorama_position = float(target_center_x) * len(horizon_headings)
+    frame_index = int(math.floor(panorama_position))
+    if frame_index == len(horizon_headings):
+        frame_index = len(horizon_headings) - 1
+    strip_fraction = panorama_position - frame_index
+    target_heading = (
+        float(horizon_headings[frame_index])
+        + (strip_fraction - 0.5) * DELTA_HEADING_RAD
+    )
+    return target_heading % (2.0 * math.pi)
+
+
+def execute_individual_rotations(sims, target_headings, pause_time=0.05):
+    if len(sims) != len(target_headings):
+        raise ValueError("sims and target_headings must have the same length.")
+
+    states = [sim.getState()[0] for sim in sims]
+    step_plans = []
+    for state, target_heading in zip(states, target_headings):
+        direction, step_count = compute_rotation(
+            math.degrees(state.heading),
+            math.degrees(float(target_heading)),
+            DELTA_HEADING_DEG,
+        )
+        step_plans.append(
+            {
+                "direction": direction,
+                "step_count": step_count,
+            }
+        )
+
+    max_step_count = max(plan["step_count"] for plan in step_plans)
+    for step_index in range(max_step_count):
+        for sim, plan in zip(sims, step_plans):
+            heading = (
+                plan["direction"] * DELTA_HEADING_RAD
+                if step_index < plan["step_count"]
+                else 0.0
+            )
+            sim.makeAction([0], [heading], [0.0])
+        if pause_time > 0.0:
+            time.sleep(pause_time)
+        render_sim_state(
+            [sim.getState()[0] for sim in sims],
+            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+        )
+
+
 def execute_batched_first_hops(sim, move_specs, pause_time=0.0):
     states = list(sim.getState())
     step_plans = []

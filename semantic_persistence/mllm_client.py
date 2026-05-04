@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import base64
 import io
@@ -37,13 +37,19 @@ class MLLMClient:
         self.raw_output_dir = str(raw_output_dir)
         self.max_validation_retries = max(0, int(max_validation_retries))
         self.semantic_raw_output_index = 0
+        self.last_direct_detections = []
+        self.api_key_env = str(api_key_env)
 
         api_key = os.environ.get(api_key_env)
         if not api_key:
-            raise RuntimeError(
-                "Environment variable %s is required for the Hugging Face router API."
-                % api_key_env
-            )
+            if self.read_saved_raw_outputs:
+                self.client = None
+                return
+            else:
+                raise RuntimeError(
+                    "Environment variable %s is required for the Hugging Face router API."
+                    % api_key_env
+                )
 
         self.client = OpenAI(
             base_url=self.base_url,
@@ -108,6 +114,13 @@ class MLLMClient:
         return "data:image/jpeg;base64,%s" % encoded
 
     def _request_completion(self, messages) -> str:
+        if self.client is None:
+            raise RuntimeError(
+                "No MLLM API client is available. A saved raw output file was "
+                "missing or invalid, so the code tried to request the MLLM, but "
+                "environment variable %s is not set." % self.api_key_env
+            )
+
         self._print_request_size_report(messages)
 
         try:
@@ -159,6 +172,12 @@ class MLLMClient:
         return os.path.join(
             getattr(self, "raw_output_dir", "mllm_raw_outputs"),
             "semantic_step_%04d.json" % int(step_index),
+        )
+
+    def _detection_raw_output_path(self, step_index: int) -> str:
+        return os.path.join(
+            getattr(self, "raw_output_dir", "mllm_raw_outputs"),
+            "detection_step_%04d.json" % int(step_index),
         )
 
     def _semantic_raw_output_path_for_attempt(
@@ -281,10 +300,15 @@ class MLLMClient:
                     {{
                       "agent_id": "agent0",
                       "target_indices": ["0"],
-                      "founds": [false]
+                      "founds": [false],
+                      "target_center_xs": [null]
                     }}
                   ]
                 }}
+
+                target_center_xs:
+                - For found=true, return the normalized horizontal center of the visible target object in the full panorama image, where 0.0 is the left edge and 1.0 is the right edge.
+                - For found=false, return null.
                 """)
             .strip()
             .format(
@@ -327,7 +351,12 @@ class MLLMClient:
             if not isinstance(detection, dict):
                 raise TypeError("Each detection item must be a dictionary.")
 
-            expected_keys = {"agent_id", "target_indices", "founds"}
+            expected_keys = {
+                "agent_id",
+                "target_indices",
+                "founds",
+                "target_center_xs",
+            }
             if set(detection) != expected_keys:
                 raise KeyError(
                     "Each detection item must contain exactly %s, got %s."
@@ -343,15 +372,23 @@ class MLLMClient:
 
             target_indices = detection["target_indices"]
             founds = detection["founds"]
+            target_center_xs = detection["target_center_xs"]
 
             if not isinstance(target_indices, list):
                 raise TypeError("detections[].target_indices must be a list.")
             if not isinstance(founds, list):
                 raise TypeError("detections[].founds must be a list.")
+            if not isinstance(target_center_xs, list):
+                raise TypeError("detections[].target_center_xs must be a list.")
             if len(target_indices) != len(founds):
                 raise ValueError(
                     "detections[].target_indices and detections[].founds must have "
                     "the same length for agent %s." % agent_id
+                )
+            if len(target_indices) != len(target_center_xs):
+                raise ValueError(
+                    "detections[].target_indices and detections[].target_center_xs "
+                    "must have the same length for agent %s." % agent_id
                 )
 
             returned_target_ids = {str(target_id) for target_id in target_indices}
@@ -368,11 +405,34 @@ class MLLMClient:
 
             normalized_founds = []
             normalized_target_indices = []
-            for target_id, found in zip(target_indices, founds):
+            normalized_target_center_xs = []
+            for target_id, found, target_center_x in zip(
+                target_indices,
+                founds,
+                target_center_xs,
+            ):
                 if not isinstance(found, bool):
                     raise TypeError(
                         "All detections[].founds values must be JSON booleans."
                     )
+                if found:
+                    if not isinstance(target_center_x, (int, float)) or isinstance(
+                        target_center_x, bool
+                    ):
+                        raise TypeError(
+                            "target_center_xs values must be numbers when found=true."
+                        )
+                    if not (0.0 <= float(target_center_x) <= 1.0):
+                        raise ValueError(
+                            "target_center_xs values must be in [0.0, 1.0]."
+                        )
+                    normalized_target_center_xs.append(float(target_center_x))
+                else:
+                    if target_center_x is not None:
+                        raise TypeError(
+                            "target_center_xs values must be null when found=false."
+                        )
+                    normalized_target_center_xs.append(None)
                 normalized_target_indices.append(str(target_id))
                 normalized_founds.append(bool(found))
 
@@ -381,6 +441,7 @@ class MLLMClient:
                     "agent_id": agent_id,
                     "target_indices": normalized_target_indices,
                     "founds": normalized_founds,
+                    "target_center_xs": normalized_target_center_xs,
                 }
             )
 
@@ -391,6 +452,19 @@ class MLLMClient:
             )
 
         return sorted(normalized_detections, key=lambda item: item["agent_id"])
+
+    @staticmethod
+    def _strip_detection_localization(
+        detections: List[Dict[str, object]],
+    ) -> List[Dict[str, object]]:
+        return [
+            {
+                "agent_id": str(detection["agent_id"]),
+                "target_indices": list(detection["target_indices"]),
+                "founds": list(detection["founds"]),
+            }
+            for detection in detections
+        ]
 
     @staticmethod
     def _build_detection_retry_user_message(
@@ -421,6 +495,7 @@ class MLLMClient:
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         image_content: List[Dict[str, object]],
+        step_index: int,
     ) -> List[Dict[str, object]]:
         """Run a short detection-only MLLM call before graph generation."""
         system_message, user_message = self._build_detection_instruction(
@@ -430,6 +505,31 @@ class MLLMClient:
 
         max_validation_retries = getattr(self, "max_validation_retries", 0)
         last_error = None
+
+        if getattr(self, "read_saved_raw_outputs", False):
+            decoded = self._read_detection_raw_output(step_index)
+            if decoded is not None:
+                print(f"Reading saved detection raw output for step {step_index}")
+                try:
+                    raw = self._strip_code_fences(decoded)
+                    payload = self._extract_json_object(raw)
+                    if payload is None:
+                        raise ValueError("Failed to parse detection JSON output")
+                    return self._validate_detection_payload(
+                        payload=payload,
+                        agent_observations=agent_observations,
+                        targets=targets,
+                    )
+                except Exception as exc:
+                    print(
+                        "Saved detection raw output for step %s is invalid. "
+                        "Requesting MLLM instead. Error: %s" % (step_index, str(exc))
+                    )
+            else:
+                print(
+                    "Saved detection raw output for step %s was not found. "
+                    "Requesting MLLM instead." % step_index
+                )
 
         for attempt_index in range(max_validation_retries + 1):
             if attempt_index == 0:
@@ -451,17 +551,19 @@ class MLLMClient:
             ]
 
             decoded = self._request_completion(messages)
-
+            debugpy.breakpoint()  # Set a breakpoint here to inspect the raw MLLM output during development.
             try:
                 raw = self._strip_code_fences(decoded)
                 payload = self._extract_json_object(raw)
                 if payload is None:
                     raise ValueError("Failed to parse detection JSON output")
-                return self._validate_detection_payload(
+                detections = self._validate_detection_payload(
                     payload=payload,
                     agent_observations=agent_observations,
                     targets=targets,
                 )
+                self._write_detection_raw_output(step_index, decoded)
+                return detections
             except Exception as exc:
                 last_error = exc
                 if attempt_index >= max_validation_retries:
@@ -903,12 +1005,17 @@ class MLLMClient:
                 }
             )
 
-        fixed_detections = self._detect_targets(
+        step_index = getattr(self, "semantic_raw_output_index", 0)
+
+        localized_detections = self._detect_targets(
             agent_observations=agent_observations,
             targets=targets,
             image_content=image_content,
+            step_index=step_index,
         )
-
+        self.last_direct_detections = localized_detections
+        fixed_detections = self._strip_detection_localization(localized_detections)
+        debugpy.breakpoint()  # Debug after detection step and before graph generation step.
         system_message, user_message = self._build_instruction(
             agent_observations=agent_observations,
             targets=targets,
@@ -916,10 +1023,38 @@ class MLLMClient:
             fixed_detections=fixed_detections,
         )
 
-        step_index = getattr(self, "semantic_raw_output_index", 0)
         max_validation_retries = getattr(self, "max_validation_retries", 0)
         validation_errors: List[str] = []
         last_error = None
+
+        if getattr(self, "read_saved_raw_outputs", False):
+            decoded = self._read_semantic_raw_output(step_index)
+            if decoded is not None:
+                print(f"Reading saved raw output for step {step_index}")
+                try:
+                    raw = self._strip_code_fences(decoded)
+                    payload = self._extract_json_object(raw)
+                    if payload is None:
+                        raise ValueError("Failed to parse joint MLLM JSON output")
+                    self._validate_payload(
+                        payload=payload,
+                        agent_observations=agent_observations,
+                        targets=targets,
+                        graph_summary=graph_summary,
+                        fixed_detections=fixed_detections,
+                    )
+                    self.semantic_raw_output_index = step_index + 1
+                    return payload
+                except Exception as exc:
+                    print(
+                        "Saved semantic raw output for step %s is invalid. "
+                        "Requesting MLLM instead. Error: %s" % (step_index, str(exc))
+                    )
+            else:
+                print(
+                    "Saved semantic raw output for step %s was not found. "
+                    "Requesting MLLM instead." % step_index
+                )
 
         for attempt_index in range(max_validation_retries + 1):
             if attempt_index == 0:
@@ -940,26 +1075,16 @@ class MLLMClient:
                 {"role": "user", "content": user_content},
             ]
 
-            # Attempt 0 may read a saved raw output. Retry attempts always call
-            # the MLLM again because they need the validation error feedback.
-            if (
-                attempt_index == 0
-                and getattr(self, "read_saved_raw_outputs", False)
-                and self._check_semantic_raw_output_exists(step_index)
-            ):
-                print(f"Reading saved raw output for step {step_index}")
-                decoded = self._read_semantic_raw_output(step_index)
+            if attempt_index == 0:
+                print(f"Requesting completion for step {step_index}")
             else:
-                if attempt_index == 0:
-                    print(f"Requesting completion for step {step_index}")
-                else:
-                    print(
-                        "Retrying MLLM completion for step %s after validation "
-                        "failure, attempt %s of %s"
-                        % (step_index, attempt_index, max_validation_retries)
-                    )
+                print(
+                    "Retrying MLLM completion for step %s after validation "
+                    "failure, attempt %s of %s"
+                    % (step_index, attempt_index, max_validation_retries)
+                )
 
-                decoded = self._request_completion(messages)
+            decoded = self._request_completion(messages)
             debugpy.breakpoint()  # Debug if the retry loop exits unexpectedly.
             try:
                 raw = self._strip_code_fences(decoded)
@@ -1021,13 +1146,26 @@ class MLLMClient:
     def _check_semantic_raw_output_exists(self, step_index: int) -> bool:
         return os.path.exists(self._semantic_raw_output_path(step_index))
 
-    def _read_semantic_raw_output(self, step_index: int) -> str:
-        with open(
-            self._semantic_raw_output_path(step_index),
-            "r",
-            encoding="utf-8",
-        ) as file_handle:
+    def _check_detection_raw_output_exists(self, step_index: int) -> bool:
+        return os.path.exists(self._detection_raw_output_path(step_index))
+
+    @staticmethod
+    def _read_text_file_if_exists(path: str) -> Optional[str]:
+        if not os.path.exists(path):
+            return None
+
+        with open(path, "r", encoding="utf-8") as file_handle:
             return file_handle.read()
+
+    def _read_semantic_raw_output(self, step_index: int) -> Optional[str]:
+        return self._read_text_file_if_exists(
+            self._semantic_raw_output_path(step_index)
+        )
+
+    def _read_detection_raw_output(self, step_index: int) -> Optional[str]:
+        return self._read_text_file_if_exists(
+            self._detection_raw_output_path(step_index)
+        )
 
     def _write_semantic_raw_output(self, step_index: int, decoded: str) -> None:
         raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
@@ -1035,6 +1173,17 @@ class MLLMClient:
 
         with open(
             self._semantic_raw_output_path(step_index),
+            "w",
+            encoding="utf-8",
+        ) as file_handle:
+            file_handle.write(decoded)
+
+    def _write_detection_raw_output(self, step_index: int, decoded: str) -> None:
+        raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
+        os.makedirs(raw_output_dir, exist_ok=True)
+
+        with open(
+            self._detection_raw_output_path(step_index),
             "w",
             encoding="utf-8",
         ) as file_handle:

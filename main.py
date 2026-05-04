@@ -1,7 +1,9 @@
-﻿import json
+﻿from doctest import debug
+import json
 import math
 import sys
 from typing import Dict, List
+import numpy as np
 
 import debugpy
 
@@ -66,135 +68,148 @@ def _target_records_for_graph(
     ]
 
 
-def _found_detections_by_target(
-    mllm_output: Dict[str, object],
-    agent_observations: List[Dict[str, object]],
-    unfound_target_ids,
-):
-    """Collect direct detections from the new MLLM raw format.
-
-    Expected detection format:
-    {
-        "agent_id": "agent0",
-        "target_indices": ["0", "1"],
-        "founds": [false, true]
-    }
-    """
-    observations_by_agent = {
-        str(observation["agent_id"]): observation for observation in agent_observations
-    }
-
-    found_detections = {}
-
-    for detection in mllm_output["detections"]:
-        agent_id = str(detection["agent_id"])
-        if agent_id not in observations_by_agent:
-            raise KeyError("Detection uses unknown agent id %s." % agent_id)
-
-        target_indices = list(detection["target_indices"])
-        founds = list(detection["founds"])
-
-        if len(target_indices) != len(founds):
-            raise ValueError(
-                "detections[].target_indices and detections[].founds must have "
-                "the same length for agent %s." % agent_id
-            )
-
-        agent_observation = observations_by_agent[agent_id]
-
-        for target_id, found in zip(target_indices, founds):
-            target_id = str(target_id)
-
-            if target_id not in unfound_target_ids:
-                continue
-            if not bool(found):
-                continue
-
-            found_detections.setdefault(target_id, []).append(
-                {
-                    "agent_id": agent_id,
-                    "target_rgb_image": agent_observation["raw_panorama"],
-                    "target_depth_image": agent_observation.get("depth_panorama"),
-                }
-            )
-
-    return found_detections
-
-
-def _mark_completed_targets(
-    mllm_client,
+def _collect_completed_targets(
     mllm_output: Dict[str, object],
     agent_observations: List[Dict[str, object]],
     targets: List[Dict[str, object]],
     hypothesis_graph,
-) -> List[str]:
-    """Mark targets as completed based on direct detections.
+) -> List[Dict[str, object]]:
+    """Collect completed targets based on current direct detections.
 
-    The graph is keyed by target_id. If a target record has distance_threshold_m,
-    the target is marked completed only when the estimated distance is within
-    the threshold. If distance_threshold_m is absent, direct detection alone is
-    treated as sufficient.
+    The graph is keyed by target_id. This function checks current direct
+    detections and returns detected targets that are completed according to
+    hypothesis_graph.target_found or can be marked completed now.
+
+    If a target is already marked found in hypothesis_graph.target_found, it can
+    still be returned when it is detected in the current MLLM output. This avoids
+    losing the agent_id and target localization after the graph state has already
+    been updated.
     """
+
     target_records = _normalize_targets(targets)
+    valid_target_ids = {str(target["target_id"]) for target in target_records}
 
-    target_descriptions_by_id = {
-        target["target_id"]: target["description"] for target in target_records
+    agent_observation_by_id = {
+        str(observation["agent_id"]): observation for observation in agent_observations
     }
 
-    target_thresholds = {
-        target["target_id"]: (
-            float(target["distance_threshold_m"])
-            if "distance_threshold_m" in target
-            else math.inf
-        )
-        for target in target_records
+    found_detections_by_target: Dict[str, List[Dict[str, object]]] = {
+        target_id: [] for target_id in valid_target_ids
     }
 
-    unfound_target_ids = {
-        str(target_id)
-        for target_id, is_found in hypothesis_graph.target_found.items()
-        if not is_found
-    }
+    for detection in mllm_output.get("detections", []):
+        agent_id = str(detection["agent_id"])
 
-    found_detections = _found_detections_by_target(
-        mllm_output=mllm_output,
-        agent_observations=agent_observations,
-        unfound_target_ids=unfound_target_ids,
-    )
+        if agent_id not in agent_observation_by_id:
+            raise ValueError("Detection uses unknown agent_id %s." % agent_id)
 
-    completed_target_ids = []
+        target_indices = detection.get("target_indices", [])
+        founds = detection.get("founds", [])
+        target_center_xs = detection.get("target_center_xs", None)
 
-    for target_id, detections in found_detections.items():
-        target_description = target_descriptions_by_id[target_id]
-        threshold_m = target_thresholds[target_id]
-
-        for detection in detections:
-            # If the scenario does not provide distance_threshold_m, direct
-            # detection is enough to mark the target as completed.
-            if math.isinf(threshold_m):
-                hypothesis_graph.mark_target_found(target_id)
-                completed_target_ids.append(target_id)
-                break
-
-            depth_image = detection.get("target_depth_image")
-            if depth_image is None:
-                raise KeyError(
-                    "Target %s has distance_threshold_m, but the observation does "
-                    "not contain depth_panorama." % target_id
-                )
-
-            distance_output = mllm_client.estimate_target_distance(
-                rgb_image=detection["target_rgb_image"],
-                depth_image=depth_image,
-                target_object=target_description,
+        if len(target_indices) != len(founds):
+            raise ValueError(
+                "target_indices and founds must have the same length "
+                "for agent %s." % agent_id
             )
 
-            if float(distance_output["distance_m"]) <= threshold_m:
-                hypothesis_graph.mark_target_found(target_id)
-                completed_target_ids.append(target_id)
-                break
+        if target_center_xs is not None and len(target_center_xs) != len(
+            target_indices
+        ):
+            raise ValueError(
+                "target_center_xs and target_indices must have the same length "
+                "for agent %s." % agent_id
+            )
 
-    return completed_target_ids
+        for item_index, target_id_raw in enumerate(target_indices):
+            target_id = str(target_id_raw)
+
+            if target_id not in valid_target_ids:
+                continue
+
+            found = founds[item_index]
+            if not isinstance(found, bool):
+                raise TypeError(
+                    "Detection founds values must be booleans for agent %s." % agent_id
+                )
+
+            if not found:
+                continue
+
+            target_center_x = None
+            target_heading = None
+
+            if target_center_xs is not None:
+                target_center_x = target_center_xs[item_index]
+
+                if target_center_x is not None:
+                    target_center_x = float(target_center_x)
+
+                    if not (0.0 <= target_center_x <= 1.0):
+                        raise ValueError(
+                            "target_center_x must be in [0, 1], got %s."
+                            % target_center_x
+                        )
+
+                    target_heading = (target_center_x - 0.5) * 2.0 * np.pi
+
+            found_detections_by_target[target_id].append(
+                {
+                    "agent_id": agent_id,
+                    "target_center_x": target_center_x,
+                    "target_heading": target_heading,
+                }
+            )
+
+    completed_targets = []
+
+    for target in target_records:
+        target_id = str(target["target_id"])
+
+        if not found_detections_by_target[target_id]:
+            continue
+
+        if not hypothesis_graph.target_found.get(target_id, False):
+            hypothesis_graph.mark_target_found(target_id)
+
+        detection = found_detections_by_target[target_id][0]
+
+        completed_targets.append(
+            {
+                "target_id": target_id,
+                "agent_id": detection["agent_id"],
+                "target_center_x": detection["target_center_x"],
+                "target_heading": detection["target_heading"],
+            }
+        )
+
+    return completed_targets
+
+
+def _center_completed_targets(agent_sims, agent_ids, completed_targets) -> None:
+    """Rotate agents in-place to center the found targets in their view."""
+
+    target_heading_by_agent = {}
+    for completed_target in completed_targets:
+        agent_id = str(completed_target["agent_id"])
+        if agent_id not in target_heading_by_agent:
+            target_heading_by_agent[agent_id] = float(
+                completed_target["target_heading"]
+            )
+
+    sims_to_rotate = []
+    target_headings = []
+    for agent_id, sim in zip(agent_ids, agent_sims):
+        if agent_id in target_heading_by_agent:
+            sims_to_rotate.append(sim)
+            target_headings.append(target_heading_by_agent[agent_id])
+
+    if sims_to_rotate:
+        Helper.execute_individual_rotations(
+            sims=sims_to_rotate,
+            target_headings=target_headings,
+            pause_time=Helper.PAUSE_TIME,
+        )
 
 
 def _init_agent_sims(scenario: Dict[str, object], scan_id: str):
@@ -286,13 +301,21 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             scorer=scorer,
         )
 
-        _mark_completed_targets(
-            mllm_client=mllm_client,
-            mllm_output=mllm_output,
+        completed_targets = _collect_completed_targets(
+            mllm_output={"detections": mllm_client.last_direct_detections},
             agent_observations=agent_observations,
             targets=targets,
             hypothesis_graph=hypothesis_graph,
         )
+        debugpy.breakpoint()
+
+        _center_completed_targets(
+            agent_sims=agent_sims,
+            agent_ids=agent_ids,
+            completed_targets=completed_targets,
+        )
+
+        debugpy.breakpoint()  # Set a breakpoint here to inspect the hypothesis graph and MLLM output during debugging.
 
         # print target finding status
         print("Target finding status:")

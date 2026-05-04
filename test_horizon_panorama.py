@@ -196,6 +196,37 @@ class HorizonPanoramaBatchTest(unittest.TestCase):
         self.assertEqual(sims[0].actions[-1][0], [1])
         self.assertEqual(sims[1].actions[-1][0], [1])
 
+    def test_panorama_center_x_to_heading_uses_horizon_strip_center(self):
+        horizon_headings = [
+            index * helper_under_test.DELTA_HEADING_RAD
+            for index in range(helper_under_test.HORIZON_LEN)
+        ]
+
+        heading = helper_under_test.panorama_center_x_to_heading(
+            target_center_x=(10.5 / helper_under_test.HORIZON_LEN),
+            horizon_headings=horizon_headings,
+        )
+
+        self.assertAlmostEqual(heading, horizon_headings[10])
+
+    def test_execute_individual_rotations_does_not_move_viewpoints(self):
+        sims = [
+            _SingleFakeSim(_FakeState("vp-root-0", 0.0, 11, 1.0)),
+            _SingleFakeSim(_FakeState("vp-root-1", 0.0, 22, 2.0)),
+        ]
+
+        helper_under_test.execute_individual_rotations(
+            sims=sims,
+            target_headings=[
+                helper_under_test.DELTA_HEADING_RAD,
+                helper_under_test.DELTA_HEADING_RAD,
+            ],
+            pause_time=0.0,
+        )
+
+        self.assertEqual(sims[0].actions[-1][0], [0])
+        self.assertEqual(sims[1].actions[-1][0], [0])
+
 
 if __name__ == "__main__":
     unittest.main()

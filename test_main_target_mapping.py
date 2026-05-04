@@ -6,7 +6,10 @@ import unittest
 
 
 _original_helper = sys.modules.get("Helper")
-sys.modules["Helper"] = types.ModuleType("Helper")
+helper_stub = types.ModuleType("Helper")
+helper_stub.TYPE_VP = 1
+helper_stub.panorama_center_x_to_heading = lambda target_center_x, horizon_headings: target_center_x
+sys.modules["Helper"] = helper_stub
 
 module_path = pathlib.Path(__file__).resolve().parent / "main.py"
 spec = importlib.util.spec_from_file_location("main_under_test_detection", module_path)
@@ -29,24 +32,27 @@ class MainDetectionMappingTest(unittest.TestCase):
                 "detections": [
                     {
                         "agent_id": "agent0",
-                        "target": "green plant on the table",
-                        "found": True,
+                        "target_indices": ["0"],
+                        "founds": [True],
+                        "target_center_xs": [0.25],
                     }
                 ]
             },
             agent_observations=[
                 {
                     "agent_id": "agent0",
+                    "horizon_headings": [0.1, 0.2],
                     "raw_panorama": "rgb-panorama",
                     "depth_panorama": "depth-panorama",
                 }
             ],
-            unfound_target_descriptions={"green plant on the table"},
+            unfound_target_ids={"0"},
         )
 
-        detection = found_detections["green plant on the table"][0]
+        detection = found_detections["0"][0]
         self.assertEqual(detection["target_rgb_image"], "rgb-panorama")
         self.assertEqual(detection["target_depth_image"], "depth-panorama")
+        self.assertEqual(detection["target_heading"], 0.25)
 
 
 if __name__ == "__main__":

@@ -100,7 +100,9 @@ def _valid_payload():
         ],
         "invisible_region_nodes": [],
         "viewpoint_target_probs": [
+            {"id": 7, "target_probs": {"0": 1.0, "1": 0.0}},
             {"id": 8, "target_probs": {"0": 0.6, "1": 0.4}},
+            {"id": 9, "target_probs": {"0": 0.0, "1": 1.0}},
             {"id": 10, "target_probs": {"0": 0.3, "1": 0.7}},
         ],
         "viewpoint_node_assigns": [
@@ -121,6 +123,29 @@ def _valid_payload():
 
 def _valid_payload_text():
     return json.dumps(_valid_payload(), indent=2, sort_keys=True)
+
+
+def _valid_detection_payload():
+    return {
+        "detections": [
+            {
+                "agent_id": "agent0",
+                "target_indices": ["0", "1"],
+                "founds": [True, False],
+                "target_center_xs": [0.25, None],
+            },
+            {
+                "agent_id": "agent1",
+                "target_indices": ["0", "1"],
+                "founds": [False, True],
+                "target_center_xs": [None, 0.75],
+            },
+        ]
+    }
+
+
+def _valid_detection_payload_text():
+    return json.dumps(_valid_detection_payload(), indent=2, sort_keys=True)
 
 
 class JointMLLMClientTest(unittest.TestCase):
@@ -155,6 +180,9 @@ class JointMLLMClientTest(unittest.TestCase):
             ],
             targets=_targets(),
             graph_summary=_FakeGraph().get_mllm_summary(),
+            fixed_detections=MLLMClient._strip_detection_localization(
+                _valid_detection_payload()["detections"]
+            ),
         )
 
         self.assertIn("one annotated RGB panorama per agent", system_message)
@@ -174,11 +202,12 @@ class JointMLLMClientTest(unittest.TestCase):
         client.save_debug_images = False
         client._image_to_data_url = lambda image: "data:image/png;base64,test"
 
-        captured_messages = {}
+        captured_messages = []
+        responses = iter([_valid_detection_payload_text(), _valid_payload_text()])
 
         def _fake_request_completion(messages):
-            captured_messages["messages"] = messages
-            return _valid_payload_text()
+            captured_messages.append(messages)
+            return next(responses)
 
         client._request_completion = _fake_request_completion
 
@@ -190,18 +219,31 @@ class JointMLLMClientTest(unittest.TestCase):
                 graph=_FakeGraph(),
             )
 
-        user_content = captured_messages["messages"][1]["content"]
+        user_content = captured_messages[1][1]["content"]
         image_items = [item for item in user_content if item["type"] == "image_url"]
         self.assertEqual(len(image_items), 2)
         self.assertEqual(payload["detections"][0]["target_indices"], ["0", "1"])
         self.assertTrue(payload["detections"][1]["founds"][1])
+        self.assertEqual(client.last_direct_detections[0]["target_center_xs"][0], 0.25)
 
-    def test_propose_semantic_nodes_saves_generated_raw_output(self):
+    def test_validate_detection_payload_requires_target_center_xs(self):
+        client = MLLMClient.__new__(MLLMClient)
+        detections = client._validate_detection_payload(
+            payload=_valid_detection_payload(),
+            agent_observations=_agent_observations(),
+            targets=_targets(),
+        )
+
+        self.assertEqual(detections[0]["target_center_xs"], [0.25, None])
+
+    def test_propose_semantic_nodes_saves_generated_raw_outputs(self):
         client = MLLMClient.__new__(MLLMClient)
         client.save_debug_images = False
         client._image_to_data_url = lambda image: "data:image/png;base64,test"
-        decoded = _valid_payload_text()
-        client._request_completion = lambda messages: decoded
+        detection_decoded = _valid_detection_payload_text()
+        graph_decoded = _valid_payload_text()
+        responses = iter([detection_decoded, graph_decoded])
+        client._request_completion = lambda messages: next(responses)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             client.raw_output_dir = tmp_dir
@@ -210,8 +252,13 @@ class JointMLLMClientTest(unittest.TestCase):
                 targets=_targets(),
                 graph=_FakeGraph(),
             )
+            detection_saved_path = pathlib.Path(tmp_dir) / "detection_step_0000.json"
             saved_path = pathlib.Path(tmp_dir) / "semantic_step_0000.json"
-            self.assertEqual(saved_path.read_text(encoding="utf-8"), decoded)
+            self.assertEqual(
+                detection_saved_path.read_text(encoding="utf-8"),
+                detection_decoded,
+            )
+            self.assertEqual(saved_path.read_text(encoding="utf-8"), graph_decoded)
 
         self.assertEqual(payload["agents"][0]["current_region_node_id"], 100)
         self.assertEqual(client.semantic_raw_output_index, 1)
@@ -229,6 +276,11 @@ class JointMLLMClientTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             client.raw_output_dir = tmp_dir
+            detection_saved_path = pathlib.Path(tmp_dir) / "detection_step_0000.json"
+            detection_saved_path.write_text(
+                _valid_detection_payload_text(),
+                encoding="utf-8",
+            )
             saved_path = pathlib.Path(tmp_dir) / "semantic_step_0000.json"
             saved_path.write_text(_valid_payload_text(), encoding="utf-8")
             payload = client.propose_semantic_nodes(
@@ -238,6 +290,7 @@ class JointMLLMClientTest(unittest.TestCase):
             )
 
         self.assertEqual(payload["agents"][1]["current_region_node_id"], 101)
+        self.assertEqual(client.last_direct_detections[1]["target_center_xs"][1], 0.75)
         self.assertEqual(client.semantic_raw_output_index, 1)
 
     def test_validate_payload_rejects_stale_target_id_detection_shape(self):
