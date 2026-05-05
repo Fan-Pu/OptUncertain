@@ -5,6 +5,7 @@ import io
 import json
 import os
 from textwrap import dedent
+import time
 from typing import TYPE_CHECKING, Dict, List, Optional
 import debugpy
 import numpy as np
@@ -39,7 +40,7 @@ class MLLMClient:
         self.raw_output_dir = str(raw_output_dir)
         self.max_validation_retries = max(0, int(max_validation_retries))
         self.semantic_raw_output_index = 0
-        self.last_direct_detections = []
+        self.found_target_trace = []
         self.api_key_env = str(api_key_env)
 
         api_key = os.environ.get(api_key_env)
@@ -281,20 +282,22 @@ class MLLMClient:
             You are doing only direct visual target detection from indoor panorama images.
             Return exactly one JSON object and nothing else.
             Do not infer a target from room type. Set found=true only when the target object itself is visible in the image.
+            Only evaluate the active targets listed in the user message. Do not include completed or unlisted target ids.
             """).strip()
 
         user_message = (
             dedent("""
-                Targets:
+                Active targets:
                 {targets_json}
 
                 Agent-image mapping:
                 {agents_json}
 
                 Task:
-                For each agent image, inspect the entire panorama and decide whether each target is directly visible anywhere in that image.
+                For each agent image, inspect the entire panorama and decide whether each active target listed above is directly visible anywhere in that image.
                 A target can be small, off-center, partly far away, or near a viewpoint marker.
                 Use false only when the target object itself is not visible or is too ambiguous.
+                Return only active target_ids from the list above in target_indices. Do not return completed or unlisted target_ids.
 
                 Return JSON only in this exact structure:
                 {{
@@ -469,6 +472,134 @@ class MLLMClient:
         ]
 
     @staticmethod
+    def _filter_targets_by_found_state(
+        targets: List[Dict[str, object]],
+        target_found: Dict[str, bool],
+    ) -> List[Dict[str, object]]:
+        return [
+            target
+            for target in targets
+            if not bool(target_found.get(str(target["target_id"]), False))
+        ]
+
+    @staticmethod
+    def _found_targets_from_detections(
+        detections: List[Dict[str, object]],
+    ) -> Dict[str, List[Dict[str, object]]]:
+        found_targets_by_id: Dict[str, List[Dict[str, object]]] = {}
+
+        for detection in detections:
+            agent_id = str(detection["agent_id"])
+            target_indices = detection["target_indices"]
+            founds = detection["founds"]
+            target_center_xs = detection.get("target_center_xs", None)
+
+            for item_index, target_id in enumerate(target_indices):
+                target_id = str(target_id)
+
+                if not bool(founds[item_index]):
+                    continue
+
+                target_center_x = None
+                target_heading = None
+
+                if target_center_xs is not None:
+                    target_center_x = target_center_xs[item_index]
+
+                    if target_center_x is not None:
+                        target_center_x = float(target_center_x)
+                        target_heading = (target_center_x - 0.5) * 2.0 * np.pi
+
+                found_targets_by_id.setdefault(target_id, []).append(
+                    {
+                        "target_id": target_id,
+                        "agent_id": agent_id,
+                        "target_center_x": target_center_x,
+                        "target_heading": target_heading,
+                    }
+                )
+
+        return found_targets_by_id
+
+    @staticmethod
+    def _filter_detections_to_target_ids(
+        detections: List[Dict[str, object]],
+        target_ids: List[str],
+    ) -> List[Dict[str, object]]:
+        target_id_set = {str(target_id) for target_id in target_ids}
+        filtered_detections = []
+
+        for detection in detections:
+            target_indices = []
+            founds = []
+            target_center_xs = []
+
+            has_target_center_xs = "target_center_xs" in detection
+
+            for item_index, target_id in enumerate(detection["target_indices"]):
+                target_id = str(target_id)
+                if target_id not in target_id_set:
+                    continue
+
+                target_indices.append(target_id)
+                founds.append(bool(detection["founds"][item_index]))
+
+                if has_target_center_xs:
+                    target_center_xs.append(detection["target_center_xs"][item_index])
+
+            filtered_detection = {
+                "agent_id": str(detection["agent_id"]),
+                "target_indices": target_indices,
+                "founds": founds,
+            }
+
+            if has_target_center_xs:
+                filtered_detection["target_center_xs"] = target_center_xs
+
+            filtered_detections.append(filtered_detection)
+
+        return filtered_detections
+
+    @staticmethod
+    def _sanitize_graph_summary_for_target_ids(
+        graph_summary: Dict[str, object],
+        target_ids: List[str],
+    ) -> Dict[str, object]:
+        target_id_set = {str(target_id) for target_id in target_ids}
+        sanitized = json.loads(json.dumps(graph_summary))
+
+        if isinstance(sanitized.get("targets"), list):
+            sanitized["targets"] = [
+                target
+                for target in sanitized["targets"]
+                if isinstance(target, dict)
+                and str(target.get("target_id")) in target_id_set
+            ]
+
+        if isinstance(sanitized.get("target_found"), dict):
+            sanitized["target_found"] = {
+                str(target_id): bool(found)
+                for target_id, found in sanitized["target_found"].items()
+                if str(target_id) in target_id_set
+            }
+
+        for node in sanitized.get("nodes", []):
+            if not isinstance(node, dict):
+                continue
+
+            target_probs = node.get("target_probs")
+            if not isinstance(target_probs, dict):
+                continue
+
+            node["target_probs"] = {
+                str(target_id): value
+                for target_id, value in target_probs.items()
+                if str(target_id) in target_id_set
+            }
+
+        return sanitized
+
+    @staticmethod
     def _build_detection_retry_user_message(
         user_message: str,
         validation_error: str,
@@ -553,7 +684,8 @@ class MLLMClient:
             ]
 
             decoded = self._request_completion(
-                messages=messages, model_name=self.detection_model_name
+                messages=messages,
+                model_name=getattr(self, "detection_model_name", ""),
             )
             debugpy.breakpoint()  # Set a breakpoint here to inspect the raw MLLM output during development.
             try:
@@ -740,10 +872,10 @@ class MLLMClient:
                 "a current viewpoint."
             ),
             "visible_region_nodes[].target_probs": (
-                "Unnormalized target-location scores keyed by every target_id. Values "
-                "must be in (0, 1]. Do not use 0.0. Use target descriptions to make "
-                "target-specific scores when evidence differs. Equal scores are allowed "
-                "only when evidence is equally weak."
+                "Unnormalized target-location scores keyed by every active target_id. "
+                "Values must be in (0, 1]. Do not use 0.0. Use active target "
+                "descriptions to make target-specific scores when evidence differs. "
+                "Equal scores are allowed only when evidence is equally weak."
             ),
             "invisible_region_nodes": (
                 "Unseen but layout-supported semantic regions. Infer 1 to 2 when there "
@@ -764,8 +896,8 @@ class MLLMClient:
                 "Existence probability in (0, 1]. Use lower values for weak layout cues."
             ),
             "invisible_region_nodes[].target_probs": (
-                "Unnormalized target-location scores keyed by every target_id. Values "
-                "must be in (0, 1]. Do not use 0.0."
+                "Unnormalized target-location scores keyed by every active target_id. "
+                "Values must be in (0, 1]. Do not use 0.0."
             ),
             "viewpoint_target_probs": (
                 "Target-location scores for every distinct current viewpoint and visible "
@@ -778,11 +910,11 @@ class MLLMClient:
                 "neighboring viewpoint from the observation context."
             ),
             "viewpoint_target_probs[].target_probs": (
-                "Dictionary keyed by every target_id. For a current viewpoint, use 1.0 "
-                "if the target is directly detected there, otherwise 0.0. This binary "
-                "rule applies only to current viewpoints. For visible neighboring "
-                "viewpoints that are not current, use soft scores in (0, 1] and do not "
-                "use 0.0."
+                "Dictionary keyed by every active target_id. For a current viewpoint, "
+                "use 1.0 if the active target is directly detected there, otherwise "
+                "0.0. This binary rule applies only to current viewpoints. For visible "
+                "neighboring viewpoints that are not current, use soft scores in "
+                "(0, 1] and do not use 0.0."
             ),
             "viewpoint_node_assigns": (
                 "Region-centered viewpoint assignments for the current step. Every "
@@ -829,10 +961,14 @@ class MLLMClient:
             ),
             "detections": (
                 "Copy the fixed direct detections from the separate detection step exactly. "
-                "Do not revise founds during graph generation."
+                "Do not revise founds during graph generation. Found and completed "
+                "targets are omitted."
             ),
             "detections[].agent_id": "Must match an input agent id exactly.",
-            "detections[].target_indices": "Every target_id exactly once. Order must match founds.",
+            "detections[].target_indices": (
+                "Every active target_id exactly once. Do not include found, completed, "
+                "or unlisted target ids. Order must match founds."
+            ),
             "detections[].founds": (
                 "JSON booleans copied exactly from the fixed direct detections. "
                 "Order must match target_indices."
@@ -858,7 +994,12 @@ class MLLMClient:
                 }
             return value
 
-        prompt_graph_summary = round_json_value(graph_summary)
+        prompt_graph_summary = round_json_value(
+            self._sanitize_graph_summary_for_target_ids(
+                graph_summary=graph_summary,
+                target_ids=target_ids,
+            )
+        )
 
         # Viewpoint labels are usually long scan ids and do not help the MLLM.
         # Region labels are kept because they carry semantic meaning.
@@ -869,7 +1010,7 @@ class MLLMClient:
         system_message = dedent("""
             You are an indoor hypothesis-graph proposal module for cooperative many-agent, many-target navigation. Analyze one annotated RGB panorama per agent and the compact shared graph summary. Propose an uncertain graph update for downstream optimization. Do not select robot actions or produce a final map.
 
-            The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, target_ids, viewpoint ids, and region ids exactly. Use target_id in target_probs and detections[].target_indices. Use target descriptions only to understand the targets.
+            The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, active target_ids, and viewpoint idsexactly. Reuse provided region ids exactly when a matching region already exists. For newly proposed regions, assign new integer region ids that do not conflict with existing ids. Use active target_id in target_probs and detections[].target_indices. Use active target descriptions only to understand the remaining targets. Found targets are complete and must not appear in target_probs, detections[].target_indices, or existence hypotheses.
 
             Return exactly one valid JSON object matching the user schema. Do not output markdown, code fences, comments, text outside JSON, extra top-level keys, trailing commas, or non-JSON booleans.
 
@@ -881,19 +1022,19 @@ class MLLMClient:
             - agents has one item per agent. current_region_node_id is the region containing the agent current viewpoint and must appear in visible_region_nodes. Reuse existing region ids and labels when matched.
             - visible_region_nodes are directly supported by current panoramas. invisible_region_nodes are unseen but layout-supported adjacent regions. Use at most 5 current-step region nodes total.
             - Region labels must be room or area labels, not object names. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names. Avoid generic labels unless they include both appearance and relative location cues.
-            - Detections are fixed by a separate detection step. Copy detections exactly from the fixed direct detections in the user message.
-            - Region target_probs and non-current viewpoint target_probs must contain every target_id with values in (0, 1]. Current viewpoint target_probs are binary direct-detection evidence: 1.0 if fixed detections mark the target as found for that agent, otherwise 0.0.
-            - Use target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak or when current-viewpoint binary evidence gives the same value.
+            - Detections are fixed by a separate detection step. The fixed direct detections provided here already exclude found and completed targets. Copy them exactly from the fixed direct detections in the user message. 
+            - Region target_probs and non-current viewpoint target_probs must contain every active target_id with values in (0, 1]. Current viewpoint target_probs are binary direct-detection evidence: 1.0 if fixed detections mark the active target as found for that agent, otherwise 0.0.
+            - Use active target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak or when current-viewpoint binary evidence gives the same value.
             - viewpoint_target_probs must include every current agent viewpoint and every distinct visible neighboring viewpoint.
             - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id. Reuse fixed non-current assignments from the graph summary.
             - new_edges may contain only VV or VZ edges. Never use region-region edges. Do not add edges between a current viewpoint and its visible neighboring viewpoints, because those local edges are already provided by the navigation system. Do not add an edge between a viewpoint and its assigned region.
-            - A VV edge may be proposed only between two unvisited non-current viewpoint nodes when the current panoramas provide clear layout evidence that they are directly connected, such as the same open room area, a continuous corridor, or an unobstructed doorway. Do not infer a VV edge only because both viewpoints are visible from the same current viewpoint. If evidence is weak but plausible, use low exist_prob. If evidence is unclear, omit the VV edge.
+            - A VV edge may be proposed only between two viewpoint nodes that satisfy all of the following conditions: both are non-current viewpoints, both are marked as unvisited according to the compact shared graph summary, and the current panoramas provide clear layout evidence that they are directly connected, such as the same open room area, a continuous corridor, or an unobstructed doorway. Do not infer a VV edge only because both viewpoints are visible from the same current viewpoint. If visit-state information is unavailable for a candidate viewpoint, treat the candidate as not eligible for a new VV edge unless the user message explicitly identifies it as unvisited.
             - A VZ edge should connect a viewpoint to a semantic region with no assigned viewpoints.
             """).strip()
 
         user_message = (
             dedent("""
-                Shared target set:
+                Active target set:
                 {targets_json}
 
                 Compact shared graph summary:
@@ -922,7 +1063,8 @@ class MLLMClient:
                 - Include every current viewpoint and every distinct visible neighboring viewpoint in viewpoint_target_probs.
                 - For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.
                 - For visible neighboring viewpoint target_probs, use soft positive target-location scores.
-                - Estimate region target_probs using target_id keys and target descriptions.
+                - Estimate region target_probs using active target_id keys and active target descriptions.
+                - Do not include found or completed targets in target_probs, detections, or existence hypotheses.
                 - Copy the fixed direct detections exactly into detections. Do not change founds.
                 - Propose only legal uncertain edges supported by observation and graph context.
                 - Propose VV edges only when two unvisited non-current viewpoints are directly connected by clear layout evidence; do not add VV edges only because they are both visible from the same current viewpoint.
@@ -952,7 +1094,7 @@ class MLLMClient:
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         graph: HypothesisGraph,
-    ) -> Dict[str, object]:
+    ) -> Optional[Dict[str, object]]:
         if self.save_debug_images:
             for image_index, observation in enumerate(agent_observations):
                 panorama_image = observation["annotated_panorama"]
@@ -963,6 +1105,13 @@ class MLLMClient:
                 )
 
         graph_summary = graph.get_mllm_summary()
+        active_detection_targets = self._filter_targets_by_found_state(
+            targets=targets,
+            target_found=getattr(graph, "target_found", {}),
+        )
+
+        if not active_detection_targets:
+            return None
 
         # Resize panorama arrays once. The resized images are used by both the
         # detection-only call and the graph-generation call.
@@ -1010,19 +1159,57 @@ class MLLMClient:
             )
 
         step_index = getattr(self, "semantic_raw_output_index", 0)
-
+        # Run the detection step first to get localized detections for the active targets. These detections are used as fixed evidence in the graph generation step, so we separate them to ensure they are not revised by the graph MLLM call.
         localized_detections = self._detect_targets(
             agent_observations=agent_observations,
-            targets=targets,
+            targets=active_detection_targets,
             image_content=image_content,
             step_index=step_index,
         )
         self.last_direct_detections = localized_detections
-        fixed_detections = self._strip_detection_localization(localized_detections)
-        debugpy.breakpoint()  # Debug after detection step and before graph generation step.
+        newly_found_targets_by_id = self._found_targets_from_detections(
+            localized_detections
+        )
+        # Append newly found targets to the found_target_trace. This trace keeps a chronological record of when each target was first detected as found, along with the associated agent and localization information at that step.
+        for target_id, detections in newly_found_targets_by_id.items():
+            for detection in detections:
+                self.found_target_trace.append(
+                    {
+                        "step_index": step_index,
+                        "target_id": target_id,
+                        "agent_id": detection["agent_id"],
+                        "target_center_x": detection["target_center_x"],
+                        "target_heading": detection["target_heading"],
+                    }
+                )
+        debugpy.breakpoint()  # Debug after detection step and before graph generation step to inspect localized detections and newly found targets.
+
+        # Given detections in localized_detections, graph generation should focus on the remaining unfound targets, so we exclude newly found targets from the graph update step. This also prevents confusion from changing target statuses between the detection and graph steps.
+        graph_targets = [
+            target
+            for target in active_detection_targets
+            if str(target["target_id"]) not in set(newly_found_targets_by_id)
+        ]
+
+        # Filter the localized detections to include only the target_ids that are still active for graph generation. This ensures that the graph generation step receives a consistent view of the remaining unfound targets, without any confusion from targets that were just found in the detection step.
+        graph_detections = self._filter_detections_to_target_ids(
+            detections=localized_detections,
+            target_ids=[str(target["target_id"]) for target in graph_targets],
+        )
+        fixed_detections = self._strip_detection_localization(graph_detections)
+        # print the fixed_detections for debugging
+        print(
+            "Fixed detections for graph generation:",
+            json.dumps(fixed_detections, indent=2),
+        )
+
+        if not graph_targets:
+            self.semantic_raw_output_index = step_index + 1
+            return None
+
         system_message, user_message = self._build_instruction(
             agent_observations=agent_observations,
-            targets=targets,
+            targets=graph_targets,
             graph_summary=graph_summary,
             fixed_detections=fixed_detections,
         )
@@ -1043,7 +1230,7 @@ class MLLMClient:
                     self._validate_payload(
                         payload=payload,
                         agent_observations=agent_observations,
-                        targets=targets,
+                        targets=graph_targets,
                         graph_summary=graph_summary,
                         fixed_detections=fixed_detections,
                     )
@@ -1087,11 +1274,17 @@ class MLLMClient:
                     "failure, attempt %s of %s"
                     % (step_index, attempt_index, max_validation_retries)
                 )
-
+            request_start_time = time.time()
             decoded = self._request_completion(
-                messages=messages, model_name=self.graph_model_name
+                messages=messages,
+                model_name=getattr(self, "graph_model_name", ""),
             )
-            debugpy.breakpoint()  # Debug if the retry loop exits unexpectedly.
+            # print the running time (s) for requesting completion
+            print(
+                "MLLM completion request for step %s took %.2f seconds"
+                % (step_index, time.time() - request_start_time)
+            )
+
             try:
                 raw = self._strip_code_fences(decoded)
                 payload = self._extract_json_object(raw)
@@ -1101,7 +1294,7 @@ class MLLMClient:
                 self._validate_payload(
                     payload=payload,
                     agent_observations=agent_observations,
-                    targets=targets,
+                    targets=graph_targets,
                     graph_summary=graph_summary,
                     fixed_detections=fixed_detections,
                 )

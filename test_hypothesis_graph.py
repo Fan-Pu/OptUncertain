@@ -45,11 +45,117 @@ class _FakeScorer:
         return best_score
 
 
+def _targets():
+    return [
+        {"target_id": "green plant", "description": "green plant"},
+        {"target_id": "glass on table", "description": "glass on table"},
+    ]
+
+
+def _observations(marker=10, current=1):
+    return [
+        {
+            "agent_id": "agent0",
+            "current_viewpoint_index": current,
+            "visible_viewpoints": [
+                {"viewpoint_index": 2 if current != 2 else 1, "distance": 1.0},
+                {"viewpoint_index": 3, "distance": 2.0 if current == 1 else 1.0},
+            ],
+            "raw_panorama": marker * np.ones((2, 2, 3), dtype=np.uint8),
+        }
+    ]
+
+
+def _step_one_payload():
+    return {
+        "agents": [{"agent_id": "agent0", "current_region_node_id": 10}],
+        "visible_region_nodes": [
+            {
+                "id": 10,
+                "label": "living room",
+                "exist_prob": 1.0,
+                "target_probs": {"green plant": 0.4, "glass on table": 0.6},
+            },
+            {
+                "id": 11,
+                "label": "dining room",
+                "exist_prob": 0.8,
+                "target_probs": {"green plant": 0.6, "glass on table": 0.4},
+            },
+        ],
+        "invisible_region_nodes": [
+            {
+                "id": 20,
+                "label": "kitchen pantry",
+                "exist_prob": 0.4,
+                "target_probs": {"green plant": 0.2, "glass on table": 0.8},
+            }
+        ],
+        "viewpoint_target_probs": [
+            {"id": 1, "target_probs": {"green plant": 0.0, "glass on table": 0.0}},
+            {"id": 2, "target_probs": {"green plant": 0.7, "glass on table": 0.3}},
+            {"id": 3, "target_probs": {"green plant": 0.3, "glass on table": 0.7}},
+        ],
+        "viewpoint_node_assigns": [
+            {"region_node_id": 10, "assigned_viewpoint_node_indices": [1]},
+            {"region_node_id": 11, "assigned_viewpoint_node_indices": [2, 3]},
+        ],
+        "new_edges": [
+            {"i": 2, "j": 3, "edge_type": "VV", "exist_prob": 0.5, "dist": 5.0},
+            {"i": 2, "j": 20, "edge_type": "VZ", "exist_prob": 0.6, "dist": 3.0},
+        ],
+        "edge_distance_variances": {
+            "viewpoint_viewpoint": 4.0,
+            "viewpoint_region": 9.0,
+        },
+        "detections": [
+            {
+                "agent_id": "agent0",
+                "target_indices": ["green plant", "glass on table"],
+                "founds": [False, False],
+            }
+        ],
+    }
+
+
+def _step_two_payload_only_glass():
+    return {
+        "agents": [{"agent_id": "agent0", "current_region_node_id": 12}],
+        "visible_region_nodes": [
+            {
+                "id": 12,
+                "label": "kitchen",
+                "exist_prob": 1.0,
+                "target_probs": {"glass on table": 0.8},
+            }
+        ],
+        "invisible_region_nodes": [],
+        "viewpoint_target_probs": [
+            {"id": 2, "target_probs": {"glass on table": 0.0}},
+            {"id": 1, "target_probs": {"glass on table": 0.9}},
+            {"id": 3, "target_probs": {"glass on table": 0.5}},
+        ],
+        "viewpoint_node_assigns": [
+            {"region_node_id": 12, "assigned_viewpoint_node_indices": [1, 2, 3]}
+        ],
+        "new_edges": [],
+        "edge_distance_variances": {
+            "viewpoint_viewpoint": 4.0,
+            "viewpoint_region": 9.0,
+        },
+        "detections": [
+            {
+                "agent_id": "agent0",
+                "target_indices": ["glass on table"],
+                "founds": [False],
+            }
+        ],
+    }
+
+
 class HypothesisGraphUpdateTest(unittest.TestCase):
     def _build_graph_and_step_one(self):
-        graph = HypothesisGraph(
-            target_descriptions=["green plant", "glass on table"]
-        )
+        graph = HypothesisGraph(targets=_targets())
         scorer = _FakeScorer(
             {
                 (10, "green plant"): 0.8,
@@ -62,105 +168,26 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
                 (30, "kitchen"): 0.9,
             }
         )
-        observations = [
-            {
-                "agent_id": "agent0",
-                "current_viewpoint_index": 1,
-                "visible_viewpoints": [
-                    {"viewpoint_index": 2, "distance": 1.0},
-                    {"viewpoint_index": 3, "distance": 2.0},
-                ],
-                "raw_panorama": 10 * np.ones((2, 2, 3), dtype=np.uint8),
-            }
-        ]
-        mllm_output = {
-            "agents": [
-                {
-                    "agent_id": "agent0",
-                    "current_region_node": {
-                        "id": 10,
-                        "label": "living room",
-                        "exist_prob": 1.0,
-                        "target_probs": {"green plant": 0.4, "glass on table": 0.6},
-                    },
-                    "viewpoint_target_probs": [
-                        {
-                            "id": 2,
-                            "target_probs": {
-                                "green plant": 0.7,
-                                "glass on table": 0.3,
-                            },
-                        },
-                        {
-                            "id": 3,
-                            "target_probs": {
-                                "green plant": 0.3,
-                                "glass on table": 0.7,
-                            },
-                        },
-                    ],
-                    "viewpoint_node_assigns": [
-                        {"id": 2, "assign_region_node_id": 11},
-                        {"id": 3, "assign_region_node_id": 11},
-                    ],
-                }
-            ],
-            "new_visible_region_nodes": [
-                {
-                    "id": 11,
-                    "label": "dining room",
-                    "exist_prob": 0.8,
-                    "target_probs": {"green plant": 0.6, "glass on table": 0.4},
-                }
-            ],
-            "new_invisible_region_nodes": [
-                {
-                    "id": 20,
-                    "label": "kitchen pantry",
-                    "exist_prob": 0.4,
-                    "target_probs": {"green plant": 0.2, "glass on table": 0.8},
-                }
-            ],
-            "new_arcs": [
-                {"i": 2, "j": 3, "exist_prob": 0.5, "dist": 5.0},
-                {"i": 2, "j": 20, "exist_prob": 0.6, "dist": 3.0},
-            ],
-            "detections": [
-                {"agent_id": "agent0", "target": "green plant", "found": False},
-                {"agent_id": "agent0", "target": "glass on table", "found": False},
-            ],
-        }
-        graph.update_from_mllm(mllm_output, observations, scorer)
+        graph.update_from_mllm(_step_one_payload(), _observations(), scorer)
         return graph, scorer
 
     def test_target_probabilities_normalize_separately_and_bayesian_updates_apply(self):
         graph, _ = self._build_graph_and_step_one()
 
-        viewpoint_plant_sum = sum(
-            node.target_probs["green plant"]
-            for node in graph.nodes.values()
-            if node.type == helper_stub.TYPE_VP
-        )
-        region_plant_sum = sum(
-            node.target_probs["green plant"]
-            for node in graph.nodes.values()
-            if node.type == helper_stub.TYPE_REGION
-        )
-        viewpoint_glass_sum = sum(
-            node.target_probs["glass on table"]
-            for node in graph.nodes.values()
-            if node.type == helper_stub.TYPE_VP
-        )
-        region_glass_sum = sum(
-            node.target_probs["glass on table"]
-            for node in graph.nodes.values()
-            if node.type == helper_stub.TYPE_REGION
-        )
+        for target_id in ["green plant", "glass on table"]:
+            viewpoint_sum = sum(
+                node.target_probs[target_id]
+                for node in graph.nodes.values()
+                if node.type == helper_stub.TYPE_VP
+            )
+            region_sum = sum(
+                node.target_probs[target_id]
+                for node in graph.nodes.values()
+                if node.type == helper_stub.TYPE_REGION
+            )
 
-        self.assertAlmostEqual(viewpoint_plant_sum, 1.0)
-        self.assertAlmostEqual(region_plant_sum, 1.0)
-        self.assertAlmostEqual(viewpoint_glass_sum, 1.0)
-        self.assertAlmostEqual(region_glass_sum, 1.0)
+            self.assertAlmostEqual(viewpoint_sum, 1.0)
+            self.assertAlmostEqual(region_sum, 1.0)
 
     def test_zone_existence_distance_fusion_and_node_gated_edge_existence(self):
         graph, _ = self._build_graph_and_step_one()
@@ -182,63 +209,34 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
 
     def test_assignment_persistence_and_newly_grounded_override(self):
         graph, scorer = self._build_graph_and_step_one()
-        observations = [
-            {
-                "agent_id": "agent0",
-                "current_viewpoint_index": 2,
-                "visible_viewpoints": [
-                    {"viewpoint_index": 1, "distance": 1.0},
-                    {"viewpoint_index": 3, "distance": 1.0},
-                ],
-                "raw_panorama": 30 * np.ones((2, 2, 3), dtype=np.uint8),
-            }
-        ]
-        mllm_output = {
-            "agents": [
-                {
-                    "agent_id": "agent0",
-                    "current_region_node": {
-                        "id": 12,
-                        "label": "kitchen",
-                        "exist_prob": 1.0,
-                        "target_probs": {"green plant": 0.2, "glass on table": 0.8},
-                    },
-                    "viewpoint_target_probs": [
-                        {
-                            "id": 1,
-                            "target_probs": {
-                                "green plant": 0.1,
-                                "glass on table": 0.9,
-                            },
-                        },
-                        {
-                            "id": 3,
-                            "target_probs": {
-                                "green plant": 0.5,
-                                "glass on table": 0.5,
-                            },
-                        },
-                    ],
-                    "viewpoint_node_assigns": [
-                        {"id": 1, "assign_region_node_id": 12},
-                        {"id": 3, "assign_region_node_id": 12},
-                    ],
-                }
-            ],
-            "new_visible_region_nodes": [],
-            "new_invisible_region_nodes": [],
-            "new_arcs": [],
-            "detections": [
-                {"agent_id": "agent0", "target": "green plant", "found": False},
-                {"agent_id": "agent0", "target": "glass on table", "found": False},
-            ],
-        }
 
-        graph.update_from_mllm(mllm_output, observations, scorer)
+        graph.update_from_mllm(
+            _step_two_payload_only_glass(),
+            _observations(marker=30, current=2),
+            scorer,
+        )
 
         self.assertEqual(graph.viewpoint_to_region[2], 12)
         self.assertEqual(graph.viewpoint_to_region[3], 11)
         self.assertEqual(graph.viewpoint_to_region[1], 10)
+
+    def test_found_target_can_be_omitted_from_next_mllm_payload(self):
+        graph, scorer = self._build_graph_and_step_one()
+        graph.mark_target_found("green plant")
+
+        graph.update_from_mllm(
+            _step_two_payload_only_glass(),
+            _observations(marker=30, current=2),
+            scorer,
+        )
+
+        self.assertTrue(graph.target_found["green plant"])
+        glass_region_sum = sum(
+            node.target_probs["glass on table"]
+            for node in graph.nodes.values()
+            if node.type == helper_stub.TYPE_REGION
+        )
+        self.assertAlmostEqual(glass_region_sum, 1.0)
 
 
 if __name__ == "__main__":

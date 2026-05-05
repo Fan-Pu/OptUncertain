@@ -296,12 +296,6 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             graph=hypothesis_graph,
         )
 
-        hypothesis_graph.update_from_mllm(
-            mllm_output=mllm_output,
-            agent_observations=agent_observations,
-            scorer=scorer,
-        )
-
         completed_targets = _collect_completed_targets(
             mllm_output={"detections": mllm_client.last_direct_detections},
             agent_observations=agent_observations,
@@ -317,6 +311,20 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         )
 
         debugpy.breakpoint()  # Set a breakpoint here to inspect the hypothesis graph and MLLM output during debugging.
+
+        if all(hypothesis_graph.target_found.values()):
+            return {"target_found": dict(hypothesis_graph.target_found)}
+
+        if mllm_output is None:
+            raise RuntimeError(
+                "Graph generation was skipped, but not all targets are marked found."
+            )
+
+        hypothesis_graph.update_from_mllm(
+            mllm_output=mllm_output,
+            agent_observations=agent_observations,
+            scorer=scorer,
+        )
 
         # print target finding status
         print("Target finding status:")

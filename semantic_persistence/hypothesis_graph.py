@@ -612,7 +612,8 @@ class HypothesisGraph:
         target_probs: Dict[str, float],
     ) -> Dict[str, float]:
         return {
-            target_id: float(target_probs[target_id]) for target_id in self.target_ids
+            target_id: float(target_probs.get(target_id, 0.0))
+            for target_id in self.target_ids
         }
 
     def _target_text(self, target_id: str) -> str:
@@ -842,6 +843,9 @@ class HypothesisGraph:
         ]
 
         for target_id in self.target_ids:
+            if self.target_found.get(target_id, False):
+                continue
+
             viewpoint_scores = {}
 
             for node_id in viewpoint_node_ids:

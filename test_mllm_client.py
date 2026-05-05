@@ -37,14 +37,20 @@ def tearDownModule():
 
 
 class _FakeGraph:
+    def __init__(self, target_found=None):
+        self.target_found = dict(
+            target_found
+            or {
+                "0": False,
+                "1": False,
+            }
+        )
+
     def get_mllm_summary(self):
         return {
             "observation_step": 3,
-            "targets": ["green plant on the table", "glass on the dining table"],
-            "target_found": {
-                "green plant on the table": False,
-                "glass on the dining table": False,
-            },
+            "targets": _targets(),
+            "target_found": dict(self.target_found),
             "agent_current_vp_ids": {"agent0": 7, "agent1": 9},
             "nodes": [],
             "edges": [],
@@ -100,9 +106,9 @@ def _valid_payload():
         ],
         "invisible_region_nodes": [],
         "viewpoint_target_probs": [
-            {"id": 7, "target_probs": {"0": 1.0, "1": 0.0}},
+            {"id": 7, "target_probs": {"0": 0.0, "1": 0.0}},
             {"id": 8, "target_probs": {"0": 0.6, "1": 0.4}},
-            {"id": 9, "target_probs": {"0": 0.0, "1": 1.0}},
+            {"id": 9, "target_probs": {"0": 0.0, "1": 0.0}},
             {"id": 10, "target_probs": {"0": 0.3, "1": 0.7}},
         ],
         "viewpoint_node_assigns": [
@@ -115,8 +121,8 @@ def _valid_payload():
             "viewpoint_viewpoint": 1.5,
         },
         "detections": [
-            {"agent_id": "agent0", "target_indices": ["0", "1"], "founds": [True, False]},
-            {"agent_id": "agent1", "target_indices": ["0", "1"], "founds": [False, True]},
+            {"agent_id": "agent0", "target_indices": ["0", "1"], "founds": [False, False]},
+            {"agent_id": "agent1", "target_indices": ["0", "1"], "founds": [False, False]},
         ],
     }
 
@@ -126,6 +132,92 @@ def _valid_payload_text():
 
 
 def _valid_detection_payload():
+    return {
+        "detections": [
+            {
+                "agent_id": "agent0",
+                "target_indices": ["0", "1"],
+                "founds": [False, False],
+                "target_center_xs": [None, None],
+            },
+            {
+                "agent_id": "agent1",
+                "target_indices": ["0", "1"],
+                "founds": [False, False],
+                "target_center_xs": [None, None],
+            },
+        ]
+    }
+
+
+def _valid_detection_payload_text():
+    return json.dumps(_valid_detection_payload(), indent=2, sort_keys=True)
+
+
+def _found_one_detection_payload():
+    return {
+        "detections": [
+            {
+                "agent_id": "agent0",
+                "target_indices": ["0", "1"],
+                "founds": [True, False],
+                "target_center_xs": [0.25, None],
+            },
+            {
+                "agent_id": "agent1",
+                "target_indices": ["0", "1"],
+                "founds": [False, False],
+                "target_center_xs": [None, None],
+            },
+        ]
+    }
+
+
+def _target_one_detection_payload():
+    return {
+        "detections": [
+            {
+                "agent_id": "agent0",
+                "target_indices": ["1"],
+                "founds": [False],
+                "target_center_xs": [None],
+            },
+            {
+                "agent_id": "agent1",
+                "target_indices": ["1"],
+                "founds": [False],
+                "target_center_xs": [None],
+            },
+        ]
+    }
+
+
+def _target_one_payload():
+    payload = _valid_payload()
+
+    for region in payload["visible_region_nodes"]:
+        region["target_probs"] = {"1": region["target_probs"]["1"]}
+
+    payload["viewpoint_target_probs"] = []
+    for item in _valid_payload()["viewpoint_target_probs"]:
+        value = 0.0 if item["id"] in {7, 9} else item["target_probs"]["1"]
+        payload["viewpoint_target_probs"].append(
+            {"id": item["id"], "target_probs": {"1": value}}
+        )
+
+    payload["detections"] = [
+        {"agent_id": "agent0", "target_indices": ["1"], "founds": [False]},
+        {"agent_id": "agent1", "target_indices": ["1"], "founds": [False]},
+    ]
+
+    return payload
+
+
+def _target_one_payload_text():
+    return json.dumps(_target_one_payload(), indent=2, sort_keys=True)
+
+
+def _found_all_detection_payload():
     return {
         "detections": [
             {
@@ -142,10 +234,6 @@ def _valid_detection_payload():
             },
         ]
     }
-
-
-def _valid_detection_payload_text():
-    return json.dumps(_valid_detection_payload(), indent=2, sort_keys=True)
 
 
 class JointMLLMClientTest(unittest.TestCase):
@@ -205,7 +293,7 @@ class JointMLLMClientTest(unittest.TestCase):
         captured_messages = []
         responses = iter([_valid_detection_payload_text(), _valid_payload_text()])
 
-        def _fake_request_completion(messages):
+        def _fake_request_completion(messages, model_name):
             captured_messages.append(messages)
             return next(responses)
 
@@ -223,8 +311,8 @@ class JointMLLMClientTest(unittest.TestCase):
         image_items = [item for item in user_content if item["type"] == "image_url"]
         self.assertEqual(len(image_items), 2)
         self.assertEqual(payload["detections"][0]["target_indices"], ["0", "1"])
-        self.assertTrue(payload["detections"][1]["founds"][1])
-        self.assertEqual(client.last_direct_detections[0]["target_center_xs"][0], 0.25)
+        self.assertFalse(payload["detections"][1]["founds"][1])
+        self.assertEqual(client.last_direct_detections[0]["target_center_xs"][0], None)
 
     def test_validate_detection_payload_requires_target_center_xs(self):
         client = MLLMClient.__new__(MLLMClient)
@@ -234,7 +322,7 @@ class JointMLLMClientTest(unittest.TestCase):
             targets=_targets(),
         )
 
-        self.assertEqual(detections[0]["target_center_xs"], [0.25, None])
+        self.assertEqual(detections[0]["target_center_xs"], [None, None])
 
     def test_propose_semantic_nodes_saves_generated_raw_outputs(self):
         client = MLLMClient.__new__(MLLMClient)
@@ -243,7 +331,7 @@ class JointMLLMClientTest(unittest.TestCase):
         detection_decoded = _valid_detection_payload_text()
         graph_decoded = _valid_payload_text()
         responses = iter([detection_decoded, graph_decoded])
-        client._request_completion = lambda messages: next(responses)
+        client._request_completion = lambda messages, model_name: next(responses)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             client.raw_output_dir = tmp_dir
@@ -269,7 +357,7 @@ class JointMLLMClientTest(unittest.TestCase):
         client.read_saved_raw_outputs = True
         client._image_to_data_url = lambda image: "data:image/png;base64,test"
 
-        def _unexpected_request(messages):
+        def _unexpected_request(messages, model_name):
             raise AssertionError("_request_completion should not be called")
 
         client._request_completion = _unexpected_request
@@ -290,8 +378,116 @@ class JointMLLMClientTest(unittest.TestCase):
             )
 
         self.assertEqual(payload["agents"][1]["current_region_node_id"], 101)
-        self.assertEqual(client.last_direct_detections[1]["target_center_xs"][1], 0.75)
+        self.assertEqual(client.last_direct_detections[1]["target_center_xs"][1], None)
         self.assertEqual(client.semantic_raw_output_index, 1)
+
+    def test_previously_found_target_is_omitted_from_detection_prompt(self):
+        client = MLLMClient.__new__(MLLMClient)
+        client.save_debug_images = False
+        client._image_to_data_url = lambda image: "data:image/png;base64,test"
+
+        captured_messages = []
+        responses = iter(
+            [
+                json.dumps(_target_one_detection_payload()),
+                _target_one_payload_text(),
+            ]
+        )
+
+        def _fake_request_completion(messages, model_name):
+            captured_messages.append(messages)
+            return next(responses)
+
+        client._request_completion = _fake_request_completion
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            client.raw_output_dir = tmp_dir
+            client.propose_semantic_nodes(
+                agent_observations=_agent_observations(),
+                targets=_targets(),
+                graph=_FakeGraph(target_found={"0": True, "1": False}),
+            )
+
+        detection_text = MLLMClient._message_to_text(
+            captured_messages[0][1]["content"]
+        )
+        self.assertNotIn('"target_id": "0"', detection_text)
+        self.assertNotIn("green plant on the table", detection_text)
+        self.assertIn('"target_id": "1"', detection_text)
+
+    def test_current_step_found_target_is_omitted_from_graph_prompt(self):
+        client = MLLMClient.__new__(MLLMClient)
+        client.save_debug_images = False
+        client._image_to_data_url = lambda image: "data:image/png;base64,test"
+
+        captured_messages = []
+        responses = iter(
+            [
+                json.dumps(_found_one_detection_payload()),
+                _target_one_payload_text(),
+            ]
+        )
+
+        def _fake_request_completion(messages, model_name):
+            captured_messages.append(messages)
+            return next(responses)
+
+        client._request_completion = _fake_request_completion
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            client.raw_output_dir = tmp_dir
+            payload = client.propose_semantic_nodes(
+                agent_observations=_agent_observations(),
+                targets=_targets(),
+                graph=_FakeGraph(),
+            )
+
+        graph_text = MLLMClient._message_to_text(captured_messages[1][1]["content"])
+        self.assertNotIn('"target_id": "0"', graph_text)
+        self.assertNotIn('"0":', graph_text)
+        self.assertNotIn("green plant on the table", graph_text)
+        self.assertEqual(payload["detections"][0]["target_indices"], ["1"])
+        self.assertEqual(payload["viewpoint_target_probs"][0]["target_probs"], {"1": 0.0})
+        self.assertEqual(client.last_direct_detections[0]["target_center_xs"][0], 0.25)
+
+    def test_graph_generation_is_skipped_when_detection_finds_all_active_targets(self):
+        client = MLLMClient.__new__(MLLMClient)
+        client.save_debug_images = False
+        client._image_to_data_url = lambda image: "data:image/png;base64,test"
+
+        captured_messages = []
+
+        def _fake_request_completion(messages, model_name):
+            captured_messages.append(messages)
+            return json.dumps(_found_all_detection_payload())
+
+        client._request_completion = _fake_request_completion
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            client.raw_output_dir = tmp_dir
+            payload = client.propose_semantic_nodes(
+                agent_observations=_agent_observations(),
+                targets=_targets(),
+                graph=_FakeGraph(),
+            )
+
+        self.assertIsNone(payload)
+        self.assertEqual(len(captured_messages), 1)
+        self.assertEqual(client.semantic_raw_output_index, 1)
+        self.assertEqual(client.last_direct_detections[1]["target_center_xs"][1], 0.75)
+
+    def test_validate_payload_accepts_only_active_target_prob_keys(self):
+        client = MLLMClient.__new__(MLLMClient)
+
+        client._validate_payload(
+            payload=_target_one_payload(),
+            agent_observations=_agent_observations(),
+            targets=[_targets()[1]],
+            graph_summary=_FakeGraph().get_mllm_summary(),
+            fixed_detections=MLLMClient._strip_detection_localization(
+                _target_one_detection_payload()["detections"]
+            ),
+        )
 
     def test_validate_payload_rejects_stale_target_id_detection_shape(self):
         client = MLLMClient.__new__(MLLMClient)
