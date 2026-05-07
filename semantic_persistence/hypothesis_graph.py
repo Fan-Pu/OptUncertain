@@ -13,8 +13,11 @@ updated with the paper's Bayesian rules.
 from __future__ import annotations
 
 import copy
+from logging import debug
 import math
 from typing import Dict, Iterable, List, Optional, Set, Tuple
+
+import debugpy
 
 import Helper
 from Helper import TYPE_REGION, TYPE_VP
@@ -144,6 +147,7 @@ class HypothesisGraph:
         or edges. Those updates still happen after the MLLM returns its graph
         hypotheses.
         """
+
         self.agent_current_vp_ids = {
             str(observation["agent_id"]): int(observation["current_viewpoint_index"])
             for observation in agent_observations
@@ -535,6 +539,12 @@ class HypothesisGraph:
             viewpoint_initial_probs=viewpoint_initial_probs,
             scorer=scorer,
         )
+
+        # Remove all found targets from every node's target_probs.
+        # This must be after _update_target_posteriors, because that update may
+        # otherwise add the found target keys back.
+        self._remove_found_target_probs_from_nodes()
+
         self._update_region_existence_posteriors(
             previous_exist_probs=previous_exist_probs,
             existing_node_ids=existing_node_ids,
@@ -552,6 +562,25 @@ class HypothesisGraph:
             previous_cond_exist_probs=previous_cond_exist_probs,
             scorer=scorer,
         )
+
+        self.target_found
+
+    def _remove_found_target_probs_from_nodes(self) -> None:
+        found_target_ids = {
+            str(target_id)
+            for target_id, found in self.target_found.items()
+            if bool(found)
+        }
+
+        if not found_target_ids:
+            return
+
+        for node in self.nodes.values():
+            node.target_probs = {
+                str(target_id): prob
+                for target_id, prob in node.target_probs.items()
+                if str(target_id) not in found_target_ids
+            }
 
     def get_mllm_summary(self) -> Dict[str, object]:
         nodes = []

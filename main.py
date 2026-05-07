@@ -151,7 +151,7 @@ def _collect_completed_targets(
                             % target_center_x
                         )
 
-                    target_heading = (target_center_x - 0.5) * 2.0 * np.pi
+                    target_heading = target_center_x * 2.0 * np.pi
 
             found_detections_by_target[target_id].append(
                 {
@@ -208,7 +208,7 @@ def _center_completed_targets(agent_sims, agent_ids, completed_targets) -> None:
         Helper.execute_individual_rotations(
             sims=sims_to_rotate,
             target_headings=target_headings,
-            pause_time=Helper.PAUSE_TIME,
+            PAUSE_TIME=Helper.PAUSE_TIME,
         )
 
 
@@ -280,6 +280,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             agent_ids=agent_ids,
             viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
         )
+
         Helper.render_sim_state(
             _current_agent_states(agent_sims),
             viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
@@ -302,15 +303,12 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             targets=targets,
             hypothesis_graph=hypothesis_graph,
         )
-        debugpy.breakpoint()
 
         _center_completed_targets(
             agent_sims=agent_sims,
             agent_ids=agent_ids,
             completed_targets=completed_targets,
         )
-
-        debugpy.breakpoint()  # Set a breakpoint here to inspect the hypothesis graph and MLLM output during debugging.
 
         if all(hypothesis_graph.target_found.values()):
             return {"target_found": dict(hypothesis_graph.target_found)}
@@ -368,6 +366,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         Helper.execute_individual_first_hops(sims=agent_sims, move_specs=move_specs)
         for _ in range(2):
             print()
+        debugpy.breakpoint()
 
 
 def main(argv: List[str] | None = None) -> int:

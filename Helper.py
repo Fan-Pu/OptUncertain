@@ -20,7 +20,7 @@ MP_ROOT = "/root/mount/Matterport3DSimulator"
 HORIZON_LEN = 48 * 4
 DELTA_HEADING_DEG = 360 / HORIZON_LEN
 DELTA_HEADING_RAD = math.radians(DELTA_HEADING_DEG)
-PAUSE_TIME = 0.15
+PAUSE_TIME = 0.02
 
 TYPE_REGION = 0
 TYPE_VP = 1
@@ -176,98 +176,84 @@ def _scan_state_to_observation(
     }
 
 
-def horizon_scan_batch_return(sim, agent_ids, viewpoint_index_by_vp=None):
-    start_states = list(sim.getState())
-    per_agent = []
-    for batch_index, start_state in enumerate(start_states):
-        per_agent.append(
-            {
-                "agent_id": str(agent_ids[batch_index]),
-                "start_state": start_state,
-                "best_heading_for_vp": {},
-                "best_score_for_vp": defaultdict(lambda: 1e18),
-                "horizon_rgb_frames": [],
-                "horizon_mllm_frames": [],
-                "horizon_headings": [],
-                "horizon_depths": [],
-                "frame_visible_viewpoint_indices": [],
-                "visible_viewpoints_by_index": {},
-            }
-        )
+def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
+    start_state = sim.getState()[0]
+    record = {
+        "agent_id": str(agent_id),
+        "start_state": start_state,
+        "best_heading_for_vp": {},
+        "best_score_for_vp": defaultdict(lambda: 1e18),
+        "horizon_rgb_frames": [],
+        "horizon_mllm_frames": [],
+        "horizon_headings": [],
+        "horizon_depths": [],
+        "frame_visible_viewpoint_indices": [],
+        "visible_viewpoints_by_index": {},
+    }
 
     for horizon_index in range(HORIZON_LEN):
-        states = list(sim.getState())
-        for batch_index, state in enumerate(states):
-            record = per_agent[batch_index]
-            raw_rgb = np.array(state.rgb, copy=True)
-            annotated_rgb, visible_viewpoints = annotate_rgb_with_viewpoints(
-                raw_rgb,
-                state.navigableLocations,
-                viewpoint_index_by_vp=viewpoint_index_by_vp,
-            )
+        state = sim.getState()[0]
+        raw_rgb = np.array(state.rgb, copy=True)
+        annotated_rgb, visible_viewpoints = annotate_rgb_with_viewpoints(
+            raw_rgb,
+            state.navigableLocations,
+            viewpoint_index_by_vp=viewpoint_index_by_vp,
+        )
 
-            record["horizon_rgb_frames"].append(raw_rgb)
-            record["horizon_mllm_frames"].append(annotated_rgb)
-            record["horizon_headings"].append(float(state.heading))
-            record["horizon_depths"].append(np.array(state.depth, copy=True))
-            record["frame_visible_viewpoint_indices"].append(
-                [
-                    int(item["viewpoint_index"])
-                    for item in visible_viewpoints
-                    if item.get("viewpoint_index") is not None
-                ]
-            )
+        record["horizon_rgb_frames"].append(raw_rgb)
+        record["horizon_mllm_frames"].append(annotated_rgb)
+        record["horizon_headings"].append(float(state.heading))
+        record["horizon_depths"].append(np.array(state.depth, copy=True))
+        record["frame_visible_viewpoint_indices"].append(
+            [
+                int(item["viewpoint_index"])
+                for item in visible_viewpoints
+                if item.get("viewpoint_index") is not None
+            ]
+        )
 
-            for visible_viewpoint in visible_viewpoints:
-                record["visible_viewpoints_by_index"][
-                    int(visible_viewpoint["viewpoint_index"])
-                ] = {
-                    "viewpoint_id": str(visible_viewpoint["viewpoint_id"]),
-                    "viewpoint_index": int(visible_viewpoint["viewpoint_index"]),
-                    "distance": round(float(visible_viewpoint["distance"]), 3),
-                }
+        for visible_viewpoint in visible_viewpoints:
+            record["visible_viewpoints_by_index"][
+                int(visible_viewpoint["viewpoint_index"])
+            ] = {
+                "viewpoint_id": str(visible_viewpoint["viewpoint_id"]),
+                "viewpoint_index": int(visible_viewpoint["viewpoint_index"]),
+                "distance": round(float(visible_viewpoint["distance"]), 3),
+            }
 
-            current_heading = float(state.heading)
-            for location in state.navigableLocations[1:]:
-                score = abs(location.rel_heading) + 0.5 * abs(location.rel_elevation)
-                if score < record["best_score_for_vp"][location.viewpointId]:
-                    record["best_score_for_vp"][location.viewpointId] = score
-                    record["best_heading_for_vp"][
-                        location.viewpointId
-                    ] = current_heading
+        current_heading = float(state.heading)
+        for location in state.navigableLocations[1:]:
+            score = abs(location.rel_heading) + 0.5 * abs(location.rel_elevation)
+            if score < record["best_score_for_vp"][location.viewpointId]:
+                record["best_score_for_vp"][location.viewpointId] = score
+                record["best_heading_for_vp"][location.viewpointId] = current_heading
 
         if horizon_index != HORIZON_LEN - 1:
             sim.makeAction(
-                [0 for _ in agent_ids],
-                [DELTA_HEADING_RAD for _ in agent_ids],
-                [0 for _ in agent_ids],
+                [0],
+                [DELTA_HEADING_RAD],
+                [0],
             )
 
     sim.makeAction(
-        [0 for _ in agent_ids],
-        [DELTA_HEADING_RAD for _ in agent_ids],
-        [0 for _ in agent_ids],
+        [0],
+        [DELTA_HEADING_RAD],
+        [0],
     )
 
-    observations = []
-    for record in per_agent:
-        observations.append(
-            _scan_state_to_observation(
-                agent_id=record["agent_id"],
-                start_state=record["start_state"],
-                best_heading_for_vp=record["best_heading_for_vp"],
-                best_score_for_vp=record["best_score_for_vp"],
-                horizon_rgb_frames=record["horizon_rgb_frames"],
-                horizon_mllm_frames=record["horizon_mllm_frames"],
-                horizon_headings=record["horizon_headings"],
-                horizon_depths=record["horizon_depths"],
-                frame_visible_viewpoint_indices=record[
-                    "frame_visible_viewpoint_indices"
-                ],
-                visible_viewpoints_by_index=record["visible_viewpoints_by_index"],
-                viewpoint_index_by_vp=viewpoint_index_by_vp,
-            )
-        )
+    observations = _scan_state_to_observation(
+        agent_id=record["agent_id"],
+        start_state=record["start_state"],
+        best_heading_for_vp=record["best_heading_for_vp"],
+        best_score_for_vp=record["best_score_for_vp"],
+        horizon_rgb_frames=record["horizon_rgb_frames"],
+        horizon_mllm_frames=record["horizon_mllm_frames"],
+        horizon_headings=record["horizon_headings"],
+        horizon_depths=record["horizon_depths"],
+        frame_visible_viewpoint_indices=record["frame_visible_viewpoint_indices"],
+        visible_viewpoints_by_index=record["visible_viewpoints_by_index"],
+        viewpoint_index_by_vp=viewpoint_index_by_vp,
+    )
 
     return observations
 
@@ -275,44 +261,15 @@ def horizon_scan_batch_return(sim, agent_ids, viewpoint_index_by_vp=None):
 def horizon_scan_individual_sims_return(sims, agent_ids, viewpoint_index_by_vp=None):
     if len(sims) != len(agent_ids):
         raise ValueError("sims and agent_ids must have the same length.")
-
     observations = []
     for sim, agent_id in zip(sims, agent_ids):
-        observations.extend(
-            horizon_scan_batch_return(
-                sim=sim,
-                agent_ids=[agent_id],
-                viewpoint_index_by_vp=viewpoint_index_by_vp,
-            )
+        scan_return = horizon_scan_return(
+            sim=sim,
+            agent_id=agent_id,
+            viewpoint_index_by_vp=viewpoint_index_by_vp,
         )
+        observations.append(scan_return)
     return observations
-
-
-def horizon_scan_return(sim, viewpoint_index_by_vp=None):
-    observation = horizon_scan_batch_return(sim, ["agent0"], viewpoint_index_by_vp)[0]
-    return (
-        observation["best_heading_for_vp"],
-        (
-            observation["start_state"]
-            if "start_state" in observation
-            else sim.getState()[0]
-        ),
-        observation["horizon_rgb_frames"],
-        observation["horizon_mllm_frames"],
-        observation["raw_panorama"],
-        observation["depth_panorama"],
-        observation["annotated_panorama"],
-        observation["horizon_headings"],
-        observation["horizon_depths"],
-        {
-            "current_viewpoint_id": observation["current_viewpoint_id"],
-            "current_viewpoint_index": observation["current_viewpoint_index"],
-            "visible_viewpoints": observation["visible_viewpoints"],
-            "frame_visible_viewpoint_indices": observation[
-                "frame_visible_viewpoint_indices"
-            ],
-        },
-    )
 
 
 def compute_rotation(current_heading_deg, target_heading_deg, step_size_deg):
@@ -340,7 +297,7 @@ def panorama_center_x_to_heading(target_center_x, horizon_headings):
     return target_heading % (2.0 * math.pi)
 
 
-def execute_individual_rotations(sims, target_headings, pause_time=0.05):
+def execute_individual_rotations(sims, target_headings, PAUSE_TIME=0.05):
     if len(sims) != len(target_headings):
         raise ValueError("sims and target_headings must have the same length.")
 
@@ -368,15 +325,15 @@ def execute_individual_rotations(sims, target_headings, pause_time=0.05):
                 else 0.0
             )
             sim.makeAction([0], [heading], [0.0])
-        if pause_time > 0.0:
-            time.sleep(pause_time)
+        if PAUSE_TIME > 0.0:
+            time.sleep(PAUSE_TIME)
         render_sim_state(
             [sim.getState()[0] for sim in sims],
             viewpoint_index_by_vp=viewpoint_index_by_vp_label,
         )
 
 
-def execute_batched_first_hops(sim, move_specs, pause_time=0.0):
+def execute_batched_first_hops(sim, move_specs, PAUSE_TIME=0.0):
     states = list(sim.getState())
     step_plans = []
     for batch_index, spec in enumerate(move_specs):
@@ -407,8 +364,8 @@ def execute_batched_first_hops(sim, move_specs, pause_time=0.0):
             ],
             [0 for _ in step_plans],
         )
-        if pause_time > 0.0:
-            time.sleep(pause_time)
+        if PAUSE_TIME > 0.0:
+            time.sleep(PAUSE_TIME)
 
     rotated_states = list(sim.getState())
     move_actions = []
@@ -426,11 +383,11 @@ def execute_batched_first_hops(sim, move_specs, pause_time=0.0):
         [0.0 for _ in step_plans],
         [0.0 for _ in step_plans],
     )
-    if pause_time > 0.0:
-        time.sleep(pause_time)
+    if PAUSE_TIME > 0.0:
+        time.sleep(PAUSE_TIME)
 
 
-def execute_individual_first_hops(sims, move_specs, pause_time=0.05):
+def execute_individual_first_hops(sims, move_specs, PAUSE_TIME=0.05):
     if len(sims) != len(move_specs):
         raise ValueError("sims and move_specs must have the same length.")
 
@@ -460,8 +417,8 @@ def execute_individual_first_hops(sims, move_specs, pause_time=0.05):
                 else 0.0
             )
             sim.makeAction([0], [heading], [0.0])
-        if pause_time > 0.0:
-            time.sleep(pause_time)
+        if PAUSE_TIME > 0.0:
+            time.sleep(PAUSE_TIME)
         render_sim_state(
             [sim.getState()[0] for sim in sims],
             viewpoint_index_by_vp=viewpoint_index_by_vp_label,
@@ -477,8 +434,8 @@ def execute_individual_first_hops(sims, move_specs, pause_time=0.05):
             if str(location.viewpointId) == target_viewpoint_id
         ][0]
         sim.makeAction([location_index], [0.0], [0.0])
-    if pause_time > 0.0:
-        time.sleep(pause_time)
+    if PAUSE_TIME > 0.0:
+        time.sleep(PAUSE_TIME)
     render_sim_state(
         [sim.getState()[0] for sim in sims],
         viewpoint_index_by_vp=viewpoint_index_by_vp_label,
@@ -494,7 +451,7 @@ def rotate_to_target_heading_mov2vp(sim, selected_heading, target_vp_id):
                 "target_viewpoint_id": str(target_vp_id),
             }
         ],
-        pause_time=PAUSE_TIME,
+        PAUSE_TIME=PAUSE_TIME,
     )
 
 
