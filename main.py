@@ -363,10 +363,11 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             hypothesis_graph.nodes[next_vp_node_id].node_visit_times += 1
             print(f"Move spec for {agent_id}: {next_vp_node_id}")
 
+        # debugpy.breakpoint()
+
         Helper.execute_individual_first_hops(sims=agent_sims, move_specs=move_specs)
         for _ in range(2):
             print()
-        debugpy.breakpoint()
 
 
 def main(argv: List[str] | None = None) -> int:

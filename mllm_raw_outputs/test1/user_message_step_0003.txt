@@ -111,7 +111,7 @@ Compact shared graph summary:
       "id": 0,
       "node_visit_times": 3,
       "target_probs": {
-        "1": 0.1384
+        "1": 0.1431
       },
       "type": "viewpoint"
     },
@@ -131,7 +131,7 @@ Compact shared graph summary:
       "id": 11,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0834
+        "1": 0.04
       },
       "type": "viewpoint"
     },
@@ -151,7 +151,7 @@ Compact shared graph summary:
       "id": 18,
       "node_visit_times": 3,
       "target_probs": {
-        "1": 0.0616
+        "1": 0.0636
       },
       "type": "viewpoint"
     },
@@ -161,7 +161,7 @@ Compact shared graph summary:
       "id": 21,
       "node_visit_times": 2,
       "target_probs": {
-        "1": 0.2368
+        "1": 0.1835
       },
       "type": "viewpoint"
     },
@@ -171,7 +171,7 @@ Compact shared graph summary:
       "id": 27,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0834
+        "1": 0.16
       },
       "type": "viewpoint"
     },
@@ -181,7 +181,7 @@ Compact shared graph summary:
       "id": 32,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0661
+        "1": 0.0683
       },
       "type": "viewpoint"
     },
@@ -191,7 +191,7 @@ Compact shared graph summary:
       "id": 35,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0661
+        "1": 0.0683
       },
       "type": "viewpoint"
     },
@@ -201,7 +201,7 @@ Compact shared graph summary:
       "id": 40,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1322
+        "1": 0.1366
       },
       "type": "viewpoint"
     },
@@ -211,37 +211,40 @@ Compact shared graph summary:
       "id": 41,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1322
+        "1": 0.1366
       },
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
         0,
-        16
+        16,
+        21,
+        27
       ],
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 100,
-      "label": "modern living area with dark floors and white walls",
+      "label": "modern living area with dark floors",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2494
+        "1": 0.5138
       },
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
+        11,
         32,
         35
       ],
       "exist_prob": 0.9,
       "grounded": 0,
       "id": 101,
-      "label": "bright bedroom area adjacent to living room",
+      "label": "bright bedroom area beyond the wall",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0595
+        "1": 0.1226
       },
       "type": "region"
     },
@@ -253,10 +256,10 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 200,
-      "label": "dark textured lounge area with quilted walls",
+      "label": "textured blue lounge area",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0574
+        "1": 0.1183
       },
       "type": "region"
     },
@@ -268,39 +271,10 @@ Compact shared graph summary:
       "exist_prob": 0.9,
       "grounded": 0,
       "id": 201,
-      "label": "white minimalist corridor beyond lounge area",
+      "label": "white minimalist room beyond the doorway",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1191
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        21
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 300,
-      "label": "bright dining area with white counter beyond living room",
-      "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.2844
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        11,
-        27
-      ],
-      "exist_prob": 0.9,
-      "grounded": 0,
-      "id": 301,
-      "label": "white kitchen counter area adjacent to dining room",
-      "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.2302
+        "1": 0.2453
       },
       "type": "region"
     }
@@ -311,11 +285,11 @@ Compact shared graph summary:
   },
   "viewpoint_to_region": {
     "0": 100,
-    "11": 301,
+    "11": 101,
     "16": 100,
     "18": 200,
-    "21": 300,
-    "27": 301,
+    "21": 100,
+    "27": 100,
     "32": 101,
     "35": 101,
     "40": 201,
@@ -481,7 +455,7 @@ Field descriptions:
   "new_edges[].exist_prob": "Edge existence probability in (0, 1].",
   "new_edges[].i": "One endpoint id. It may be a viewpoint or region. For VV, it must be an unvisited viewpoint.",
   "new_edges[].j": "Other endpoint id. Never region-region. For VV, it must be an unvisited viewpoint. Because edges are undirected, do not output both directions.",
-  "viewpoint_node_assigns": "Region-centered viewpoint assignments for the current step. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id. For any non-current visible neighboring viewpoint already listed in graph_summary.viewpoint_to_region, reuse that fixed region assignment exactly.",
+  "viewpoint_node_assigns": "Region-centered viewpoint assignments for the current step. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id, inferred from the current panorama. If a current viewpoint already has an old graph_summary.viewpoint_to_region assignment, treat it only as prior information, not a fixed rule. Reuse that old region only if it still matches the current panorama; otherwise reuse another matching existing region or create a new visible_region_node. For non-current visible neighboring viewpoints already listed in graph_summary.viewpoint_to_region, reuse that fixed region assignment exactly.",
   "viewpoint_node_assigns[].assigned_viewpoint_node_indices": "Integer viewpoint ids assigned to this region. Current viewpoints must be assigned to their agents' current_region_node_id.",
   "viewpoint_node_assigns[].region_node_id": "Region id containing the assigned viewpoints. If it is a current_region_node_id, it must be listed in visible_region_nodes.",
   "viewpoint_target_probs": "Target-location scores for every distinct current viewpoint and visible neighboring viewpoint in the current step. Current viewpoint entries are binary direct-detection evidence. Visible-neighbor entries are soft prior scores.",
@@ -508,5 +482,5 @@ Current step request:
 - Propose only legal uncertain edges supported by observation and graph context.
 - Propose VZ edges only to semantic regions with no assigned viewpoints; the region may be visible or invisible.
 - Propose VV edges only when two unvisited non-current viewpoints are directly connected by clear layout evidence; do not add VV edges only because they are both visible from the same current viewpoint.
-- Keep graph_summary.viewpoint_to_region assignments for non-current visible neighboring viewpoints.
+- Keep graph_summary.viewpoint_to_region assignments only for non-current visible neighboring viewpoints. For current viewpoints, infer the best matching region from the current panorama and allow old assignments to be corrected.
 - Return compact JSON only.

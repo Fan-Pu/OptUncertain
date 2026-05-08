@@ -9,55 +9,320 @@ Active target set:
 Compact shared graph summary:
 {
   "agent_current_vp_ids": {
-    "agent0": 16,
-    "agent1": 9
+    "agent0": 0,
+    "agent1": 18
   },
-  "edges": [],
-  "nodes": [],
-  "observation_step": 0,
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.936,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 0,
+      "j": 16,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.155,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 0,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.266,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 9,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.87,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 9,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.705,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 9,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.306,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 11,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.565,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 16,
+      "j": 32,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.466,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 16,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.205,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 21,
+      "j": 27,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 0,
+      "node_visit_times": 5,
+      "target_probs": {
+        "1": 0.1469
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 9,
+      "node_visit_times": 5,
+      "target_probs": {
+        "1": 0.0
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 11,
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.0401
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 16,
+      "node_visit_times": 1,
+      "target_probs": {
+        "1": 0.0
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 18,
+      "node_visit_times": 5,
+      "target_probs": {
+        "1": 0.0594
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 21,
+      "node_visit_times": 4,
+      "target_probs": {
+        "1": 0.1822
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 27,
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.1604
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 32,
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.0685
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 35,
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.0685
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 40,
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.137
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 41,
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.137
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        16,
+        21,
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 100,
+      "label": "modern living area with dark floors",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.5236
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        11,
+        32,
+        35
+      ],
+      "exist_prob": 0.9,
+      "grounded": 0,
+      "id": 101,
+      "label": "bright bedroom area beyond the wall",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.1221
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        18
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 200,
+      "label": "textured blue lounge area",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.1102
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        40,
+        41
+      ],
+      "exist_prob": 0.9,
+      "grounded": 0,
+      "id": 201,
+      "label": "white minimalist room beyond the doorway",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.2441
+      },
+      "type": "region"
+    }
+  ],
+  "observation_step": 5,
   "target_found": {
     "1": false
   },
-  "viewpoint_to_region": {}
+  "viewpoint_to_region": {
+    "0": 100,
+    "11": 101,
+    "16": 100,
+    "18": 200,
+    "21": 100,
+    "27": 100,
+    "32": 101,
+    "35": 101,
+    "40": 201,
+    "41": 201,
+    "9": 200
+  }
 }
 
 Per-agent observation context:
 [
   {
     "agent_id": "agent0",
-    "current_viewpoint_index": 16,
+    "current_viewpoint_index": 0,
     "image_index": 0,
     "visible_viewpoints": [
       {
         "distance": 0.936,
-        "viewpoint_index": 0
+        "viewpoint_index": 16
       },
       {
-        "distance": 0.565,
-        "viewpoint_index": 32
-      },
-      {
-        "distance": 1.466,
-        "viewpoint_index": 35
+        "distance": 1.155,
+        "viewpoint_index": 21
       }
     ]
   },
   {
     "agent_id": "agent1",
-    "current_viewpoint_index": 9,
+    "current_viewpoint_index": 18,
     "image_index": 1,
     "visible_viewpoints": [
       {
         "distance": 1.266,
-        "viewpoint_index": 18
-      },
-      {
-        "distance": 1.87,
-        "viewpoint_index": 40
-      },
-      {
-        "distance": 1.705,
-        "viewpoint_index": 41
+        "viewpoint_index": 9
       }
     ]
   }
@@ -128,28 +393,28 @@ Output schema example. Use keys and value types only. Do not copy example values
       "dist": 2.5,
       "edge_type": "VZ",
       "exist_prob": 0.6,
-      "i": 0,
+      "i": 16,
       "j": 900
     }
   ],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        16,
-        0
+        0,
+        16
       ],
       "region_node_id": 100
     }
   ],
   "viewpoint_target_probs": [
     {
-      "id": 16,
+      "id": 0,
       "target_probs": {
         "1": 0.0
       }
     },
     {
-      "id": 0,
+      "id": 16,
       "target_probs": {
         "1": 0.01
       }

@@ -915,9 +915,13 @@ class MLLMClient:
                 "Region-centered viewpoint assignments for the current step. Every "
                 "current viewpoint and every distinct visible neighboring viewpoint must "
                 "appear exactly once. Current viewpoints must be assigned to their agents' "
-                "current_region_node_id. For any non-current visible neighboring viewpoint "
-                "already listed in graph_summary.viewpoint_to_region, reuse that fixed "
-                "region assignment exactly."
+                "current_region_node_id, inferred from the current panorama. If a current "
+                "viewpoint already has an old graph_summary.viewpoint_to_region assignment, "
+                "treat it only as prior information, not a fixed rule. Reuse that old region "
+                "only if it still matches the current panorama; otherwise reuse another "
+                "matching existing region or create a new visible_region_node. For non-current "
+                "visible neighboring viewpoints already listed in graph_summary.viewpoint_to_region, "
+                "reuse that fixed region assignment exactly."
             ),
             "viewpoint_node_assigns[].region_node_id": (
                 "Region id containing the assigned viewpoints. If it is a current_region_node_id, "
@@ -1029,7 +1033,7 @@ class MLLMClient:
             - Region target_probs and non-current viewpoint target_probs must contain every active target_id with values in (0, 1]. Current viewpoint target_probs are binary direct-detection evidence: 1.0 if fixed detections mark the active target as found for that agent, otherwise 0.0.
             - Use active target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak or when current-viewpoint binary evidence gives the same value.
             - viewpoint_target_probs must include every current agent viewpoint and every distinct visible neighboring viewpoint.
-            - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id. For non-current visible neighboring viewpoints already listed in graph_summary.viewpoint_to_region, reuse the fixed region assignment exactly.
+            - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id based on the current panorama. If a current viewpoint has an old graph_summary.viewpoint_to_region assignment, use it only as prior information, not as a fixed assignment. Reuse the old region only if it still matches the current panorama; otherwise reuse another matching existing region or create a new visible_region_node. For non-current visible neighboring viewpoints already listed in graph_summary.viewpoint_to_region, reuse the fixed region assignment exactly.
             - new_edges may contain only VV or VZ edges. Never use region-region edges. Do not add edges between a current viewpoint and its visible neighboring viewpoints, because those local edges are already provided by the navigation system. Do not add an edge between a viewpoint and its assigned region.
             - A VV edge may be proposed only between two viewpoint nodes that satisfy all of the following conditions: both are non-current viewpoints, both are marked as unvisited according to the compact shared graph summary, and the current panoramas provide clear layout evidence that they are directly connected, such as the same open room area, a continuous corridor, or an unobstructed doorway. Do not infer a VV edge only because both viewpoints are visible from the same current viewpoint. If visit-state information is unavailable for a candidate viewpoint, treat the candidate as not eligible for a new VV edge unless the user message explicitly identifies it as unvisited.
             - A VZ edge connects a viewpoint to a semantic region with no assigned viewpoints. The region may be visible or invisible. Do not add a VZ edge to a region with assigned viewpoints or between a viewpoint and its assigned region.
@@ -1080,7 +1084,7 @@ class MLLMClient:
                 - Propose only legal uncertain edges supported by observation and graph context.
                 - Propose VZ edges only to semantic regions with no assigned viewpoints; the region may be visible or invisible.
                 - Propose VV edges only when two unvisited non-current viewpoints are directly connected by clear layout evidence; do not add VV edges only because they are both visible from the same current viewpoint.
-                - Keep graph_summary.viewpoint_to_region assignments for non-current visible neighboring viewpoints.
+                - Keep graph_summary.viewpoint_to_region assignments only for non-current visible neighboring viewpoints. For current viewpoints, infer the best matching region from the current panorama and allow old assignments to be corrected.
                 - Return compact JSON only.
                 """)
             .strip()
@@ -2192,6 +2196,37 @@ class MLLMClient:
             all_region_ids = visible_region_ids | invisible_region_ids
             assigned_viewpoint_to_region[viewpoint_id] = fixed_region_id
             corrected_assignments.append((viewpoint_id, old_region_id, fixed_region_id))
+
+        # check for current-viewpoint old-assignment correction
+        for observation in agent_observations:
+            agent_id = str(observation["agent_id"])
+            current_viewpoint_id = int(observation["current_viewpoint_index"])
+            agent_region_id = agent_current_region[agent_id]
+            assigned_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
+
+            if assigned_region_id != agent_region_id:
+                raise ValueError(
+                    "Agent %s current viewpoint %s is assigned to region %s, "
+                    "but its current_region_node_id is %s."
+                    % (
+                        agent_id,
+                        current_viewpoint_id,
+                        assigned_region_id,
+                        agent_region_id,
+                    )
+                )
+
+        # diagnostic check for all current-viewpoint assignment changes, including those not caused by fixed assignment correction
+        for current_viewpoint_id in sorted(current_viewpoint_ids):
+            old_region_id = graph_viewpoint_to_region.get(current_viewpoint_id)
+            new_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
+
+            if old_region_id is not None and new_region_id != old_region_id:
+                print(
+                    "Current viewpoint %s changes region assignment from old region %s "
+                    "to current-observation region %s."
+                    % (current_viewpoint_id, old_region_id, new_region_id)
+                )
 
         if len(visible_region_nodes) + len(invisible_region_nodes) > 5:
             raise ValueError(

@@ -2,7 +2,7 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 300
+      "current_region_node_id": 100
     },
     {
       "agent_id": "agent1",
@@ -38,9 +38,17 @@
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        0
+        0,
+        21,
+        27
       ],
       "region_node_id": 100
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        11
+      ],
+      "region_node_id": 101
     },
     {
       "assigned_viewpoint_node_indices": [
@@ -55,19 +63,6 @@
         41
       ],
       "region_node_id": 201
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        21
-      ],
-      "region_node_id": 300
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        11,
-        27
-      ],
-      "region_node_id": 301
     }
   ],
   "viewpoint_target_probs": [
@@ -84,15 +79,15 @@
       }
     },
     {
-      "id": 11,
+      "id": 27,
       "target_probs": {
-        "1": 0.1
+        "1": 0.2
       }
     },
     {
-      "id": 27,
+      "id": 11,
       "target_probs": {
-        "1": 0.1
+        "1": 0.05
       }
     },
     {
@@ -104,61 +99,53 @@
     {
       "id": 18,
       "target_probs": {
-        "1": 0.05
+        "1": 0.1
       }
     },
     {
       "id": 40,
       "target_probs": {
-        "1": 0.05
+        "1": 0.12
       }
     },
     {
       "id": 41,
       "target_probs": {
-        "1": 0.05
+        "1": 0.12
       }
     }
   ],
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 300,
-      "label": "bright dining area with white counter beyond living room",
+      "id": 100,
+      "label": "modern living area with dark floors",
       "target_probs": {
         "1": 0.4
       }
     },
     {
-      "exist_prob": 1.0,
-      "id": 100,
-      "label": "modern living area with dark floors and white walls",
-      "target_probs": {
-        "1": 0.2
-      }
-    },
-    {
       "exist_prob": 0.9,
-      "id": 301,
-      "label": "white kitchen counter area adjacent to dining room",
+      "id": 101,
+      "label": "bright bedroom area beyond the wall",
       "target_probs": {
-        "1": 0.3
+        "1": 0.05
       }
     },
     {
       "exist_prob": 1.0,
       "id": 200,
-      "label": "dark textured lounge area with quilted walls",
+      "label": "textured blue lounge area",
       "target_probs": {
-        "1": 0.05
+        "1": 0.1
       }
     },
     {
       "exist_prob": 0.9,
       "id": 201,
-      "label": "white minimalist corridor beyond lounge area",
+      "label": "white minimalist room beyond the doorway",
       "target_probs": {
-        "1": 0.05
+        "1": 0.2
       }
     }
   ]
