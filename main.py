@@ -1,11 +1,13 @@
 ﻿from doctest import debug
 import json
 import math
+from pathlib import Path
 import sys
 from typing import Dict, List
 import numpy as np
 
 import debugpy
+from yaml import ScalarNode
 
 import Helper
 
@@ -242,6 +244,10 @@ def run_scenario(config_path: str) -> Dict[str, object]:
     print("debugger attached, continuing...")
 
     scenario = load_scenario_config(config_path)
+    run_output_dir = scenario["mllm"].get("raw_output_dir", "mllm_raw_outputs/default")
+    debug_output_dir = scenario["mllm"].get(
+        "debug_output_dir", "mllm_debug_outputs/default"
+    )
     agent_ids = [str(agent["id"]) for agent in scenario["agents"]]
     scan_id = str(scenario["scan_id"])
 
@@ -265,7 +271,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         read_saved_raw_outputs=bool(
             scenario["mllm"].get("read_saved_raw_outputs", False)
         ),
-        raw_output_dir=str(scenario["mllm"].get("raw_output_dir", "mllm_raw_outputs")),
+        raw_output_dir=run_output_dir,
+        raw_debug_dir=debug_output_dir,
         max_validation_retries=int(scenario["mllm"].get("max_validation_retries", 2)),
     )
 
@@ -296,6 +303,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             targets=graph_targets,
             graph=hypothesis_graph,
         )
+        debug_step_index = int(mllm_client.semantic_raw_output_index) - 1
 
         completed_targets = _collect_completed_targets(
             mllm_output={"detections": mllm_client.last_direct_detections},
@@ -311,6 +319,10 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         )
 
         if all(hypothesis_graph.target_found.values()):
+            hypothesis_graph.export_debug_snapshot(
+                output_dir=debug_output_dir,
+                step_index=debug_step_index,
+            )
             return {"target_found": dict(hypothesis_graph.target_found)}
 
         if mllm_output is None:
@@ -322,6 +334,10 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             mllm_output=mllm_output,
             agent_observations=agent_observations,
             scorer=scorer,
+        )
+        hypothesis_graph.export_debug_snapshot(
+            output_dir=debug_output_dir,
+            step_index=debug_step_index,
         )
 
         # print target finding status
@@ -360,7 +376,6 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             )
             # The graph is updated with the new viewpoint assignment before executing the move.
             hypothesis_graph.nodes[next_vp_node_id].grounded = True
-            hypothesis_graph.nodes[next_vp_node_id].node_visit_times += 1
             print(f"Move spec for {agent_id}: {next_vp_node_id}")
 
         # debugpy.breakpoint()
@@ -368,6 +383,9 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         Helper.execute_individual_first_hops(sims=agent_sims, move_specs=move_specs)
         for _ in range(2):
             print()
+
+        if debug_step_index == 3:
+            debugpy.breakpoint()
 
 
 def main(argv: List[str] | None = None) -> int:

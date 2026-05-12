@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from doctest import debug
 from typing import Dict, List, Tuple
 
+import debugpy
 from gurobipy import GRB, Model, quicksum
 
 from Helper import TYPE_VP
@@ -110,6 +112,12 @@ class RollingHorizonOptimizer:
                     vtype=GRB.BINARY,
                     name="x_%s_%s_%s" % (source_id, target_id, agent_id),
                 )
+                if (
+                    hypothesis_graph.observation_step == 5
+                    and source_id == 21
+                    and agent_id == "agent0"
+                ):
+                    debugpy.breakpoint()
 
         y = {}
         u = {}
@@ -313,8 +321,12 @@ class RollingHorizonOptimizer:
                 <= 1 - int(bool(target_found_flags[target_id])),
                 name="unique_target_%s" % target_id,
             )
-
+        # save the model
+        model.write("optimization_model.lp")
         model.optimize()
+
+        if hypothesis_graph.observation_step == 5:
+            debugpy.breakpoint()
 
         if model.Status != GRB.OPTIMAL:
             raise RuntimeError("Optimizer did not find an optimal solution.")

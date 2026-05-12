@@ -82,6 +82,16 @@ Compact shared graph summary:
       "i": 16,
       "j": 35,
       "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.2926,
+      "distance_var": 0.0456,
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "i": 32,
+      "j": 35,
+      "type": "vv"
     }
   ],
   "nodes": [
@@ -89,9 +99,9 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 0,
-      "node_visit_times": 2,
+      "node_visit_times": 1,
       "target_probs": {
-        "1": 0.1748
+        "1": 0.0
       },
       "type": "viewpoint"
     },
@@ -99,7 +109,7 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 9,
-      "node_visit_times": 2,
+      "node_visit_times": 1,
       "target_probs": {
         "1": 0.0
       },
@@ -119,9 +129,9 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 18,
-      "node_visit_times": 2,
+      "node_visit_times": 1,
       "target_probs": {
-        "1": 0.0824
+        "1": 0.0
       },
       "type": "viewpoint"
     },
@@ -129,9 +139,9 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 21,
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2305
+        "1": 0.3103
       },
       "type": "viewpoint"
     },
@@ -141,7 +151,7 @@ Compact shared graph summary:
       "id": 32,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0854
+        "1": 0.1149
       },
       "type": "viewpoint"
     },
@@ -151,7 +161,7 @@ Compact shared graph summary:
       "id": 35,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0854
+        "1": 0.1149
       },
       "type": "viewpoint"
     },
@@ -161,7 +171,7 @@ Compact shared graph summary:
       "id": 40,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1708
+        "1": 0.2299
       },
       "type": "viewpoint"
     },
@@ -171,7 +181,7 @@ Compact shared graph summary:
       "id": 41,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1708
+        "1": 0.2299
       },
       "type": "viewpoint"
     },
@@ -199,7 +209,7 @@ Compact shared graph summary:
       "exist_prob": 0.9,
       "grounded": 0,
       "id": 101,
-      "label": "bright bedroom area beyond the wall",
+      "label": "bright bedroom area adjacent to living room",
       "node_visit_times": 0,
       "target_probs": {
         "1": 0.1236
@@ -229,7 +239,7 @@ Compact shared graph summary:
       "exist_prob": 0.9,
       "grounded": 0,
       "id": 201,
-      "label": "white minimalist room beyond the doorway",
+      "label": "white corridor area beyond lounge",
       "node_visit_times": 0,
       "target_probs": {
         "1": 0.2472
@@ -417,9 +427,9 @@ Field descriptions:
   "invisible_region_nodes[].id": "Integer region id. Use a new id only if the region is not represented in the graph summary.",
   "invisible_region_nodes[].label": "Room or area label only, not an object name. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names.",
   "invisible_region_nodes[].target_probs": "Unnormalized target-location scores keyed by every active target_id. Values must be in (0, 1]. Do not use 0.0.",
-  "new_edges": "Uncertain hypothesis edges. Use legal VV or VZ edges only. A VZ edge may connect a viewpoint to any semantic region with no assigned viewpoints, whether the region is visible or invisible. Do not add a VZ edge to a region with assigned viewpoints or to the viewpoint's assigned region. Use low exist_prob for weak edges.",
+  "new_edges": "Uncertain hypothesis edges. Use legal VV or VZ edges only. For VV edges, include plausible direct local connections between unvisited non-current viewpoints when they make spatial sense, even if the evidence is uncertain; use lower exist_prob for weaker hypotheses. A VZ edge may connect a viewpoint to any semantic region with no assigned viewpoints, whether the region is visible or invisible. Do not add a VZ edge to a region with assigned viewpoints or to the viewpoint's assigned region.",
   "new_edges[].dist": "Estimated distance in meters. For VZ, this is surrogate approach effort, not literal executable motion.",
-  "new_edges[].edge_type": "Use VV only for a hypothesized direct connection between two unvisited non-current viewpoint nodes with clear layout evidence. Use VZ for a viewpoint-region edge.",
+  "new_edges[].edge_type": "Use VV for a plausible hypothesized direct connection between two unvisited non-current viewpoint nodes. The connection does not need to be visually certain, but it should make spatial sense based on layout, shared semantic-region cues, corridor continuity, nearby positions in the same open area, or plausible passage structure. Use lower exist_prob when the connection is weakly supported. Use VZ for a viewpoint-region edge.",
   "new_edges[].exist_prob": "Edge existence probability in (0, 1].",
   "new_edges[].i": "One endpoint id. It may be a viewpoint or region. For VV, it must be an unvisited viewpoint.",
   "new_edges[].j": "Other endpoint id. Never region-region. For VV, it must be an unvisited viewpoint. Because edges are undirected, do not output both directions.",
@@ -449,6 +459,6 @@ Current step request:
 - Treat partially visible adjacent areas as visible_region_nodes, not invisible_region_nodes.
 - Propose only legal uncertain edges supported by observation and graph context.
 - Propose VZ edges only to semantic regions with no assigned viewpoints; the region may be visible or invisible.
-- Propose VV edges only when two unvisited non-current viewpoints are directly connected by clear layout evidence; do not add VV edges only because they are both visible from the same current viewpoint.
+- Propose VV edges between two unvisited non-current viewpoints when a direct local connection is spatially plausible from the observation and graph context. The support may be uncertain, so use lower exist_prob for weak but meaningful hypotheses. Do not add arbitrary VV edges only because they are both visible from the same current viewpoint.
 - Keep graph_summary.viewpoint_to_region assignments only for non-current visible neighboring viewpoints. For current viewpoints, infer the best matching region from the current panorama and allow old assignments to be corrected.
 - Return compact JSON only.

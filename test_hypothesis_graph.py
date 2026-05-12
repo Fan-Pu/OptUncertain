@@ -1,6 +1,8 @@
 import importlib.util
+import json
 import pathlib
 import sys
+import tempfile
 import types
 import unittest
 
@@ -237,6 +239,40 @@ class HypothesisGraphUpdateTest(unittest.TestCase):
             if node.type == helper_stub.TYPE_REGION
         )
         self.assertAlmostEqual(glass_region_sum, 1.0)
+
+    def test_debug_snapshots_are_json_serializable_and_written(self):
+        graph, _ = self._build_graph_and_step_one()
+
+        json.dumps(graph.get_graph_layout_snapshot(), sort_keys=True)
+        json.dumps(graph.get_hypothesis_snapshot(), sort_keys=True)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            graph.export_debug_snapshot(output_dir=tmp_dir, step_index=0)
+
+            layout_path = pathlib.Path(tmp_dir) / "graph_layout_step_0000.json"
+            hypothesis_path = pathlib.Path(tmp_dir) / "hypothesis_step_0000.json"
+
+            self.assertTrue(layout_path.exists())
+            self.assertTrue(hypothesis_path.exists())
+
+            layout = json.loads(layout_path.read_text(encoding="utf-8"))
+            hypothesis = json.loads(hypothesis_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(layout["observation_step"], 1)
+        self.assertEqual(layout["region_to_viewpoints"]["10"], [1])
+        self.assertEqual(layout["region_to_viewpoints"]["11"], [2, 3])
+
+        pantry = next(node for node in hypothesis["nodes"] if node["id"] == 20)
+        self.assertEqual(pantry["label"], "kitchen pantry")
+        self.assertAlmostEqual(pantry["exist_prob"], 0.4)
+
+        vz_edge = next(
+            edge
+            for edge in hypothesis["edges"]
+            if edge["i"] == 2 and edge["j"] == 20
+        )
+        self.assertAlmostEqual(vz_edge["cond_exist_prob"], 0.6)
+        self.assertAlmostEqual(vz_edge["exist_prob"], 0.24)
 
 
 if __name__ == "__main__":

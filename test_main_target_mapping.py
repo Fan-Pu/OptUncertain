@@ -33,6 +33,16 @@ class _FakeGraph:
 
 
 class MainDetectionMappingTest(unittest.TestCase):
+    def test_run_output_dir_uses_config_stem(self):
+        output_dir = main_under_test._run_output_dir_for_config(
+            "scenarios/test1.json"
+        )
+
+        self.assertEqual(
+            pathlib.Path(output_dir),
+            pathlib.Path("mllm_raw_outputs") / "test1",
+        )
+
     def test_found_detection_marks_target_and_preserves_panorama_center(self):
         completed_targets = main_under_test._collect_completed_targets(
             mllm_output={

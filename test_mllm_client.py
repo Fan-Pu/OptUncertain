@@ -342,11 +342,19 @@ class JointMLLMClientTest(unittest.TestCase):
             )
             detection_saved_path = pathlib.Path(tmp_dir) / "detection_step_0000.json"
             saved_path = pathlib.Path(tmp_dir) / "semantic_step_0000.json"
+            agent0_image_path = (
+                pathlib.Path(tmp_dir) / "observation_step_0000_agent_agent0.jpg"
+            )
+            agent1_image_path = (
+                pathlib.Path(tmp_dir) / "observation_step_0000_agent_agent1.jpg"
+            )
             self.assertEqual(
                 detection_saved_path.read_text(encoding="utf-8"),
                 detection_decoded,
             )
             self.assertEqual(saved_path.read_text(encoding="utf-8"), graph_decoded)
+            self.assertEqual(agent0_image_path.read_bytes()[:2], b"\xff\xd8")
+            self.assertEqual(agent1_image_path.read_bytes()[:2], b"\xff\xd8")
 
         self.assertEqual(payload["agents"][0]["current_region_node_id"], 100)
         self.assertEqual(client.semantic_raw_output_index, 1)

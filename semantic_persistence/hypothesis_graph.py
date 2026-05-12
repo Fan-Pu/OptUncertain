@@ -12,9 +12,12 @@ updated with the paper's Bayesian rules.
 
 from __future__ import annotations
 
+from calendar import c
 import copy
+import json
 from logging import debug
 import math
+import os
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 import debugpy
@@ -633,6 +636,119 @@ class HypothesisGraph:
 
     get_MLLM_summary = get_mllm_summary
 
+    def get_graph_layout_snapshot(self) -> Dict[str, object]:
+        nodes = []
+        for node_id in sorted(self.nodes):
+            node = self.nodes[node_id]
+            node_record = {
+                "id": node.node_id,
+                "label": node.label,
+                "type": "region" if node.type == TYPE_REGION else "viewpoint",
+                "grounded": bool(node.grounded),
+                "node_visit_times": node.node_visit_times,
+                "connected_node_ids": sorted(node.connected_node_ids),
+            }
+            if node.type == TYPE_REGION:
+                node_record["assigned_viewpoint_ids"] = sorted(
+                    self.region_to_viewpoints.get(node.node_id, set())
+                )
+            nodes.append(node_record)
+
+        edges = []
+        for edge_id in sorted(self.edges):
+            edge = self.edges[edge_id]
+            edges.append(
+                {
+                    "i": edge.source_node_id,
+                    "j": edge.target_node_id,
+                    "type": self._edge_type(edge),
+                    "grounded": bool(edge.grounded),
+                }
+            )
+
+        return {
+            "observation_step": self.observation_step,
+            "agent_current_vp_ids": copy.deepcopy(self.agent_current_vp_ids),
+            "nodes": nodes,
+            "edges": edges,
+            "viewpoint_to_region": copy.deepcopy(self.viewpoint_to_region),
+            "region_to_viewpoints": {
+                region_id: sorted(viewpoint_ids)
+                for region_id, viewpoint_ids in sorted(
+                    self.region_to_viewpoints.items()
+                )
+            },
+        }
+
+    def get_hypothesis_snapshot(self) -> Dict[str, object]:
+        nodes = []
+        for node_id in sorted(self.nodes):
+            node = self.nodes[node_id]
+            nodes.append(
+                {
+                    "id": node.node_id,
+                    "label": node.label,
+                    "type": "region" if node.type == TYPE_REGION else "viewpoint",
+                    "grounded": bool(node.grounded),
+                    "exist_prob": node.exist_prob,
+                    "target_probs": dict(node.target_probs),
+                    "node_visit_times": node.node_visit_times,
+                }
+            )
+
+        edges = []
+        for edge_id in sorted(self.edges):
+            edge = self.edges[edge_id]
+            edges.append(
+                {
+                    "i": edge.source_node_id,
+                    "j": edge.target_node_id,
+                    "type": self._edge_type(edge),
+                    "distance_mean": edge.distance_mean,
+                    "distance_var": edge.distance_var,
+                    "cond_exist_prob": edge.cond_exist_prob,
+                    "exist_prob": edge.exist_prob,
+                    "grounded": bool(edge.grounded),
+                }
+            )
+
+        return {
+            "observation_step": self.observation_step,
+            "targets": copy.deepcopy(self.target_records),
+            "target_found": copy.deepcopy(self.target_found),
+            "bayes_config": copy.deepcopy(self.bayes_config),
+            "nodes": nodes,
+            "edges": edges,
+        }
+
+    def export_debug_snapshot(self, output_dir: str, step_index: int) -> None:
+        os.makedirs(output_dir, exist_ok=True)
+
+        layout_path = os.path.join(
+            output_dir,
+            "graph_layout_step_%04d.json" % int(step_index),
+        )
+        hypothesis_path = os.path.join(
+            output_dir,
+            "hypothesis_step_%04d.json" % int(step_index),
+        )
+
+        with open(layout_path, "w", encoding="utf-8") as file_handle:
+            json.dump(
+                self.get_graph_layout_snapshot(),
+                file_handle,
+                indent=2,
+                sort_keys=True,
+            )
+
+        with open(hypothesis_path, "w", encoding="utf-8") as file_handle:
+            json.dump(
+                self.get_hypothesis_snapshot(),
+                file_handle,
+                indent=2,
+                sort_keys=True,
+            )
+
     def _zero_target_probs(self) -> Dict[str, float]:
         return {target_id: 0.0 for target_id in self.target_ids}
 
@@ -878,6 +994,10 @@ class HypothesisGraph:
             viewpoint_scores = {}
 
             for node_id in viewpoint_node_ids:
+                # Grounded viewpoints are assumed to have already verified existence of their targets
+                if self.nodes[node_id].grounded:
+                    viewpoint_scores[node_id] = 0.0
+                    continue
                 if node_id in existing_node_ids:
                     prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
                 else:
