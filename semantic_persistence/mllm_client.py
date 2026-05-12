@@ -689,7 +689,7 @@ class MLLMClient:
                 messages=messages,
                 model_name=getattr(self, "detection_model_name", ""),
             )
-            debugpy.breakpoint()  # Set a breakpoint here to inspect the raw MLLM output during development.
+
             try:
                 raw = self._strip_code_fences(decoded)
                 payload = self._extract_json_object(raw)
@@ -941,13 +941,15 @@ class MLLMClient:
             ),
             "new_edges": (
                 "Uncertain hypothesis edges. Use legal VV or VZ edges only. "
-                "For VV edges, include plausible direct local connections between "
-                "unvisited non-current viewpoints when they make spatial sense, even if "
-                "the evidence is uncertain; use lower exist_prob for weaker hypotheses. "
-                "A VZ edge may connect a viewpoint to any semantic region with no "
-                "assigned viewpoints, whether the region is visible or invisible. "
-                "Do not add a VZ edge to a region with assigned viewpoints or to the "
-                "viewpoint's assigned region."
+                "For VV edges, include plausible directly traversable local connections "
+                "between unvisited non-current viewpoints. The evidence may be uncertain, "
+                "but the connection should not cross an apparent obstacle, large furniture, "
+                "wall, blocked passage, or other visible barrier. Two viewpoints being in "
+                "the same room or same semantic region is not sufficient by itself. Use lower "
+                "exist_prob for weaker but still traversable hypotheses. "
+                "A VZ edge may connect a viewpoint to any semantic region with no assigned "
+                "viewpoints, whether the region is visible or invisible. Do not add a VZ edge "
+                "to a region with assigned viewpoints or to the viewpoint's assigned region."
             ),
             "new_edges[].i": (
                 "One endpoint id. It may be a viewpoint or region. For VV, it must be an "
@@ -958,12 +960,14 @@ class MLLMClient:
                 "viewpoint. Because edges are undirected, do not output both directions."
             ),
             "new_edges[].edge_type": (
-                "Use VV for a plausible hypothesized direct connection between two "
-                "unvisited non-current viewpoint nodes. The connection does not need to "
-                "be visually certain, but it should make spatial sense based on layout, "
-                "shared semantic-region cues, corridor continuity, nearby positions in the "
-                "same open area, or plausible passage structure. Use lower exist_prob when "
-                "the connection is weakly supported. Use VZ for a viewpoint-region edge."
+                "Use VV for a plausible hypothesized directly traversable local connection "
+                "between two unvisited non-current viewpoint nodes. The connection does not "
+                "need to be certain, but it should appear physically passable from the "
+                "panorama and graph context. Do not propose a VV edge if a bed, sofa, table, "
+                "counter, wall, closed partition, or other visible obstacle appears to block "
+                "direct local movement between the viewpoints. Shared room membership alone "
+                "is not enough. Use lower exist_prob when the connection is weakly supported. "
+                "Use VZ for a viewpoint-region edge."
             ),
             "new_edges[].exist_prob": "Edge existence probability in (0, 1].",
             "new_edges[].dist": (
@@ -1053,7 +1057,7 @@ class MLLMClient:
             - viewpoint_target_probs must include every current agent viewpoint and every distinct visible neighboring viewpoint.
             - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id based on the current panorama. If a current viewpoint has an old graph_summary.viewpoint_to_region assignment, use it only as prior information, not as a fixed assignment. Reuse the old region only if it still matches the current panorama; otherwise reuse another matching existing region or create a new visible_region_node. For non-current visible neighboring viewpoints already listed in graph_summary.viewpoint_to_region, reuse the fixed region assignment exactly.
             - new_edges may contain only VV or VZ edges. Never use region-region edges. Do not add edges between a current viewpoint and its visible neighboring viewpoints, because those local edges are already provided by the navigation system. Do not add an edge between a viewpoint and its assigned region.
-            - A VV edge may be proposed only between two viewpoint nodes that satisfy all of the following conditions: both are non-current viewpoints and both are marked as unvisited according to the compact shared graph summary. The MLLM may hypothesize a direct local connection when it is spatially plausible from the current panoramas, graph context, shared semantic-region cues, corridor continuity, open-area structure, or nearby viewpoint placement. The connection does not need to be visually certain. Use lower exist_prob when the support is weak. Do not add arbitrary VV edges only because two viewpoints are both visible from the same current viewpoint. If visit-state information is unavailable for a candidate viewpoint, treat the candidate as not eligible for a new VV edge unless the user message explicitly identifies it as unvisited.
+            - A VV edge may be proposed only between two viewpoint nodes that satisfy all of the following conditions: both are non-current viewpoints and both are marked as unvisited according to the compact shared graph summary. The MLLM may hypothesize a direct local connection when it is spatially plausible and appears directly traversable from the current panoramas and graph context. The evidence does not need to be certain, but the proposed connection should not cross an apparent obstacle, large furniture, wall, blocked passage, closed partition, or other visible barrier. Two viewpoints being visible from the same current viewpoint, or belonging to the same semantic region, is not sufficient by itself. Use lower exist_prob when the support is weak but the local connection still appears passable. If visit-state information is unavailable for a candidate viewpoint, treat the candidate as not eligible for a new VV edge unless the user message explicitly identifies it as unvisited.
             - A VZ edge connects a viewpoint to a semantic region with no assigned viewpoints. The region may be visible or invisible. Do not add a VZ edge to a region with assigned viewpoints or between a viewpoint and its assigned region.
             - If a viewpoint is listed under a region in viewpoint_node_assigns, do not create a VZ edge between that viewpoint and that region. The assignment already represents the viewpoint-region relation.
             - Do not merge multiple rooms or areas into one region label. A region must describe one spatially coherent area only.
@@ -1101,7 +1105,7 @@ class MLLMClient:
                 - Treat partially visible adjacent areas as visible_region_nodes, not invisible_region_nodes.
                 - Propose only legal uncertain edges supported by observation and graph context.
                 - Propose VZ edges only to semantic regions with no assigned viewpoints; the region may be visible or invisible.
-                - Propose VV edges between two unvisited non-current viewpoints when a direct local connection is spatially plausible from the observation and graph context. The support may be uncertain, so use lower exist_prob for weak but meaningful hypotheses. Do not add arbitrary VV edges only because they are both visible from the same current viewpoint.
+                - Propose VV edges between two unvisited non-current viewpoints only when a directly traversable local connection is spatially plausible from the observation and graph context. The support may be uncertain, so use lower exist_prob for weak but meaningful hypotheses. Do not propose a VV edge across an apparent obstacle, large furniture, wall, blocked passage, or closed partition. Same-room or same-region membership alone is not enough.
                 - Keep graph_summary.viewpoint_to_region assignments only for non-current visible neighboring viewpoints. For current viewpoints, infer the best matching region from the current panorama and allow old assignments to be corrected.
                 - Return compact JSON only.
                 """)

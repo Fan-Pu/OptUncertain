@@ -2,7 +2,7 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 100
+      "current_region_node_id": 300
     },
     {
       "agent_id": "agent1",
@@ -38,9 +38,7 @@
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        15,
-        21,
-        27
+        21
       ],
       "region_node_id": 100
     },
@@ -50,6 +48,13 @@
         18
       ],
       "region_node_id": 200
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        15,
+        27
+      ],
+      "region_node_id": 300
     }
   ],
   "viewpoint_target_probs": [
@@ -68,7 +73,7 @@
     {
       "id": 21,
       "target_probs": {
-        "1": 0.1
+        "1": 0.2
       }
     },
     {
@@ -87,18 +92,26 @@
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 100,
-      "label": "modern living area with dark floors",
+      "id": 300,
+      "label": "white kitchen area with bar stools",
       "target_probs": {
-        "1": 0.6
+        "1": 0.4
+      }
+    },
+    {
+      "exist_prob": 1.0,
+      "id": 100,
+      "label": "modern living area with white sofa",
+      "target_probs": {
+        "1": 0.3
       }
     },
     {
       "exist_prob": 1.0,
       "id": 200,
-      "label": "textured blue lounge area",
+      "label": "dark textured lounge area with quilted walls",
       "target_probs": {
-        "1": 0.2
+        "1": 0.1
       }
     }
   ]

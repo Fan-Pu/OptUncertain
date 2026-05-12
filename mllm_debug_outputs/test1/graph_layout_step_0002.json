@@ -57,12 +57,6 @@
       "i": 21,
       "j": 27,
       "type": "vv"
-    },
-    {
-      "grounded": false,
-      "i": 32,
-      "j": 35,
-      "type": "vv"
     }
   ],
   "nodes": [
@@ -145,8 +139,7 @@
     },
     {
       "connected_node_ids": [
-        16,
-        35
+        16
       ],
       "grounded": false,
       "id": 32,
@@ -156,8 +149,7 @@
     },
     {
       "connected_node_ids": [
-        16,
-        32
+        16
       ],
       "grounded": false,
       "id": 35,
@@ -188,27 +180,26 @@
     {
       "assigned_viewpoint_ids": [
         0,
-        11,
         16,
-        21,
-        27
+        21
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 100,
-      "label": "modern living area with dark floors",
+      "label": "modern living area with white sofa",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
+        11,
         32,
         35
       ],
       "connected_node_ids": [],
       "grounded": false,
       "id": 101,
-      "label": "bright bedroom area adjacent to living room",
+      "label": "bedroom area with large white bed",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -220,7 +211,7 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 200,
-      "label": "textured blue lounge area",
+      "label": "dark textured lounge area with quilted walls",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -232,7 +223,18 @@
       "connected_node_ids": [],
       "grounded": false,
       "id": 201,
-      "label": "white corridor area beyond lounge",
+      "label": "bright corridor area beyond lounge",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        27
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 300,
+      "label": "white kitchen area with bar stools",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -241,12 +243,11 @@
   "region_to_viewpoints": {
     "100": [
       0,
-      11,
       16,
-      21,
-      27
+      21
     ],
     "101": [
+      11,
       32,
       35
     ],
@@ -257,16 +258,19 @@
     "201": [
       40,
       41
+    ],
+    "300": [
+      27
     ]
   },
   "viewpoint_to_region": {
     "0": 100,
     "9": 200,
-    "11": 100,
+    "11": 101,
     "16": 100,
     "18": 200,
     "21": 100,
-    "27": 100,
+    "27": 300,
     "32": 101,
     "35": 101,
     "40": 201,
