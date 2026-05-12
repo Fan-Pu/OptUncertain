@@ -1,13 +1,11 @@
 ﻿from doctest import debug
 import json
-import math
 from pathlib import Path
 import sys
 from typing import Dict, List
 import numpy as np
-
+from graph_visualizer import visualize_instance
 import debugpy
-from yaml import ScalarNode
 
 import Helper
 
@@ -242,6 +240,9 @@ def run_scenario(config_path: str) -> Dict[str, object]:
     print("debugpy listening on 5678, waiting...")
     debugpy.wait_for_client()
     print("debugger attached, continuing...")
+
+    debugpy.breakpoint()
+    server = visualize_instance(Path(config_path).stem)
 
     scenario = load_scenario_config(config_path)
     run_output_dir = scenario["mllm"].get("raw_output_dir", "mllm_raw_outputs/default")
