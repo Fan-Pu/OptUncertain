@@ -1,5 +1,7 @@
 import json
+import subprocess
 import unittest
+from unittest.mock import patch
 from urllib.request import urlopen
 
 from graph_visualizer import start_visualizer_server
@@ -45,6 +47,33 @@ class GraphVisualizerTest(unittest.TestCase):
         self.assertIn("Graph Hypothesis Visualizer", html)
         self.assertEqual(payload["instance_name"], "test1")
         self.assertEqual(len(payload["steps"]), 4)
+
+    def test_server_opens_windows_browser_when_requested(self):
+        server = None
+        with patch("graph_visualizer.server.subprocess.run") as run:
+            server = start_visualizer_server("test1", open_browser=True)
+
+            run.assert_called_once_with(
+                [
+                    "powershell.exe",
+                    "-NoProfile",
+                    "-Command",
+                    "Start-Process",
+                    server.url,
+                ],
+                check=True,
+            )
+        server.shutdown()
+
+    def test_server_raises_when_windows_browser_open_fails(self):
+        with patch("graph_visualizer.server.subprocess.run") as run:
+            run.side_effect = subprocess.CalledProcessError(
+                returncode=1,
+                cmd=["powershell.exe"],
+            )
+
+            with self.assertRaises(subprocess.CalledProcessError):
+                start_visualizer_server("test1", open_browser=True)
 
     def test_viewer_has_step_controls(self):
         html = render_viewer_html()

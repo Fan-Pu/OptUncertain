@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import subprocess
 import threading
-import webbrowser
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -30,6 +30,13 @@ class VisualizationServer:
         self.httpd.shutdown()
         self.httpd.server_close()
         self.thread.join(timeout=5.0)
+
+
+def _open_windows_browser(url: str) -> None:
+    subprocess.run(
+        ["powershell.exe", "-NoProfile", "-Command", "Start-Process", url],
+        check=True,
+    )
 
 
 def visualize_instance(
@@ -104,5 +111,5 @@ def start_visualizer_server(
         thread=thread,
     )
     if open_browser:
-        webbrowser.open(server.url)
+        _open_windows_browser(server.url)
     return server
