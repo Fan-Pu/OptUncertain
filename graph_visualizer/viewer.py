@@ -59,6 +59,12 @@ def render_viewer_html() -> str:
       cursor: default;
       background: #f2f4f7;
     }
+    button[aria-pressed="true"] {
+      border-color: #7a5cfa;
+      background: #eef2ff;
+      color: #312e81;
+      font-weight: 700;
+    }
     .controls {
       display: flex;
       align-items: center;
@@ -151,6 +157,7 @@ def render_viewer_html() -> str:
       margin: 0;
       min-width: 0;
       overflow-wrap: anywhere;
+      white-space: pre-wrap;
     }
     table {
       width: 100%;
@@ -203,6 +210,12 @@ def render_viewer_html() -> str:
     .node {
       cursor: pointer;
     }
+    .node.viewpoint.draggable {
+      cursor: grab;
+    }
+    .node.viewpoint.draggable.dragging {
+      cursor: grabbing;
+    }
     .node text {
       font-size: 11px;
       fill: #111827;
@@ -226,9 +239,13 @@ def render_viewer_html() -> str:
     .edge.ungrounded line {
       opacity: 0.45;
     }
+    .region-hull {
+      fill-opacity: 0.18;
+      stroke-width: 2;
+    }
     .selected line,
     .selected circle,
-    .selected rect {
+    .selected polygon {
       stroke: #111827;
       stroke-width: 4;
     }
@@ -246,6 +263,8 @@ def render_viewer_html() -> str:
   <header>
     <h1 id="title">Graph Hypothesis Visualizer</h1>
     <div class="controls">
+      <button id="useSavedLayoutButton" type="button" aria-pressed="false">Use saved layout: Off</button>
+      <button id="resetDefaultLayoutButton" type="button" disabled>Retrieve default layout for this step</button>
       <button id="prevButton" type="button">Previous</button>
       <div id="stepLabel"></div>
       <button id="nextButton" type="button">Next</button>
@@ -301,12 +320,25 @@ def render_viewer_html() -> str:
     let payload = null;
     let stepPosition = 0;
     let selected = null;
+    let dragState = null;
+    let useSavedLayout = false;
+    const positionOverrides = new Map();
 
     const graph = document.getElementById("graph");
+    const useSavedLayoutButton = document.getElementById("useSavedLayoutButton");
+    const resetDefaultLayoutButton = document.getElementById("resetDefaultLayoutButton");
     const prevButton = document.getElementById("prevButton");
     const nextButton = document.getElementById("nextButton");
     const stepLabel = document.getElementById("stepLabel");
 
+    useSavedLayoutButton.addEventListener("click", () => {
+      useSavedLayout = !useSavedLayout;
+      dragState = null;
+      render();
+    });
+    resetDefaultLayoutButton.addEventListener("click", () => {
+      resetDefaultLayoutForStep();
+    });
     prevButton.addEventListener("click", () => {
       stepPosition = Math.max(0, stepPosition - 1);
       selected = null;
@@ -318,6 +350,31 @@ def render_viewer_html() -> str:
       render();
     });
     window.addEventListener("resize", () => renderGraph(currentStep()));
+    graph.addEventListener("pointermove", event => {
+      if (!dragState) return;
+      const point = graphPoint(event);
+      const x = clamp(point.x + dragState.offsetX, 24, graph.viewBox.baseVal.width - 24);
+      const y = clamp(point.y + dragState.offsetY, 24, graph.viewBox.baseVal.height - 24);
+      setPositionOverride(dragState.stepIndex, dragState.nodeId, x, y);
+      renderGraph(currentStep());
+    });
+    graph.addEventListener("pointerup", event => {
+      if (!dragState) return;
+      const point = graphPoint(event);
+      const x = clamp(point.x + dragState.offsetX, 24, graph.viewBox.baseVal.width - 24);
+      const y = clamp(point.y + dragState.offsetY, 24, graph.viewBox.baseVal.height - 24);
+      setPositionOverride(dragState.stepIndex, dragState.nodeId, x, y);
+      const update = {
+        step_index: dragState.stepIndex,
+        node_id: dragState.nodeId,
+        x: x,
+        y: y
+      };
+      graph.releasePointerCapture(dragState.pointerId);
+      dragState = null;
+      renderGraph(currentStep());
+      savePosition(update);
+    });
 
     fetch("/api/steps")
       .then(response => response.json())
@@ -336,6 +393,11 @@ def render_viewer_html() -> str:
       const step = currentStep();
       prevButton.disabled = stepPosition === 0;
       nextButton.disabled = stepPosition === payload.steps.length - 1;
+      useSavedLayoutButton.setAttribute("aria-pressed", String(useSavedLayout));
+      useSavedLayoutButton.textContent = useSavedLayout
+        ? "Use saved layout: On"
+        : "Use saved layout: Off";
+      resetDefaultLayoutButton.disabled = !useSavedLayout;
       stepLabel.textContent = `Step ${stepPosition + 1} / ${payload.steps.length}`;
       renderGraph(step);
       renderSelection(step);
@@ -355,10 +417,44 @@ def render_viewer_html() -> str:
       graph.setAttribute("viewBox", `0 0 ${width} ${height}`);
 
       const layoutNodes = step.layout.nodes;
-      const nodeById = new Map(layoutNodes.map(node => [String(node.id), node]));
-      const hypothesisNodeById = new Map(step.hypothesis.nodes.map(node => [String(node.id), node]));
       const hypothesisEdgeById = new Map(step.hypothesis.edges.map(edge => [edgeKey(edge.i, edge.j), edge]));
-      const positions = computePositions(step, width, height);
+      const positions = computePositions(step, width, height, {
+        useSavedPositions: useSavedLayout,
+        useOverrides: useSavedLayout
+      });
+
+      const regionLayer = svgEl("g", {});
+      graph.appendChild(regionLayer);
+      for (const node of layoutNodes.filter(item => item.type === "region").sort(byId)) {
+        const hull = regionHull(node, positions);
+        const center = polygonCentroid(hull);
+        positions.set(String(node.id), center);
+        const group = svgEl("g", {
+          class: `node region ${isSelectedNode(node.id) ? "selected" : ""}`
+        });
+        group.addEventListener("click", () => {
+          selected = { kind: "node", id: node.id };
+          render();
+        });
+        const title = svgEl("title", {});
+        title.textContent = `${node.type} ${node.id}: ${node.label}`;
+        group.appendChild(title);
+        group.appendChild(svgEl("polygon", {
+          class: "region-hull",
+          points: hull.map(point => `${point.x},${point.y}`).join(" "),
+          fill: node.grounded ? "var(--grounded)" : "var(--region)",
+          stroke: node.grounded ? "var(--grounded)" : "var(--region)"
+        }));
+        const idText = svgEl("text", {
+          x: center.x,
+          y: center.y + 4,
+          "text-anchor": "middle",
+          "font-weight": 700
+        });
+        idText.textContent = String(node.id);
+        group.appendChild(idText);
+        regionLayer.appendChild(group);
+      }
 
       const edgeLayer = svgEl("g", {});
       graph.appendChild(edgeLayer);
@@ -397,39 +493,39 @@ def render_viewer_html() -> str:
 
       const nodeLayer = svgEl("g", {});
       graph.appendChild(nodeLayer);
-      for (const node of layoutNodes) {
+      for (const node of layoutNodes.filter(item => item.type === "viewpoint").sort(byId)) {
         const pos = positions.get(String(node.id));
-        const hyp = hypothesisNodeById.get(String(node.id)) || node;
         const currentAgent = agentAtNode(step, node.id);
-        const isRegion = node.type === "region";
         const group = svgEl("g", {
-          class: `node ${isSelectedNode(node.id) ? "selected" : ""}`
+          class: `node viewpoint ${useSavedLayout ? "draggable" : ""} ${dragState && String(dragState.nodeId) === String(node.id) ? "dragging" : ""} ${isSelectedNode(node.id) ? "selected" : ""}`
+        });
+        group.addEventListener("pointerdown", event => {
+          if (!useSavedLayout) return;
+          if (event.button !== 0) return;
+          const point = graphPoint(event);
+          dragState = {
+            stepIndex: step.step_index,
+            nodeId: Number(node.id),
+            pointerId: event.pointerId,
+            offsetX: pos.x - point.x,
+            offsetY: pos.y - point.y
+          };
+          graph.setPointerCapture(event.pointerId);
+          selected = { kind: "node", id: node.id };
+          renderSelection(step);
         });
         group.addEventListener("click", () => {
           selected = { kind: "node", id: node.id };
           render();
         });
-        if (isRegion) {
-          group.appendChild(svgEl("rect", {
-            x: pos.x - 54,
-            y: pos.y - 25,
-            width: 108,
-            height: 50,
-            rx: 6,
-            fill: node.grounded ? "var(--grounded)" : "var(--region)",
-            stroke: currentAgent ? "var(--current)" : "#ffffff",
-            "stroke-width": currentAgent ? 5 : 2
-          }));
-        } else {
-          group.appendChild(svgEl("circle", {
-            cx: pos.x,
-            cy: pos.y,
-            r: currentAgent ? 20 : 16,
-            fill: node.grounded ? "var(--grounded)" : "var(--viewpoint)",
-            stroke: currentAgent ? "var(--current)" : "#ffffff",
-            "stroke-width": currentAgent ? 5 : 2
-          }));
-        }
+        group.appendChild(svgEl("circle", {
+          cx: pos.x,
+          cy: pos.y,
+          r: currentAgent ? 20 : 16,
+          fill: node.grounded ? "var(--grounded)" : "var(--viewpoint)",
+          stroke: currentAgent ? "var(--current)" : "#ffffff",
+          "stroke-width": currentAgent ? 5 : 2
+        }));
         const title = svgEl("title", {});
         title.textContent = `${node.type} ${node.id}: ${node.label}`;
         group.appendChild(title);
@@ -441,17 +537,10 @@ def render_viewer_html() -> str:
         });
         idText.textContent = String(node.id);
         group.appendChild(idText);
-        const labelText = svgEl("text", {
-          x: pos.x,
-          y: pos.y + (isRegion ? 42 : 34),
-          "text-anchor": "middle"
-        });
-        labelText.textContent = shortLabel(hyp.label, 24);
-        group.appendChild(labelText);
         if (currentAgent) {
           const agentText = svgEl("text", {
             x: pos.x,
-            y: pos.y - (isRegion ? 34 : 25),
+            y: pos.y - 25,
             "text-anchor": "middle",
             "font-weight": 700,
             fill: "var(--current)"
@@ -463,7 +552,9 @@ def render_viewer_html() -> str:
       }
     }
 
-    function computePositions(step, width, height) {
+    function computePositions(step, width, height, options = {}) {
+      const useSavedPositions = options.useSavedPositions === true;
+      const useOverrides = options.useOverrides === true;
       const nodes = step.layout.nodes;
       const regions = nodes.filter(node => node.type === "region").sort(byId);
       const viewpoints = nodes.filter(node => node.type === "viewpoint").sort(byId);
@@ -506,7 +597,81 @@ def render_viewer_html() -> str:
           y: clamp(cy + Math.sin(angle) * outerRadius, 40, height - 40)
         });
       });
+
+      if (useSavedPositions) {
+        viewpoints.forEach(node => {
+          if (typeof node.x === "number" && typeof node.y === "number") {
+            positions.set(String(node.id), {
+              x: clamp(node.x, 24, width - 24),
+              y: clamp(node.y, 24, height - 24)
+            });
+          }
+          const override = getPositionOverride(step.step_index, node.id);
+          if (useOverrides && override) {
+            positions.set(String(node.id), {
+              x: clamp(override.x, 24, width - 24),
+              y: clamp(override.y, 24, height - 24)
+            });
+          }
+        });
+      }
       return positions;
+    }
+
+    function regionHull(region, positions) {
+      const padding = 42;
+      const samples = [];
+      const assignedIds = (region.assigned_viewpoint_ids || []).map(String).sort(numericStringCompare);
+      assignedIds.forEach(id => {
+        const center = positions.get(id);
+        for (let index = 0; index < 16; index += 1) {
+          const angle = (2 * Math.PI * index) / 16;
+          samples.push({
+            x: center.x + Math.cos(angle) * padding,
+            y: center.y + Math.sin(angle) * padding
+          });
+        }
+      });
+      return convexHull(samples);
+    }
+
+    function convexHull(points) {
+      const sorted = points
+        .slice()
+        .sort((a, b) => a.x === b.x ? a.y - b.y : a.x - b.x);
+      const lower = [];
+      for (const point of sorted) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+          lower.pop();
+        }
+        lower.push(point);
+      }
+      const upper = [];
+      for (let index = sorted.length - 1; index >= 0; index -= 1) {
+        const point = sorted[index];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+          upper.pop();
+        }
+        upper.push(point);
+      }
+      lower.pop();
+      upper.pop();
+      return lower.concat(upper);
+    }
+
+    function cross(origin, a, b) {
+      return (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+    }
+
+    function polygonCentroid(points) {
+      const total = points.reduce((acc, point) => ({
+        x: acc.x + point.x,
+        y: acc.y + point.y
+      }), { x: 0, y: 0 });
+      return {
+        x: total.x / points.length,
+        y: total.y / points.length
+      };
     }
 
     function renderSelection(step) {
@@ -548,7 +713,7 @@ def render_viewer_html() -> str:
       const agents = formatObject(step.layout.agent_current_vp_ids);
       const targets = step.hypothesis.targets
         .map(target => `${target.target_id}: ${target.description}`)
-        .join("<br>");
+        .join("\n");
       document.getElementById("summary").innerHTML = definitionList({
         step_index: step.step_index,
         observation_step: step.layout.observation_step,
@@ -654,8 +819,83 @@ def render_viewer_html() -> str:
     }
 
     function edgeLabel(edge) {
-      if (edge.distance_mean === undefined) return edge.type;
-      return `${edge.type} ${formatNumber(edge.distance_mean)}`;
+      return edge.type;
+    }
+
+    function graphPoint(event) {
+      const point = graph.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      return point.matrixTransform(graph.getScreenCTM().inverse());
+    }
+
+    function positionKey(stepIndex, nodeId) {
+      return `${stepIndex}:${nodeId}`;
+    }
+
+    function getPositionOverride(stepIndex, nodeId) {
+      return positionOverrides.get(positionKey(stepIndex, nodeId));
+    }
+
+    function setPositionOverride(stepIndex, nodeId, x, y) {
+      positionOverrides.set(positionKey(stepIndex, nodeId), { x: x, y: y });
+    }
+
+    function clearPositionOverridesForStep(stepIndex) {
+      for (const key of Array.from(positionOverrides.keys())) {
+        if (key.startsWith(`${stepIndex}:`)) {
+          positionOverrides.delete(key);
+        }
+      }
+    }
+
+    function savePosition(update) {
+      const step = payload.steps.find(item => Number(item.step_index) === Number(update.step_index));
+      const node = step.layout.nodes.find(item => Number(item.id) === Number(update.node_id));
+      node.x = update.x;
+      node.y = update.y;
+      fetch("/api/layout-position", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(update)
+      }).then(response => response.json());
+    }
+
+    function savePositions(update) {
+      fetch("/api/layout-positions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(update)
+      }).then(response => response.json());
+    }
+
+    function resetDefaultLayoutForStep() {
+      if (!useSavedLayout) return;
+      const step = currentStep();
+      const width = graph.clientWidth || 900;
+      const height = graph.clientHeight || 560;
+      const positions = computePositions(step, width, height, {
+        useSavedPositions: false,
+        useOverrides: false
+      });
+      const updates = step.layout.nodes
+        .filter(node => node.type === "viewpoint")
+        .map(node => {
+          const position = positions.get(String(node.id));
+          node.x = position.x;
+          node.y = position.y;
+          return {
+            node_id: Number(node.id),
+            x: position.x,
+            y: position.y
+          };
+        });
+      clearPositionOverridesForStep(step.step_index);
+      renderGraph(step);
+      savePositions({
+        step_index: step.step_index,
+        positions: updates
+      });
     }
 
     function byId(a, b) {

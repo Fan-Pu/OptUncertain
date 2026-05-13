@@ -67,7 +67,6 @@ def start_visualizer_server(
         "instance_name": str(instance_name),
         "steps": steps,
     }
-    payload_bytes = json.dumps(payload, sort_keys=True).encode("utf-8")
     html_bytes = render_viewer_html().encode("utf-8")
 
     class VisualizerRequestHandler(BaseHTTPRequestHandler):
@@ -76,6 +75,7 @@ def start_visualizer_server(
             if parsed.path == "/":
                 self._send_bytes(html_bytes, "text/html; charset=utf-8")
             elif parsed.path == "/api/steps":
+                payload_bytes = json.dumps(payload, sort_keys=True).encode("utf-8")
                 self._send_bytes(payload_bytes, "application/json; charset=utf-8")
             elif parsed.path.startswith("/assets/"):
                 asset_path = root / unquote(parsed.path[len("/assets/") :])
@@ -86,6 +86,34 @@ def start_visualizer_server(
                 )
             else:
                 self.send_error(404)
+
+        def do_POST(self) -> None:
+            parsed = urlparse(self.path)
+            if parsed.path not in ("/api/layout-position", "/api/layout-positions"):
+                self.send_error(404)
+                return
+            content_length = int(self.headers["Content-Length"])
+            body = self.rfile.read(content_length)
+            update = json.loads(body.decode("utf-8"))
+            if parsed.path == "/api/layout-position":
+                _save_layout_position(
+                    project_root=root,
+                    instance_name=str(instance_name),
+                    payload=payload,
+                    step_index=int(update["step_index"]),
+                    node_id=int(update["node_id"]),
+                    x=float(update["x"]),
+                    y=float(update["y"]),
+                )
+            else:
+                _save_layout_positions(
+                    project_root=root,
+                    instance_name=str(instance_name),
+                    payload=payload,
+                    step_index=int(update["step_index"]),
+                    positions=update["positions"],
+                )
+            self._send_bytes(b"{}", "application/json; charset=utf-8")
 
         def log_message(self, format: str, *args: object) -> None:
             return
@@ -113,3 +141,57 @@ def start_visualizer_server(
     if open_browser:
         _open_windows_browser(server.url)
     return server
+
+
+def _save_layout_position(
+    project_root: Path,
+    instance_name: str,
+    payload: dict[str, object],
+    step_index: int,
+    node_id: int,
+    x: float,
+    y: float,
+) -> None:
+    _save_layout_positions(
+        project_root=project_root,
+        instance_name=instance_name,
+        payload=payload,
+        step_index=step_index,
+        positions=[
+            {
+                "node_id": node_id,
+                "x": x,
+                "y": y,
+            }
+        ],
+    )
+
+
+def _save_layout_positions(
+    project_root: Path,
+    instance_name: str,
+    payload: dict[str, object],
+    step_index: int,
+    positions: list[dict[str, object]],
+) -> None:
+    debug_dir = project_root / "mllm_debug_outputs" / str(instance_name)
+    layout_path = debug_dir / ("graph_layout_step_%04d.json" % int(step_index))
+    layout = json.loads(layout_path.read_text(encoding="utf-8"))
+    position_by_node_id = {
+        int(position["node_id"]): position
+        for position in positions
+    }
+    for node in layout["nodes"]:
+        position = position_by_node_id.get(int(node["id"]))
+        if position is not None:
+            node["x"] = float(position["x"])
+            node["y"] = float(position["y"])
+    layout_path.write_text(
+        json.dumps(layout, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    for step in payload["steps"]:
+        if int(step["step_index"]) == int(step_index):
+            step["layout"] = layout
+            break
