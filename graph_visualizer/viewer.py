@@ -100,6 +100,29 @@ def render_viewer_html() -> str:
       position: relative;
       overflow: hidden;
     }
+    .graph-toolbar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 2;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .graph-toolbar button {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, 0.16);
+    }
+    .graph-toolbar .graph-reset-button {
+      width: auto;
+      padding: 0 10px;
+      font-size: 13px;
+    }
     svg {
       width: 100%;
       height: 100%;
@@ -109,6 +132,13 @@ def render_viewer_html() -> str:
         linear-gradient(#eef2f6 1px, transparent 1px),
         linear-gradient(90deg, #eef2f6 1px, transparent 1px);
       background-size: 32px 32px;
+    }
+    #graph:focus {
+      outline: 2px solid #7a5cfa;
+      outline-offset: -2px;
+    }
+    #graph.panning {
+      cursor: grabbing;
     }
     .legend {
       display: flex;
@@ -281,7 +311,12 @@ def render_viewer_html() -> str:
   <main>
     <div class="workspace">
       <section class="panel graph-panel">
-        <svg id="graph" role="img" aria-label="Graph layout"></svg>
+        <div class="graph-toolbar" aria-label="Graph view controls">
+          <button id="graphZoomInButton" type="button" title="Zoom in" aria-label="Zoom in">+</button>
+          <button id="graphZoomOutButton" type="button" title="Zoom out" aria-label="Zoom out">-</button>
+          <button id="graphResetViewButton" class="graph-reset-button" type="button" title="Reset view" aria-label="Reset view">Reset</button>
+        </div>
+        <svg id="graph" tabindex="0" role="img" aria-label="Graph layout"></svg>
       </section>
       <section class="panel">
         <div class="legend">
@@ -329,11 +364,20 @@ def render_viewer_html() -> str:
     let stepPosition = 0;
     let selected = null;
     let dragState = null;
+    let panState = null;
     let selectionState = null;
     let useSavedLayout = false;
     const positionOverrides = new Map();
+    const viewportStates = new Map();
+    const GRAPH_MIN_SCALE = 0.2;
+    const GRAPH_MAX_SCALE = 5;
+    const GRAPH_ZOOM_FACTOR = 1.2;
+    const GRAPH_FIT_PADDING = 56;
 
     const graph = document.getElementById("graph");
+    const graphZoomInButton = document.getElementById("graphZoomInButton");
+    const graphZoomOutButton = document.getElementById("graphZoomOutButton");
+    const graphResetViewButton = document.getElementById("graphResetViewButton");
     const useSavedLayoutButton = document.getElementById("useSavedLayoutButton");
     const resetDefaultLayoutButton = document.getElementById("resetDefaultLayoutButton");
     const saveLayoutButton = document.getElementById("saveLayoutButton");
@@ -353,6 +397,19 @@ def render_viewer_html() -> str:
     saveLayoutButton.addEventListener("click", () => {
       saveLayoutForStep();
     });
+    graphZoomInButton.addEventListener("click", () => {
+      graph.focus();
+      zoomGraphAtCenter(GRAPH_ZOOM_FACTOR);
+    });
+    graphZoomOutButton.addEventListener("click", () => {
+      graph.focus();
+      zoomGraphAtCenter(1 / GRAPH_ZOOM_FACTOR);
+    });
+    graphResetViewButton.addEventListener("click", () => {
+      graph.focus();
+      resetGraphViewport(currentStep());
+      renderGraph(currentStep());
+    });
     prevButton.addEventListener("click", () => {
       stepPosition = Math.max(0, stepPosition - 1);
       selected = null;
@@ -368,10 +425,18 @@ def render_viewer_html() -> str:
       render();
     });
     window.addEventListener("resize", () => renderGraph(currentStep()));
+    graph.addEventListener("pointerdown", () => {
+      graph.focus();
+    }, true);
     graph.addEventListener("pointerdown", event => {
-      if (!useSavedLayout) return;
+      graph.focus();
       if (event.button !== 0) return;
       if (event.target !== graph) return;
+      if (event.ctrlKey) {
+        beginGraphPan(event);
+        return;
+      }
+      if (!useSavedLayout) return;
       const point = graphPoint(event);
       selectionState = {
         stepIndex: currentStep().step_index,
@@ -386,6 +451,11 @@ def render_viewer_html() -> str:
       render();
     });
     graph.addEventListener("pointermove", event => {
+      if (panState) {
+        updateGraphPan(event);
+        renderGraph(currentStep());
+        return;
+      }
       if (dragState) {
         updateDragPositions(event);
         renderGraph(currentStep());
@@ -400,6 +470,14 @@ def render_viewer_html() -> str:
       }
     });
     graph.addEventListener("pointerup", event => {
+      if (panState) {
+        updateGraphPan(event);
+        graph.releasePointerCapture(panState.pointerId);
+        panState = null;
+        graph.classList.remove("panning");
+        renderGraph(currentStep());
+        return;
+      }
       if (dragState) {
         updateDragPositions(event);
         graph.releasePointerCapture(dragState.pointerId);
@@ -419,9 +497,17 @@ def render_viewer_html() -> str:
     });
     graph.addEventListener("pointercancel", () => {
       dragState = null;
+      panState = null;
       selectionState = null;
+      graph.classList.remove("panning");
       render();
     });
+    graph.addEventListener("wheel", event => {
+      event.preventDefault();
+      graph.focus();
+      const factor = event.deltaY < 0 ? GRAPH_ZOOM_FACTOR : 1 / GRAPH_ZOOM_FACTOR;
+      zoomGraphAtPoint(factor, graphScreenPoint(event));
+    }, { passive: false });
 
     fetch("/api/steps")
       .then(response => response.json())
@@ -469,13 +555,20 @@ def render_viewer_html() -> str:
         useSavedPositions: useSavedLayout,
         useOverrides: useSavedLayout
       });
+      const contentBounds = emptyBounds();
+      const viewportLayer = svgEl("g", {});
+      graph.appendChild(viewportLayer);
 
       const regionLayer = svgEl("g", {});
-      graph.appendChild(regionLayer);
+      viewportLayer.appendChild(regionLayer);
       for (const node of layoutNodes.filter(item => item.type === "region").sort(byId)) {
         const hull = regionHull(node, positions);
         const center = polygonCentroid(hull);
         positions.set(String(node.id), center);
+        for (const point of hull) {
+          includeGraphPoint(contentBounds, point.x, point.y, 8);
+        }
+        includeGraphPoint(contentBounds, center.x, center.y, 18);
         const group = svgEl("g", {
           class: `node region ${isSelectedNode(node.id, node.type) ? "selected" : ""}`
         });
@@ -504,11 +597,13 @@ def render_viewer_html() -> str:
       }
 
       const edgeLayer = svgEl("g", {});
-      graph.appendChild(edgeLayer);
+      viewportLayer.appendChild(edgeLayer);
       for (const edge of step.layout.edges) {
         const source = positions.get(String(edge.i));
         const target = positions.get(String(edge.j));
         const hyp = hypothesisEdgeById.get(edgeKey(edge.i, edge.j)) || edge;
+        includeGraphPoint(contentBounds, source.x, source.y, 8);
+        includeGraphPoint(contentBounds, target.x, target.y, 8);
         const edgeGroup = svgEl("g", {
           class: `edge ${edge.type === "vz" ? "vz" : "vv"} ${edge.grounded ? "" : "ungrounded"} ${isSelectedEdge(edge) ? "selected" : ""}`
         });
@@ -523,6 +618,7 @@ def render_viewer_html() -> str:
           y2: target.y
         }));
         const midpoint = { x: (source.x + target.x) / 2, y: (source.y + target.y) / 2 };
+        includeGraphPoint(contentBounds, midpoint.x, midpoint.y, 18);
         const label = svgEl("text", {
           x: midpoint.x,
           y: midpoint.y - 5,
@@ -539,10 +635,11 @@ def render_viewer_html() -> str:
       }
 
       const nodeLayer = svgEl("g", {});
-      graph.appendChild(nodeLayer);
+      viewportLayer.appendChild(nodeLayer);
       for (const node of layoutNodes.filter(item => item.type === "viewpoint").sort(byId)) {
         const pos = positions.get(String(node.id));
         const currentAgent = agentAtNode(step, node.id);
+        includeGraphPoint(contentBounds, pos.x, pos.y, currentAgent ? 42 : 22);
         const group = svgEl("g", {
           class: `node viewpoint ${useSavedLayout ? "draggable" : ""} ${isDraggingNode(node.id) ? "dragging" : ""} ${isSelectedNode(node.id, node.type) ? "selected" : ""}`
         });
@@ -595,7 +692,7 @@ def render_viewer_html() -> str:
       }
       if (selectionState && Number(selectionState.stepIndex) === Number(step.step_index)) {
         const box = normalizedSelectionBox(selectionState);
-        graph.appendChild(svgEl("rect", {
+        viewportLayer.appendChild(svgEl("rect", {
           class: "selection-window",
           x: box.x,
           y: box.y,
@@ -603,6 +700,7 @@ def render_viewer_html() -> str:
           height: box.height
         }));
       }
+      viewportLayer.setAttribute("transform", viewportTransform(getViewportState(step, width, height, contentBounds)));
     }
 
     function updateLayoutControls(step) {
@@ -1004,11 +1102,163 @@ def render_viewer_html() -> str:
       return edge.type;
     }
 
-    function graphPoint(event) {
+    function emptyBounds() {
+      return {
+        minX: Infinity,
+        minY: Infinity,
+        maxX: -Infinity,
+        maxY: -Infinity
+      };
+    }
+
+    function includeGraphPoint(bounds, x, y, padding) {
+      bounds.minX = Math.min(bounds.minX, x - padding);
+      bounds.minY = Math.min(bounds.minY, y - padding);
+      bounds.maxX = Math.max(bounds.maxX, x + padding);
+      bounds.maxY = Math.max(bounds.maxY, y + padding);
+    }
+
+    function computeGraphContentBounds(step, width, height) {
+      const bounds = emptyBounds();
+      const positions = computePositions(step, width, height, {
+        useSavedPositions: useSavedLayout,
+        useOverrides: useSavedLayout
+      });
+      for (const node of step.layout.nodes.filter(item => item.type === "region").sort(byId)) {
+        const hull = regionHull(node, positions);
+        const center = polygonCentroid(hull);
+        positions.set(String(node.id), center);
+        for (const point of hull) {
+          includeGraphPoint(bounds, point.x, point.y, 8);
+        }
+        includeGraphPoint(bounds, center.x, center.y, 18);
+      }
+      for (const edge of step.layout.edges) {
+        const source = positions.get(String(edge.i));
+        const target = positions.get(String(edge.j));
+        includeGraphPoint(bounds, source.x, source.y, 8);
+        includeGraphPoint(bounds, target.x, target.y, 8);
+        includeGraphPoint(bounds, (source.x + target.x) / 2, (source.y + target.y) / 2, 18);
+      }
+      for (const node of step.layout.nodes.filter(item => item.type === "viewpoint").sort(byId)) {
+        const pos = positions.get(String(node.id));
+        includeGraphPoint(bounds, pos.x, pos.y, agentAtNode(step, node.id) ? 42 : 22);
+      }
+      return bounds;
+    }
+
+    function viewportKey(stepIndex) {
+      return String(stepIndex);
+    }
+
+    function viewportTransform(viewport) {
+      return `translate(${viewport.translateX},${viewport.translateY}) scale(${viewport.scale})`;
+    }
+
+    function getViewportState(step, width, height, bounds) {
+      const key = viewportKey(step.step_index);
+      const current = viewportStates.get(key);
+      if (!current || (current.isDefault && (current.width !== width || current.height !== height))) {
+        const fitted = fitViewportToBounds(bounds, width, height);
+        viewportStates.set(key, fitted);
+        return fitted;
+      }
+      return current;
+    }
+
+    function fitViewportToBounds(bounds, width, height) {
+      const contentWidth = bounds.maxX - bounds.minX;
+      const contentHeight = bounds.maxY - bounds.minY;
+      const scale = clamp(
+        Math.min((width - GRAPH_FIT_PADDING * 2) / contentWidth, (height - GRAPH_FIT_PADDING * 2) / contentHeight),
+        GRAPH_MIN_SCALE,
+        GRAPH_MAX_SCALE
+      );
+      return {
+        scale: scale,
+        translateX: width / 2 - ((bounds.minX + bounds.maxX) / 2) * scale,
+        translateY: height / 2 - ((bounds.minY + bounds.maxY) / 2) * scale,
+        width: width,
+        height: height,
+        isDefault: true
+      };
+    }
+
+    function resetGraphViewport(step) {
+      const width = graph.clientWidth || 900;
+      const height = graph.clientHeight || 560;
+      viewportStates.set(
+        viewportKey(step.step_index),
+        fitViewportToBounds(computeGraphContentBounds(step, width, height), width, height)
+      );
+    }
+
+    function zoomGraphAtCenter(factor) {
+      const width = graph.clientWidth || 900;
+      const height = graph.clientHeight || 560;
+      zoomGraphAtPoint(factor, { x: width / 2, y: height / 2 });
+    }
+
+    function zoomGraphAtPoint(factor, anchor) {
+      const step = currentStep();
+      const viewport = viewportStates.get(viewportKey(step.step_index));
+      const scale = clamp(viewport.scale * factor, GRAPH_MIN_SCALE, GRAPH_MAX_SCALE);
+      const anchorX = (anchor.x - viewport.translateX) / viewport.scale;
+      const anchorY = (anchor.y - viewport.translateY) / viewport.scale;
+      viewportStates.set(viewportKey(step.step_index), {
+        scale: scale,
+        translateX: anchor.x - anchorX * scale,
+        translateY: anchor.y - anchorY * scale,
+        width: viewport.width,
+        height: viewport.height,
+        isDefault: false
+      });
+      renderGraph(step);
+    }
+
+    function beginGraphPan(event) {
+      const point = graphScreenPoint(event);
+      const viewport = viewportStates.get(viewportKey(currentStep().step_index));
+      panState = {
+        pointerId: event.pointerId,
+        startX: point.x,
+        startY: point.y,
+        translateX: viewport.translateX,
+        translateY: viewport.translateY
+      };
+      graph.setPointerCapture(event.pointerId);
+      graph.classList.add("panning");
+      event.preventDefault();
+    }
+
+    function updateGraphPan(event) {
+      const point = graphScreenPoint(event);
+      const step = currentStep();
+      const viewport = viewportStates.get(viewportKey(step.step_index));
+      viewportStates.set(viewportKey(step.step_index), {
+        scale: viewport.scale,
+        translateX: panState.translateX + point.x - panState.startX,
+        translateY: panState.translateY + point.y - panState.startY,
+        width: viewport.width,
+        height: viewport.height,
+        isDefault: false
+      });
+    }
+
+    function graphScreenPoint(event) {
       const point = graph.createSVGPoint();
       point.x = event.clientX;
       point.y = event.clientY;
       return point.matrixTransform(graph.getScreenCTM().inverse());
+    }
+
+    function graphPoint(event) {
+      const point = graphScreenPoint(event);
+      const viewport = viewportStates.get(viewportKey(currentStep().step_index));
+      return {
+        x: (point.x - viewport.translateX) / viewport.scale,
+        y: (point.y - viewport.translateY) / viewport.scale
+      };
     }
 
     function positionKey(stepIndex, nodeId) {
