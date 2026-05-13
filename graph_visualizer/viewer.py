@@ -503,6 +503,7 @@ def render_viewer_html() -> str:
       render();
     });
     graph.addEventListener("wheel", event => {
+      if (!event.ctrlKey) return;
       event.preventDefault();
       graph.focus();
       const factor = event.deltaY < 0 ? GRAPH_ZOOM_FACTOR : 1 / GRAPH_ZOOM_FACTOR;
