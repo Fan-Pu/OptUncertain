@@ -34,6 +34,7 @@ def render_viewer_html() -> str:
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
       gap: 16px;
       padding: 14px 18px;
       background: #111827;
@@ -68,7 +69,11 @@ def render_viewer_html() -> str:
     .controls {
       display: flex;
       align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
       gap: 10px;
+    }
+    .controls button {
       white-space: nowrap;
     }
     #stepLabel {
@@ -286,6 +291,48 @@ def render_viewer_html() -> str:
       stroke: #111827;
       stroke-width: 4;
     }
+    .dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(17, 24, 39, 0.46);
+    }
+    .dialog-backdrop[hidden] {
+      display: none;
+    }
+    .confirmation-dialog {
+      width: min(420px, 100%);
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 20px 45px rgba(16, 24, 40, 0.24);
+      padding: 18px;
+    }
+    .confirmation-dialog h2 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      color: var(--ink);
+    }
+    .confirmation-dialog p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .dialog-actions .confirm-yes {
+      border-color: #7a5cfa;
+      background: #7a5cfa;
+      color: white;
+    }
     @media (max-width: 980px) {
       main {
         grid-template-columns: 1fr;
@@ -302,6 +349,7 @@ def render_viewer_html() -> str:
     <div class="controls">
       <button id="useSavedLayoutButton" type="button" aria-pressed="false">Use saved layout: Off</button>
       <button id="resetDefaultLayoutButton" type="button" disabled>Retrieve default layout for this step</button>
+      <button id="copyPreviousLayoutButton" type="button" disabled>Copy previous layout</button>
       <button id="saveLayoutButton" type="button" disabled>Save layout for this step</button>
       <button id="prevButton" type="button">Previous</button>
       <div id="stepLabel"></div>
@@ -359,6 +407,16 @@ def render_viewer_html() -> str:
       </section>
     </aside>
   </main>
+  <div id="confirmationDialog" class="dialog-backdrop" role="presentation" hidden>
+    <div class="confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle" aria-describedby="confirmationMessage">
+      <h2 id="confirmationTitle"></h2>
+      <p id="confirmationMessage"></p>
+      <div class="dialog-actions">
+        <button id="confirmationCancelButton" type="button">Cancel</button>
+        <button id="confirmationYesButton" class="confirm-yes" type="button">Yes</button>
+      </div>
+    </div>
+  </div>
   <script>
     let payload = null;
     let stepPosition = 0;
@@ -380,10 +438,17 @@ def render_viewer_html() -> str:
     const graphResetViewButton = document.getElementById("graphResetViewButton");
     const useSavedLayoutButton = document.getElementById("useSavedLayoutButton");
     const resetDefaultLayoutButton = document.getElementById("resetDefaultLayoutButton");
+    const copyPreviousLayoutButton = document.getElementById("copyPreviousLayoutButton");
     const saveLayoutButton = document.getElementById("saveLayoutButton");
     const prevButton = document.getElementById("prevButton");
     const nextButton = document.getElementById("nextButton");
     const stepLabel = document.getElementById("stepLabel");
+    const confirmationDialog = document.getElementById("confirmationDialog");
+    const confirmationTitle = document.getElementById("confirmationTitle");
+    const confirmationMessage = document.getElementById("confirmationMessage");
+    const confirmationYesButton = document.getElementById("confirmationYesButton");
+    const confirmationCancelButton = document.getElementById("confirmationCancelButton");
+    let confirmationAction = null;
 
     useSavedLayoutButton.addEventListener("click", () => {
       useSavedLayout = !useSavedLayout;
@@ -392,10 +457,36 @@ def render_viewer_html() -> str:
       render();
     });
     resetDefaultLayoutButton.addEventListener("click", () => {
-      resetDefaultLayoutForStep();
+      showConfirmation(
+        "Retrieve default layout?",
+        "This will stage the default layout positions for the current step. The layout file will not change until you save this step.",
+        resetDefaultLayoutForStep
+      );
+    });
+    copyPreviousLayoutButton.addEventListener("click", () => {
+      showConfirmation(
+        "Copy previous layout?",
+        "This will stage matching current-step nodes at their previous-step positions. The layout file will not change until you save this step.",
+        copyPreviousLayoutForStep
+      );
     });
     saveLayoutButton.addEventListener("click", () => {
-      saveLayoutForStep();
+      showConfirmation(
+        "Save layout for this step?",
+        "This will write the staged positions to the current step layout file.",
+        saveLayoutForStep
+      );
+    });
+    confirmationYesButton.addEventListener("click", () => {
+      const action = confirmationAction;
+      hideConfirmation();
+      action();
+    });
+    confirmationCancelButton.addEventListener("click", hideConfirmation);
+    confirmationDialog.addEventListener("click", event => {
+      if (event.target === confirmationDialog) {
+        hideConfirmation();
+      }
     });
     graphZoomInButton.addEventListener("click", () => {
       graph.focus();
@@ -706,6 +797,7 @@ def render_viewer_html() -> str:
 
     function updateLayoutControls(step) {
       resetDefaultLayoutButton.disabled = !useSavedLayout;
+      copyPreviousLayoutButton.disabled = !useSavedLayout || stepPosition === 0;
       saveLayoutButton.disabled = !hasPositionOverridesForStep(step.step_index);
     }
 
@@ -1289,6 +1381,19 @@ def render_viewer_html() -> str:
       }
     }
 
+    function showConfirmation(title, message, action) {
+      confirmationTitle.textContent = title;
+      confirmationMessage.textContent = message;
+      confirmationAction = action;
+      confirmationDialog.hidden = false;
+      confirmationYesButton.focus();
+    }
+
+    function hideConfirmation() {
+      confirmationDialog.hidden = true;
+      confirmationAction = null;
+    }
+
     function savePositions(update) {
       return fetch("/api/layout-positions", {
         method: "POST",
@@ -1343,6 +1448,31 @@ def render_viewer_html() -> str:
         .filter(node => node.type === "viewpoint")
         .forEach(node => {
           const position = positions.get(String(node.id));
+          setPositionOverride(step.step_index, node.id, position.x, position.y);
+        });
+      render();
+    }
+
+    function copyPreviousLayoutForStep() {
+      if (!useSavedLayout || stepPosition === 0) return;
+      const step = currentStep();
+      const previousStep = payload.steps[stepPosition - 1];
+      const width = graph.clientWidth || 900;
+      const height = graph.clientHeight || 560;
+      const previousPositions = computePositions(previousStep, width, height, {
+        useSavedPositions: true,
+        useOverrides: true
+      });
+      const previousViewpointIds = new Set(
+        previousStep.layout.nodes
+          .filter(node => node.type === "viewpoint")
+          .map(node => String(node.id))
+      );
+      step.layout.nodes
+        .filter(node => node.type === "viewpoint")
+        .filter(node => previousViewpointIds.has(String(node.id)))
+        .forEach(node => {
+          const position = previousPositions.get(String(node.id));
           setPositionOverride(step.step_index, node.id, position.x, position.y);
         });
       render();

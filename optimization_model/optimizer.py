@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from doctest import debug
 from typing import Dict, List, Tuple
 
 import debugpy
@@ -12,13 +11,13 @@ from Helper import TYPE_VP
 class RollingHorizonOptimizer:
     def __init__(self, optimizer_config: dict | None = None):
         optimizer_config = optimizer_config or {}
-        self.goal_weight = float(optimizer_config.get("goal_weight", 0.2222))
-        self.dist_weight = float(optimizer_config.get("dist_weight", 0.2222))
-        self.arc_weight = float(optimizer_config.get("arc_weight", 0.3333))
-        self.node_weight = float(optimizer_config.get("node_weight", 0.1111))
-        self.visit_weight = float(optimizer_config.get("visit_weight", 0.1111))
+        self.goal_weight = float(optimizer_config.get("goal_weight"))
+        self.dist_weight = float(optimizer_config.get("dist_weight"))
+        self.arc_weight = float(optimizer_config.get("arc_weight"))
+        self.node_weight = float(optimizer_config.get("node_weight"))
+        self.visit_weight = float(optimizer_config.get("visit_weight"))
         self.ungrounded_reward_weight = float(
-            optimizer_config.get("ungrounded_reward_weight", 0.8)
+            optimizer_config.get("ungrounded_reward_weight")
         )
         self.epsilon = float(optimizer_config.get("epsilon", 1e-9))
 
@@ -122,12 +121,6 @@ class RollingHorizonOptimizer:
                     vtype=GRB.BINARY,
                     name="x_%s_%s_%s" % (source_id, target_id, agent_id),
                 )
-                if (
-                    hypothesis_graph.observation_step == 5
-                    and source_id == 21
-                    and agent_id == "agent0"
-                ):
-                    debugpy.breakpoint()
 
         y = {}
         u = {}
