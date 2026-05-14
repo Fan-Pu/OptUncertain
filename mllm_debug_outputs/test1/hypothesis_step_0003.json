@@ -104,12 +104,42 @@
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 2.007,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 1.205,
       "distance_var": 0.0,
       "exist_prob": 1.0,
       "grounded": true,
       "i": 21,
       "j": 27,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.199,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.666,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 40,
+      "j": 41,
       "type": "vv"
     }
   ],
@@ -143,7 +173,7 @@
       "label": "6800f98e9e67463e9928a4253253bc2f",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.04754877848827676
+        "1": 0.06714258151649623
       },
       "type": "viewpoint"
     },
@@ -154,7 +184,7 @@
       "label": "5e9f4f8654574e699480e90ecdd150c8",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2966060009837678
+        "1": 0.18927262203357126
       },
       "type": "viewpoint"
     },
@@ -174,9 +204,20 @@
       "grounded": true,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
-      "node_visit_times": 2,
+      "node_visit_times": 1,
       "target_probs": {
         "1": 0.0
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.06309087401119041
       },
       "type": "viewpoint"
     },
@@ -188,6 +229,17 @@
       "node_visit_times": 1,
       "target_probs": {
         "1": 0.0
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.06309087401119041
       },
       "type": "viewpoint"
     },
@@ -209,7 +261,7 @@
       "label": "e34dcf54d26a4a95869cc8a0c01cd2be",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.10930753675465922
+        "1": 0.1543507621068879
       },
       "type": "viewpoint"
     },
@@ -220,7 +272,7 @@
       "label": "50c241453dfd45c1ba95b5d7191982ef",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.10930753675465922
+        "1": 0.1543507621068879
       },
       "type": "viewpoint"
     },
@@ -231,18 +283,18 @@
       "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.21861507350931844
+        "1": 0.3087015242137758
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "target_probs": {
-        "1": 0.21861507350931844
+        "1": 0.0
       },
       "type": "viewpoint"
     },
@@ -253,7 +305,7 @@
       "label": "modern living area with white sofa",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.36892231974220585
+        "1": 0.3903798674268511
       },
       "type": "region"
     },
@@ -261,10 +313,10 @@
       "exist_prob": 0.9,
       "grounded": false,
       "id": 101,
-      "label": "bedroom area with large white bed",
+      "label": "bedroom area with white bed",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0860363810757524
+        "1": 0.08863472606719684
       },
       "type": "region"
     },
@@ -272,32 +324,32 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 200,
-      "label": "dark textured lounge area with quilted walls",
+      "label": "dark textured lounge area",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.08027382202873781
-      },
-      "type": "region"
-    },
-    {
-      "exist_prob": 0.9,
-      "grounded": false,
-      "id": 201,
-      "label": "bright corridor area beyond lounge",
-      "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.1720727621515048
+        "1": 0.16539626927402967
       },
       "type": "region"
     },
     {
       "exist_prob": 1.0,
       "grounded": true,
-      "id": 300,
-      "label": "white kitchen area with bar stools",
+      "id": 201,
+      "label": "bright hallway area beyond lounge",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.29269471500179933
+        "1": 0.26590417820159046
+      },
+      "type": "region"
+    },
+    {
+      "exist_prob": 0.9,
+      "grounded": false,
+      "id": 202,
+      "label": "white corridor area beyond dark lounge",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.08968495903033183
       },
       "type": "region"
     }

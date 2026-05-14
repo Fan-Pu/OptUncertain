@@ -10,7 +10,7 @@ Compact shared graph summary:
 {
   "agent_current_vp_ids": {
     "agent0": 27,
-    "agent1": 18
+    "agent1": 41
   },
   "edges": [
     {
@@ -131,7 +131,7 @@ Compact shared graph summary:
       "id": 11,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0481
+        "1": 0.0532
       },
       "type": "viewpoint"
     },
@@ -171,7 +171,7 @@ Compact shared graph summary:
       "id": 27,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2886
+        "1": 0.2128
       },
       "type": "viewpoint"
     },
@@ -181,7 +181,7 @@ Compact shared graph summary:
       "id": 32,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1106
+        "1": 0.1223
       },
       "type": "viewpoint"
     },
@@ -191,7 +191,7 @@ Compact shared graph summary:
       "id": 35,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1106
+        "1": 0.1223
       },
       "type": "viewpoint"
     },
@@ -201,17 +201,17 @@ Compact shared graph summary:
       "id": 40,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2211
+        "1": 0.2446
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 41,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2211
+        "1": 0.2446
       },
       "type": "viewpoint"
     },
@@ -219,7 +219,8 @@ Compact shared graph summary:
       "assigned_viewpoint_ids": [
         0,
         16,
-        21
+        21,
+        27
       ],
       "exist_prob": 1.0,
       "grounded": 1,
@@ -227,7 +228,7 @@ Compact shared graph summary:
       "label": "modern living area with white sofa",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.3678
+        "1": 0.4141
       },
       "type": "region"
     },
@@ -240,10 +241,10 @@ Compact shared graph summary:
       "exist_prob": 0.9,
       "grounded": 0,
       "id": 101,
-      "label": "bedroom area with large white bed",
+      "label": "bedroom area with white bed",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0878
+        "1": 0.0988
       },
       "type": "region"
     },
@@ -255,10 +256,10 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 200,
-      "label": "dark textured lounge area with quilted walls",
+      "label": "dark textured lounge area",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0847
+        "1": 0.1906
       },
       "type": "region"
     },
@@ -270,24 +271,10 @@ Compact shared graph summary:
       "exist_prob": 0.9,
       "grounded": 0,
       "id": 201,
-      "label": "bright corridor area beyond lounge",
+      "label": "bright hallway area beyond lounge",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1756
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        27
-      ],
-      "exist_prob": 0.9,
-      "grounded": 0,
-      "id": 300,
-      "label": "white kitchen area with bar stools",
-      "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.2841
+        "1": 0.2965
       },
       "type": "region"
     }
@@ -302,7 +289,7 @@ Compact shared graph summary:
     "16": 100,
     "18": 200,
     "21": 100,
-    "27": 300,
+    "27": 100,
     "32": 101,
     "35": 101,
     "40": 201,
@@ -330,12 +317,24 @@ Per-agent observation context:
   },
   {
     "agent_id": "agent1",
-    "current_viewpoint_index": 18,
+    "current_viewpoint_index": 41,
     "image_index": 1,
     "visible_viewpoints": [
       {
-        "distance": 1.266,
+        "distance": 1.705,
         "viewpoint_index": 9
+      },
+      {
+        "distance": 2.007,
+        "viewpoint_index": 19
+      },
+      {
+        "distance": 1.199,
+        "viewpoint_index": 25
+      },
+      {
+        "distance": 0.666,
+        "viewpoint_index": 40
       }
     ]
   }

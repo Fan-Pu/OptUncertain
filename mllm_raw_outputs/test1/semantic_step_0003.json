@@ -2,11 +2,11 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 300
+      "current_region_node_id": 100
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 200
+      "current_region_node_id": 201
     }
   ],
   "detections": [
@@ -38,23 +38,31 @@
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        21
+        15,
+        21,
+        27
       ],
       "region_node_id": 100
     },
     {
       "assigned_viewpoint_node_indices": [
-        9,
-        18
+        9
       ],
       "region_node_id": 200
     },
     {
       "assigned_viewpoint_node_indices": [
-        15,
-        27
+        40,
+        41
       ],
-      "region_node_id": 300
+      "region_node_id": 201
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        19,
+        25
+      ],
+      "region_node_id": 202
     }
   ],
   "viewpoint_target_probs": [
@@ -67,19 +75,25 @@
     {
       "id": 15,
       "target_probs": {
-        "1": 0.3
+        "1": 0.15
       }
     },
     {
       "id": 21,
       "target_probs": {
-        "1": 0.2
+        "1": 0.1
       }
     },
     {
-      "id": 18,
+      "id": 41,
       "target_probs": {
         "1": 0.0
+      }
+    },
+    {
+      "id": 40,
+      "target_probs": {
+        "1": 0.1
       }
     },
     {
@@ -87,31 +101,51 @@
       "target_probs": {
         "1": 0.1
       }
+    },
+    {
+      "id": 19,
+      "target_probs": {
+        "1": 0.05
+      }
+    },
+    {
+      "id": 25,
+      "target_probs": {
+        "1": 0.05
+      }
     }
   ],
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 300,
-      "label": "white kitchen area with bar stools",
+      "id": 100,
+      "label": "modern living area with white sofa",
       "target_probs": {
         "1": 0.4
       }
     },
     {
       "exist_prob": 1.0,
-      "id": 100,
-      "label": "modern living area with white sofa",
+      "id": 201,
+      "label": "bright hallway area beyond lounge",
       "target_probs": {
-        "1": 0.3
+        "1": 0.2
+      }
+    },
+    {
+      "exist_prob": 0.9,
+      "id": 202,
+      "label": "white corridor area beyond dark lounge",
+      "target_probs": {
+        "1": 0.1
       }
     },
     {
       "exist_prob": 1.0,
       "id": 200,
-      "label": "dark textured lounge area with quilted walls",
+      "label": "dark textured lounge area",
       "target_probs": {
-        "1": 0.1
+        "1": 0.19061500015115787
       }
     }
   ]

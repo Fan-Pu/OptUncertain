@@ -31,11 +31,19 @@ def tearDownModule():
 
 
 class _FakeNode:
-    def __init__(self, node_type, grounded, exist_prob, target_probs):
+    def __init__(
+        self,
+        node_type,
+        grounded,
+        exist_prob,
+        target_probs,
+        node_visit_times=0,
+    ):
         self.type = node_type
         self.grounded = grounded
         self.exist_prob = exist_prob
         self.target_probs = dict(target_probs)
+        self.node_visit_times = node_visit_times
 
 
 class _FakeEdge:
@@ -49,6 +57,12 @@ class _FakeEdge:
 class _FakeGraph:
     def __init__(self):
         self.target_descriptions = ["green plant", "glass on table"]
+        self.target_ids = ["green plant", "glass on table"]
+        self.target_id_to_description = {
+            "green plant": "green plant",
+            "glass on table": "glass on table",
+        }
+        self.observation_step = 0
         self.nodes = {
             1: _FakeNode(1, True, 1.0, {"green plant": 0.0, "glass on table": 0.0}),
             2: _FakeNode(1, True, 1.0, {"green plant": 0.0, "glass on table": 0.0}),
@@ -74,6 +88,22 @@ class _FakeGraph:
         }
 
 
+class _RevisitPenaltyGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 1.0}, node_visit_times=5),
+            3: _FakeNode(1, True, 1.0, {"target": 1.0}, node_visit_times=0),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
+            (1, 3): _FakeEdge(1, 3, 1.0, 1.0),
+        }
+
+
 class MultiAgentOptimizerTest(unittest.TestCase):
     def test_assigns_each_unfound_target_at_most_once_across_agents(self):
         optimizer = RollingHorizonOptimizer()
@@ -85,7 +115,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
 
         self.assertEqual(len(result["target_assignments"]), 2)
         self.assertEqual(
-            sorted(item["target"] for item in result["target_assignments"]),
+            sorted(item["target_id"] for item in result["target_assignments"]),
             ["glass on table", "green plant"],
         )
 
@@ -98,11 +128,21 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
 
         self.assertEqual(
-            [item["target"] for item in result["target_assignments"]],
+            [item["target_id"] for item in result["target_assignments"]],
             ["glass on table"],
         )
         self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
         self.assertEqual(result["agent_paths"]["agent1"]["next_vp_node_id"], 4)
+
+    def test_revisit_penalty_avoids_visited_viewpoint_when_other_terms_match(self):
+        optimizer = RollingHorizonOptimizer()
+        result = optimizer.solve(
+            hypothesis_graph=_RevisitPenaltyGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
 
     def test_detached_high_reward_cycle_is_not_selected(self):
         optimizer = RollingHorizonOptimizer()
