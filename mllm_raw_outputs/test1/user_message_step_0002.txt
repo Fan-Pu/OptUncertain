@@ -10,7 +10,7 @@ Compact shared graph summary:
 {
   "agent_current_vp_ids": {
     "agent0": 21,
-    "agent1": 9
+    "agent1": 40
   },
   "edges": [
     {
@@ -82,6 +82,36 @@ Compact shared graph summary:
       "i": 16,
       "j": 35,
       "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.007,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 19,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.199,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 25,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.666,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
     }
   ],
   "nodes": [
@@ -117,11 +147,21 @@ Compact shared graph summary:
     },
     {
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 18,
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0
+        "1": 0.1299
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 19,
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.1169
       },
       "type": "viewpoint"
     },
@@ -131,7 +171,17 @@ Compact shared graph summary:
       "id": 21,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.3103
+        "1": 0.1169
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 25,
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.1169
       },
       "type": "viewpoint"
     },
@@ -141,7 +191,7 @@ Compact shared graph summary:
       "id": 32,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1149
+        "1": 0.1299
       },
       "type": "viewpoint"
     },
@@ -151,27 +201,27 @@ Compact shared graph summary:
       "id": 35,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1149
+        "1": 0.1299
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 40,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2299
+        "1": 0.2597
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 41,
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "target_probs": {
-        "1": 0.2299
+        "1": 0.0
       },
       "type": "viewpoint"
     },
@@ -187,7 +237,7 @@ Compact shared graph summary:
       "label": "modern living area with white sofa",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.3387
+        "1": 0.2544
       },
       "type": "region"
     },
@@ -198,11 +248,11 @@ Compact shared graph summary:
       ],
       "exist_prob": 0.9,
       "grounded": 0,
-      "id": 101,
-      "label": "bright bedroom area with white bed",
+      "id": 110,
+      "label": "bedroom area with white bed beyond partition",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1655
+        "1": 0.1243
       },
       "type": "region"
     },
@@ -217,22 +267,24 @@ Compact shared graph summary:
       "label": "dark textured lounge area with quilted walls",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1649
+        "1": 0.1243
       },
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
+        19,
+        25,
         40,
         41
       ],
-      "exist_prob": 0.9,
-      "grounded": 0,
-      "id": 201,
-      "label": "white minimalist corridor beyond lounge",
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 210,
+      "label": "bright corridor area beyond lounge doorway",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.3309
+        "1": 0.4971
       },
       "type": "region"
     }
@@ -245,11 +297,13 @@ Compact shared graph summary:
     "0": 100,
     "16": 100,
     "18": 200,
+    "19": 210,
     "21": 100,
-    "32": 101,
-    "35": 101,
-    "40": 201,
-    "41": 201,
+    "25": 210,
+    "32": 110,
+    "35": 110,
+    "40": 210,
+    "41": 210,
     "9": 200
   }
 }
@@ -277,19 +331,19 @@ Per-agent observation context:
   },
   {
     "agent_id": "agent1",
-    "current_viewpoint_index": 9,
+    "current_viewpoint_index": 40,
     "image_index": 1,
     "visible_viewpoints": [
       {
-        "distance": 1.266,
-        "viewpoint_index": 18
-      },
-      {
         "distance": 1.87,
-        "viewpoint_index": 40
+        "viewpoint_index": 9
       },
       {
-        "distance": 1.705,
+        "distance": 0.767,
+        "viewpoint_index": 25
+      },
+      {
+        "distance": 0.666,
         "viewpoint_index": 41
       }
     ]

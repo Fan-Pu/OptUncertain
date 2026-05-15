@@ -81,6 +81,36 @@
       "i": 16,
       "j": 35,
       "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.007,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.199,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.666,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
     }
   ],
   "nodes": [
@@ -119,12 +149,23 @@
     },
     {
       "exist_prob": 1.0,
-      "grounded": true,
+      "grounded": false,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0
+        "1": 0.1298701298701299
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.1168831168831169
       },
       "type": "viewpoint"
     },
@@ -135,7 +176,18 @@
       "label": "77a1a11978b04e9cbf74914c98578ab8",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.31034482758620685
+        "1": 0.1168831168831169
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.1168831168831169
       },
       "type": "viewpoint"
     },
@@ -146,7 +198,7 @@
       "label": "e34dcf54d26a4a95869cc8a0c01cd2be",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1149425287356322
+        "1": 0.1298701298701299
       },
       "type": "viewpoint"
     },
@@ -157,7 +209,7 @@
       "label": "50c241453dfd45c1ba95b5d7191982ef",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1149425287356322
+        "1": 0.1298701298701299
       },
       "type": "viewpoint"
     },
@@ -168,18 +220,18 @@
       "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2298850574712644
+        "1": 0.2597402597402598
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "target_probs": {
-        "1": 0.2298850574712644
+        "1": 0.0
       },
       "type": "viewpoint"
     },
@@ -190,18 +242,18 @@
       "label": "modern living area with white sofa",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.33868387360097096
+        "1": 0.2543702170079214
       },
       "type": "region"
     },
     {
       "exist_prob": 0.9,
       "grounded": false,
-      "id": 101,
-      "label": "bright bedroom area with white bed",
+      "id": 110,
+      "label": "bedroom area with white bed beyond partition",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.16546275617908024
+        "1": 0.12427163049867976
       },
       "type": "region"
     },
@@ -212,18 +264,18 @@
       "label": "dark textured lounge area with quilted walls",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.16492785786178832
+        "1": 0.12427163049867976
       },
       "type": "region"
     },
     {
-      "exist_prob": 0.9,
-      "grounded": false,
-      "id": 201,
-      "label": "white minimalist corridor beyond lounge",
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 210,
+      "label": "bright corridor area beyond lounge doorway",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.3309255123581605
+        "1": 0.49708652199471903
       },
       "type": "region"
     }

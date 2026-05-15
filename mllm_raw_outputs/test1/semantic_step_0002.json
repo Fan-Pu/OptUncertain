@@ -6,7 +6,7 @@
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 200
+      "current_region_node_id": 210
     }
   ],
   "detections": [
@@ -39,7 +39,8 @@
     {
       "assigned_viewpoint_node_indices": [
         0,
-        21
+        21,
+        27
       ],
       "region_node_id": 100
     },
@@ -47,27 +48,21 @@
       "assigned_viewpoint_node_indices": [
         11
       ],
-      "region_node_id": 101
+      "region_node_id": 110
     },
     {
       "assigned_viewpoint_node_indices": [
-        9,
-        18
+        9
       ],
       "region_node_id": 200
     },
     {
       "assigned_viewpoint_node_indices": [
+        25,
         40,
         41
       ],
-      "region_node_id": 201
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        27
-      ],
-      "region_node_id": 300
+      "region_node_id": 210
     }
   ],
   "viewpoint_target_probs": [
@@ -84,25 +79,13 @@
       }
     },
     {
-      "id": 11,
-      "target_probs": {
-        "1": 0.1
-      }
-    },
-    {
       "id": 27,
       "target_probs": {
-        "1": 0.4
+        "1": 0.2
       }
     },
     {
-      "id": 9,
-      "target_probs": {
-        "1": 0.0
-      }
-    },
-    {
-      "id": 18,
+      "id": 11,
       "target_probs": {
         "1": 0.1
       }
@@ -110,13 +93,25 @@
     {
       "id": 40,
       "target_probs": {
-        "1": 0.2
+        "1": 0.0
+      }
+    },
+    {
+      "id": 25,
+      "target_probs": {
+        "1": 0.15
       }
     },
     {
       "id": 41,
       "target_probs": {
-        "1": 0.2
+        "1": 0.15
+      }
+    },
+    {
+      "id": 9,
+      "target_probs": {
+        "1": 0.15
       }
     }
   ],
@@ -126,23 +121,15 @@
       "id": 100,
       "label": "modern living area with white sofa",
       "target_probs": {
-        "1": 0.2
+        "1": 0.3
       }
     },
     {
       "exist_prob": 0.9,
-      "id": 101,
-      "label": "bright bedroom area with white bed",
+      "id": 110,
+      "label": "bedroom area with white bed beyond partition",
       "target_probs": {
         "1": 0.1
-      }
-    },
-    {
-      "exist_prob": 0.9,
-      "id": 300,
-      "label": "white kitchen area with bar stools",
-      "target_probs": {
-        "1": 0.5
       }
     },
     {
@@ -154,9 +141,9 @@
       }
     },
     {
-      "exist_prob": 0.9,
-      "id": 201,
-      "label": "white minimalist corridor beyond lounge",
+      "exist_prob": 1.0,
+      "id": 210,
+      "label": "bright corridor area beyond lounge doorway",
       "target_probs": {
         "1": 0.2
       }

@@ -2,11 +2,11 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 300
+      "current_region_node_id": 100
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 201
+      "current_region_node_id": 210
     }
   ],
   "detections": [
@@ -38,29 +38,26 @@
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        21
+        15,
+        21,
+        27
       ],
       "region_node_id": 100
     },
     {
       "assigned_viewpoint_node_indices": [
-        9
-      ],
-      "region_node_id": 200
-    },
-    {
-      "assigned_viewpoint_node_indices": [
+        5,
         19,
         25,
+        37,
         40,
         41
       ],
-      "region_node_id": 201
+      "region_node_id": 210
     },
     {
       "assigned_viewpoint_node_indices": [
-        15,
-        27
+        3
       ],
       "region_node_id": 300
     }
@@ -75,25 +72,19 @@
     {
       "id": 15,
       "target_probs": {
-        "1": 0.4
+        "1": 0.3
       }
     },
     {
       "id": 21,
       "target_probs": {
-        "1": 0.2
-      }
-    },
-    {
-      "id": 41,
-      "target_probs": {
-        "1": 0.0
+        "1": 0.1
       }
     },
     {
       "id": 25,
       "target_probs": {
-        "1": 0.1
+        "1": 0.0
       }
     },
     {
@@ -109,43 +100,53 @@
       }
     },
     {
-      "id": 9,
+      "id": 41,
       "target_probs": {
         "1": 0.1
+      }
+    },
+    {
+      "id": 37,
+      "target_probs": {
+        "1": 0.2
+      }
+    },
+    {
+      "id": 5,
+      "target_probs": {
+        "1": 0.4
+      }
+    },
+    {
+      "id": 3,
+      "target_probs": {
+        "1": 0.05
       }
     }
   ],
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 300,
-      "label": "white kitchen area with bar stools",
+      "id": 100,
+      "label": "modern living area with white sofa",
+      "target_probs": {
+        "1": 0.3
+      }
+    },
+    {
+      "exist_prob": 1.0,
+      "id": 210,
+      "label": "bright corridor area beyond lounge doorway",
       "target_probs": {
         "1": 0.5
       }
     },
     {
-      "exist_prob": 0.9,
-      "id": 100,
-      "label": "modern living area with white sofa",
+      "exist_prob": 0.8,
+      "id": 300,
+      "label": "small white bathroom area beyond open door",
       "target_probs": {
-        "1": 0.2
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 201,
-      "label": "white minimalist corridor beyond lounge",
-      "target_probs": {
-        "1": 0.1
-      }
-    },
-    {
-      "exist_prob": 0.9,
-      "id": 200,
-      "label": "dark textured lounge area with quilted walls",
-      "target_probs": {
-        "1": 0.1
+        "1": 0.05
       }
     }
   ]
