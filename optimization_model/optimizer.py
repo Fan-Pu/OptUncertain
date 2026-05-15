@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from turtle import up
 from typing import Dict, List, Tuple
 
-import debugpy
 from gurobipy import GRB, Model, quicksum
 
 from Helper import TYPE_VP
@@ -16,10 +16,10 @@ class RollingHorizonOptimizer:
         self.arc_weight = float(optimizer_config.get("arc_weight"))
         self.node_weight = float(optimizer_config.get("node_weight"))
         self.visit_weight = float(optimizer_config.get("visit_weight"))
+        # the above should sum to 1.0
         self.ungrounded_reward_weight = float(
             optimizer_config.get("ungrounded_reward_weight")
-        )
-        self.epsilon = float(optimizer_config.get("epsilon", 1e-9))
+        )  # the weight for rewards from ungrounded nodes, which may be less reliable than grounded nodes.
 
     def solve(
         self,
@@ -37,11 +37,15 @@ class RollingHorizonOptimizer:
             raise RuntimeError("No target ids are available for optimization.")
 
         start_node_ids = {int(node_id) for node_id in agent_current_vp_ids.values()}
+        all_node_ids = sorted(hypothesis_graph.nodes)
 
         candidate_node_ids = [
+            node_id for node_id in all_node_ids if node_id not in start_node_ids
+        ]
+        candidate_viewpoint_node_ids = [
             node_id
-            for node_id in sorted(hypothesis_graph.nodes)
-            if node_id not in start_node_ids
+            for node_id in candidate_node_ids
+            if hypothesis_graph.nodes[node_id].type == TYPE_VP
         ]
 
         if not candidate_node_ids:
@@ -52,7 +56,6 @@ class RollingHorizonOptimizer:
 
         directed_edges = self._build_directed_edges(
             hypothesis_graph=hypothesis_graph,
-            start_node_ids=start_node_ids,
         )
 
         if not directed_edges:
@@ -124,15 +127,19 @@ class RollingHorizonOptimizer:
 
         y = {}
         u = {}
+        mtz_node_count = len(all_node_ids)
+
         for agent_id in agent_ids:
             for node_id in candidate_node_ids:
                 y[(node_id, agent_id)] = model.addVar(
                     vtype=GRB.BINARY,
                     name="y_%s_%s" % (node_id, agent_id),
                 )
+
+            for node_id in all_node_ids:
                 u[(node_id, agent_id)] = model.addVar(
                     lb=1.0,
-                    ub=float(len(candidate_node_ids)),
+                    ub=float(mtz_node_count),
                     vtype=GRB.CONTINUOUS,
                     name="u_%s_%s" % (node_id, agent_id),
                 )
@@ -169,6 +176,7 @@ class RollingHorizonOptimizer:
             node_reward=node_reward,
             node_nonexist_penalty=node_nonexist_penalty,
             revisit_penalty=revisit_penalty,
+            candidate_viewpoint_node_ids=candidate_viewpoint_node_ids,
         )
 
         goal_term = quicksum(
@@ -200,7 +208,7 @@ class RollingHorizonOptimizer:
         visit_term = quicksum(
             revisit_penalty[node_id] * y[(node_id, agent_id)]
             for agent_id in agent_ids
-            for node_id in candidate_node_ids
+            for node_id in candidate_viewpoint_node_ids
         )
 
         normalized_goal = self._normalized_expression(
@@ -305,17 +313,11 @@ class RollingHorizonOptimizer:
             )
 
             for source_id, target_id in directed_edges:
-                if (
-                    source_id not in candidate_node_ids
-                    or target_id not in candidate_node_ids
-                ):
-                    continue
-
                 model.addConstr(
                     u[(source_id, agent_id)]
                     - u[(target_id, agent_id)]
-                    + len(candidate_node_ids) * x[(source_id, target_id, agent_id)]
-                    <= len(candidate_node_ids) - 1,
+                    + mtz_node_count * x[(source_id, target_id, agent_id)]
+                    <= mtz_node_count - 1,
                     name="mtz_%s_%s_%s" % (source_id, target_id, agent_id),
                 )
 
@@ -339,8 +341,7 @@ class RollingHorizonOptimizer:
                 <= 1 - int(bool(target_found_flags[target_id])),
                 name="unique_target_%s" % target_id,
             )
-        # save the model
-        model.write("optimization_model.lp")
+
         model.optimize()
 
         if model.Status != GRB.OPTIMAL:
@@ -400,15 +401,16 @@ class RollingHorizonOptimizer:
     def _normalized_expression(
         self, expression, lower_bound: float, upper_bound: float
     ):
-        denominator = float(upper_bound) - float(lower_bound)
-        if abs(denominator) <= self.epsilon:
+        if lower_bound == upper_bound:
             return 0.0
-        return (expression - float(lower_bound)) / denominator
+        else:
+            return (expression - float(lower_bound)) / (
+                float(upper_bound) - float(lower_bound)
+            )
 
     def _build_directed_edges(
         self,
         hypothesis_graph,
-        start_node_ids,
     ) -> List[Tuple[int, int]]:
         directed_edges = []
 
@@ -416,11 +418,8 @@ class RollingHorizonOptimizer:
             source_id = edge.source_node_id
             target_id = edge.target_node_id
 
-            if target_id not in start_node_ids:
-                directed_edges.append((source_id, target_id))
-
-            if source_id not in start_node_ids:
-                directed_edges.append((target_id, source_id))
+            directed_edges.append((source_id, target_id))
+            directed_edges.append((target_id, source_id))
 
         return sorted(set(directed_edges))
 
@@ -437,6 +436,7 @@ class RollingHorizonOptimizer:
         node_reward,
         node_nonexist_penalty,
         revisit_penalty,
+        candidate_viewpoint_node_ids,
     ):
         goal_lower_bound = 0.0
         goal_upper_bound = 0.0
@@ -479,12 +479,13 @@ class RollingHorizonOptimizer:
             )
 
             node_lower_bound += min(
-                node_nonexist_penalty[target_id]
+                node_nonexist_penalty.get(target_id, 0.0)
                 for _, target_id in viewpoint_outgoing_edges
             )
 
             visit_lower_bound += min(
-                revisit_penalty[target_id] for _, target_id in viewpoint_outgoing_edges
+                revisit_penalty.get(target_id, 0.0)
+                for _, target_id in viewpoint_outgoing_edges
             )
 
         max_edge_distance = max(
@@ -498,18 +499,14 @@ class RollingHorizonOptimizer:
         max_node_penalty = max(
             node_nonexist_penalty[node_id] for node_id in candidate_node_ids
         )
-        max_visit_penalty = max(
-            revisit_penalty[node_id]
-            for node_id in candidate_node_ids
-            if hypothesis_graph.nodes[node_id].type == TYPE_VP
-        )
-
         scale = float(len(agent_current_vp_ids) * len(candidate_node_ids))
 
         dist_upper_bound = scale * max_edge_distance
         arc_upper_bound = scale * max_arc_penalty
         node_upper_bound = scale * max_node_penalty
-        visit_upper_bound = float(len(agent_current_vp_ids)) * max_visit_penalty
+        visit_upper_bound = float(len(agent_current_vp_ids)) * sum(
+            revisit_penalty[node_id] for node_id in candidate_viewpoint_node_ids
+        )
 
         return (
             goal_lower_bound,
