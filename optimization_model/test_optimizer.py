@@ -154,23 +154,47 @@ class _RegionVisitGraph:
         }
 
 
+class _OtherAgentCurrentNodeGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 1.0}),
+            3: _FakeNode(1, True, 1.0, {"target": 0.0}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 0.1, 1.0),
+            (2, 3): _FakeEdge(2, 3, 0.1, 1.0),
+        }
+
+
 class MultiAgentOptimizerTest(unittest.TestCase):
     def _objective_bounds_for_graph(
         self, graph, agent_current_vp_ids, target_found_flags
     ):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+        agent_ids = list(agent_current_vp_ids)
         target_ids = list(graph.target_ids)
-        start_node_ids = {int(node_id) for node_id in agent_current_vp_ids.values()}
-        candidate_node_ids = [
-            node_id for node_id in sorted(graph.nodes) if node_id not in start_node_ids
-        ]
-        candidate_viewpoint_node_ids = [
-            node_id for node_id in candidate_node_ids if graph.nodes[node_id].type == 1
-        ]
-        directed_edges = optimizer._build_directed_edges(
-            hypothesis_graph=graph,
-            start_node_ids=start_node_ids,
-        )
+        all_node_ids = sorted(graph.nodes)
+        candidate_node_ids_by_agent = {
+            agent_id: [
+                node_id
+                for node_id in all_node_ids
+                if node_id != int(agent_current_vp_ids[agent_id])
+            ]
+            for agent_id in agent_ids
+        }
+        candidate_viewpoint_node_ids_by_agent = {
+            agent_id: [
+                node_id
+                for node_id in candidate_node_ids_by_agent[agent_id]
+                if graph.nodes[node_id].type == 1
+            ]
+            for agent_id in agent_ids
+        }
+        directed_edges = optimizer._build_directed_edges(hypothesis_graph=graph)
         edge_distance = {
             (source_id, target_id): graph.edges[
                 tuple(sorted((source_id, target_id)))
@@ -184,7 +208,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         }
         node_nonexist_penalty = {
             node_id: 1.0 - graph.nodes[node_id].exist_prob
-            for node_id in candidate_node_ids
+            for node_id in all_node_ids
         }
         revisit_penalty = {
             node_id: (
@@ -192,10 +216,10 @@ class MultiAgentOptimizerTest(unittest.TestCase):
                 if graph.nodes[node_id].type == 1
                 else 0.0
             )
-            for node_id in candidate_node_ids
+            for node_id in all_node_ids
         }
         node_reward = {}
-        for node_id in candidate_node_ids:
+        for node_id in all_node_ids:
             node = graph.nodes[node_id]
             reward_weight = (
                 1.0 if node.grounded else OPTIMIZER_CONFIG["ungrounded_reward_weight"]
@@ -210,14 +234,17 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             agent_current_vp_ids=agent_current_vp_ids,
             target_found_flags=target_found_flags,
             target_ids=target_ids,
-            candidate_node_ids=candidate_node_ids,
+            all_node_ids=all_node_ids,
+            candidate_node_ids_by_agent=candidate_node_ids_by_agent,
+            candidate_viewpoint_node_ids_by_agent=(
+                candidate_viewpoint_node_ids_by_agent
+            ),
             directed_edges=directed_edges,
             edge_distance=edge_distance,
             edge_nonexist_penalty=edge_nonexist_penalty,
             node_reward=node_reward,
             node_nonexist_penalty=node_nonexist_penalty,
             revisit_penalty=revisit_penalty,
-            candidate_viewpoint_node_ids=candidate_viewpoint_node_ids,
         )
 
     def test_assigns_each_unfound_target_at_most_once_across_agents(self):
@@ -275,6 +302,24 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         }
         self.assertEqual(selected_cycle_nodes, set())
 
+    def test_agent_can_assign_target_at_other_agents_current_viewpoint(self):
+        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_OtherAgentCurrentNodeGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target": False},
+        )
+
+        self.assertIn(2, result["agent_paths"]["agent0"]["planned_path_node_ids"])
+        self.assertTrue(
+            any(
+                assignment["agent_id"] == "agent0"
+                and assignment["node_id"] == 2
+                and assignment["target_id"] == "target"
+                for assignment in result["target_assignments"]
+            )
+        )
+
     def test_normalized_objective_value_is_bounded(self):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
         result = optimizer.solve(
@@ -300,12 +345,12 @@ class MultiAgentOptimizerTest(unittest.TestCase):
                 0.7200000000000001,
                 2.0,
                 9.0,
-                0.09999999999999998,
+                0.0,
                 1.2000000000000002,
-                0.19999999999999996,
-                1.2000000000000002,
+                0.0,
+                0.9,
                 2.0,
-                4.0,
+                6.0,
             ),
         )
 

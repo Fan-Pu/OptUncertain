@@ -1,72 +1,46 @@
 {
-  "bayes_config": {
-    "epsilon": 1e-06,
-    "eta_exist": 5.0,
-    "eta_goal": 5.0,
-    "eta_vz": 5.0,
-    "kappa_vv": 1.0,
-    "kappa_vz": 1.0,
-    "omega_vz": 0.7,
-    "sigma_vv2": 4.0,
-    "sigma_vz2": 9.0,
-    "varrho": 0.75
+  "agent_current_vp_ids": {
+    "agent0": 0,
+    "agent1": 18
   },
   "edges": [
     {
-      "cond_exist_prob": 1.0,
-      "distance_mean": 0.936,
-      "distance_var": 0.0,
-      "exist_prob": 1.0,
       "grounded": true,
       "i": 0,
       "j": 16,
       "type": "vv"
     },
     {
-      "cond_exist_prob": 1.0,
-      "distance_mean": 1.266,
-      "distance_var": 0.0,
-      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 0,
+      "j": 21,
+      "type": "vv"
+    },
+    {
       "grounded": true,
       "i": 9,
       "j": 18,
       "type": "vv"
     },
     {
-      "cond_exist_prob": 1.0,
-      "distance_mean": 1.87,
-      "distance_var": 0.0,
-      "exist_prob": 1.0,
       "grounded": true,
       "i": 9,
       "j": 40,
       "type": "vv"
     },
     {
-      "cond_exist_prob": 1.0,
-      "distance_mean": 1.705,
-      "distance_var": 0.0,
-      "exist_prob": 1.0,
       "grounded": true,
       "i": 9,
       "j": 41,
       "type": "vv"
     },
     {
-      "cond_exist_prob": 1.0,
-      "distance_mean": 0.565,
-      "distance_var": 0.0,
-      "exist_prob": 1.0,
       "grounded": true,
       "i": 16,
       "j": 32,
       "type": "vv"
     },
     {
-      "cond_exist_prob": 1.0,
-      "distance_mean": 1.466,
-      "distance_var": 0.0,
-      "exist_prob": 1.0,
       "grounded": true,
       "i": 16,
       "j": 35,
@@ -75,151 +49,179 @@
   ],
   "nodes": [
     {
-      "exist_prob": 1.0,
-      "grounded": false,
+      "connected_node_ids": [
+        16,
+        21
+      ],
+      "grounded": true,
       "id": 0,
       "label": "10c252c90fa24ef3b698c6f54d984c5c",
-      "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.22222222222222227
-      },
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
-      "exist_prob": 1.0,
+      "connected_node_ids": [
+        18,
+        40,
+        41
+      ],
       "grounded": true,
       "id": 9,
       "label": "85c23efeaecd4d43a7dcd5b90137179e",
       "node_visit_times": 1,
-      "target_probs": {
-        "1": 0.0
-      },
       "type": "viewpoint"
     },
     {
-      "exist_prob": 1.0,
+      "connected_node_ids": [
+        0,
+        32,
+        35
+      ],
       "grounded": true,
       "id": 16,
       "label": "0f37bd0737e349de9d536263a4bdd60d",
       "node_visit_times": 1,
-      "target_probs": {
-        "1": 0.0
-      },
       "type": "viewpoint"
     },
     {
-      "exist_prob": 1.0,
-      "grounded": false,
+      "connected_node_ids": [
+        9
+      ],
+      "grounded": true,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
-      "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.11111111111111113
-      },
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
-      "exist_prob": 1.0,
+      "connected_node_ids": [
+        0
+      ],
+      "grounded": false,
+      "id": 21,
+      "label": "77a1a11978b04e9cbf74914c98578ab8",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        16
+      ],
       "grounded": false,
       "id": 32,
       "label": "e34dcf54d26a4a95869cc8a0c01cd2be",
       "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.11111111111111113
-      },
       "type": "viewpoint"
     },
     {
-      "exist_prob": 1.0,
+      "connected_node_ids": [
+        16
+      ],
       "grounded": false,
       "id": 35,
       "label": "50c241453dfd45c1ba95b5d7191982ef",
       "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.11111111111111113
-      },
       "type": "viewpoint"
     },
     {
-      "exist_prob": 1.0,
+      "connected_node_ids": [
+        9
+      ],
       "grounded": false,
       "id": 40,
       "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
       "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.22222222222222227
-      },
       "type": "viewpoint"
     },
     {
-      "exist_prob": 1.0,
+      "connected_node_ids": [
+        9
+      ],
       "grounded": false,
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
       "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.22222222222222227
-      },
       "type": "viewpoint"
     },
     {
-      "exist_prob": 1.0,
+      "assigned_viewpoint_ids": [
+        0,
+        16,
+        21
+      ],
+      "connected_node_ids": [],
       "grounded": true,
       "id": 100,
       "label": "modern living area with white sofa",
       "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.3333333333333333
-      },
       "type": "region"
     },
     {
-      "exist_prob": 0.9,
+      "assigned_viewpoint_ids": [
+        32,
+        35
+      ],
+      "connected_node_ids": [],
       "grounded": false,
       "id": 101,
       "label": "bright bedroom area with white bed",
       "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.16666666666666666
-      },
       "type": "region"
     },
     {
-      "exist_prob": 1.0,
+      "assigned_viewpoint_ids": [
+        9,
+        18
+      ],
+      "connected_node_ids": [],
       "grounded": true,
       "id": 200,
       "label": "dark textured lounge area with quilted walls",
       "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.16666666666666666
-      },
       "type": "region"
     },
     {
-      "exist_prob": 0.9,
+      "assigned_viewpoint_ids": [
+        40,
+        41
+      ],
+      "connected_node_ids": [],
       "grounded": false,
       "id": 201,
       "label": "white minimalist corridor beyond lounge",
       "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.3333333333333333
-      },
       "type": "region"
     }
   ],
-  "observation_step": 1,
-  "target_found": {
-    "0": true,
-    "1": false
+  "observation_step": 2,
+  "region_to_viewpoints": {
+    "100": [
+      0,
+      16,
+      21
+    ],
+    "101": [
+      32,
+      35
+    ],
+    "200": [
+      9,
+      18
+    ],
+    "201": [
+      40,
+      41
+    ]
   },
-  "targets": [
-    {
-      "description": "the pillow on the bed",
-      "target_id": "0"
-    },
-    {
-      "description": "the green plant on the dining table",
-      "target_id": "1"
-    }
-  ]
+  "viewpoint_to_region": {
+    "0": 100,
+    "9": 200,
+    "16": 100,
+    "18": 200,
+    "21": 100,
+    "32": 101,
+    "35": 101,
+    "40": 201,
+    "41": 201
+  }
 }

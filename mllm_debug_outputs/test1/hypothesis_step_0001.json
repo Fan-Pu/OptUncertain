@@ -24,6 +24,16 @@
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 1.155,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 0,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 1.266,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -76,12 +86,12 @@
   "nodes": [
     {
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 0,
       "label": "10c252c90fa24ef3b698c6f54d984c5c",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "target_probs": {
-        "1": 0.22222222222222227
+        "1": 0.0
       },
       "type": "viewpoint"
     },
@@ -109,12 +119,23 @@
     },
     {
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
+      "node_visit_times": 1,
+      "target_probs": {
+        "1": 0.0
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "77a1a11978b04e9cbf74914c98578ab8",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.11111111111111113
+        "1": 0.31034482758620685
       },
       "type": "viewpoint"
     },
@@ -125,7 +146,7 @@
       "label": "e34dcf54d26a4a95869cc8a0c01cd2be",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.11111111111111113
+        "1": 0.1149425287356322
       },
       "type": "viewpoint"
     },
@@ -136,7 +157,7 @@
       "label": "50c241453dfd45c1ba95b5d7191982ef",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.11111111111111113
+        "1": 0.1149425287356322
       },
       "type": "viewpoint"
     },
@@ -147,7 +168,7 @@
       "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.22222222222222227
+        "1": 0.2298850574712644
       },
       "type": "viewpoint"
     },
@@ -158,7 +179,7 @@
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.22222222222222227
+        "1": 0.2298850574712644
       },
       "type": "viewpoint"
     },
@@ -169,7 +190,7 @@
       "label": "modern living area with white sofa",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.3333333333333333
+        "1": 0.33868387360097096
       },
       "type": "region"
     },
@@ -180,7 +201,7 @@
       "label": "bright bedroom area with white bed",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.16666666666666666
+        "1": 0.16546275617908024
       },
       "type": "region"
     },
@@ -191,7 +212,7 @@
       "label": "dark textured lounge area with quilted walls",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.16666666666666666
+        "1": 0.16492785786178832
       },
       "type": "region"
     },
@@ -202,12 +223,12 @@
       "label": "white minimalist corridor beyond lounge",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.3333333333333333
+        "1": 0.3309255123581605
       },
       "type": "region"
     }
   ],
-  "observation_step": 1,
+  "observation_step": 2,
   "target_found": {
     "0": true,
     "1": false
