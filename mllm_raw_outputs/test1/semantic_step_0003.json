@@ -2,13 +2,14 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 100
+      "current_region_node_id": 300
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 210
+      "current_region_node_id": 200
     }
   ],
+  "current_viewpoints_reassignment": [],
   "detections": [
     {
       "agent_id": "agent0",
@@ -34,32 +35,45 @@
     "viewpoint_viewpoint": 1.0
   },
   "invisible_region_nodes": [],
-  "new_edges": [],
-  "viewpoint_node_assigns": [
+  "new_edges": [
     {
-      "assigned_viewpoint_node_indices": [
-        15,
-        21,
-        27
-      ],
-      "region_node_id": 100
-    },
+      "dist": 1.5,
+      "edge_type": "VV",
+      "exist_prob": 0.6,
+      "i": 3,
+      "j": 5
+    }
+  ],
+  "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
         5,
         19,
         25,
         37,
-        40,
         41
       ],
-      "region_node_id": 210
+      "region_node_id": 200
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        40
+      ],
+      "region_node_id": 201
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        15,
+        21,
+        27
+      ],
+      "region_node_id": 300
     },
     {
       "assigned_viewpoint_node_indices": [
         3
       ],
-      "region_node_id": 300
+      "region_node_id": 400
     }
   ],
   "viewpoint_target_probs": [
@@ -70,15 +84,15 @@
       }
     },
     {
-      "id": 15,
+      "id": 21,
       "target_probs": {
         "1": 0.3
       }
     },
     {
-      "id": 21,
+      "id": 15,
       "target_probs": {
-        "1": 0.1
+        "1": 0.2
       }
     },
     {
@@ -94,13 +108,13 @@
       }
     },
     {
-      "id": 40,
+      "id": 41,
       "target_probs": {
         "1": 0.1
       }
     },
     {
-      "id": 41,
+      "id": 5,
       "target_probs": {
         "1": 0.1
       }
@@ -108,13 +122,13 @@
     {
       "id": 37,
       "target_probs": {
-        "1": 0.2
+        "1": 0.1
       }
     },
     {
-      "id": 5,
+      "id": 40,
       "target_probs": {
-        "1": 0.4
+        "1": 0.1
       }
     },
     {
@@ -127,24 +141,32 @@
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 100,
-      "label": "modern living area with white sofa",
+      "id": 300,
+      "label": "bright dining area with counter beyond living room",
       "target_probs": {
-        "1": 0.3
+        "1": 0.4
       }
     },
     {
       "exist_prob": 1.0,
-      "id": 210,
-      "label": "bright corridor area beyond lounge doorway",
+      "id": 200,
+      "label": "dark textured lounge area with quilted walls",
       "target_probs": {
-        "1": 0.5
+        "1": 0.1
       }
     },
     {
-      "exist_prob": 0.8,
-      "id": 300,
-      "label": "small white bathroom area beyond open door",
+      "exist_prob": 1.0,
+      "id": 201,
+      "label": "bright corridor area beyond lounge doorway",
+      "target_probs": {
+        "1": 0.1
+      }
+    },
+    {
+      "exist_prob": 0.9,
+      "id": 400,
+      "label": "small white bathroom area beyond lounge door",
       "target_probs": {
         "1": 0.05
       }

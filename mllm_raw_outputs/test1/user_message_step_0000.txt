@@ -27,6 +27,8 @@ Per-agent observation context:
     "agent_id": "agent0",
     "current_viewpoint_index": 16,
     "image_index": 0,
+    "prior_assigned_region_id": null,
+    "prior_assigned_region_label": null,
     "visible_viewpoints": [
       {
         "distance": 0.936,
@@ -46,6 +48,8 @@ Per-agent observation context:
     "agent_id": "agent1",
     "current_viewpoint_index": 9,
     "image_index": 1,
+    "prior_assigned_region_id": null,
+    "prior_assigned_region_label": null,
     "visible_viewpoints": [
       {
         "distance": 1.266,
@@ -88,6 +92,7 @@ Fixed direct detections from the separate detection step:
 Current-step interpretation note:
 - The observation context is the source of truth for current agent locations.
 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
+- If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
 - If a current region already appears in the graph summary, reuse its id and label and still include it in visible_region_nodes.
 
 Output schema example. Use keys and value types only. Do not copy example values unless supported:
@@ -96,6 +101,12 @@ Output schema example. Use keys and value types only. Do not copy example values
     {
       "agent_id": "agent0",
       "current_region_node_id": 100
+    }
+  ],
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 101,
+      "viewpoint_id": 16
     }
   ],
   "detections": [
@@ -172,6 +183,9 @@ Field descriptions:
   "agents": "One item per agent.",
   "agents[].agent_id": "Must match an input agent id exactly.",
   "agents[].current_region_node_id": "Region id containing the agent current viewpoint. It must appear in visible_region_nodes. If this region already exists, reuse its id and label and still include it.",
+  "current_viewpoints_reassignment": "Explicit region reassignment events for current viewpoints only. Return an empty list if every current viewpoint prior region assignment still matches the current panorama, or if the current viewpoint has no prior region assignment. Include one item only when a current viewpoint previously had a graph_summary.viewpoint_to_region assignment and the current panorama supports a different final region assignment.",
+  "current_viewpoints_reassignment[].new_assigned_region_id": "Final region id assigned to this current viewpoint after checking the current panorama. It must match the region used for this viewpoint in viewpoint_node_assigns and the corresponding agents[].current_region_node_id. It must appear in visible_region_nodes. If this is a newly proposed region id, its full region record must be included in visible_region_nodes.",
+  "current_viewpoints_reassignment[].viewpoint_id": "Integer viewpoint id. It must be one of the current agent viewpoints.",
   "detections": "Copy the fixed direct detections from the separate detection step exactly. Do not revise founds during graph generation. Found and completed targets are omitted.",
   "detections[].agent_id": "Must match an input agent id exactly.",
   "detections[].founds": "JSON booleans copied exactly from the fixed direct detections. Order must match target_indices.",
@@ -205,6 +219,10 @@ Field descriptions:
 
 Current step request:
 - Identify each agent current semantic region.
+- For each current viewpoint with prior_assigned_region_id, check whether prior_assigned_region_label still matches the current panorama.
+- If the prior region label still matches, keep the assignment and do not include that viewpoint in current_viewpoints_reassignment.
+- If the prior region label does not match, assign the viewpoint to the better-matching region and add one current_viewpoints_reassignment item.
+- If a reassigned region is newly proposed, include its full region node record in visible_region_nodes.
 - Include every current viewpoint and every distinct visible neighboring viewpoint exactly once in viewpoint_node_assigns.
 - Include every current viewpoint and every distinct visible neighboring viewpoint in viewpoint_target_probs.
 - For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.

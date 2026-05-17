@@ -747,6 +747,24 @@ class MLLMClient:
         if len(target_ids) != len(set(target_ids)):
             raise ValueError("Target ids must be unique.")
 
+        graph_viewpoint_to_region_for_prompt = {}
+        if isinstance(graph_summary.get("viewpoint_to_region"), dict):
+            graph_viewpoint_to_region_for_prompt = {
+                int(viewpoint_id): int(region_id)
+                for viewpoint_id, region_id in graph_summary[
+                    "viewpoint_to_region"
+                ].items()
+            }
+
+        graph_region_label_by_id_for_prompt = {}
+        for node in graph_summary.get("nodes", []):
+            if not isinstance(node, dict):
+                continue
+            if node.get("type") == "region":
+                graph_region_label_by_id_for_prompt[int(node["id"])] = str(
+                    node.get("label", "")
+                ).strip()
+
         agent_context = []
         for image_index, observation in enumerate(agent_observations):
             visible_viewpoints = [
@@ -756,12 +774,22 @@ class MLLMClient:
                 }
                 for item in observation["visible_viewpoints"]
             ]
+            current_viewpoint_id = int(observation["current_viewpoint_index"])
+            prior_assigned_region_id = graph_viewpoint_to_region_for_prompt.get(
+                current_viewpoint_id
+            )
             agent_context.append(
                 {
                     "agent_id": str(observation["agent_id"]),
                     "image_index": image_index,
-                    "current_viewpoint_index": int(
-                        observation["current_viewpoint_index"]
+                    "current_viewpoint_index": current_viewpoint_id,
+                    "prior_assigned_region_id": prior_assigned_region_id,
+                    "prior_assigned_region_label": (
+                        graph_region_label_by_id_for_prompt.get(
+                            prior_assigned_region_id
+                        )
+                        if prior_assigned_region_id is not None
+                        else None
                     ),
                     "visible_viewpoints": visible_viewpoints,
                 }
@@ -787,6 +815,12 @@ class MLLMClient:
                 {
                     "agent_id": example_agent_id,
                     "current_region_node_id": 100,
+                }
+            ],
+            "current_viewpoints_reassignment": [
+                {
+                    "viewpoint_id": example_current_viewpoint_id,
+                    "new_assigned_region_id": 101,
                 }
             ],
             "visible_region_nodes": [
@@ -853,6 +887,25 @@ class MLLMClient:
                 "Region id containing the agent current viewpoint. It must appear in "
                 "visible_region_nodes. If this region already exists, reuse its id and "
                 "label and still include it."
+            ),
+            "current_viewpoints_reassignment": (
+                "Explicit region reassignment events for current viewpoints only. "
+                "Return an empty list if every current viewpoint prior region assignment "
+                "still matches the current panorama, or if the current viewpoint has no "
+                "prior region assignment. Include one item only when a current viewpoint "
+                "previously had a graph_summary.viewpoint_to_region assignment and the "
+                "current panorama supports a different final region assignment."
+            ),
+            "current_viewpoints_reassignment[].viewpoint_id": (
+                "Integer viewpoint id. It must be one of the current agent viewpoints."
+            ),
+            "current_viewpoints_reassignment[].new_assigned_region_id": (
+                "Final region id assigned to this current viewpoint after checking the "
+                "current panorama. It must match the region used for this viewpoint in "
+                "viewpoint_node_assigns and the corresponding "
+                "agents[].current_region_node_id. It must appear in visible_region_nodes. "
+                "If this is a newly proposed region id, its full region record must be "
+                "included in visible_region_nodes."
             ),
             "visible_region_nodes": (
                 "Current regions and any semantic area visually observable in current "
@@ -1040,11 +1093,17 @@ class MLLMClient:
             Return exactly one valid JSON object matching the user schema. Do not output markdown, code fences, comments, text outside JSON, extra top-level keys, trailing commas, or non-JSON booleans.
 
             Required top-level keys:
-            agents, visible_region_nodes, invisible_region_nodes, viewpoint_target_probs, viewpoint_node_assigns, new_edges, edge_distance_variances, detections.
+            agents, current_viewpoints_reassignment, visible_region_nodes, invisible_region_nodes, viewpoint_target_probs, viewpoint_node_assigns, new_edges, edge_distance_variances, detections.
 
             Core rules:
             - The per-agent observation context is the source of truth for current agent locations, even if the compact graph summary has older node status values.
             - agents has one item per agent. current_region_node_id is the region containing the agent current viewpoint and must appear in visible_region_nodes. Reuse existing region ids and labels when matched.
+            - For each current viewpoint with a prior_assigned_region_id in the per-agent observation context, compare prior_assigned_region_label against the current panorama. The prior assignment is a semantic hypothesis from earlier steps, not ground truth.
+            - If the prior region assignment still matches the current panorama, keep the original region assignment and do not include that viewpoint in current_viewpoints_reassignment.
+            - If the prior region assignment does not match the current panorama, assign the current viewpoint to the region that best matches the current observation and include exactly one item in current_viewpoints_reassignment.
+            - current_viewpoints_reassignment must contain only true region changes for current viewpoints. Return [] when no current viewpoint requires reassignment.
+            - For each current_viewpoints_reassignment item, new_assigned_region_id must equal the final region assignment used in agents[].current_region_node_id and viewpoint_node_assigns.
+            - If new_assigned_region_id is a newly proposed region, include the complete region node record in visible_region_nodes.
             - visible_region_nodes include current regions and any adjacent area that is visually observable in current panoramas, even if only partially visible through a doorway, opening, or corridor.
             - invisible_region_nodes include only completely unseen regions inferred from layout cues. If any part of a region is visible, it is not invisible.
             - Do not assign viewpoints to invisible_region_nodes. A region with assigned viewpoints must be in visible_region_nodes.
@@ -1084,6 +1143,7 @@ class MLLMClient:
                 Current-step interpretation note:
                 - The observation context is the source of truth for current agent locations.
                 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
+                - If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
                 - If a current region already appears in the graph summary, reuse its id and label and still include it in visible_region_nodes.
 
                 Output schema example. Use keys and value types only. Do not copy example values unless supported:
@@ -1094,6 +1154,10 @@ class MLLMClient:
 
                 Current step request:
                 - Identify each agent current semantic region.
+                - For each current viewpoint with prior_assigned_region_id, check whether prior_assigned_region_label still matches the current panorama.
+                - If the prior region label still matches, keep the assignment and do not include that viewpoint in current_viewpoints_reassignment.
+                - If the prior region label does not match, assign the viewpoint to the better-matching region and add one current_viewpoints_reassignment item.
+                - If a reassigned region is newly proposed, include its full region node record in visible_region_nodes.
                 - Include every current viewpoint and every distinct visible neighboring viewpoint exactly once in viewpoint_node_assigns.
                 - Include every current viewpoint and every distinct visible neighboring viewpoint in viewpoint_target_probs.
                 - For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.
@@ -1252,6 +1316,7 @@ class MLLMClient:
         validation_errors: List[str] = []
         last_error = None
 
+        # read local raw output if enabled, otherwise request MLLM completion directly
         if getattr(self, "read_saved_raw_outputs", False):
             decoded = self._read_semantic_raw_output(step_index)
             if decoded is not None:
@@ -1282,6 +1347,7 @@ class MLLMClient:
                     "Requesting MLLM instead." % step_index
                 )
 
+        # request MLLM completion with retries for validation failures
         for attempt_index in range(max_validation_retries + 1):
             if attempt_index == 0:
                 attempt_user_message = user_message
@@ -1622,6 +1688,7 @@ class MLLMClient:
     ) -> Dict[str, object]:
         required_top_level_keys = {
             "agents",
+            "current_viewpoints_reassignment",
             "detections",
             "visible_region_nodes",
             "invisible_region_nodes",
@@ -1705,6 +1772,10 @@ class MLLMClient:
             raise ValueError("Target ids must be unique.")
 
         agents = require_list(payload["agents"], "agents")
+        current_viewpoints_reassignment = require_list(
+            payload["current_viewpoints_reassignment"],
+            "current_viewpoints_reassignment",
+        )
         detections = require_list(payload["detections"], "detections")
         visible_region_nodes = require_list(
             payload["visible_region_nodes"], "visible_region_nodes"
@@ -2254,16 +2325,98 @@ class MLLMClient:
                     )
                 )
 
-        # diagnostic check for all current-viewpoint assignment changes, including those not caused by fixed assignment correction
+        # Validate explicit current-viewpoint region reassignment events. The
+        # final current-viewpoint assignments are still represented by agents and
+        # viewpoint_node_assigns. This object records only true changes from an
+        # existing graph_summary.viewpoint_to_region assignment.
+        returned_reassignment_by_viewpoint = {}
+        for item in current_viewpoints_reassignment:
+            item = require_dict(
+                item,
+                "current_viewpoints_reassignment[] item",
+            )
+
+            expected_keys = {"viewpoint_id", "new_assigned_region_id"}
+            if set(item) != expected_keys:
+                raise KeyError(
+                    "Each current_viewpoints_reassignment item must contain exactly "
+                    "%s, got %s." % (sorted(expected_keys), sorted(item))
+                )
+
+            viewpoint_id = int(item["viewpoint_id"])
+            new_region_id = int(item["new_assigned_region_id"])
+
+            if viewpoint_id not in current_viewpoint_ids:
+                raise ValueError(
+                    "current_viewpoints_reassignment viewpoint_id %s is not a "
+                    "current viewpoint." % viewpoint_id
+                )
+
+            if viewpoint_id in returned_reassignment_by_viewpoint:
+                raise ValueError(
+                    "Duplicated current_viewpoints_reassignment item for viewpoint %s."
+                    % viewpoint_id
+                )
+
+            old_region_id = graph_viewpoint_to_region.get(viewpoint_id)
+            if old_region_id is None:
+                raise ValueError(
+                    "current_viewpoints_reassignment includes viewpoint %s, but this "
+                    "viewpoint has no prior graph_summary.viewpoint_to_region assignment."
+                    % viewpoint_id
+                )
+
+            if new_region_id == old_region_id:
+                raise ValueError(
+                    "current_viewpoints_reassignment includes viewpoint %s, but "
+                    "new_assigned_region_id %s is identical to its old region assignment."
+                    % (viewpoint_id, new_region_id)
+                )
+
+            if new_region_id not in visible_region_ids:
+                raise ValueError(
+                    "current_viewpoints_reassignment uses new_assigned_region_id %s "
+                    "for viewpoint %s, but this region is not in visible_region_nodes."
+                    % (new_region_id, viewpoint_id)
+                )
+
+            final_assigned_region_id = assigned_viewpoint_to_region.get(viewpoint_id)
+            if new_region_id != final_assigned_region_id:
+                raise ValueError(
+                    "current_viewpoints_reassignment says viewpoint %s is reassigned "
+                    "to region %s, but viewpoint_node_assigns assigns it to region %s."
+                    % (viewpoint_id, new_region_id, final_assigned_region_id)
+                )
+
+            returned_reassignment_by_viewpoint[viewpoint_id] = new_region_id
+
+        expected_reassignment_by_viewpoint = {}
         for current_viewpoint_id in sorted(current_viewpoint_ids):
             old_region_id = graph_viewpoint_to_region.get(current_viewpoint_id)
             new_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
 
             if old_region_id is not None and new_region_id != old_region_id:
+                expected_reassignment_by_viewpoint[current_viewpoint_id] = new_region_id
+
+        if returned_reassignment_by_viewpoint != expected_reassignment_by_viewpoint:
+            raise ValueError(
+                "current_viewpoints_reassignment does not match the actual current-"
+                "viewpoint region assignment changes. Got %s, expected %s."
+                % (
+                    returned_reassignment_by_viewpoint,
+                    expected_reassignment_by_viewpoint,
+                )
+            )
+
+        if returned_reassignment_by_viewpoint:
+            print("Current viewpoint region reassignments:")
+            for viewpoint_id, new_region_id in sorted(
+                returned_reassignment_by_viewpoint.items()
+            ):
+                old_region_id = graph_viewpoint_to_region.get(viewpoint_id)
                 print(
-                    "Current viewpoint %s changes region assignment from old region %s "
-                    "to current-observation region %s."
-                    % (current_viewpoint_id, old_region_id, new_region_id)
+                    "  Viewpoint %s reassigned from old region %s to new region %s."
+                    % (viewpoint_id, old_region_id, new_region_id)
                 )
 
         if len(visible_region_nodes) + len(invisible_region_nodes) > 5:
@@ -2307,6 +2460,15 @@ class MLLMClient:
         for viewpoint_id, region_id in assigned_viewpoint_to_region.items():
             region_to_assigned_viewpoints.setdefault(region_id, set()).add(viewpoint_id)
 
+        payload["current_viewpoints_reassignment"] = [
+            {
+                "viewpoint_id": int(viewpoint_id),
+                "new_assigned_region_id": int(region_id),
+            }
+            for viewpoint_id, region_id in sorted(
+                returned_reassignment_by_viewpoint.items()
+            )
+        ]
         payload["visible_region_nodes"] = visible_region_nodes
         payload["invisible_region_nodes"] = invisible_region_nodes
         payload["viewpoint_node_assigns"] = [

@@ -275,7 +275,9 @@ def run_scenario(config_path: str) -> Dict[str, object]:
 
     scorer = SigLIPScorer()
 
-    while True:
+    all_targets_found = False
+
+    while not all_targets_found:
         if all(hypothesis_graph.target_found.values()):
             return {"target_found": dict(hypothesis_graph.target_found)}
 
@@ -315,23 +317,19 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             completed_targets=completed_targets,
         )
 
+        # Check if all targets are found after processing direct detections, before updating the graph with MLLM output.
         if all(hypothesis_graph.target_found.values()):
-            hypothesis_graph.export_debug_snapshot(
-                output_dir=debug_output_dir,
-                step_index=debug_step_index,
-            )
-            return {"target_found": dict(hypothesis_graph.target_found)}
+            all_targets_found = True
 
-        if mllm_output is None:
-            raise RuntimeError(
-                "Graph generation was skipped, but not all targets are marked found."
+        if mllm_output is not None:
+            hypothesis_graph.update_from_mllm(
+                mllm_output=mllm_output,
+                agent_observations=agent_observations,
+                scorer=scorer,
             )
+        else:
+            hypothesis_graph.update_without_mllm(agent_observations=agent_observations)
 
-        hypothesis_graph.update_from_mllm(
-            mllm_output=mllm_output,
-            agent_observations=agent_observations,
-            scorer=scorer,
-        )
         hypothesis_graph.export_debug_snapshot(
             output_dir=debug_output_dir,
             step_index=debug_step_index,
@@ -379,7 +377,10 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         for _ in range(2):
             print()
 
-        if debug_step_index == 3:
+        if all_targets_found:
+            print("All targets found, skipping remaining steps.")
+
+        if debug_step_index == 7:
             debugpy.breakpoint()
 
 

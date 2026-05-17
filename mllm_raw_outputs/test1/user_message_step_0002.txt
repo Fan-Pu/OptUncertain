@@ -151,7 +151,7 @@ Compact shared graph summary:
       "id": 18,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1299
+        "1": 0.0962
       },
       "type": "viewpoint"
     },
@@ -161,7 +161,7 @@ Compact shared graph summary:
       "id": 19,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1169
+        "1": 0.0865
       },
       "type": "viewpoint"
     },
@@ -171,7 +171,7 @@ Compact shared graph summary:
       "id": 21,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1169
+        "1": 0.3462
       },
       "type": "viewpoint"
     },
@@ -181,7 +181,7 @@ Compact shared graph summary:
       "id": 25,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1169
+        "1": 0.0865
       },
       "type": "viewpoint"
     },
@@ -191,7 +191,7 @@ Compact shared graph summary:
       "id": 32,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1299
+        "1": 0.0962
       },
       "type": "viewpoint"
     },
@@ -201,7 +201,7 @@ Compact shared graph summary:
       "id": 35,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1299
+        "1": 0.0962
       },
       "type": "viewpoint"
     },
@@ -211,7 +211,7 @@ Compact shared graph summary:
       "id": 40,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2597
+        "1": 0.1923
       },
       "type": "viewpoint"
     },
@@ -228,8 +228,7 @@ Compact shared graph summary:
     {
       "assigned_viewpoint_ids": [
         0,
-        16,
-        21
+        16
       ],
       "exist_prob": 1.0,
       "grounded": 1,
@@ -237,7 +236,7 @@ Compact shared graph summary:
       "label": "modern living area with white sofa",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.2544
+        "1": 0.3175
       },
       "type": "region"
     },
@@ -248,18 +247,21 @@ Compact shared graph summary:
       ],
       "exist_prob": 0.9,
       "grounded": 0,
-      "id": 110,
-      "label": "bedroom area with white bed beyond partition",
+      "id": 101,
+      "label": "bedroom area with large bed beyond partition",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1243
+        "1": 0.0776
       },
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         9,
-        18
+        18,
+        19,
+        25,
+        41
       ],
       "exist_prob": 1.0,
       "grounded": 1,
@@ -267,24 +269,35 @@ Compact shared graph summary:
       "label": "dark textured lounge area with quilted walls",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1243
+        "1": 0.0776
       },
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        19,
-        25,
-        40,
-        41
+        40
       ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 210,
+      "exist_prob": 0.9,
+      "grounded": 0,
+      "id": 201,
       "label": "bright corridor area beyond lounge doorway",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.4971
+        "1": 0.1551
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        21
+      ],
+      "exist_prob": 0.8,
+      "grounded": 0,
+      "id": 300,
+      "label": "bright dining area with counter beyond living room",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.3723
       },
       "type": "region"
     }
@@ -297,13 +310,13 @@ Compact shared graph summary:
     "0": 100,
     "16": 100,
     "18": 200,
-    "19": 210,
-    "21": 100,
-    "25": 210,
-    "32": 110,
-    "35": 110,
-    "40": 210,
-    "41": 210,
+    "19": 200,
+    "21": 300,
+    "25": 200,
+    "32": 101,
+    "35": 101,
+    "40": 201,
+    "41": 200,
     "9": 200
   }
 }
@@ -314,6 +327,8 @@ Per-agent observation context:
     "agent_id": "agent0",
     "current_viewpoint_index": 21,
     "image_index": 0,
+    "prior_assigned_region_id": 300,
+    "prior_assigned_region_label": "bright dining area with counter beyond living room",
     "visible_viewpoints": [
       {
         "distance": 1.155,
@@ -333,6 +348,8 @@ Per-agent observation context:
     "agent_id": "agent1",
     "current_viewpoint_index": 40,
     "image_index": 1,
+    "prior_assigned_region_id": 201,
+    "prior_assigned_region_label": "bright corridor area beyond lounge doorway",
     "visible_viewpoints": [
       {
         "distance": 1.87,
@@ -375,6 +392,7 @@ Fixed direct detections from the separate detection step:
 Current-step interpretation note:
 - The observation context is the source of truth for current agent locations.
 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
+- If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
 - If a current region already appears in the graph summary, reuse its id and label and still include it in visible_region_nodes.
 
 Output schema example. Use keys and value types only. Do not copy example values unless supported:
@@ -383,6 +401,12 @@ Output schema example. Use keys and value types only. Do not copy example values
     {
       "agent_id": "agent0",
       "current_region_node_id": 100
+    }
+  ],
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 101,
+      "viewpoint_id": 21
     }
   ],
   "detections": [
@@ -459,6 +483,9 @@ Field descriptions:
   "agents": "One item per agent.",
   "agents[].agent_id": "Must match an input agent id exactly.",
   "agents[].current_region_node_id": "Region id containing the agent current viewpoint. It must appear in visible_region_nodes. If this region already exists, reuse its id and label and still include it.",
+  "current_viewpoints_reassignment": "Explicit region reassignment events for current viewpoints only. Return an empty list if every current viewpoint prior region assignment still matches the current panorama, or if the current viewpoint has no prior region assignment. Include one item only when a current viewpoint previously had a graph_summary.viewpoint_to_region assignment and the current panorama supports a different final region assignment.",
+  "current_viewpoints_reassignment[].new_assigned_region_id": "Final region id assigned to this current viewpoint after checking the current panorama. It must match the region used for this viewpoint in viewpoint_node_assigns and the corresponding agents[].current_region_node_id. It must appear in visible_region_nodes. If this is a newly proposed region id, its full region record must be included in visible_region_nodes.",
+  "current_viewpoints_reassignment[].viewpoint_id": "Integer viewpoint id. It must be one of the current agent viewpoints.",
   "detections": "Copy the fixed direct detections from the separate detection step exactly. Do not revise founds during graph generation. Found and completed targets are omitted.",
   "detections[].agent_id": "Must match an input agent id exactly.",
   "detections[].founds": "JSON booleans copied exactly from the fixed direct detections. Order must match target_indices.",
@@ -492,6 +519,10 @@ Field descriptions:
 
 Current step request:
 - Identify each agent current semantic region.
+- For each current viewpoint with prior_assigned_region_id, check whether prior_assigned_region_label still matches the current panorama.
+- If the prior region label still matches, keep the assignment and do not include that viewpoint in current_viewpoints_reassignment.
+- If the prior region label does not match, assign the viewpoint to the better-matching region and add one current_viewpoints_reassignment item.
+- If a reassigned region is newly proposed, include its full region node record in visible_region_nodes.
 - Include every current viewpoint and every distinct visible neighboring viewpoint exactly once in viewpoint_node_assigns.
 - Include every current viewpoint and every distinct visible neighboring viewpoint in viewpoint_target_probs.
 - For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.

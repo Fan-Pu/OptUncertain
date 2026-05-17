@@ -568,6 +568,102 @@ class HypothesisGraph:
 
         self.target_found
 
+    def update_without_mllm(
+        self,
+        agent_observations: List[Dict[str, object]],
+    ) -> None:
+        """Update observation-driven graph states when no MLLM call is made.
+
+        This function is intended for cases such as the final step, where all
+        targets have already been found and therefore no MLLM output is requested.
+
+        It updates:
+        - observation_step
+        - current agent viewpoint ids
+        - grounding status of current viewpoints
+        - visit counts of current viewpoints
+        - RGB evidence for current viewpoints
+        - grounded VV edges from each current viewpoint to its visible neighbors
+        - grounding status of assigned region nodes
+        - removal of invalid VZ edges
+        - removal of target probabilities for targets already marked as found
+
+        It does not:
+        - create or revise semantic region hypotheses
+        - revise viewpoint-region assignments
+        - add MLLM-proposed uncertain edges
+        - perform Bayesian posterior updates
+        """
+
+        self.observation_step += 1
+
+        self.agent_current_vp_ids = {}
+
+        for observation in agent_observations:
+            agent_id = str(observation["agent_id"])
+            current_vp_id = int(observation["current_viewpoint_index"])
+
+            self.agent_current_vp_ids[agent_id] = current_vp_id
+
+            current_vp_label = Helper.viewpoint_vp_label_by_index[current_vp_id]
+
+            # Preserve existing target_probs if the node already exists.
+            # For a new viewpoint node, add_or_update_node() initializes them to zero.
+            current_vp_node = self.add_or_update_node(
+                node_id=current_vp_id,
+                label=current_vp_label,
+                node_type=TYPE_VP,
+                exist_prob=1.0,
+                grounded=True,
+                target_probs=None,
+            )
+
+            current_vp_node.node_visit_times += 1
+
+            self.viewpoint_rgb_evidence[current_vp_id] = [observation["raw_panorama"]]
+
+            for visible_viewpoint in observation["visible_viewpoints"]:
+                visible_vp_id = int(visible_viewpoint["viewpoint_index"])
+                visible_label = Helper.viewpoint_vp_label_by_index[visible_vp_id]
+
+                already_grounded = (
+                    self.nodes[visible_vp_id].grounded
+                    if visible_vp_id in self.nodes
+                    else False
+                )
+
+                # Preserve existing target_probs if the node already exists.
+                self.add_or_update_node(
+                    node_id=visible_vp_id,
+                    label=visible_label,
+                    node_type=TYPE_VP,
+                    exist_prob=1.0,
+                    grounded=already_grounded,
+                    target_probs=None,
+                )
+
+                # This VV edge is directly observed from the simulator, so it is grounded.
+                self.add_or_update_edge(
+                    source_node_id=current_vp_id,
+                    target_node_id=visible_vp_id,
+                    distance_mean=float(visible_viewpoint["distance"]),
+                    distance_var=0.0,
+                    cond_exist_prob=1.0,
+                    exist_prob=1.0,
+                    grounded=True,
+                )
+
+        # If a region already has this viewpoint assigned, grounding the viewpoint
+        # should also ground that region.
+        self._refresh_region_grounding()
+
+        # Remove VZ edges whose region now has assigned viewpoints.
+        self._drop_invalid_vz_edges()
+
+        # If target_found has already been updated elsewhere, remove those found
+        # targets from every node's target probability dictionary.
+        self._remove_found_target_probs_from_nodes()
+
     def _remove_found_target_probs_from_nodes(self) -> None:
         found_target_ids = {
             str(target_id)
