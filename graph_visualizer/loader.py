@@ -64,6 +64,15 @@ def _load_step(
     detection_path = raw_dir / ("detection_step_%s.json" % suffix)
     user_message_path = raw_dir / ("user_message_step_%s.txt" % suffix)
 
+    layout = _read_json(layout_path)
+    hypothesis = _read_json(hypothesis_path)
+    detection = _read_json(detection_path)
+    semantic, user_message = _load_semantic_and_user_message(
+        semantic_path=semantic_path,
+        user_message_path=user_message_path,
+        hypothesis=hypothesis,
+    )
+
     observation_images = _load_observation_images(
         project_root=project_root,
         debug_dir=debug_dir,
@@ -80,13 +89,53 @@ def _load_step(
             "detection": _relative_posix(project_root, detection_path),
             "user_message": _relative_posix(project_root, user_message_path),
         },
-        "layout": _read_json(layout_path),
-        "hypothesis": _read_json(hypothesis_path),
-        "semantic": _read_json(semantic_path),
-        "detection": _read_json(detection_path),
-        "user_message": user_message_path.read_text(encoding="utf-8"),
+        "layout": layout,
+        "hypothesis": hypothesis,
+        "semantic": semantic,
+        "detection": detection,
+        "user_message": user_message,
         "observation_images": observation_images,
     }
+
+
+def _load_semantic_and_user_message(
+    semantic_path: Path,
+    user_message_path: Path,
+    hypothesis: object,
+) -> tuple[object, str]:
+    semantic_exists = semantic_path.exists()
+    user_message_exists = user_message_path.exists()
+
+    if semantic_exists and user_message_exists:
+        return (
+            _read_json(semantic_path),
+            user_message_path.read_text(encoding="utf-8"),
+        )
+
+    if _is_terminal_detection_only_step(hypothesis):
+        semantic = _read_json(semantic_path) if semantic_exists else None
+        user_message = (
+            user_message_path.read_text(encoding="utf-8")
+            if user_message_exists
+            else ""
+        )
+        return semantic, user_message
+
+    return (
+        _read_json(semantic_path),
+        user_message_path.read_text(encoding="utf-8"),
+    )
+
+
+def _is_terminal_detection_only_step(hypothesis: object) -> bool:
+    if not isinstance(hypothesis, dict):
+        return False
+
+    target_found = hypothesis.get("target_found")
+    if not isinstance(target_found, dict) or not target_found:
+        return False
+
+    return all(bool(found) for found in target_found.values())
 
 
 def _load_observation_images(

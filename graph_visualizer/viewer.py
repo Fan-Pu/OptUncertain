@@ -631,7 +631,8 @@ def render_viewer_html() -> str:
       renderEdgeTable(step);
       renderDetections(step);
       renderImages(step);
-      document.getElementById("semantic").textContent = JSON.stringify(step.semantic, null, 2);
+      document.getElementById("semantic").textContent =
+        step.semantic === null ? "" : JSON.stringify(step.semantic, null, 2);
       document.getElementById("userMessage").textContent = step.user_message;
     }
 

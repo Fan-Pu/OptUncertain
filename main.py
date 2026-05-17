@@ -391,6 +391,8 @@ def main(argv: List[str] | None = None) -> int:
         raise SystemExit("Usage: python main.py <scenario_config.json>")
 
     run_scenario(argv[0])
+
+    debugpy.breakpoint()
     return 0
 
 

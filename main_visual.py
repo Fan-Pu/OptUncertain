@@ -1,3 +1,4 @@
+from doctest import debug
 import time
 
 from graph_visualizer import visualize_instance
@@ -13,6 +14,7 @@ def main():
     except KeyboardInterrupt:
         print("\nStopping visualizer.")
         server.shutdown()
+
     return 0
 
 

@@ -829,6 +829,14 @@ class HypothesisGraph:
             "hypothesis_step_%04d.json" % int(step_index),
         )
 
+        # check if layout_path and hypothesis_path already exist, and if so, skip writing to avoid overwriting existing debug snapshots
+        if os.path.exists(layout_path) or os.path.exists(hypothesis_path):
+            debug(
+                "Debug snapshot for step %d already exists, skipping export."
+                % int(step_index)
+            )
+            return
+
         with open(layout_path, "w", encoding="utf-8") as file_handle:
             json.dump(
                 self.get_graph_layout_snapshot(),
