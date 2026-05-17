@@ -828,11 +828,10 @@ def render_viewer_html() -> str:
 
     function updateDragPositions(event) {
       const point = graphPoint(event);
-      const delta = clampedDragDelta(
-        dragState.positions,
-        point.x - dragState.startPoint.x,
-        point.y - dragState.startPoint.y
-      );
+      const delta = {
+        dx: point.x - dragState.startPoint.x,
+        dy: point.y - dragState.startPoint.y
+      };
       if (delta.dx === 0 && delta.dy === 0) return;
       for (const position of dragState.positions) {
         setPositionOverride(
@@ -842,20 +841,6 @@ def render_viewer_html() -> str:
           position.y + delta.dy
         );
       }
-    }
-
-    function clampedDragDelta(positions, dx, dy) {
-      const margin = 24;
-      const width = graph.viewBox.baseVal.width;
-      const height = graph.viewBox.baseVal.height;
-      const minDx = Math.max(...positions.map(position => margin - position.x));
-      const maxDx = Math.min(...positions.map(position => width - margin - position.x));
-      const minDy = Math.max(...positions.map(position => margin - position.y));
-      const maxDy = Math.min(...positions.map(position => height - margin - position.y));
-      return {
-        dx: clamp(dx, minDx, maxDx),
-        dy: clamp(dy, minDy, maxDy)
-      };
     }
 
     function selectViewpointsInWindow(step) {
@@ -941,15 +926,15 @@ def render_viewer_html() -> str:
         viewpoints.forEach(node => {
           if (typeof node.x === "number" && typeof node.y === "number") {
             positions.set(String(node.id), {
-              x: clamp(node.x, 24, width - 24),
-              y: clamp(node.y, 24, height - 24)
+              x: node.x,
+              y: node.y
             });
           }
           const override = getPositionOverride(step.step_index, node.id);
           if (useOverrides && override) {
             positions.set(String(node.id), {
-              x: clamp(override.x, 24, width - 24),
-              y: clamp(override.y, 24, height - 24)
+              x: override.x,
+              y: override.y
             });
           }
         });
