@@ -5,7 +5,7 @@ from graph_visualizer import visualize_instance
 
 
 def main():
-    server = visualize_instance("test1")
+    server = visualize_instance("test2")
     print("Visualizer running at %s" % server.url)
     print("Press Ctrl+C to stop.")
     try:

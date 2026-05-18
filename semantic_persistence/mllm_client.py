@@ -1419,8 +1419,6 @@ class MLLMClient:
                 if error_message not in validation_errors:
                     validation_errors.append(error_message)
 
-                debugpy.breakpoint()  # Debug after catching a validation error to inspect the error and the invalid payload.
-
                 if attempt_index >= max_validation_retries:
                     self.semantic_raw_output_index = step_index + 1
                     accumulated_errors_text = "\n".join(
@@ -1512,8 +1510,10 @@ class MLLMClient:
         agent_id: str,
         image_bytes: bytes,
     ) -> None:
-        raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
+        raw_output_dir = getattr(self, "raw_output_dir")
         os.makedirs(raw_output_dir, exist_ok=True)
+        raw_debug_dir = getattr(self, "raw_debug_dir")
+        os.makedirs(raw_debug_dir, exist_ok=True)
 
         with open(
             self._observation_image_path(step_index, agent_id),
