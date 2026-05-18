@@ -12,6 +12,8 @@ import numpy as np
 from openai import BadRequestError, OpenAI
 from PIL import Image
 
+import Helper
+
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
 
@@ -484,8 +486,13 @@ class MLLMClient:
     @staticmethod
     def _found_targets_from_detections(
         detections: List[Dict[str, object]],
+        agent_observations: List[Dict[str, object]],
     ) -> Dict[str, List[Dict[str, object]]]:
         found_targets_by_id: Dict[str, List[Dict[str, object]]] = {}
+        agent_observation_by_id = {
+            str(observation["agent_id"]): observation
+            for observation in agent_observations
+        }
 
         for detection in detections:
             agent_id = str(detection["agent_id"])
@@ -499,18 +506,25 @@ class MLLMClient:
                 if not bool(founds[item_index]):
                     continue
 
-                target_center_x = None
-                target_heading = None
+                if target_center_xs is None:
+                    raise KeyError(
+                        "Found detection for agent %s target %s requires target_center_xs."
+                        % (agent_id, target_id)
+                    )
 
-                if target_center_xs is not None:
-                    target_center_x = target_center_xs[item_index]
+                target_center_x = target_center_xs[item_index]
 
-                    if target_center_x is not None:
-                        target_center_x = float(target_center_x)
-                        target_heading = target_center_x * 2.0 * np.pi
-                        target_heading = (target_heading + np.pi) % (
-                            2.0 * np.pi
-                        ) - np.pi
+                if target_center_x is None:
+                    raise ValueError(
+                        "Found detection for agent %s target %s has null target_center_x."
+                        % (agent_id, target_id)
+                    )
+
+                target_center_x = float(target_center_x)
+                target_heading = Helper.panorama_center_x_to_heading(
+                    target_center_x,
+                    agent_observation_by_id[agent_id]["horizon_headings"],
+                )
 
                 found_targets_by_id.setdefault(target_id, []).append(
                     {
@@ -1272,7 +1286,8 @@ class MLLMClient:
         )
         self.last_direct_detections = localized_detections
         newly_found_targets_by_id = self._found_targets_from_detections(
-            localized_detections
+            localized_detections,
+            agent_observations,
         )
         # Append newly found targets to the found_target_trace. This trace keeps a chronological record of when each target was first detected as found, along with the associated agent and localization information at that step.
         for target_id, detections in newly_found_targets_by_id.items():

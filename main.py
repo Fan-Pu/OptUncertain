@@ -4,7 +4,6 @@ from pathlib import Path
 import sys
 import time
 from typing import Dict, List
-import numpy as np
 import debugpy
 
 import Helper
@@ -136,22 +135,31 @@ def _collect_completed_targets(
             if not found:
                 continue
 
-            target_center_x = None
-            target_heading = None
+            if target_center_xs is None:
+                raise KeyError(
+                    "Found detection for agent %s target %s requires target_center_xs."
+                    % (agent_id, target_id)
+                )
 
-            if target_center_xs is not None:
-                target_center_x = target_center_xs[item_index]
+            target_center_x = target_center_xs[item_index]
 
-                if target_center_x is not None:
-                    target_center_x = float(target_center_x)
+            if target_center_x is None:
+                raise ValueError(
+                    "Found detection for agent %s target %s has null target_center_x."
+                    % (agent_id, target_id)
+                )
 
-                    if not (0.0 <= target_center_x <= 1.0):
-                        raise ValueError(
-                            "target_center_x must be in [0, 1], got %s."
-                            % target_center_x
-                        )
+            target_center_x = float(target_center_x)
 
-                    target_heading = target_center_x * 2.0 * np.pi
+            if not (0.0 <= target_center_x <= 1.0):
+                raise ValueError(
+                    "target_center_x must be in [0, 1], got %s." % target_center_x
+                )
+
+            target_heading = Helper.panorama_center_x_to_heading(
+                target_center_x,
+                agent_observation_by_id[agent_id]["horizon_headings"],
+            )
 
             found_detections_by_target[target_id].append(
                 {

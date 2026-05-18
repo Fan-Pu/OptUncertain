@@ -418,7 +418,7 @@ def execute_individual_first_hops(sims, move_specs, PAUSE_TIME=0.05):
             )
             sim.makeAction([0], [heading], [0.0])
         if PAUSE_TIME > 0.0:
-            time.sleep(PAUSE_TIME)
+            time.sleep(0.3 * PAUSE_TIME)
         render_sim_state(
             [sim.getState()[0] for sim in sims],
             viewpoint_index_by_vp=viewpoint_index_by_vp_label,
@@ -426,6 +426,8 @@ def execute_individual_first_hops(sims, move_specs, PAUSE_TIME=0.05):
 
     # Update the states after rotation
     rotated_states = [sim.getState()[0] for sim in sims]
+    if PAUSE_TIME > 0.0:
+        time.sleep(10 * PAUSE_TIME)
     for sim, state, plan in zip(sims, rotated_states, step_plans):
         target_viewpoint_id = plan["target_viewpoint_id"]
         location_index = [
@@ -434,24 +436,9 @@ def execute_individual_first_hops(sims, move_specs, PAUSE_TIME=0.05):
             if str(location.viewpointId) == target_viewpoint_id
         ][0]
         sim.makeAction([location_index], [0.0], [0.0])
-    if PAUSE_TIME > 0.0:
-        time.sleep(PAUSE_TIME)
     render_sim_state(
         [sim.getState()[0] for sim in sims],
         viewpoint_index_by_vp=viewpoint_index_by_vp_label,
-    )
-
-
-def rotate_to_target_heading_mov2vp(sim, selected_heading, target_vp_id):
-    execute_batched_first_hops(
-        sim,
-        [
-            {
-                "target_heading": float(selected_heading),
-                "target_viewpoint_id": str(target_vp_id),
-            }
-        ],
-        PAUSE_TIME=PAUSE_TIME,
     )
 
 
