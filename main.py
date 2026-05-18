@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import sys
+import time
 from typing import Dict, List
 import numpy as np
 import debugpy
@@ -340,7 +341,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         for target_id, found in hypothesis_graph.target_found.items():
             print(f"  {target_id}: {'Found' if found else 'Not found'}")
 
-        if all(hypothesis_graph.target_found.values()):
+        if all_targets_found:
+            debugpy.breakpoint()
             return {"target_found": dict(hypothesis_graph.target_found)}
 
         optimization_result = optimizer.solve(
@@ -376,9 +378,6 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         Helper.execute_individual_first_hops(sims=agent_sims, move_specs=move_specs)
         for _ in range(2):
             print()
-
-        if all_targets_found:
-            print("All targets found, skipping remaining steps.")
 
         if debug_step_index == 7:
             debugpy.breakpoint()

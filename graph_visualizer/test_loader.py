@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import time
+from urllib.request import Request, urlopen
 
 import pytest
 
 from graph_visualizer.loader import load_visualization_steps
+from graph_visualizer.server import start_visualizer_server
 
 
 def _write_json(path, payload):
@@ -110,3 +113,38 @@ def test_load_nonterminal_step_without_semantic_still_crashes(tmp_path):
 
     with pytest.raises(FileNotFoundError):
         load_visualization_steps("case", project_root=tmp_path)
+
+
+def test_shutdown_endpoint_stops_visualization_server(tmp_path):
+    _write_step(
+        tmp_path,
+        "case",
+        0,
+        target_found={"0": False},
+    )
+    server = start_visualizer_server(
+        "case",
+        project_root=tmp_path,
+        open_browser=False,
+    )
+
+    try:
+        request = Request(
+            server.url + "api/shutdown",
+            data=b"{}",
+            method="POST",
+        )
+        with urlopen(request, timeout=5) as response:
+            assert response.status == 200
+            assert response.read() == b"{}"
+
+        deadline = time.time() + 5
+        while server.thread.is_alive() and time.time() < deadline:
+            time.sleep(0.05)
+
+        assert not server.thread.is_alive()
+    finally:
+        if server.thread.is_alive():
+            server.shutdown()
+        else:
+            server.httpd.server_close()

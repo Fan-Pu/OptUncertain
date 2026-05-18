@@ -245,10 +245,10 @@ def render_viewer_html() -> str:
     .node {
       cursor: pointer;
     }
-    .node.viewpoint.draggable {
+    .node.draggable {
       cursor: grab;
     }
-    .node.viewpoint.draggable.dragging {
+    .node.draggable.dragging {
       cursor: grabbing;
     }
     .selection-window {
@@ -516,6 +516,9 @@ def render_viewer_html() -> str:
       render();
     });
     window.addEventListener("resize", () => renderGraph(currentStep()));
+    window.addEventListener("pagehide", () => {
+      navigator.sendBeacon("/api/shutdown", "{}");
+    });
     graph.addEventListener("pointerdown", () => {
       graph.focus();
     }, true);
@@ -654,18 +657,29 @@ def render_viewer_html() -> str:
 
       const regionLayer = svgEl("g", {});
       viewportLayer.appendChild(regionLayer);
+      const regionMarkerGroups = [];
       for (const node of layoutNodes.filter(item => item.type === "region").sort(byId)) {
-        const hull = regionHull(node, positions);
-        const center = polygonCentroid(hull);
+        const geometry = regionGeometry(node, positions);
+        const center = geometry.center;
         positions.set(String(node.id), center);
-        for (const point of hull) {
+        for (const point of geometry.points) {
           includeGraphPoint(contentBounds, point.x, point.y, 8);
         }
-        includeGraphPoint(contentBounds, center.x, center.y, 18);
+        includeGraphPoint(contentBounds, center.x, center.y, geometry.kind === "marker" ? 28 : 18);
+        const draggable = useSavedLayout && isMovableLayoutNode(node);
         const group = svgEl("g", {
-          class: `node region ${isSelectedNode(node.id, node.type) ? "selected" : ""}`
+          class: `node region ${draggable ? "draggable" : ""} ${isDraggingNode(node.id) ? "dragging" : ""} ${isSelectedNode(node.id, node.type) ? "selected" : ""}`
         });
-        group.addEventListener("click", () => {
+        if (geometry.kind === "marker") {
+          group.addEventListener("pointerdown", event => {
+            if (!useSavedLayout) return;
+            if (event.button !== 0) return;
+            event.stopPropagation();
+            beginNodeDrag(event, step, node, positions);
+          });
+        }
+        group.addEventListener("click", event => {
+          event.stopPropagation();
           selected = { kind: "node", id: node.id };
           render();
         });
@@ -674,7 +688,7 @@ def render_viewer_html() -> str:
         group.appendChild(title);
         group.appendChild(svgEl("polygon", {
           class: "region-hull",
-          points: hull.map(point => `${point.x},${point.y}`).join(" "),
+          points: geometry.points.map(point => `${point.x},${point.y}`).join(" "),
           fill: node.grounded ? "var(--grounded)" : "var(--region)",
           stroke: node.grounded ? "var(--grounded)" : "var(--region)"
         }));
@@ -686,7 +700,11 @@ def render_viewer_html() -> str:
         });
         idText.textContent = String(node.id);
         group.appendChild(idText);
-        regionLayer.appendChild(group);
+        if (geometry.kind === "marker") {
+          regionMarkerGroups.push(group);
+        } else {
+          regionLayer.appendChild(group);
+        }
       }
 
       const edgeLayer = svgEl("g", {});
@@ -725,6 +743,12 @@ def render_viewer_html() -> str:
         label.textContent = edgeLabel(hyp);
         edgeGroup.appendChild(label);
         edgeLayer.appendChild(edgeGroup);
+      }
+
+      const regionMarkerLayer = svgEl("g", {});
+      viewportLayer.appendChild(regionMarkerLayer);
+      for (const group of regionMarkerGroups) {
+        regionMarkerLayer.appendChild(group);
       }
 
       const nodeLayer = svgEl("g", {});
@@ -924,7 +948,7 @@ def render_viewer_html() -> str:
       });
 
       if (useSavedPositions) {
-        viewpoints.forEach(node => {
+        nodes.filter(isMovableLayoutNode).forEach(node => {
           if (typeof node.x === "number" && typeof node.y === "number") {
             positions.set(String(node.id), {
               x: node.x,
@@ -946,7 +970,7 @@ def render_viewer_html() -> str:
     function regionHull(region, positions) {
       const padding = 42;
       const samples = [];
-      const assignedIds = (region.assigned_viewpoint_ids || []).map(String).sort(numericStringCompare);
+      const assignedIds = assignedRegionViewpointIds(region);
       assignedIds.forEach(id => {
         const center = positions.get(id);
         for (let index = 0; index < 16; index += 1) {
@@ -958,6 +982,40 @@ def render_viewer_html() -> str:
         }
       });
       return convexHull(samples);
+    }
+
+    function assignedRegionViewpointIds(region) {
+      return (region.assigned_viewpoint_ids || []).map(String).sort(numericStringCompare);
+    }
+
+    function isMovableLayoutNode(node) {
+      return node.type === "viewpoint"
+        || (node.type === "region" && assignedRegionViewpointIds(node).length === 0);
+    }
+
+    function regionGeometry(region, positions) {
+      const assignedIds = assignedRegionViewpointIds(region);
+      if (assignedIds.length > 0) {
+        const points = regionHull(region, positions);
+        return {
+          kind: "hull",
+          points: points,
+          center: polygonCentroid(points)
+        };
+      }
+
+      const center = positions.get(String(region.id));
+      const radius = 24;
+      return {
+        kind: "marker",
+        center: center,
+        points: [
+          { x: center.x, y: center.y - radius },
+          { x: center.x + radius, y: center.y },
+          { x: center.x, y: center.y + radius },
+          { x: center.x - radius, y: center.y }
+        ]
+      };
     }
 
     function convexHull(points) {
@@ -1204,13 +1262,13 @@ def render_viewer_html() -> str:
         useOverrides: useSavedLayout
       });
       for (const node of step.layout.nodes.filter(item => item.type === "region").sort(byId)) {
-        const hull = regionHull(node, positions);
-        const center = polygonCentroid(hull);
+        const geometry = regionGeometry(node, positions);
+        const center = geometry.center;
         positions.set(String(node.id), center);
-        for (const point of hull) {
+        for (const point of geometry.points) {
           includeGraphPoint(bounds, point.x, point.y, 8);
         }
-        includeGraphPoint(bounds, center.x, center.y, 18);
+        includeGraphPoint(bounds, center.x, center.y, geometry.kind === "marker" ? 28 : 18);
       }
       for (const edge of step.layout.edges) {
         const source = positions.get(String(edge.i));
@@ -1397,7 +1455,7 @@ def render_viewer_html() -> str:
         useOverrides: true
       });
       const updates = step.layout.nodes
-        .filter(node => node.type === "viewpoint")
+        .filter(isMovableLayoutNode)
         .map(node => {
           const position = positions.get(String(node.id));
           return {
@@ -1411,7 +1469,7 @@ def render_viewer_html() -> str:
         step_index: step.step_index,
         positions: updates
       }).then(() => {
-        for (const node of step.layout.nodes.filter(item => item.type === "viewpoint")) {
+        for (const node of step.layout.nodes.filter(isMovableLayoutNode)) {
           const update = updates.find(item => Number(item.node_id) === Number(node.id));
           node.x = update.x;
           node.y = update.y;
@@ -1431,7 +1489,7 @@ def render_viewer_html() -> str:
         useOverrides: false
       });
       step.layout.nodes
-        .filter(node => node.type === "viewpoint")
+        .filter(isMovableLayoutNode)
         .forEach(node => {
           const position = positions.get(String(node.id));
           setPositionOverride(step.step_index, node.id, position.x, position.y);
@@ -1451,11 +1509,11 @@ def render_viewer_html() -> str:
       });
       const previousViewpointIds = new Set(
         previousStep.layout.nodes
-          .filter(node => node.type === "viewpoint")
+          .filter(isMovableLayoutNode)
           .map(node => String(node.id))
       );
       step.layout.nodes
-        .filter(node => node.type === "viewpoint")
+        .filter(isMovableLayoutNode)
         .filter(node => previousViewpointIds.has(String(node.id)))
         .forEach(node => {
           const position = previousPositions.get(String(node.id));

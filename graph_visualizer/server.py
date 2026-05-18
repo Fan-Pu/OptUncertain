@@ -89,6 +89,10 @@ def start_visualizer_server(
 
         def do_POST(self) -> None:
             parsed = urlparse(self.path)
+            if parsed.path == "/api/shutdown":
+                self._send_bytes(b"{}", "application/json; charset=utf-8")
+                threading.Thread(target=httpd.shutdown, daemon=True).start()
+                return
             if parsed.path not in ("/api/layout-position", "/api/layout-positions"):
                 self.send_error(404)
                 return
