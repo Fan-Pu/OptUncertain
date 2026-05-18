@@ -185,6 +185,7 @@ def _collect_completed_targets(
         completed_targets.append(
             {
                 "target_id": target_id,
+                "description": str(target["description"]),
                 "agent_id": detection["agent_id"],
                 "target_center_x": detection["target_center_x"],
                 "target_heading": detection["target_heading"],
@@ -197,26 +198,33 @@ def _collect_completed_targets(
 def _center_completed_targets(agent_sims, agent_ids, completed_targets) -> None:
     """Rotate agents in-place to center the found targets in their view."""
 
-    target_heading_by_agent = {}
+    completed_target_by_agent = {}
     for completed_target in completed_targets:
         agent_id = str(completed_target["agent_id"])
-        if agent_id not in target_heading_by_agent:
-            target_heading_by_agent[agent_id] = float(
-                completed_target["target_heading"]
-            )
+        if agent_id not in completed_target_by_agent:
+            completed_target_by_agent[agent_id] = completed_target
 
     sims_to_rotate = []
     target_headings = []
-    for agent_id, sim in zip(agent_ids, agent_sims):
-        if agent_id in target_heading_by_agent:
+    window_names = []
+    notifications = []
+    for agent_index, (agent_id, sim) in enumerate(zip(agent_ids, agent_sims)):
+        if agent_id in completed_target_by_agent:
+            completed_target = completed_target_by_agent[agent_id]
             sims_to_rotate.append(sim)
-            target_headings.append(target_heading_by_agent[agent_id])
+            target_headings.append(float(completed_target["target_heading"]))
+            window_names.append("Agent %s" % agent_index)
+            notifications.append(
+                "Target %s is found." % (completed_target["target_id"])
+            )
 
     if sims_to_rotate:
         Helper.execute_individual_rotations(
             sims=sims_to_rotate,
             target_headings=target_headings,
             PAUSE_TIME=Helper.PAUSE_TIME,
+            window_names=window_names,
+            notifications=notifications,
         )
 
 

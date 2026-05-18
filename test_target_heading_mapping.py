@@ -2,7 +2,9 @@ import importlib.util
 import math
 import sys
 import types
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 
@@ -33,7 +35,7 @@ if importlib.util.find_spec("openai") is None:
 
 
 import Helper
-from main import _collect_completed_targets
+from main import _center_completed_targets, _collect_completed_targets
 from semantic_persistence.mllm_client import MLLMClient
 
 
@@ -100,9 +102,113 @@ def test_collect_completed_targets_maps_center_x_through_agent_horizon_headings(
     )
 
     assert len(completed_targets) == 1
+    assert completed_targets[0]["target_id"] == "0"
+    assert completed_targets[0]["description"] == "the long bathrobe in the bathroom"
+    assert completed_targets[0]["agent_id"] == "agent0"
     assert completed_targets[0]["target_heading"] == pytest.approx(
         Helper.panorama_center_x_to_heading(0.41, horizon_headings)
     )
+
+
+def test_center_completed_targets_passes_agent_window_and_notification(monkeypatch):
+    calls = []
+
+    def fake_execute_individual_rotations(**kwargs):
+        calls.append(kwargs)
+
+    monkeypatch.setattr(
+        Helper,
+        "execute_individual_rotations",
+        fake_execute_individual_rotations,
+    )
+
+    _center_completed_targets(
+        agent_sims=["sim0", "sim1"],
+        agent_ids=["agent0", "agent1"],
+        completed_targets=[
+            {
+                "target_id": "0",
+                "description": "the long bathrobe in the bathroom",
+                "agent_id": "agent1",
+                "target_center_x": 0.41,
+                "target_heading": 1.5,
+            }
+        ],
+    )
+
+    assert calls == [
+        {
+            "sims": ["sim1"],
+            "target_headings": [1.5],
+            "PAUSE_TIME": Helper.PAUSE_TIME,
+            "window_names": ["Agent 1"],
+            "notifications": [
+                "Target 0 (the long bathrobe in the bathroom) is found."
+            ],
+        }
+    ]
+
+
+def test_render_sim_state_draws_notification(monkeypatch):
+    calls = []
+
+    monkeypatch.setattr(Helper.cv2, "FONT_HERSHEY_SIMPLEX", 0, raising=False)
+    monkeypatch.setattr(
+        Helper.cv2,
+        "getTextSize",
+        lambda text, font, font_scale, thickness: ((len(text) * 10, 20), 5),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        Helper.cv2,
+        "rectangle",
+        lambda image, start, end, color, thickness: calls.append(
+            ("rectangle", start, end, color, thickness)
+        ),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        Helper.cv2,
+        "putText",
+        lambda image, text, origin, font, font_scale, color, thickness: calls.append(
+            ("putText", text, origin, font, font_scale, color, thickness)
+        ),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        Helper.cv2,
+        "imshow",
+        lambda window_name, image: calls.append(("imshow", window_name)),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        Helper.cv2,
+        "waitKey",
+        lambda delay: calls.append(("waitKey", delay)),
+        raising=False,
+    )
+
+    state = SimpleNamespace(
+        rgb=np.zeros((60, 80, 3), dtype=np.uint8),
+        navigableLocations=[],
+    )
+
+    Helper.render_sim_state(
+        [state],
+        window_names=["Agent 1"],
+        notifications=["Target 0 (the long bathrobe in the bathroom) is found."],
+    )
+
+    assert (
+        "putText",
+        "Target 0 (the long bathrobe in the bathroom) is found.",
+        (16, 36),
+        0,
+        0.9,
+        (255, 255, 255),
+        2,
+    ) in calls
+    assert ("imshow", "Agent 1") in calls
 
 
 def test_mllm_found_targets_maps_center_x_through_agent_horizon_headings():

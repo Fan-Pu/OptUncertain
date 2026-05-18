@@ -116,14 +116,58 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
     return annotated_rgb, visible_viewpoints
 
 
-def render_sim_state(state_list, viewpoint_index_by_vp=None):
+def _draw_notification(rgb_image, notification):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.9
+    thickness = 2
+    margin = 16
+    padding = 10
+    (text_width, text_height), baseline = cv2.getTextSize(
+        notification,
+        font,
+        font_scale,
+        thickness,
+    )
+    cv2.rectangle(
+        rgb_image,
+        (margin - padding, margin - padding),
+        (margin + text_width + padding, margin + text_height + baseline + padding),
+        (0, 0, 0),
+        thickness=-1,
+    )
+    cv2.putText(
+        rgb_image,
+        notification,
+        (margin, margin + text_height),
+        font,
+        font_scale,
+        (255, 255, 255),
+        thickness=thickness,
+    )
+
+
+def render_sim_state(
+    state_list,
+    viewpoint_index_by_vp=None,
+    window_names=None,
+    notifications=None,
+):
+    if window_names is None:
+        window_names = [
+            "Agent %s" % batch_index for batch_index in range(len(state_list))
+        ]
+    if notifications is None:
+        notifications = [None for _ in state_list]
+
     for batch_index, state in enumerate(state_list):
         rgb_image, _ = annotate_rgb_with_viewpoints(
             state.rgb,
             state.navigableLocations,
             viewpoint_index_by_vp=viewpoint_index_by_vp,
         )
-        cv2.imshow("Agent %s" % batch_index, rgb_image)
+        if notifications[batch_index]:
+            _draw_notification(rgb_image, notifications[batch_index])
+        cv2.imshow(window_names[batch_index], rgb_image)
     cv2.waitKey(1)
 
 
@@ -297,7 +341,13 @@ def panorama_center_x_to_heading(target_center_x, horizon_headings):
     return target_heading % (2.0 * math.pi)
 
 
-def execute_individual_rotations(sims, target_headings, PAUSE_TIME=0.05):
+def execute_individual_rotations(
+    sims,
+    target_headings,
+    PAUSE_TIME=0.05,
+    window_names=None,
+    notifications=None,
+):
     if len(sims) != len(target_headings):
         raise ValueError("sims and target_headings must have the same length.")
 
@@ -330,7 +380,18 @@ def execute_individual_rotations(sims, target_headings, PAUSE_TIME=0.05):
         render_sim_state(
             [sim.getState()[0] for sim in sims],
             viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+            window_names=window_names,
         )
+
+    if notifications is not None:
+        render_sim_state(
+            [sim.getState()[0] for sim in sims],
+            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+            window_names=window_names,
+            notifications=notifications,
+        )
+        if PAUSE_TIME > 0.0:
+            time.sleep(2)
 
 
 def execute_batched_first_hops(sim, move_specs, PAUSE_TIME=0.0):
