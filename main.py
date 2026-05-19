@@ -316,22 +316,6 @@ def _write_mllm_completion_route_summary(
     return summary
 
 
-def _write_mllm_completion_route_plot(
-    test_case: str,
-    scan_id: str,
-    debug_output_dir: str,
-    executed_routes_by_agent: Dict[str, List[int]],
-    completed_target_node_ids: Dict[str, int],
-) -> Dict[str, object]:
-    return _write_mllm_completion_route_summary(
-        test_case=test_case,
-        scan_id=scan_id,
-        debug_output_dir=debug_output_dir,
-        executed_routes_by_agent=executed_routes_by_agent,
-        completed_target_node_ids=completed_target_node_ids,
-    )
-
-
 def run_scenario(config_path: str) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
     from semantic_persistence import HypothesisGraph, MLLMClient, SigLIPScorer

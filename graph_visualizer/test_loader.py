@@ -23,6 +23,26 @@ def _pose(x, y, z):
     return pose
 
 
+def _write_connectivity(connectivity_dir, *, second_viewpoint_id="vp1"):
+    _write_json(
+        connectivity_dir / "scan_connectivity.json",
+        [
+            {
+                "image_id": "vp0",
+                "included": True,
+                "pose": _pose(0.0, 0.0, 0.0),
+                "unobstructed": [False, True],
+            },
+            {
+                "image_id": second_viewpoint_id,
+                "included": True,
+                "pose": _pose(1.0, 0.0, 0.0),
+                "unobstructed": [True, False],
+            },
+        ],
+    )
+
+
 def _write_step(
     root,
     instance_name,
@@ -81,23 +101,7 @@ def _write_route_case(root, instance_name):
             "targets": [],
         },
     )
-    _write_json(
-        root / "connectivity" / "scan_connectivity.json",
-        [
-            {
-                "image_id": "vp0",
-                "included": True,
-                "pose": _pose(0.0, 0.0, 0.0),
-                "unobstructed": [False, True],
-            },
-            {
-                "image_id": "vp1",
-                "included": True,
-                "pose": _pose(1.0, 0.0, 0.0),
-                "unobstructed": [True, False],
-            },
-        ],
-    )
+    _write_connectivity(root / "connectivity")
     _write_json(
         root / "mllm_debug_outputs" / instance_name / ("%s_mllm_route_summary.txt" % instance_name),
         {
@@ -173,7 +177,7 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
     monkeypatch,
 ):
     _write_route_case(tmp_path, "case")
-    monkeypatch.setenv("MATTERPORT_CONNECTIVITY_DIR", str(tmp_path / "connectivity"))
+    monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
 
     payload = load_solution_payload("case", project_root=tmp_path)
 
@@ -182,6 +186,21 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
     assert payload["environment_graph"]["scan_id"] == "scan"
     assert payload["environment_graph"]["nodes"][0]["viewpoint_id"] == "vp0"
     assert payload["environment_graph"]["edges"][0]["distance"] == pytest.approx(1.0)
+
+
+def test_load_solution_payload_keeps_environment_connectivity_on_linux(
+    tmp_path,
+    monkeypatch,
+):
+    _write_route_case(tmp_path, "case")
+    env_connectivity_dir = tmp_path / "env_connectivity"
+    _write_connectivity(env_connectivity_dir, second_viewpoint_id="env-vp1")
+    monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Linux")
+    monkeypatch.setenv("MATTERPORT_CONNECTIVITY_DIR", str(env_connectivity_dir))
+
+    payload = load_solution_payload("case", project_root=tmp_path)
+
+    assert payload["environment_graph"]["nodes"][1]["viewpoint_id"] == "env-vp1"
 
 
 def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):

@@ -199,21 +199,6 @@ class MLLMClient:
             "observation_step_%04d_agent_%s.jpg" % (int(step_index), str(agent_id)),
         )
 
-    def _semantic_raw_output_path_for_attempt(
-        self,
-        step_index: int,
-        attempt_index: int,
-    ) -> str:
-        """Return the raw-output path for the first attempt or a retry attempt."""
-        if int(attempt_index) <= 0:
-            return self._semantic_raw_output_path(step_index)
-
-        return os.path.join(
-            getattr(self, "raw_output_dir", "mllm_raw_outputs"),
-            "semantic_step_%04d_retry_%02d.json"
-            % (int(step_index), int(attempt_index)),
-        )
-
     @staticmethod
     def _build_validation_retry_user_message(
         user_message: str,
@@ -1461,12 +1446,6 @@ class MLLMClient:
         debugpy.breakpoint()  # Debug if the retry loop exits unexpectedly.
 
         raise RuntimeError("Unexpected retry loop exit.")
-
-    def _check_semantic_raw_output_exists(self, step_index: int) -> bool:
-        return os.path.exists(self._semantic_raw_output_path(step_index))
-
-    def _check_detection_raw_output_exists(self, step_index: int) -> bool:
-        return os.path.exists(self._detection_raw_output_path(step_index))
 
     @staticmethod
     def _read_text_file_if_exists(path: str) -> Optional[str]:

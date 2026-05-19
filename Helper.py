@@ -394,60 +394,6 @@ def execute_individual_rotations(
             time.sleep(2)
 
 
-def execute_batched_first_hops(sim, move_specs, PAUSE_TIME=0.0):
-    states = list(sim.getState())
-    step_plans = []
-    for batch_index, spec in enumerate(move_specs):
-        direction, step_count = compute_rotation(
-            math.degrees(states[batch_index].heading),
-            math.degrees(float(spec["target_heading"])),
-            DELTA_HEADING_DEG,
-        )
-        step_plans.append(
-            {
-                "direction": direction,
-                "step_count": step_count,
-                "target_viewpoint_id": str(spec["target_viewpoint_id"]),
-            }
-        )
-
-    max_step_count = max(plan["step_count"] for plan in step_plans)
-    for step_index in range(max_step_count):
-        sim.makeAction(
-            [0 for _ in step_plans],
-            [
-                (
-                    plan["direction"] * DELTA_HEADING_RAD
-                    if step_index < plan["step_count"]
-                    else 0.0
-                )
-                for plan in step_plans
-            ],
-            [0 for _ in step_plans],
-        )
-        if PAUSE_TIME > 0.0:
-            time.sleep(PAUSE_TIME)
-
-    rotated_states = list(sim.getState())
-    move_actions = []
-    for batch_index, state in enumerate(rotated_states):
-        target_viewpoint_id = step_plans[batch_index]["target_viewpoint_id"]
-        location_index = [
-            index
-            for index, location in enumerate(state.navigableLocations)
-            if str(location.viewpointId) == target_viewpoint_id
-        ][0]
-        move_actions.append(location_index)
-
-    sim.makeAction(
-        move_actions,
-        [0.0 for _ in step_plans],
-        [0.0 for _ in step_plans],
-    )
-    if PAUSE_TIME > 0.0:
-        time.sleep(PAUSE_TIME)
-
-
 def execute_individual_first_hops(sims, move_specs, PAUSE_TIME=0.05):
     if len(sims) != len(move_specs):
         raise ValueError("sims and move_specs must have the same length.")
@@ -501,46 +447,3 @@ def execute_individual_first_hops(sims, move_specs, PAUSE_TIME=0.05):
         [sim.getState()[0] for sim in sims],
         viewpoint_index_by_vp=viewpoint_index_by_vp_label,
     )
-
-
-def explore_world(sim, location=0, heading=0, elevation=0):
-    while True:
-        sim.makeAction([location], [heading], [elevation])
-        location = 0
-        heading = 0
-        elevation = 0
-
-        state = sim.getState()[0]
-        rgb = np.array(state.rgb, copy=False)
-        for index, location in enumerate(state.navigableLocations[1:], start=1):
-            font_scale = 3.0 / location.rel_distance
-            x_coord = int(WIDTH / 2 + location.rel_heading / HFOV * WIDTH)
-            y_coord = int(HEIGHT / 2 - location.rel_elevation / VFOV * HEIGHT)
-            cv2.putText(
-                rgb,
-                str(index),
-                (x_coord, y_coord),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                font_scale,
-                TEXT_COLOR,
-                thickness=3,
-            )
-        cv2.imshow("Agent 0", rgb)
-        key_code = cv2.waitKey(1)
-        if key_code == -1:
-            continue
-        key_code &= 255
-        if key_code == ord("q"):
-            break
-        if ord("1") <= key_code <= ord("9"):
-            location = key_code - ord("0")
-            if location >= len(state.navigableLocations):
-                location = 0
-        elif key_code == 81 or key_code == ord("a"):
-            heading = -DELTA_HEADING_RAD
-        elif key_code == 82 or key_code == ord("w"):
-            elevation = DELTA_HEADING_RAD
-        elif key_code == 83 or key_code == ord("d"):
-            heading = DELTA_HEADING_RAD
-        elif key_code == 84 or key_code == ord("s"):
-            elevation = -DELTA_HEADING_RAD

@@ -1044,12 +1044,6 @@ class HypothesisGraph:
         for edge_id in invalid_edges:
             self.remove_edge(edge_id)
 
-    def _agent_for_current_viewpoint(self, viewpoint_id: int) -> str:
-        for agent_id, current_vp_id in self.agent_current_vp_ids.items():
-            if current_vp_id == viewpoint_id:
-                return agent_id
-        raise KeyError("No agent is currently at viewpoint %s" % viewpoint_id)
-
     def _target_visual_score(
         self,
         node_id: int,

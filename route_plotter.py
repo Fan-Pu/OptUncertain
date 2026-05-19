@@ -68,7 +68,7 @@ def load_environment_graph(
         scan_id=str(scan_id),
         viewpoint_id_by_index=viewpoint_id_by_index,
         coords_by_node_id={
-            node_id: (position[0], position[2])
+            node_id: (position[0], position[1])
             for node_id, position in position_by_index.items()
         },
         edge_distances=edge_distances,
@@ -122,102 +122,6 @@ def summarize_routes(
             for target_id, node_id in target_node_ids_by_target_id.items()
         },
     }
-
-
-def plot_environment_routes(
-    environment_graph: EnvironmentGraph,
-    agent_summaries: List[Dict[str, object]],
-    output_path: str | Path,
-    title: str,
-    target_node_ids_by_target_id: Dict[str, int],
-) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    colors = [
-        "#d62728",
-        "#1f77b4",
-        "#2ca02c",
-        "#ff7f0e",
-        "#9467bd",
-        "#17becf",
-    ]
-
-    fig, ax = plt.subplots(figsize=(10, 8))
-    for source_id, target_id in sorted(environment_graph.edge_distances):
-        x0, y0 = environment_graph.coords_by_node_id[source_id]
-        x1, y1 = environment_graph.coords_by_node_id[target_id]
-        ax.plot([x0, x1], [y0, y1], color="#c7c7c7", linewidth=0.8, zorder=1)
-
-    xs = [coord[0] for coord in environment_graph.coords_by_node_id.values()]
-    ys = [coord[1] for coord in environment_graph.coords_by_node_id.values()]
-    ax.scatter(xs, ys, s=14, color="#4d4d4d", zorder=2, label="Viewpoints")
-
-    for agent_index, agent_summary in enumerate(agent_summaries):
-        color = colors[agent_index % len(colors)]
-        route_node_ids = [int(node_id) for node_id in agent_summary["route_node_ids"]]
-        route_xs = [
-            environment_graph.coords_by_node_id[node_id][0]
-            for node_id in route_node_ids
-        ]
-        route_ys = [
-            environment_graph.coords_by_node_id[node_id][1]
-            for node_id in route_node_ids
-        ]
-        ax.plot(
-            route_xs,
-            route_ys,
-            color=color,
-            linewidth=2.8,
-            marker="o",
-            markersize=5,
-            zorder=4,
-            label=str(agent_summary["agent_id"]),
-        )
-        start_node_id = route_node_ids[0]
-        ax.scatter(
-            [environment_graph.coords_by_node_id[start_node_id][0]],
-            [environment_graph.coords_by_node_id[start_node_id][1]],
-            color=color,
-            marker="s",
-            s=90,
-            edgecolors="black",
-            zorder=5,
-            label="%s start" % str(agent_summary["agent_id"]),
-        )
-
-    for target_id, node_id in target_node_ids_by_target_id.items():
-        x, y = environment_graph.coords_by_node_id[int(node_id)]
-        ax.scatter(
-            [x],
-            [y],
-            marker="*",
-            s=180,
-            color="#f2c300",
-            edgecolors="black",
-            zorder=6,
-            label="target %s" % str(target_id),
-        )
-        ax.annotate(
-            str(target_id),
-            (x, y),
-            xytext=(6, 6),
-            textcoords="offset points",
-            fontsize=9,
-            color="black",
-        )
-
-    ax.set_title(title)
-    ax.set_xlabel("Matterport pose x")
-    ax.set_ylabel("Matterport pose z")
-    ax.set_aspect("equal", adjustable="datalim")
-    ax.legend(loc="best", fontsize=8)
-    ax.grid(True, color="#eeeeee", linewidth=0.6)
-    fig.tight_layout()
-    fig.savefig(output_path, dpi=200)
-    plt.close(fig)
 
 
 def print_route_summary(summary: Dict[str, object], title: str) -> None:

@@ -295,6 +295,7 @@ def render_viewer_html() -> str:
       fill: #475467;
       stroke: white;
       stroke-width: 1.5;
+      cursor: pointer;
     }
     .route-line {
       fill: none;
@@ -302,18 +303,25 @@ def render_viewer_html() -> str:
       stroke-linecap: round;
       stroke-linejoin: round;
     }
+    .route-selected {
+      stroke: #111827;
+      stroke-width: 4;
+    }
     .route-step-marker {
       stroke: white;
       stroke-width: 2;
+      cursor: pointer;
     }
     .route-start-marker {
       stroke: #111827;
       stroke-width: 2;
+      cursor: pointer;
     }
     .route-target-marker {
       fill: #f2c300;
       stroke: #111827;
       stroke-width: 1.5;
+      cursor: pointer;
     }
     .route-summary {
       display: grid;
@@ -546,23 +554,17 @@ def render_viewer_html() -> str:
       }
     });
     graphZoomInButton.addEventListener("click", () => {
-      if (activeSolutionId) return;
       graph.focus();
       zoomGraphAtCenter(GRAPH_ZOOM_FACTOR);
     });
     graphZoomOutButton.addEventListener("click", () => {
-      if (activeSolutionId) return;
       graph.focus();
       zoomGraphAtCenter(1 / GRAPH_ZOOM_FACTOR);
     });
     graphResetViewButton.addEventListener("click", () => {
-      if (activeSolutionId) {
-        renderRouteGraph(currentSolution());
-        return;
-      }
       graph.focus();
-      resetGraphViewport(currentStep());
-      renderGraph(currentStep());
+      resetCurrentGraphViewport();
+      renderCurrentGraph();
     });
     prevButton.addEventListener("click", () => {
       stepPosition = Math.max(0, stepPosition - 1);
@@ -578,7 +580,6 @@ def render_viewer_html() -> str:
       selectionState = null;
       render();
     });
-    window.addEventListener("resize", () => renderGraph(currentStep()));
     window.addEventListener("pagehide", () => {
       navigator.sendBeacon("/api/shutdown", "{}");
     });
@@ -586,10 +587,13 @@ def render_viewer_html() -> str:
       graph.focus();
     }, true);
     graph.addEventListener("pointerdown", event => {
-      if (activeSolutionId) return;
       graph.focus();
       if (event.button !== 0) return;
       if (event.target !== graph) return;
+      if (activeSolutionId) {
+        beginGraphPan(event);
+        return;
+      }
       if (event.ctrlKey) {
         beginGraphPan(event);
         return;
@@ -609,12 +613,12 @@ def render_viewer_html() -> str:
       render();
     });
     graph.addEventListener("pointermove", event => {
-      if (activeSolutionId) return;
       if (panState) {
         updateGraphPan(event);
-        renderGraph(currentStep());
+        renderCurrentGraph();
         return;
       }
+      if (activeSolutionId) return;
       if (dragState) {
         updateDragPositions(event);
         renderGraph(currentStep());
@@ -629,15 +633,15 @@ def render_viewer_html() -> str:
       }
     });
     graph.addEventListener("pointerup", event => {
-      if (activeSolutionId) return;
       if (panState) {
         updateGraphPan(event);
         graph.releasePointerCapture(panState.pointerId);
         panState = null;
         graph.classList.remove("panning");
-        renderGraph(currentStep());
+        renderCurrentGraph();
         return;
       }
+      if (activeSolutionId) return;
       if (dragState) {
         updateDragPositions(event);
         graph.releasePointerCapture(dragState.pointerId);
@@ -663,7 +667,6 @@ def render_viewer_html() -> str:
       render();
     });
     graph.addEventListener("wheel", event => {
-      if (activeSolutionId) return;
       if (!event.ctrlKey) return;
       event.preventDefault();
       graph.focus();
@@ -678,6 +681,7 @@ def render_viewer_html() -> str:
         document.getElementById("title").textContent =
           `Graph Hypothesis Visualizer: ${payload.instance_name}`;
         render();
+        window.addEventListener("resize", renderCurrentGraph);
       });
 
     function currentStep() {
@@ -698,9 +702,9 @@ def render_viewer_html() -> str:
         resetDefaultLayoutButton.disabled = true;
         copyPreviousLayoutButton.disabled = true;
         saveLayoutButton.disabled = true;
-        graphZoomInButton.disabled = true;
-        graphZoomOutButton.disabled = true;
-        graphResetViewButton.disabled = true;
+        graphZoomInButton.disabled = false;
+        graphZoomOutButton.disabled = false;
+        graphResetViewButton.disabled = false;
         stepLabel.textContent = activeSolution.label;
         renderRouteGraph(activeSolution);
         renderSolutionDetails(activeSolution);
@@ -771,13 +775,14 @@ def render_viewer_html() -> str:
     }
 
     function renderSolutionDetails(solution) {
-      selectionSection.hidden = true;
+      selectionSection.hidden = false;
       nodeTableSection.hidden = true;
       edgeTableSection.hidden = true;
       detectionsSection.hidden = true;
       semanticSection.hidden = true;
       userMessageSection.hidden = true;
       summaryTitle.textContent = solution.label;
+      renderRouteSelection(solution);
       document.getElementById("summary").innerHTML = routeSummaryHtml(solution.summary);
     }
 
@@ -811,6 +816,32 @@ def render_viewer_html() -> str:
       `;
     }
 
+    function renderRouteSelection(solution) {
+      const target = document.getElementById("selection");
+      if (!selected || selected.kind !== "route-node") {
+        target.innerHTML = "<p style=\"margin:0;color:var(--muted);font-size:13px;\">Click a route node in the graph.</p>";
+        return;
+      }
+      const nodeId = Number(selected.node_id);
+      const node = payload.environment_graph.nodes.find(item => Number(item.node_id) === nodeId);
+      const targetIds = Object.entries(solution.summary.target_node_ids_by_target_id || {})
+        .filter(([, targetNodeId]) => Number(targetNodeId) === nodeId)
+        .map(([targetId]) => targetId);
+      const visits = (solution.summary.agents || []).flatMap(agent => {
+        return (agent.route_node_ids || [])
+          .map((routeNodeId, routeIndex) => ({ routeNodeId, routeIndex }))
+          .filter(item => Number(item.routeNodeId) === nodeId)
+          .map(item => `${agent.agent_id}: step ${item.routeIndex}`);
+      });
+      target.innerHTML = definitionList({
+        node_id: nodeId,
+        map_x: formatNumber(node.x),
+        map_y: formatNumber(node.y),
+        target_ids: targetIds.join(", "),
+        route_visits: visits.join(", ")
+      });
+    }
+
     function renderRouteGraph(solution) {
       while (graph.firstChild) graph.removeChild(graph.firstChild);
       const width = graph.clientWidth || 900;
@@ -818,10 +849,24 @@ def render_viewer_html() -> str:
       graph.setAttribute("viewBox", `0 0 ${width} ${height}`);
       const environment = payload.environment_graph;
       const positions = routePositions(environment.nodes, width, height);
+      const contentBounds = computeRouteContentBounds(solution, positions);
       const colors = ["#d62728", "#1f77b4", "#2ca02c", "#ff7f0e", "#9467bd", "#17becf"];
 
+      const defs = svgEl("defs", {});
+      graph.appendChild(defs);
+      (solution.summary.agents || []).forEach((agent, agentIndex) => {
+        appendRouteArrowMarker(
+          defs,
+          routeArrowMarkerId(agentIndex),
+          colors[agentIndex % colors.length]
+        );
+      });
+
+      const viewportLayer = svgEl("g", {});
+      graph.appendChild(viewportLayer);
+
       const edgeLayer = svgEl("g", {});
-      graph.appendChild(edgeLayer);
+      viewportLayer.appendChild(edgeLayer);
       for (const edge of environment.edges) {
         const source = positions.get(String(edge.i));
         const target = positions.get(String(edge.j));
@@ -835,44 +880,63 @@ def render_viewer_html() -> str:
       }
 
       const nodeLayer = svgEl("g", {});
-      graph.appendChild(nodeLayer);
+      viewportLayer.appendChild(nodeLayer);
       for (const node of environment.nodes) {
         const position = positions.get(String(node.node_id));
         const marker = svgEl("circle", {
-          class: "route-node",
+          class: routeNodeClass("route-node", node.node_id),
           cx: position.x,
           cy: position.y,
           r: 4
         });
+        marker.addEventListener("click", event => selectRouteNode(event, node.node_id));
         const title = svgEl("title", {});
-        title.textContent = `viewpoint ${node.node_id}: ${node.viewpoint_id}`;
+        title.textContent = `node ${node.node_id}`;
         marker.appendChild(title);
         nodeLayer.appendChild(marker);
       }
 
       const routeLayer = svgEl("g", {});
-      graph.appendChild(routeLayer);
+      viewportLayer.appendChild(routeLayer);
       (solution.summary.agents || []).forEach((agent, agentIndex) => {
         const color = colors[agentIndex % colors.length];
-        const routePoints = (agent.route_node_ids || []).map(nodeId => positions.get(String(nodeId)));
-        const polyline = svgEl("polyline", {
-          class: "route-line",
-          points: routePoints.map(point => `${point.x},${point.y}`).join(" "),
-          stroke: color
+        const routeNodeIds = (agent.route_node_ids || []).map(Number);
+        const routePoints = routeNodeIds.map(nodeId => positions.get(String(nodeId)));
+        routePoints.slice(0, -1).forEach((point, routeIndex) => {
+          const nextPoint = routePoints[routeIndex + 1];
+          const segment = routeSegmentEndpoints(
+            point,
+            nextPoint,
+            routeIndex === 0 ? 8 : 6,
+            10
+          );
+          const line = svgEl("line", {
+            class: "route-line",
+            x1: segment.x1,
+            y1: segment.y1,
+            x2: segment.x2,
+            y2: segment.y2,
+            stroke: color,
+            "marker-end": `url(#${routeArrowMarkerId(agentIndex)})`
+          });
+          const title = svgEl("title", {});
+          title.textContent = `${agent.agent_id} step ${routeIndex} to ${routeIndex + 1}`;
+          line.appendChild(title);
+          routeLayer.appendChild(line);
         });
-        const title = svgEl("title", {});
-        title.textContent = `${agent.agent_id}: ${formatNumber(agent.path_distance)} m`;
-        polyline.appendChild(title);
-        routeLayer.appendChild(polyline);
         routePoints.forEach((point, routeIndex) => {
-          const nodeId = agent.route_node_ids[routeIndex];
+          const nodeId = routeNodeIds[routeIndex];
           const circle = svgEl("circle", {
-            class: routeIndex === 0 ? "route-start-marker" : "route-step-marker",
+            class: routeNodeClass(
+              routeIndex === 0 ? "route-start-marker" : "route-step-marker",
+              nodeId
+            ),
             cx: point.x,
             cy: point.y,
             r: routeIndex === 0 ? 8 : 6,
             fill: color
           });
+          circle.addEventListener("click", event => selectRouteNode(event, nodeId));
           const circleTitle = svgEl("title", {});
           circleTitle.textContent = `${agent.agent_id} step ${routeIndex}: node ${nodeId}`;
           circle.appendChild(circleTitle);
@@ -881,13 +945,14 @@ def render_viewer_html() -> str:
       });
 
       const targetLayer = svgEl("g", {});
-      graph.appendChild(targetLayer);
+      viewportLayer.appendChild(targetLayer);
       for (const [targetId, nodeId] of Object.entries(solution.summary.target_node_ids_by_target_id || {})) {
         const position = positions.get(String(nodeId));
         const star = svgEl("polygon", {
-          class: "route-target-marker",
+          class: routeNodeClass("route-target-marker", nodeId),
           points: starPoints(position.x, position.y, 12, 5)
         });
+        star.addEventListener("click", event => selectRouteNode(event, nodeId));
         const title = svgEl("title", {});
         title.textContent = `target ${targetId}: node ${nodeId}`;
         star.appendChild(title);
@@ -905,6 +970,62 @@ def render_viewer_html() -> str:
         label.textContent = String(targetId);
         targetLayer.appendChild(label);
       }
+      viewportLayer.setAttribute(
+        "transform",
+        viewportTransform(getViewportState(solutionViewportKey(solution), width, height, contentBounds))
+      );
+    }
+
+    function appendRouteArrowMarker(defs, markerId, color) {
+      const marker = svgEl("marker", {
+        id: markerId,
+        viewBox: "0 0 8 8",
+        markerWidth: 3,
+        markerHeight: 3,
+        refX: 7,
+        refY: 4,
+        orient: "auto",
+        markerUnits: "strokeWidth"
+      });
+      marker.appendChild(svgEl("path", {
+        d: "M 0 0 L 8 4 L 0 8 z",
+        fill: color
+      }));
+      defs.appendChild(marker);
+    }
+
+    function routeArrowMarkerId(agentIndex) {
+      return `route-arrow-${agentIndex}`;
+    }
+
+    function routeNodeClass(baseClass, nodeId) {
+      return `${baseClass} ${isSelectedRouteNode(nodeId) ? "route-selected" : ""}`;
+    }
+
+    function isSelectedRouteNode(nodeId) {
+      return selected
+        && selected.kind === "route-node"
+        && Number(selected.node_id) === Number(nodeId);
+    }
+
+    function selectRouteNode(event, nodeId) {
+      event.stopPropagation();
+      selected = { kind: "route-node", node_id: Number(nodeId) };
+      render();
+    }
+
+    function routeSegmentEndpoints(source, target, startPadding, endPadding) {
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const length = Math.hypot(dx, dy);
+      const ux = dx / length;
+      const uy = dy / length;
+      return {
+        x1: source.x + ux * startPadding,
+        y1: source.y + uy * startPadding,
+        x2: target.x - ux * endPadding,
+        y2: target.y - uy * endPadding
+      };
     }
 
     function renderGraph(step) {
@@ -1085,7 +1206,7 @@ def render_viewer_html() -> str:
           height: box.height
         }));
       }
-      viewportLayer.setAttribute("transform", viewportTransform(getViewportState(step, width, height, contentBounds)));
+      viewportLayer.setAttribute("transform", viewportTransform(getViewportState(stepViewportKey(step), width, height, contentBounds)));
     }
 
     function updateLayoutControls(step) {
@@ -1588,16 +1709,59 @@ def render_viewer_html() -> str:
       return bounds;
     }
 
-    function viewportKey(stepIndex) {
-      return String(stepIndex);
+    function computeRouteContentBounds(solution, positions) {
+      const bounds = emptyBounds();
+      const environment = payload.environment_graph;
+      for (const edge of environment.edges) {
+        const source = positions.get(String(edge.i));
+        const target = positions.get(String(edge.j));
+        includeGraphPoint(bounds, source.x, source.y, 8);
+        includeGraphPoint(bounds, target.x, target.y, 8);
+      }
+      for (const node of environment.nodes) {
+        const position = positions.get(String(node.node_id));
+        includeGraphPoint(bounds, position.x, position.y, 8);
+      }
+      for (const agent of solution.summary.agents || []) {
+        (agent.route_node_ids || []).forEach((nodeId, routeIndex) => {
+          const position = positions.get(String(nodeId));
+          includeGraphPoint(bounds, position.x, position.y, routeIndex === 0 ? 12 : 10);
+        });
+      }
+      for (const [targetId, nodeId] of Object.entries(solution.summary.target_node_ids_by_target_id || {})) {
+        const position = positions.get(String(nodeId));
+        includeGraphPoint(bounds, position.x, position.y, 30 + String(targetId).length * 7);
+      }
+      return bounds;
+    }
+
+    function stepViewportKey(step) {
+      return `step:${step.step_index}`;
+    }
+
+    function solutionViewportKey(solution) {
+      return `solution:${solution.id}`;
+    }
+
+    function currentViewportKey() {
+      const solution = currentSolution();
+      return solution ? solutionViewportKey(solution) : stepViewportKey(currentStep());
+    }
+
+    function renderCurrentGraph() {
+      const solution = currentSolution();
+      if (solution) {
+        renderRouteGraph(solution);
+      } else {
+        renderGraph(currentStep());
+      }
     }
 
     function viewportTransform(viewport) {
       return `translate(${viewport.translateX},${viewport.translateY}) scale(${viewport.scale})`;
     }
 
-    function getViewportState(step, width, height, bounds) {
-      const key = viewportKey(step.step_index);
+    function getViewportState(key, width, height, bounds) {
       const current = viewportStates.get(key);
       if (!current || (current.isDefault && (current.width !== width || current.height !== height))) {
         const fitted = fitViewportToBounds(bounds, width, height);
@@ -1625,13 +1789,26 @@ def render_viewer_html() -> str:
       };
     }
 
-    function resetGraphViewport(step) {
+    function resetCurrentGraphViewport() {
       const width = graph.clientWidth || 900;
       const height = graph.clientHeight || 560;
-      viewportStates.set(
-        viewportKey(step.step_index),
-        fitViewportToBounds(computeGraphContentBounds(step, width, height), width, height)
-      );
+      const solution = currentSolution();
+      if (solution) {
+        viewportStates.set(
+          solutionViewportKey(solution),
+          fitViewportToBounds(
+            computeRouteContentBounds(solution, routePositions(payload.environment_graph.nodes, width, height)),
+            width,
+            height
+          )
+        );
+      } else {
+        const step = currentStep();
+        viewportStates.set(
+          stepViewportKey(step),
+          fitViewportToBounds(computeGraphContentBounds(step, width, height), width, height)
+        );
+      }
     }
 
     function zoomGraphAtCenter(factor) {
@@ -1641,12 +1818,12 @@ def render_viewer_html() -> str:
     }
 
     function zoomGraphAtPoint(factor, anchor) {
-      const step = currentStep();
-      const viewport = viewportStates.get(viewportKey(step.step_index));
+      const key = currentViewportKey();
+      const viewport = viewportStates.get(key);
       const scale = clamp(viewport.scale * factor, GRAPH_MIN_SCALE, GRAPH_MAX_SCALE);
       const anchorX = (anchor.x - viewport.translateX) / viewport.scale;
       const anchorY = (anchor.y - viewport.translateY) / viewport.scale;
-      viewportStates.set(viewportKey(step.step_index), {
+      viewportStates.set(key, {
         scale: scale,
         translateX: anchor.x - anchorX * scale,
         translateY: anchor.y - anchorY * scale,
@@ -1654,12 +1831,12 @@ def render_viewer_html() -> str:
         height: viewport.height,
         isDefault: false
       });
-      renderGraph(step);
+      renderCurrentGraph();
     }
 
     function beginGraphPan(event) {
       const point = graphScreenPoint(event);
-      const viewport = viewportStates.get(viewportKey(currentStep().step_index));
+      const viewport = viewportStates.get(currentViewportKey());
       panState = {
         pointerId: event.pointerId,
         startX: point.x,
@@ -1674,9 +1851,9 @@ def render_viewer_html() -> str:
 
     function updateGraphPan(event) {
       const point = graphScreenPoint(event);
-      const step = currentStep();
-      const viewport = viewportStates.get(viewportKey(step.step_index));
-      viewportStates.set(viewportKey(step.step_index), {
+      const key = currentViewportKey();
+      const viewport = viewportStates.get(key);
+      viewportStates.set(key, {
         scale: viewport.scale,
         translateX: panState.translateX + point.x - panState.startX,
         translateY: panState.translateY + point.y - panState.startY,
@@ -1695,7 +1872,7 @@ def render_viewer_html() -> str:
 
     function graphPoint(event) {
       const point = graphScreenPoint(event);
-      const viewport = viewportStates.get(viewportKey(currentStep().step_index));
+      const viewport = viewportStates.get(currentViewportKey());
       return {
         x: (point.x - viewport.translateX) / viewport.scale,
         y: (point.y - viewport.translateY) / viewport.scale

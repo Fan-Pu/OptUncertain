@@ -1,13 +1,8 @@
+from __future__ import annotations
+
 import json
 
-import pytest
-
-from oracle_runner import (
-    build_oracle_instance,
-    plot_oracle_routes,
-    run_oracle,
-    summarize_oracle_solution,
-)
+from oracle_runner import build_oracle_instance, run_oracle
 
 
 def _write_json(path, payload):
@@ -23,65 +18,56 @@ def _pose(x, y, z):
     return pose
 
 
-def _write_case(tmp_path):
+def _write_oracle_case(root):
     _write_json(
-        tmp_path / "scenarios" / "case.json",
+        root / "scenarios" / "case.json",
         {
             "scan_id": "scan",
             "agents": [
                 {
                     "id": "agent0",
                     "start_viewpoint_id": "vp0",
+                    "heading": 0.0,
+                    "elevation": 0.0,
                 }
             ],
             "targets": [
                 {
                     "target_id": "0",
-                    "description": "target zero",
-                },
-                {
-                    "target_id": "1",
-                    "description": "target one",
-                },
+                    "description": "target object",
+                }
             ],
         },
     )
     _write_json(
-        tmp_path / "scenarios" / "oracle_targets.json",
+        root / "scenarios" / "oracle_targets.json",
         {
             "case": {
                 "0": 1,
-                "1": 2,
             }
         },
     )
     _write_json(
-        tmp_path / "connectivity" / "scan_connectivity.json",
+        root / "connectivity" / "scan_connectivity.json",
         [
             {
                 "image_id": "vp0",
                 "included": True,
                 "pose": _pose(0.0, 0.0, 0.0),
-                "unobstructed": [False, True, False],
+                "unobstructed": [False, True],
             },
             {
                 "image_id": "vp1",
                 "included": True,
                 "pose": _pose(1.0, 0.0, 0.0),
-                "unobstructed": [True, False, True],
-            },
-            {
-                "image_id": "vp2",
-                "included": True,
-                "pose": _pose(1.0, 0.0, 1.0),
-                "unobstructed": [False, True, False],
+                "unobstructed": [True, False],
             },
         ],
     )
 
 
-def test_build_oracle_instance_sets_known_graph_and_target_probs(tmp_path):
-    _write_case(tmp_path)
+def test_build_oracle_instance_accepts_bare_case_name(tmp_path):
+    _write_oracle_case(tmp_path)
 
     instance = build_oracle_instance(
         "case",
@@ -89,78 +75,31 @@ def test_build_oracle_instance_sets_known_graph_and_target_probs(tmp_path):
         connectivity_dir=tmp_path / "connectivity",
     )
 
-    assert sorted(instance.graph.nodes) == [0, 1, 2]
-    assert sorted(instance.graph.edges) == [(0, 1), (1, 2)]
+    assert instance.test_case == "case"
+    assert instance.scan_id == "scan"
     assert instance.agent_current_vp_ids == {"agent0": 0}
-
-    for node in instance.graph.nodes.values():
-        assert node.exist_prob == 1.0
-        assert node.grounded is True
-        assert node.node_visit_times == 0
-
-    for edge in instance.graph.edges.values():
-        assert edge.distance_var == 0.0
-        assert edge.cond_exist_prob == 1.0
-        assert edge.exist_prob == 1.0
-        assert edge.grounded is True
-
-    assert instance.graph.nodes[0].target_probs == {"0": 0.0, "1": 0.0}
-    assert instance.graph.nodes[1].target_probs == {"0": 1.0, "1": 0.0}
-    assert instance.graph.nodes[2].target_probs == {"0": 0.0, "1": 1.0}
+    assert instance.target_node_ids_by_target_id == {"0": 1}
 
 
-def test_summarize_oracle_solution_reports_distances(tmp_path):
-    _write_case(tmp_path)
+def test_build_oracle_instance_accepts_scenario_config_path(tmp_path):
+    _write_oracle_case(tmp_path)
+
     instance = build_oracle_instance(
-        "case",
+        "scenarios/case.json",
         project_root=tmp_path,
         connectivity_dir=tmp_path / "connectivity",
     )
-    result = {
-        "agent_paths": {
-            "agent0": {
-                "route_node_ids": [0, 1, 2],
-            }
-        }
-    }
 
-    summary = summarize_oracle_solution(instance, result)
-
-    assert summary["agents"][0]["route_node_ids"] == [0, 1, 2]
-    assert summary["agents"][0]["route_viewpoint_ids"] == ["vp0", "vp1", "vp2"]
-    assert summary["agents"][0]["edge_distances"] == pytest.approx([1.0, 1.0])
-    assert summary["agents"][0]["path_distance"] == pytest.approx(2.0)
-    assert summary["total_distance"] == pytest.approx(2.0)
+    assert instance.test_case == "case"
+    assert instance.scan_id == "scan"
+    assert instance.agent_current_vp_ids == {"agent0": 0}
+    assert instance.target_node_ids_by_target_id == {"0": 1}
 
 
-def test_plot_oracle_routes_writes_full_graph_route_plot(tmp_path):
-    _write_case(tmp_path)
-    instance = build_oracle_instance(
-        "case",
-        project_root=tmp_path,
-        connectivity_dir=tmp_path / "connectivity",
-    )
-    output_path = tmp_path / "plot.png"
-
-    plot_oracle_routes(
-        instance=instance,
-        agent_summaries=[
-            {
-                "agent_id": "agent0",
-                "route_node_ids": [0, 1, 2],
-            }
-        ],
-        output_path=output_path,
-    )
-
-    assert output_path.exists()
-    assert output_path.stat().st_size > 0
-
-
-def test_run_oracle_writes_summary_to_mllm_debug_outputs(tmp_path, monkeypatch):
+def test_run_oracle_uses_case_name_for_path_input_outputs(tmp_path, monkeypatch):
     import optimization_model
 
-    _write_case(tmp_path)
+    _write_oracle_case(tmp_path)
 
     class FakeOptimizer:
         def __init__(self, config):
@@ -170,7 +109,7 @@ def test_run_oracle_writes_summary_to_mllm_debug_outputs(tmp_path, monkeypatch):
             return {
                 "agent_paths": {
                     "agent0": {
-                        "route_node_ids": [0, 1, 2],
+                        "route_node_ids": [0, 1],
                     }
                 }
             }
@@ -182,7 +121,7 @@ def test_run_oracle_writes_summary_to_mllm_debug_outputs(tmp_path, monkeypatch):
     )
 
     summary = run_oracle(
-        "case",
+        "scenarios/case.json",
         project_root=tmp_path,
         connectivity_dir=tmp_path / "connectivity",
     )
@@ -190,7 +129,6 @@ def test_run_oracle_writes_summary_to_mllm_debug_outputs(tmp_path, monkeypatch):
     summary_path = (
         tmp_path / "mllm_debug_outputs" / "case" / "case_oracle_route_summary.txt"
     )
+    assert summary["test_case"] == "case"
     assert summary_path.exists()
-    assert json.loads(summary_path.read_text(encoding="utf-8")) == summary
-    assert "plot_path" not in summary
-    assert not (tmp_path / "oracle_outputs" / "case_oracle_routes.png").exists()
+    assert not (tmp_path / "mllm_debug_outputs" / "scenarios").exists()

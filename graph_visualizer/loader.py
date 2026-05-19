@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import platform
 import re
 from pathlib import Path
 from urllib.parse import quote
@@ -98,7 +99,13 @@ def _load_route_environment_graph(
     project_root: Path,
 ) -> dict[str, object]:
     scenario = _read_json(project_root / "scenarios" / ("%s.json" % instance_name))
-    environment_graph = load_environment_graph(scan_id=str(scenario["scan_id"]))
+    if platform.system() == "Windows":
+        environment_graph = load_environment_graph(
+            scan_id=str(scenario["scan_id"]),
+            connectivity_dir=project_root / "connectivity",
+        )
+    else:
+        environment_graph = load_environment_graph(scan_id=str(scenario["scan_id"]))
     return {
         "scan_id": environment_graph.scan_id,
         "nodes": [

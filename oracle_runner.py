@@ -8,7 +8,6 @@ from typing import Dict, List, Tuple
 from route_plotter import (
     EnvironmentGraph,
     load_environment_graph,
-    plot_environment_routes,
     print_route_summary,
     summarize_routes,
 )
@@ -57,8 +56,7 @@ class OracleGraph:
     @property
     def target_id_to_description(self) -> Dict[str, str]:
         return {
-            target["target_id"]: target["description"]
-            for target in self.target_records
+            target["target_id"]: target["description"] for target in self.target_records
         }
 
 
@@ -79,7 +77,11 @@ def build_oracle_instance(
     oracle_targets_path: str | Path | None = None,
 ) -> OracleInstance:
     root = Path(project_root).resolve() if project_root is not None else Path.cwd()
-    scenario = _read_json(root / "scenarios" / ("%s.json" % str(test_case)))
+    case_name, scenario_path = _resolve_oracle_case(
+        case_or_config=str(test_case),
+        project_root=root,
+    )
+    scenario = _read_json(scenario_path)
     oracle_targets = _read_json(
         Path(oracle_targets_path)
         if oracle_targets_path is not None
@@ -99,7 +101,7 @@ def build_oracle_instance(
         }
         for target in scenario["targets"]
     ]
-    oracle_target_mapping = oracle_targets[str(test_case)]
+    oracle_target_mapping = oracle_targets[case_name]
     target_node_ids_by_target_id = {
         target["target_id"]: int(oracle_target_mapping[target["target_id"]])
         for target in target_records
@@ -116,9 +118,7 @@ def build_oracle_instance(
             grounded=True,
             target_probs={
                 target_id: (
-                    1.0
-                    if target_node_ids_by_target_id[target_id] == node_id
-                    else 0.0
+                    1.0 if target_node_ids_by_target_id[target_id] == node_id else 0.0
                 )
                 for target_id in target_ids
             },
@@ -149,7 +149,7 @@ def build_oracle_instance(
     }
 
     return OracleInstance(
-        test_case=str(test_case),
+        test_case=case_name,
         scan_id=scan_id,
         graph=OracleGraph(
             target_records=target_records,
@@ -191,10 +191,10 @@ def run_oracle(
     output_root = (
         Path(output_dir)
         if output_dir is not None
-        else root / "mllm_debug_outputs" / str(test_case)
+        else root / "mllm_debug_outputs" / instance.test_case
     )
     output_root.mkdir(parents=True, exist_ok=True)
-    summary_path = output_root / ("%s_oracle_route_summary.txt" % str(test_case))
+    summary_path = output_root / ("%s_oracle_route_summary.txt" % instance.test_case)
     with open(summary_path, "w", encoding="utf-8") as summary_file_handle:
         json.dump(summary, summary_file_handle, indent=2)
     print("Saved oracle route summary to %s.\n" % str(summary_path))
@@ -220,24 +220,27 @@ def summarize_oracle_solution(
     )
 
 
-def plot_oracle_routes(
-    instance: OracleInstance,
-    agent_summaries: List[Dict[str, object]],
-    output_path: str | Path,
-) -> None:
-    plot_environment_routes(
-        environment_graph=instance.environment_graph,
-        agent_summaries=agent_summaries,
-        output_path=output_path,
-        title="%s oracle routes" % instance.test_case,
-        target_node_ids_by_target_id=instance.target_node_ids_by_target_id,
-    )
-
-
 def print_oracle_summary(summary: Dict[str, object]) -> None:
     print_route_summary(
         summary=summary,
         title="Oracle solution for %s" % summary["test_case"],
+    )
+
+
+def _resolve_oracle_case(case_or_config: str, project_root: Path) -> Tuple[str, Path]:
+    path = Path(case_or_config)
+    if path.exists():
+        scenario_path = path.resolve()
+        return scenario_path.stem, scenario_path
+    if not path.is_absolute() and (project_root / path).exists():
+        scenario_path = (project_root / path).resolve()
+        return scenario_path.stem, scenario_path
+    if path.suffix == ".json":
+        scenario_path = path if path.is_absolute() else project_root / path
+        return path.stem, scenario_path
+    return (
+        str(case_or_config),
+        project_root / "scenarios" / ("%s.json" % str(case_or_config)),
     )
 
 

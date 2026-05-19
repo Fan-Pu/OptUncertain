@@ -25,9 +25,6 @@ class SigLIPScorer:
 
         self.text_embedding_cache: Dict[str, object] = {}
 
-    def clear_cache(self) -> None:
-        self.text_embedding_cache.clear()
-
     def _to_pil_images(self, images: Iterable[object]) -> List[Image.Image]:
         pil_images = []
 
@@ -129,30 +126,3 @@ class SigLIPScorer:
         similarities = image_embeddings @ text_embedding
 
         return float(similarities.max().item())
-
-    def test_score_images_text(self, image_path: str) -> None:
-        image = Image.open(image_path).convert("RGB")
-
-        texts = [
-            "a photo of a hallway",
-            "a photo of a kitchen",
-            "a photo of a bedroom",
-            "a photo of a bathroom",
-        ]
-
-        inputs = self.processor(
-            text=texts,
-            images=image,
-            padding="max_length",
-            return_tensors="pt",
-        )
-        inputs = {key: value.to(self.device) for key, value in inputs.items()}
-
-        with self.torch.inference_mode():
-            outputs = self.model(**inputs)
-
-        logits = outputs.logits_per_image[0]
-        probs = self.torch.sigmoid(logits)
-
-        for text, prob in zip(texts, probs):
-            print(f"{text}: {prob.item():.4f}")
