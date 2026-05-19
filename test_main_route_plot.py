@@ -124,7 +124,7 @@ def test_executed_route_helpers_track_starts_hops_and_found_targets(monkeypatch)
     assert completed_target_node_ids == {"target": 2}
 
 
-def test_write_mllm_completion_route_plot_writes_png_and_distance_summary(
+def test_write_mllm_completion_route_summary_writes_json_distance_summary(
     tmp_path,
     monkeypatch,
 ):
@@ -132,7 +132,7 @@ def test_write_mllm_completion_route_plot_writes_png_and_distance_summary(
     monkeypatch.setenv("MATTERPORT_CONNECTIVITY_DIR", str(tmp_path / "connectivity"))
     debug_output_dir = tmp_path / "mllm_debug_outputs" / "case"
 
-    summary = main._write_mllm_completion_route_plot(
+    summary = main._write_mllm_completion_route_summary(
         test_case="case",
         scan_id="scan",
         debug_output_dir=str(debug_output_dir),
@@ -149,6 +149,49 @@ def test_write_mllm_completion_route_plot_writes_png_and_distance_summary(
     assert summary["agents"][0]["edge_distances"] == pytest.approx([1.0, 1.0])
     assert summary["agents"][0]["path_distance"] == pytest.approx(2.0)
     assert summary["total_distance"] == pytest.approx(2.0)
-    assert summary["plot_path"] == str(debug_output_dir / "case_mllm_routes.png")
-    assert (debug_output_dir / "case_mllm_routes.png").exists()
-    assert (debug_output_dir / "case_mllm_routes.png").stat().st_size > 0
+    assert "plot_path" not in summary
+    assert not (debug_output_dir / "case_mllm_routes.png").exists()
+    summary_path = debug_output_dir / "case_mllm_route_summary.txt"
+    assert json.loads(summary_path.read_text(encoding="utf-8")) == summary
+
+
+def test_main_oracle_mode_calls_oracle_runner(monkeypatch):
+    import oracle_runner
+
+    calls = []
+
+    def fake_run_oracle(test_case):
+        calls.append(test_case)
+
+    monkeypatch.setattr(oracle_runner, "run_oracle", fake_run_oracle)
+
+    assert main.main(["test1", "--oracle"]) == 0
+    assert calls == ["test1"]
+
+
+def test_main_resolves_bare_test_case_to_scenario_path(monkeypatch):
+    calls = []
+
+    def fake_run_scenario(config_path):
+        calls.append(config_path)
+
+    monkeypatch.setattr(main, "run_scenario", fake_run_scenario)
+    monkeypatch.setattr(main.debugpy, "breakpoint", lambda: None)
+
+    assert main.main(["test1"]) == 0
+    assert calls == ["scenarios\\test1.json"]
+
+
+def test_main_accepts_existing_config_path(tmp_path, monkeypatch):
+    config_path = tmp_path / "case.json"
+    config_path.write_text("{}", encoding="utf-8")
+    calls = []
+
+    def fake_run_scenario(config_path):
+        calls.append(config_path)
+
+    monkeypatch.setattr(main, "run_scenario", fake_run_scenario)
+    monkeypatch.setattr(main.debugpy, "breakpoint", lambda: None)
+
+    assert main.main([str(config_path)]) == 0
+    assert calls == [str(config_path)]

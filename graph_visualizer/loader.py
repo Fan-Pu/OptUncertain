@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from urllib.parse import quote
 
+from route_plotter import load_environment_graph
+
 
 STEP_RE = re.compile(r"graph_layout_step_(\d{4})\.json$")
 OBSERVATION_RE = re.compile(r"observation_step_(\d{4})_agent_(.+)\.jpg$")
@@ -35,6 +37,88 @@ def load_visualization_steps(
         )
         for step_index in step_indices
     ]
+
+
+def load_solution_payload(
+    instance_name: str,
+    project_root: str | Path | None = None,
+) -> dict[str, object]:
+    root = resolve_project_root(project_root)
+    debug_dir = root / "mllm_debug_outputs" / str(instance_name)
+    solutions = _load_solution_summaries(
+        instance_name=str(instance_name),
+        project_root=root,
+        debug_dir=debug_dir,
+    )
+    payload: dict[str, object] = {
+        "solutions": solutions,
+        "environment_graph": None,
+    }
+    if solutions:
+        payload["environment_graph"] = _load_route_environment_graph(
+            instance_name=str(instance_name),
+            project_root=root,
+        )
+    return payload
+
+
+def _load_solution_summaries(
+    instance_name: str,
+    project_root: Path,
+    debug_dir: Path,
+) -> list[dict[str, object]]:
+    specs = [
+        (
+            "mllm",
+            "Proposed final solution",
+            debug_dir / ("%s_mllm_route_summary.txt" % instance_name),
+        ),
+        (
+            "oracle",
+            "Theoretical optimal solution",
+            debug_dir / ("%s_oracle_route_summary.txt" % instance_name),
+        ),
+    ]
+    solutions = []
+    for solution_id, label, path in specs:
+        if path.exists():
+            solutions.append(
+                {
+                    "id": solution_id,
+                    "label": label,
+                    "file": _relative_posix(project_root, path),
+                    "summary": _read_json(path),
+                }
+            )
+    return solutions
+
+
+def _load_route_environment_graph(
+    instance_name: str,
+    project_root: Path,
+) -> dict[str, object]:
+    scenario = _read_json(project_root / "scenarios" / ("%s.json" % instance_name))
+    environment_graph = load_environment_graph(scan_id=str(scenario["scan_id"]))
+    return {
+        "scan_id": environment_graph.scan_id,
+        "nodes": [
+            {
+                "node_id": int(node_id),
+                "viewpoint_id": environment_graph.viewpoint_id_by_index[node_id],
+                "x": float(environment_graph.coords_by_node_id[node_id][0]),
+                "y": float(environment_graph.coords_by_node_id[node_id][1]),
+            }
+            for node_id in sorted(environment_graph.viewpoint_id_by_index)
+        ],
+        "edges": [
+            {
+                "i": int(edge_id[0]),
+                "j": int(edge_id[1]),
+                "distance": float(distance),
+            }
+            for edge_id, distance in sorted(environment_graph.edge_distances.items())
+        ],
+    }
 
 
 def _discover_step_indices(debug_dir: Path) -> list[int]:

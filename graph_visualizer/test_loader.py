@@ -6,13 +6,21 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-from graph_visualizer.loader import load_visualization_steps
+from graph_visualizer.loader import load_solution_payload, load_visualization_steps
 from graph_visualizer.server import start_visualizer_server
 
 
 def _write_json(path, payload):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _pose(x, y, z):
+    pose = [0.0] * 16
+    pose[3] = x
+    pose[7] = y
+    pose[11] = z
+    return pose
 
 
 def _write_step(
@@ -64,6 +72,51 @@ def _write_step(
         )
 
 
+def _write_route_case(root, instance_name):
+    _write_json(
+        root / "scenarios" / ("%s.json" % instance_name),
+        {
+            "scan_id": "scan",
+            "agents": [],
+            "targets": [],
+        },
+    )
+    _write_json(
+        root / "connectivity" / "scan_connectivity.json",
+        [
+            {
+                "image_id": "vp0",
+                "included": True,
+                "pose": _pose(0.0, 0.0, 0.0),
+                "unobstructed": [False, True],
+            },
+            {
+                "image_id": "vp1",
+                "included": True,
+                "pose": _pose(1.0, 0.0, 0.0),
+                "unobstructed": [True, False],
+            },
+        ],
+    )
+    _write_json(
+        root / "mllm_debug_outputs" / instance_name / ("%s_mllm_route_summary.txt" % instance_name),
+        {
+            "test_case": instance_name,
+            "agents": [
+                {
+                    "agent_id": "agent0",
+                    "route_node_ids": [0, 1],
+                    "route_viewpoint_ids": ["vp0", "vp1"],
+                    "edge_distances": [1.0],
+                    "path_distance": 1.0,
+                }
+            ],
+            "total_distance": 1.0,
+            "target_node_ids_by_target_id": {"0": 1},
+        },
+    )
+
+
 def test_load_visualization_step_with_all_raw_files(tmp_path):
     _write_step(
         tmp_path,
@@ -113,6 +166,47 @@ def test_load_nonterminal_step_without_semantic_still_crashes(tmp_path):
 
     with pytest.raises(FileNotFoundError):
         load_visualization_steps("case", project_root=tmp_path)
+
+
+def test_load_solution_payload_detects_route_summary_and_environment_graph(
+    tmp_path,
+    monkeypatch,
+):
+    _write_route_case(tmp_path, "case")
+    monkeypatch.setenv("MATTERPORT_CONNECTIVITY_DIR", str(tmp_path / "connectivity"))
+
+    payload = load_solution_payload("case", project_root=tmp_path)
+
+    assert payload["solutions"][0]["id"] == "mllm"
+    assert payload["solutions"][0]["summary"]["total_distance"] == 1.0
+    assert payload["environment_graph"]["scan_id"] == "scan"
+    assert payload["environment_graph"]["nodes"][0]["viewpoint_id"] == "vp0"
+    assert payload["environment_graph"]["edges"][0]["distance"] == pytest.approx(1.0)
+
+
+def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
+    _write_step(
+        tmp_path,
+        "case",
+        0,
+        target_found={"0": False},
+    )
+    _write_route_case(tmp_path, "case")
+    monkeypatch.setenv("MATTERPORT_CONNECTIVITY_DIR", str(tmp_path / "connectivity"))
+    server = start_visualizer_server(
+        "case",
+        project_root=tmp_path,
+        open_browser=False,
+    )
+
+    try:
+        with urlopen(server.url + "api/steps", timeout=5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+
+        assert payload["solutions"][0]["id"] == "mllm"
+        assert payload["environment_graph"]["scan_id"] == "scan"
+    finally:
+        server.shutdown()
 
 
 def test_shutdown_endpoint_stops_visualization_server(tmp_path):

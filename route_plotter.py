@@ -242,7 +242,6 @@ def print_route_summary(summary: Dict[str, object], title: str) -> None:
         print()
 
     print("Sum of all path distances: %.6f" % float(summary["total_distance"]))
-    print("Route plot: %s" % summary["plot_path"])
 
 
 def _read_json(path: Path) -> object:

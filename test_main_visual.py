@@ -34,13 +34,8 @@ def test_main_visual_starts_visualizer_for_named_case(monkeypatch):
     assert calls == ["test1"]
 
 
-def test_main_visual_oracle_mode_calls_oracle_runner(monkeypatch):
-    calls = []
+def test_main_visual_rejects_oracle_mode():
+    with pytest.raises(SystemExit) as exc_info:
+        main_visual.main(["test1", "--oracle"])
 
-    def fake_run_oracle(test_case):
-        calls.append(test_case)
-
-    monkeypatch.setattr(main_visual, "run_oracle", fake_run_oracle)
-
-    assert main_visual.main(["test1", "--oracle"]) == 0
-    assert calls == ["test1"]
+    assert exc_info.value.code == 2

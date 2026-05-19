@@ -5,6 +5,7 @@ import pytest
 from oracle_runner import (
     build_oracle_instance,
     plot_oracle_routes,
+    run_oracle,
     summarize_oracle_solution,
 )
 
@@ -154,3 +155,42 @@ def test_plot_oracle_routes_writes_full_graph_route_plot(tmp_path):
 
     assert output_path.exists()
     assert output_path.stat().st_size > 0
+
+
+def test_run_oracle_writes_summary_to_mllm_debug_outputs(tmp_path, monkeypatch):
+    import optimization_model
+
+    _write_case(tmp_path)
+
+    class FakeOptimizer:
+        def __init__(self, config):
+            self.config = config
+
+        def solve(self, hypothesis_graph, agent_current_vp_ids, target_found_flags):
+            return {
+                "agent_paths": {
+                    "agent0": {
+                        "route_node_ids": [0, 1, 2],
+                    }
+                }
+            }
+
+    monkeypatch.setitem(
+        optimization_model.__dict__,
+        "RollingHorizonOptimizer",
+        FakeOptimizer,
+    )
+
+    summary = run_oracle(
+        "case",
+        project_root=tmp_path,
+        connectivity_dir=tmp_path / "connectivity",
+    )
+
+    summary_path = (
+        tmp_path / "mllm_debug_outputs" / "case" / "case_oracle_route_summary.txt"
+    )
+    assert summary_path.exists()
+    assert json.loads(summary_path.read_text(encoding="utf-8")) == summary
+    assert "plot_path" not in summary
+    assert not (tmp_path / "oracle_outputs" / "case_oracle_routes.png").exists()

@@ -1,4 +1,4 @@
-﻿from doctest import debug
+﻿import argparse
 import json
 from pathlib import Path
 import sys
@@ -9,7 +9,6 @@ import debugpy
 import Helper
 from route_plotter import (
     load_environment_graph,
-    plot_environment_routes,
     print_route_summary,
     summarize_routes,
 )
@@ -290,7 +289,7 @@ def _record_completed_target_nodes(
             )
 
 
-def _write_mllm_completion_route_plot(
+def _write_mllm_completion_route_summary(
     test_case: str,
     scan_id: str,
     debug_output_dir: str,
@@ -306,16 +305,6 @@ def _write_mllm_completion_route_plot(
     )
     output_dir = Path(debug_output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    plot_path = output_dir / ("%s_mllm_routes.png" % str(test_case))
-    plot_environment_routes(
-        environment_graph=environment_graph,
-        agent_summaries=summary["agents"],
-        output_path=plot_path,
-        title="%s MLLM executed routes" % str(test_case),
-        target_node_ids_by_target_id=completed_target_node_ids,
-    )
-    summary["plot_path"] = str(plot_path)
-    # save summary as txt for easy viewing and copying
     summary_path = output_dir / ("%s_mllm_route_summary.txt" % str(test_case))
     with open(summary_path, "w", encoding="utf-8") as summary_file_handle:
         json.dump(summary, summary_file_handle, indent=2)
@@ -325,6 +314,22 @@ def _write_mllm_completion_route_plot(
         title="MLLM executed route solution for %s" % str(test_case),
     )
     return summary
+
+
+def _write_mllm_completion_route_plot(
+    test_case: str,
+    scan_id: str,
+    debug_output_dir: str,
+    executed_routes_by_agent: Dict[str, List[int]],
+    completed_target_node_ids: Dict[str, int],
+) -> Dict[str, object]:
+    return _write_mllm_completion_route_summary(
+        test_case=test_case,
+        scan_id=scan_id,
+        debug_output_dir=debug_output_dir,
+        executed_routes_by_agent=executed_routes_by_agent,
+        completed_target_node_ids=completed_target_node_ids,
+    )
 
 
 def run_scenario(config_path: str) -> Dict[str, object]:
@@ -446,7 +451,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             print(f"  {target_id}: {'Found' if found else 'Not found'}")
 
         if all_targets_found:
-            route_summary = _write_mllm_completion_route_plot(
+            route_summary = _write_mllm_completion_route_summary(
                 test_case=test_case,
                 scan_id=scan_id,
                 debug_output_dir=debug_output_dir,
@@ -504,13 +509,35 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             debugpy.breakpoint()
 
 
+def _resolve_scenario_config(case_or_config: str) -> str:
+    path = Path(case_or_config)
+    if path.exists():
+        return str(path)
+    return str(Path("scenarios") / ("%s.json" % str(case_or_config)))
+
+
 def main(argv: List[str] | None = None) -> int:
-    argv = list(sys.argv[1:] if argv is None else argv)
+    parser = argparse.ArgumentParser(
+        description="Run a scenario or its perfect-knowledge oracle solution."
+    )
+    parser.add_argument(
+        "case_or_config",
+        help="Scenario config path or test case name, such as test1.",
+    )
+    parser.add_argument(
+        "--oracle",
+        action="store_true",
+        help="Run the perfect-knowledge oracle optimization for the named test case.",
+    )
+    args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
-    if len(argv) != 1:
-        raise SystemExit("Usage: python main.py <scenario_config.json>")
+    if args.oracle:
+        from oracle_runner import run_oracle
 
-    run_scenario(argv[0])
+        run_oracle(args.case_or_config)
+        return 0
+
+    run_scenario(_resolve_scenario_config(args.case_or_config))
 
     debugpy.breakpoint()
     return 0

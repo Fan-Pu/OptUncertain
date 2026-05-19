@@ -187,20 +187,17 @@ def run_oracle(
     )
 
     summary = summarize_oracle_solution(instance=instance, optimization_result=result)
+    root = Path(project_root).resolve() if project_root is not None else Path.cwd()
     output_root = (
         Path(output_dir)
         if output_dir is not None
-        else (Path(project_root).resolve() if project_root is not None else Path.cwd())
-        / "oracle_outputs"
+        else root / "mllm_debug_outputs" / str(test_case)
     )
     output_root.mkdir(parents=True, exist_ok=True)
-    plot_path = output_root / ("%s_oracle_routes.png" % str(test_case))
-    plot_oracle_routes(
-        instance=instance,
-        agent_summaries=summary["agents"],
-        output_path=plot_path,
-    )
-    summary["plot_path"] = str(plot_path)
+    summary_path = output_root / ("%s_oracle_route_summary.txt" % str(test_case))
+    with open(summary_path, "w", encoding="utf-8") as summary_file_handle:
+        json.dump(summary, summary_file_handle, indent=2)
+    print("Saved oracle route summary to %s.\n" % str(summary_path))
     print_oracle_summary(summary)
     return summary
 

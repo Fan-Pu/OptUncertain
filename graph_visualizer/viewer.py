@@ -76,6 +76,12 @@ def render_viewer_html() -> str:
     .controls button {
       white-space: nowrap;
     }
+    .solution-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
     #stepLabel {
       min-width: 104px;
       text-align: center;
@@ -281,6 +287,47 @@ def render_viewer_html() -> str:
     .edge.ungrounded line {
       opacity: 0.45;
     }
+    .route-environment-edge {
+      stroke: #c7ced8;
+      stroke-width: 1;
+    }
+    .route-node {
+      fill: #475467;
+      stroke: white;
+      stroke-width: 1.5;
+    }
+    .route-line {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .route-step-marker {
+      stroke: white;
+      stroke-width: 2;
+    }
+    .route-start-marker {
+      stroke: #111827;
+      stroke-width: 2;
+    }
+    .route-target-marker {
+      fill: #f2c300;
+      stroke: #111827;
+      stroke-width: 1.5;
+    }
+    .route-summary {
+      display: grid;
+      gap: 12px;
+      font-size: 13px;
+    }
+    .route-agent {
+      border-top: 1px solid #eaecf0;
+      padding-top: 10px;
+    }
+    .route-agent h3 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+    }
     .region-hull {
       fill-opacity: 0.18;
       stroke-width: 2;
@@ -347,6 +394,7 @@ def render_viewer_html() -> str:
   <header>
     <h1 id="title">Graph Hypothesis Visualizer</h1>
     <div class="controls">
+      <div id="solutionButtons" class="solution-buttons"></div>
       <button id="useSavedLayoutButton" type="button" aria-pressed="false">Use saved layout: Off</button>
       <button id="resetDefaultLayoutButton" type="button" disabled>Retrieve default layout for this step</button>
       <button id="copyPreviousLayoutButton" type="button" disabled>Copy previous layout</button>
@@ -377,31 +425,31 @@ def render_viewer_html() -> str:
       </section>
     </div>
     <aside class="side">
-      <section class="panel section">
+      <section id="selectionSection" class="panel section">
         <h2>Selected Item</h2>
         <div id="selection"></div>
       </section>
-      <section class="panel section">
-        <h2>Step Summary</h2>
+      <section id="summarySection" class="panel section">
+        <h2 id="summaryTitle">Step Summary</h2>
         <div id="summary"></div>
       </section>
-      <section class="panel section">
+      <section id="nodeTableSection" class="panel section">
         <h2>Hypothesis Nodes</h2>
         <div id="nodeTable"></div>
       </section>
-      <section class="panel section">
+      <section id="edgeTableSection" class="panel section">
         <h2>Hypothesis Edges</h2>
         <div id="edgeTable"></div>
       </section>
-      <section class="panel section">
+      <section id="detectionsSection" class="panel section">
         <h2>Detections</h2>
         <div id="detections"></div>
       </section>
-      <section class="panel section">
+      <section id="semanticSection" class="panel section">
         <h2>Semantic Raw Output</h2>
         <pre id="semantic"></pre>
       </section>
-      <section class="panel section">
+      <section id="userMessageSection" class="panel section">
         <h2>User Message</h2>
         <pre id="userMessage"></pre>
       </section>
@@ -421,6 +469,7 @@ def render_viewer_html() -> str:
     let payload = null;
     let stepPosition = 0;
     let selected = null;
+    let activeSolutionId = null;
     let dragState = null;
     let panState = null;
     let selectionState = null;
@@ -433,6 +482,7 @@ def render_viewer_html() -> str:
     const GRAPH_FIT_PADDING = 56;
 
     const graph = document.getElementById("graph");
+    const solutionButtons = document.getElementById("solutionButtons");
     const graphZoomInButton = document.getElementById("graphZoomInButton");
     const graphZoomOutButton = document.getElementById("graphZoomOutButton");
     const graphResetViewButton = document.getElementById("graphResetViewButton");
@@ -443,6 +493,13 @@ def render_viewer_html() -> str:
     const prevButton = document.getElementById("prevButton");
     const nextButton = document.getElementById("nextButton");
     const stepLabel = document.getElementById("stepLabel");
+    const selectionSection = document.getElementById("selectionSection");
+    const summaryTitle = document.getElementById("summaryTitle");
+    const nodeTableSection = document.getElementById("nodeTableSection");
+    const edgeTableSection = document.getElementById("edgeTableSection");
+    const detectionsSection = document.getElementById("detectionsSection");
+    const semanticSection = document.getElementById("semanticSection");
+    const userMessageSection = document.getElementById("userMessageSection");
     const confirmationDialog = document.getElementById("confirmationDialog");
     const confirmationTitle = document.getElementById("confirmationTitle");
     const confirmationMessage = document.getElementById("confirmationMessage");
@@ -489,14 +546,20 @@ def render_viewer_html() -> str:
       }
     });
     graphZoomInButton.addEventListener("click", () => {
+      if (activeSolutionId) return;
       graph.focus();
       zoomGraphAtCenter(GRAPH_ZOOM_FACTOR);
     });
     graphZoomOutButton.addEventListener("click", () => {
+      if (activeSolutionId) return;
       graph.focus();
       zoomGraphAtCenter(1 / GRAPH_ZOOM_FACTOR);
     });
     graphResetViewButton.addEventListener("click", () => {
+      if (activeSolutionId) {
+        renderRouteGraph(currentSolution());
+        return;
+      }
       graph.focus();
       resetGraphViewport(currentStep());
       renderGraph(currentStep());
@@ -523,6 +586,7 @@ def render_viewer_html() -> str:
       graph.focus();
     }, true);
     graph.addEventListener("pointerdown", event => {
+      if (activeSolutionId) return;
       graph.focus();
       if (event.button !== 0) return;
       if (event.target !== graph) return;
@@ -545,6 +609,7 @@ def render_viewer_html() -> str:
       render();
     });
     graph.addEventListener("pointermove", event => {
+      if (activeSolutionId) return;
       if (panState) {
         updateGraphPan(event);
         renderGraph(currentStep());
@@ -564,6 +629,7 @@ def render_viewer_html() -> str:
       }
     });
     graph.addEventListener("pointerup", event => {
+      if (activeSolutionId) return;
       if (panState) {
         updateGraphPan(event);
         graph.releasePointerCapture(panState.pointerId);
@@ -597,6 +663,7 @@ def render_viewer_html() -> str:
       render();
     });
     graph.addEventListener("wheel", event => {
+      if (activeSolutionId) return;
       if (!event.ctrlKey) return;
       event.preventDefault();
       graph.focus();
@@ -617,8 +684,34 @@ def render_viewer_html() -> str:
       return payload.steps[stepPosition];
     }
 
+    function currentSolution() {
+      return (payload.solutions || []).find(solution => solution.id === activeSolutionId) || null;
+    }
+
     function render() {
+      renderSolutionButtons();
+      const activeSolution = currentSolution();
+      if (activeSolution) {
+        prevButton.disabled = true;
+        nextButton.disabled = true;
+        useSavedLayoutButton.disabled = true;
+        resetDefaultLayoutButton.disabled = true;
+        copyPreviousLayoutButton.disabled = true;
+        saveLayoutButton.disabled = true;
+        graphZoomInButton.disabled = true;
+        graphZoomOutButton.disabled = true;
+        graphResetViewButton.disabled = true;
+        stepLabel.textContent = activeSolution.label;
+        renderRouteGraph(activeSolution);
+        renderSolutionDetails(activeSolution);
+        document.getElementById("images").innerHTML = "";
+        return;
+      }
       const step = currentStep();
+      useSavedLayoutButton.disabled = false;
+      graphZoomInButton.disabled = false;
+      graphZoomOutButton.disabled = false;
+      graphResetViewButton.disabled = false;
       prevButton.disabled = stepPosition === 0;
       nextButton.disabled = stepPosition === payload.steps.length - 1;
       useSavedLayoutButton.setAttribute("aria-pressed", String(useSavedLayout));
@@ -626,6 +719,7 @@ def render_viewer_html() -> str:
         ? "Use saved layout: On"
         : "Use saved layout: Off";
       updateLayoutControls(step);
+      showStepSections();
       stepLabel.textContent = `Step ${stepPosition + 1} / ${payload.steps.length}`;
       renderGraph(step);
       renderSelection(step);
@@ -637,6 +731,180 @@ def render_viewer_html() -> str:
       document.getElementById("semantic").textContent =
         step.semantic === null ? "" : JSON.stringify(step.semantic, null, 2);
       document.getElementById("userMessage").textContent = step.user_message;
+    }
+
+    function renderSolutionButtons() {
+      const solutions = payload.solutions || [];
+      if (!solutions.length) {
+        solutionButtons.innerHTML = "";
+        return;
+      }
+      const stepPressed = activeSolutionId === null;
+      solutionButtons.innerHTML = [
+        `<button type="button" data-solution-id="" aria-pressed="${stepPressed}">Step view</button>`,
+        ...solutions.map(solution => `
+          <button type="button" data-solution-id="${escapeAttr(solution.id)}" aria-pressed="${String(activeSolutionId === solution.id)}">
+            ${escapeHtml(solution.label)}
+          </button>
+        `)
+      ].join("");
+      for (const button of solutionButtons.querySelectorAll("button")) {
+        button.addEventListener("click", () => {
+          activeSolutionId = button.dataset.solutionId || null;
+          selected = null;
+          dragState = null;
+          panState = null;
+          selectionState = null;
+          render();
+        });
+      }
+    }
+
+    function showStepSections() {
+      selectionSection.hidden = false;
+      nodeTableSection.hidden = false;
+      edgeTableSection.hidden = false;
+      detectionsSection.hidden = false;
+      semanticSection.hidden = false;
+      userMessageSection.hidden = false;
+      summaryTitle.textContent = "Step Summary";
+    }
+
+    function renderSolutionDetails(solution) {
+      selectionSection.hidden = true;
+      nodeTableSection.hidden = true;
+      edgeTableSection.hidden = true;
+      detectionsSection.hidden = true;
+      semanticSection.hidden = true;
+      userMessageSection.hidden = true;
+      summaryTitle.textContent = solution.label;
+      document.getElementById("summary").innerHTML = routeSummaryHtml(solution.summary);
+    }
+
+    function routeSummaryHtml(summary) {
+      const targetRows = Object.entries(summary.target_node_ids_by_target_id || {})
+        .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+        .map(([targetId, nodeId]) => [targetId, nodeId]);
+      const agentBlocks = (summary.agents || []).map(agent => `
+        <div class="route-agent">
+          <h3>${escapeHtml(agent.agent_id)}</h3>
+          ${definitionList({
+            route_node_ids: (agent.route_node_ids || []).join(", "),
+            route_viewpoint_ids: (agent.route_viewpoint_ids || []).join("\n"),
+            edge_distances: (agent.edge_distances || []).map(formatNumber).join(", "),
+            path_distance: formatNumber(agent.path_distance)
+          })}
+        </div>
+      `).join("");
+      return `
+        <div class="route-summary">
+          ${definitionList({
+            test_case: summary.test_case,
+            total_distance: formatNumber(summary.total_distance)
+          })}
+          <div>
+            <h3>Target viewpoint indices</h3>
+            ${table(["target", "node"], targetRows)}
+          </div>
+          ${agentBlocks}
+        </div>
+      `;
+    }
+
+    function renderRouteGraph(solution) {
+      while (graph.firstChild) graph.removeChild(graph.firstChild);
+      const width = graph.clientWidth || 900;
+      const height = graph.clientHeight || 560;
+      graph.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      const environment = payload.environment_graph;
+      const positions = routePositions(environment.nodes, width, height);
+      const colors = ["#d62728", "#1f77b4", "#2ca02c", "#ff7f0e", "#9467bd", "#17becf"];
+
+      const edgeLayer = svgEl("g", {});
+      graph.appendChild(edgeLayer);
+      for (const edge of environment.edges) {
+        const source = positions.get(String(edge.i));
+        const target = positions.get(String(edge.j));
+        edgeLayer.appendChild(svgEl("line", {
+          class: "route-environment-edge",
+          x1: source.x,
+          y1: source.y,
+          x2: target.x,
+          y2: target.y
+        }));
+      }
+
+      const nodeLayer = svgEl("g", {});
+      graph.appendChild(nodeLayer);
+      for (const node of environment.nodes) {
+        const position = positions.get(String(node.node_id));
+        const marker = svgEl("circle", {
+          class: "route-node",
+          cx: position.x,
+          cy: position.y,
+          r: 4
+        });
+        const title = svgEl("title", {});
+        title.textContent = `viewpoint ${node.node_id}: ${node.viewpoint_id}`;
+        marker.appendChild(title);
+        nodeLayer.appendChild(marker);
+      }
+
+      const routeLayer = svgEl("g", {});
+      graph.appendChild(routeLayer);
+      (solution.summary.agents || []).forEach((agent, agentIndex) => {
+        const color = colors[agentIndex % colors.length];
+        const routePoints = (agent.route_node_ids || []).map(nodeId => positions.get(String(nodeId)));
+        const polyline = svgEl("polyline", {
+          class: "route-line",
+          points: routePoints.map(point => `${point.x},${point.y}`).join(" "),
+          stroke: color
+        });
+        const title = svgEl("title", {});
+        title.textContent = `${agent.agent_id}: ${formatNumber(agent.path_distance)} m`;
+        polyline.appendChild(title);
+        routeLayer.appendChild(polyline);
+        routePoints.forEach((point, routeIndex) => {
+          const nodeId = agent.route_node_ids[routeIndex];
+          const circle = svgEl("circle", {
+            class: routeIndex === 0 ? "route-start-marker" : "route-step-marker",
+            cx: point.x,
+            cy: point.y,
+            r: routeIndex === 0 ? 8 : 6,
+            fill: color
+          });
+          const circleTitle = svgEl("title", {});
+          circleTitle.textContent = `${agent.agent_id} step ${routeIndex}: node ${nodeId}`;
+          circle.appendChild(circleTitle);
+          routeLayer.appendChild(circle);
+        });
+      });
+
+      const targetLayer = svgEl("g", {});
+      graph.appendChild(targetLayer);
+      for (const [targetId, nodeId] of Object.entries(solution.summary.target_node_ids_by_target_id || {})) {
+        const position = positions.get(String(nodeId));
+        const star = svgEl("polygon", {
+          class: "route-target-marker",
+          points: starPoints(position.x, position.y, 12, 5)
+        });
+        const title = svgEl("title", {});
+        title.textContent = `target ${targetId}: node ${nodeId}`;
+        star.appendChild(title);
+        targetLayer.appendChild(star);
+        const label = svgEl("text", {
+          x: position.x + 12,
+          y: position.y - 10,
+          "font-size": 12,
+          "font-weight": 700,
+          fill: "#111827",
+          "paint-order": "stroke",
+          stroke: "white",
+          "stroke-width": 4
+        });
+        label.textContent = String(targetId);
+        targetLayer.appendChild(label);
+      }
     }
 
     function renderGraph(step) {
@@ -1170,6 +1438,42 @@ def render_viewer_html() -> str:
           <figcaption>${escapeHtml(image.agent_id)} observation</figcaption>
         </figure>
       `).join("");
+    }
+
+    function routePositions(nodes, width, height) {
+      const padding = 48;
+      const xs = nodes.map(node => node.x);
+      const ys = nodes.map(node => node.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const scale = Math.min(
+        (width - padding * 2) / (maxX - minX),
+        (height - padding * 2) / (maxY - minY)
+      );
+      const usedWidth = (maxX - minX) * scale;
+      const usedHeight = (maxY - minY) * scale;
+      const offsetX = (width - usedWidth) / 2;
+      const offsetY = (height - usedHeight) / 2;
+      const positions = new Map();
+      for (const node of nodes) {
+        positions.set(String(node.node_id), {
+          x: offsetX + (node.x - minX) * scale,
+          y: height - offsetY - (node.y - minY) * scale
+        });
+      }
+      return positions;
+    }
+
+    function starPoints(cx, cy, outerRadius, innerRadius) {
+      const points = [];
+      for (let index = 0; index < 10; index += 1) {
+        const radius = index % 2 === 0 ? outerRadius : innerRadius;
+        const angle = -Math.PI / 2 + index * Math.PI / 5;
+        points.push(`${cx + Math.cos(angle) * radius},${cy + Math.sin(angle) * radius}`);
+      }
+      return points.join(" ");
     }
 
     function definitionList(items) {

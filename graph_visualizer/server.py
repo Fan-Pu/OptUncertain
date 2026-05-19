@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from .loader import load_visualization_steps, resolve_project_root
+from .loader import load_solution_payload, load_visualization_steps, resolve_project_root
 from .viewer import render_viewer_html
 
 
@@ -67,6 +67,9 @@ def start_visualizer_server(
         "instance_name": str(instance_name),
         "steps": steps,
     }
+    payload.update(
+        load_solution_payload(instance_name=instance_name, project_root=root)
+    )
     html_bytes = render_viewer_html().encode("utf-8")
 
     class VisualizerRequestHandler(BaseHTTPRequestHandler):
