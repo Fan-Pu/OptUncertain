@@ -7,6 +7,12 @@ from typing import Dict, List
 import debugpy
 
 import Helper
+from route_plotter import (
+    load_environment_graph,
+    plot_environment_routes,
+    print_route_summary,
+    summarize_routes,
+)
 
 
 def load_scenario_config(config_path: str) -> Dict[str, object]:
@@ -247,6 +253,80 @@ def _current_agent_states(agent_sims):
     return [sim.getState()[0] for sim in agent_sims]
 
 
+def _initialize_executed_routes(scenario: Dict[str, object]) -> Dict[str, List[int]]:
+    return {
+        str(agent["id"]): [
+            int(Helper.viewpoint_index_by_vp_label[str(agent["start_viewpoint_id"])])
+        ]
+        for agent in scenario["agents"]
+    }
+
+
+def _append_executed_route_nodes(
+    executed_routes_by_agent: Dict[str, List[int]],
+    next_route_node_ids_by_agent: Dict[str, int],
+    agent_ids: List[str],
+) -> None:
+    for agent_id in agent_ids:
+        executed_routes_by_agent[agent_id].append(
+            int(next_route_node_ids_by_agent[agent_id])
+        )
+
+
+def _record_completed_target_nodes(
+    completed_targets: List[Dict[str, object]],
+    agent_observations: List[Dict[str, object]],
+    completed_target_node_ids: Dict[str, int],
+) -> None:
+    observation_by_agent_id = {
+        str(observation["agent_id"]): observation for observation in agent_observations
+    }
+    for completed_target in completed_targets:
+        target_id = str(completed_target["target_id"])
+        if target_id not in completed_target_node_ids:
+            agent_id = str(completed_target["agent_id"])
+            completed_target_node_ids[target_id] = int(
+                observation_by_agent_id[agent_id]["current_viewpoint_index"]
+            )
+
+
+def _write_mllm_completion_route_plot(
+    test_case: str,
+    scan_id: str,
+    debug_output_dir: str,
+    executed_routes_by_agent: Dict[str, List[int]],
+    completed_target_node_ids: Dict[str, int],
+) -> Dict[str, object]:
+    environment_graph = load_environment_graph(scan_id=scan_id)
+    summary = summarize_routes(
+        test_case=test_case,
+        environment_graph=environment_graph,
+        routes_by_agent=executed_routes_by_agent,
+        target_node_ids_by_target_id=completed_target_node_ids,
+    )
+    output_dir = Path(debug_output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    plot_path = output_dir / ("%s_mllm_routes.png" % str(test_case))
+    plot_environment_routes(
+        environment_graph=environment_graph,
+        agent_summaries=summary["agents"],
+        output_path=plot_path,
+        title="%s MLLM executed routes" % str(test_case),
+        target_node_ids_by_target_id=completed_target_node_ids,
+    )
+    summary["plot_path"] = str(plot_path)
+    # save summary as txt for easy viewing and copying
+    summary_path = output_dir / ("%s_mllm_route_summary.txt" % str(test_case))
+    with open(summary_path, "w", encoding="utf-8") as summary_file_handle:
+        json.dump(summary, summary_file_handle, indent=2)
+    print("Saved MLLM route summary to %s.\n" % str(summary_path))
+    print_route_summary(
+        summary=summary,
+        title="MLLM executed route solution for %s" % str(test_case),
+    )
+    return summary
+
+
 def run_scenario(config_path: str) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
     from semantic_persistence import HypothesisGraph, MLLMClient, SigLIPScorer
@@ -264,8 +344,11 @@ def run_scenario(config_path: str) -> Dict[str, object]:
     )
     agent_ids = [str(agent["id"]) for agent in scenario["agents"]]
     scan_id = str(scenario["scan_id"])
+    test_case = Path(debug_output_dir).name
 
     Helper.build_viewpoint_index(scan_id)
+    executed_routes_by_agent = _initialize_executed_routes(scenario)
+    completed_target_node_ids: Dict[str, int] = {}
     agent_sims = _init_agent_sims(scenario=scenario, scan_id=scan_id)
 
     targets = _normalize_targets(scenario["targets"])
@@ -327,6 +410,11 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             targets=targets,
             hypothesis_graph=hypothesis_graph,
         )
+        _record_completed_target_nodes(
+            completed_targets=completed_targets,
+            agent_observations=agent_observations,
+            completed_target_node_ids=completed_target_node_ids,
+        )
 
         _center_completed_targets(
             agent_sims=agent_sims,
@@ -358,8 +446,18 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             print(f"  {target_id}: {'Found' if found else 'Not found'}")
 
         if all_targets_found:
+            route_summary = _write_mllm_completion_route_plot(
+                test_case=test_case,
+                scan_id=scan_id,
+                debug_output_dir=debug_output_dir,
+                executed_routes_by_agent=executed_routes_by_agent,
+                completed_target_node_ids=completed_target_node_ids,
+            )
             debugpy.breakpoint()
-            return {"target_found": dict(hypothesis_graph.target_found)}
+            return {
+                "target_found": dict(hypothesis_graph.target_found),
+                "route_summary": route_summary,
+            }
 
         optimization_result = optimizer.solve(
             hypothesis_graph=hypothesis_graph,
@@ -373,9 +471,11 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         }
 
         move_specs = []
+        next_route_node_ids_by_agent = {}
         for agent_id in agent_ids:
             agent_path = optimization_result["agent_paths"][agent_id]
             next_vp_node_id = int(agent_path["next_vp_node_id"])
+            next_route_node_ids_by_agent[agent_id] = next_vp_node_id
             next_viewpoint_id = Helper.viewpoint_vp_label_by_index[next_vp_node_id]
             agent_observation = observations_by_agent[agent_id]
 
@@ -392,6 +492,11 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             print(f"Move spec for {agent_id}: {next_vp_node_id}")
 
         Helper.execute_individual_first_hops(sims=agent_sims, move_specs=move_specs)
+        _append_executed_route_nodes(
+            executed_routes_by_agent=executed_routes_by_agent,
+            next_route_node_ids_by_agent=next_route_node_ids_by_agent,
+            agent_ids=agent_ids,
+        )
         for _ in range(2):
             print()
 
