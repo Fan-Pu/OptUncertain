@@ -27,7 +27,7 @@ class MLLMClient:
         api_key_env: str = "HF_TOKEN",
         max_new_tokens: int = -1,  # read from config
         request_timeout: float = 120.0,
-        save_debug_images: bool = False,
+        save_debug_images: bool = True,
         read_saved_raw_outputs: bool = False,
         raw_output_dir: str = "mllm_raw_outputs",
         raw_debug_dir: str = "mllm_debug_outputs",
@@ -396,9 +396,7 @@ class MLLMClient:
                     "target." % agent_id
                 )
 
-            returned_target_ids = {
-                str(target_id) for target_id in found_target_indices
-            }
+            returned_target_ids = {str(target_id) for target_id in found_target_indices}
             unknown_target_ids = returned_target_ids.difference(target_ids)
             if unknown_target_ids:
                 raise ValueError(
@@ -704,6 +702,7 @@ class MLLMClient:
                         str(last_error),
                     )
                 )
+                debugpy.breakpoint()
 
         raise RuntimeError("Unexpected detection retry loop exit.")
 
@@ -1304,6 +1303,8 @@ class MLLMClient:
             fixed_detections=fixed_detections,
         )
 
+        debugpy.breakpoint()  # Debug before requesting MLLM completion.
+
         max_validation_retries = getattr(self, "max_validation_retries", 0)
         validation_errors: List[str] = []
         last_error = None
@@ -1434,6 +1435,7 @@ class MLLMClient:
                         str(last_error),
                     )
                 )
+                debugpy.breakpoint()
 
         debugpy.breakpoint()  # Debug if the retry loop exits unexpectedly.
 
@@ -1452,7 +1454,9 @@ class MLLMClient:
             self._semantic_raw_output_path(step_index)
         )
 
-    def _read_detection_raw_output(self, step_index: int) -> Optional[str]:
+    def _read_detection_raw_output(
+        self, step_index: int
+    ) -> Optional[str]:  # Debug if the detection raw output is being read.
         return self._read_text_file_if_exists(
             self._detection_raw_output_path(step_index)
         )
