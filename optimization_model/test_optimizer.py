@@ -32,6 +32,17 @@ OPTIMIZER_CONFIG = {
     "ungrounded_reward_weight": 0.8,
 }
 
+UNIQUE_TARGET_REWARD_CONFIG = dict(OPTIMIZER_CONFIG, unique_target_reward=True)
+ORACLE_INACTIVE_AGENT_CONFIG = dict(
+    UNIQUE_TARGET_REWARD_CONFIG,
+    allow_inactive_agents=True,
+)
+ORACLE_EXACT_COVERAGE_CONFIG = dict(
+    ORACLE_INACTIVE_AGENT_CONFIG,
+    force_positive_target_assignment=True,
+    minimize_distance_after_targets=True,
+)
+
 
 def tearDownModule():
     if _original_helper is None:
@@ -170,6 +181,131 @@ class _OtherAgentCurrentNodeGraph:
         }
 
 
+class _SharedTargetGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            3: _FakeNode(1, True, 1.0, {"target": 1.0}),
+        }
+        self.edges = {
+            (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
+            (2, 3): _FakeEdge(2, 3, 0.1, 1.0),
+        }
+
+
+class _OneAgentCoversAllTargetsGraph:
+    def __init__(self):
+        self.target_ids = ["target0", "target1"]
+        self.target_id_to_description = {
+            "target0": "target0",
+            "target1": "target1",
+        }
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 1.0, "target1": 0.0},
+            ),
+            2: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 0.0},
+            ),
+            3: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 0.0},
+            ),
+            4: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 1.0},
+            ),
+            5: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 0.0},
+            ),
+        }
+        self.edges = {
+            (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
+            (3, 4): _FakeEdge(3, 4, 0.1, 1.0),
+            (2, 5): _FakeEdge(2, 5, 0.1, 1.0),
+        }
+
+
+class _OracleDistanceChoiceGraph:
+    def __init__(self):
+        self.target_ids = ["target0", "target1"]
+        self.target_id_to_description = {
+            "target0": "target0",
+            "target1": "target1",
+        }
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 1.0, "target1": 0.0},
+            ),
+            2: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 0.0},
+            ),
+            3: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 0.0},
+            ),
+            4: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 1.0},
+            ),
+            5: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 0.0},
+            ),
+        }
+        self.edges = {
+            (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
+            (3, 4): _FakeEdge(3, 4, 0.1, 1.0),
+            (2, 5): _FakeEdge(2, 5, 0.1, 1.0),
+            (4, 5): _FakeEdge(5, 4, 1.0, 1.0),
+        }
+
+
+class _ZeroRewardAssignmentGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 1.0}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
+        }
+
+
 class MultiAgentOptimizerTest(unittest.TestCase):
     def _objective_bounds_for_graph(
         self, graph, agent_current_vp_ids, target_found_flags
@@ -248,7 +384,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
 
     def test_assigns_each_unfound_target_at_most_once_across_agents(self):
-        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
         result = optimizer.solve(
             hypothesis_graph=_FakeGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
@@ -262,7 +398,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
 
     def test_masks_found_targets_and_first_hop_is_viewpoint_for_each_agent(self):
-        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
         result = optimizer.solve(
             hypothesis_graph=_FakeGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
@@ -303,7 +439,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertEqual(selected_cycle_nodes, set())
 
     def test_agent_can_assign_target_at_other_agents_current_viewpoint(self):
-        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
         result = optimizer.solve(
             hypothesis_graph=_OtherAgentCurrentNodeGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
@@ -319,6 +455,97 @@ class MultiAgentOptimizerTest(unittest.TestCase):
                 for assignment in result["target_assignments"]
             )
         )
+
+    def test_default_mode_keeps_target_assignments_empty(self):
+        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_SharedTargetGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["target_assignments"], [])
+
+    def test_unique_target_reward_assigns_shared_target_once(self):
+        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_SharedTargetGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(len(result["target_assignments"]), 1)
+        self.assertEqual(result["target_assignments"][0]["target_id"], "target")
+        self.assertEqual(result["target_assignments"][0]["node_id"], 3)
+
+    def test_oracle_mode_allows_unassigned_agent_to_wait_at_start(self):
+        optimizer = RollingHorizonOptimizer(ORACLE_INACTIVE_AGENT_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_OneAgentCoversAllTargetsGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target0": False, "target1": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent1"]["route_node_ids"], [2])
+        self.assertEqual(
+            result["agent_paths"]["agent1"]["planned_path_node_ids"],
+            [],
+        )
+        self.assertEqual(
+            sorted(
+                (assignment["agent_id"], assignment["target_id"])
+                for assignment in result["target_assignments"]
+            ),
+            [("agent0", "target0"), ("agent0", "target1")],
+        )
+
+    def test_default_mode_still_forces_each_agent_to_depart(self):
+        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_OneAgentCoversAllTargetsGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target0": False, "target1": False},
+        )
+
+        self.assertNotEqual(result["agent_paths"]["agent1"]["route_node_ids"], [2])
+
+    def test_oracle_exact_coverage_assigns_target_to_lower_distance_agent(self):
+        optimizer = RollingHorizonOptimizer(ORACLE_EXACT_COVERAGE_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_OracleDistanceChoiceGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target0": False, "target1": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["route_node_ids"], [1, 3, 4])
+        self.assertEqual(result["agent_paths"]["agent1"]["route_node_ids"], [2])
+        self.assertEqual(
+            sorted(
+                (assignment["agent_id"], assignment["node_id"], assignment["target_id"])
+                for assignment in result["target_assignments"]
+            ),
+            [("agent0", 1, "target0"), ("agent0", 4, "target1")],
+        )
+
+    def test_zero_reward_assignments_do_not_satisfy_oracle_target_coverage(self):
+        optimizer = RollingHorizonOptimizer(ORACLE_EXACT_COVERAGE_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_ZeroRewardAssignmentGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["route_node_ids"], [1, 2])
+        self.assertEqual(
+            result["target_assignments"],
+            [{"target_id": "target", "node_id": 2, "agent_id": "agent0"}],
+        )
+
+    def test_default_mode_leaves_oracle_exact_coverage_flags_disabled(self):
+        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+
+        self.assertFalse(optimizer.force_positive_target_assignment)
+        self.assertFalse(optimizer.minimize_distance_after_targets)
 
     def test_normalized_objective_value_is_bounded(self):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)

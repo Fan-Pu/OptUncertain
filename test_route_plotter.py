@@ -5,7 +5,7 @@ import math
 
 import pytest
 
-from route_plotter import load_environment_graph
+from route_plotter import EnvironmentGraph, load_environment_graph, summarize_routes
 
 
 def _pose(x: float, y: float, z: float) -> list[float]:
@@ -46,3 +46,26 @@ def test_environment_graph_uses_xy_for_display_coordinates(tmp_path):
     assert graph.edge_distances[(0, 1)] == pytest.approx(
         math.sqrt(4.0**2 + 5.0**2 + 6.0**2)
     )
+
+
+def test_summarize_routes_treats_repeated_node_as_wait_step():
+    graph = EnvironmentGraph(
+        scan_id="scan",
+        viewpoint_id_by_index={0: "vp0", 1: "vp1"},
+        coords_by_node_id={0: (0.0, 0.0), 1: (1.0, 0.0)},
+        edge_distances={(0, 1): 1.0},
+    )
+
+    summary = summarize_routes(
+        test_case="case",
+        environment_graph=graph,
+        routes_by_agent={"agent0": [0, 1, 1]},
+        target_node_ids_by_target_id={"0": 1},
+    )
+
+    agent_summary = summary["agents"][0]
+    assert agent_summary["edge_distances"] == [1.0, 0.0]
+    assert agent_summary["path_distance"] == 1.0
+    assert agent_summary["step_count"] == 2
+    assert agent_summary["wait_steps"] == 1
+    assert summary["total_distance"] == 1.0

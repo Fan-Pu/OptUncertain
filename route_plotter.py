@@ -82,10 +82,18 @@ def summarize_agent_routes(
     summaries = []
     for agent_id, route_node_ids_raw in routes_by_agent.items():
         route_node_ids = [int(node_id) for node_id in route_node_ids_raw]
-        edge_distances = [
-            environment_graph.edge_distances[tuple(sorted((source_id, target_id)))]
-            for source_id, target_id in zip(route_node_ids, route_node_ids[1:])
-        ]
+        edge_distances = []
+        wait_steps = 0
+        for source_id, target_id in zip(route_node_ids, route_node_ids[1:]):
+            if source_id == target_id:
+                edge_distances.append(0.0)
+                wait_steps += 1
+            else:
+                edge_distances.append(
+                    environment_graph.edge_distances[
+                        tuple(sorted((source_id, target_id)))
+                    ]
+                )
         summaries.append(
             {
                 "agent_id": str(agent_id),
@@ -96,6 +104,8 @@ def summarize_agent_routes(
                 ],
                 "edge_distances": edge_distances,
                 "path_distance": sum(edge_distances),
+                "step_count": len(route_node_ids) - 1,
+                "wait_steps": wait_steps,
             }
         )
     return summaries
@@ -142,6 +152,8 @@ def print_route_summary(summary: Dict[str, object], title: str) -> None:
                 for distance in agent_summary["edge_distances"]
             ]
         )
+        print("  step count: %s" % int(agent_summary["step_count"]))
+        print("  wait steps: %s" % int(agent_summary["wait_steps"]))
         print("  path distance: %.6f" % float(agent_summary["path_distance"]))
         print()
 

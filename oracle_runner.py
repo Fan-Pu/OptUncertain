@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import debugpy
+
 from route_plotter import (
     EnvironmentGraph,
     load_environment_graph,
@@ -171,6 +173,12 @@ def run_oracle(
 ) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
 
+    # -------------------- Debugger --------------------
+    debugpy.listen(("0.0.0.0", 5678))
+    print("debugpy listening on 5678, waiting...")
+    debugpy.wait_for_client()
+    print("debugger attached, continuing...")
+
     instance = build_oracle_instance(
         test_case=test_case,
         project_root=project_root,
@@ -212,12 +220,26 @@ def summarize_oracle_solution(
         routes_by_agent[agent_id] = [
             int(node_id) for node_id in agent_path["route_node_ids"]
         ]
+    routes_by_agent = _pad_routes_to_equal_length(routes_by_agent)
     return summarize_routes(
         test_case=instance.test_case,
         environment_graph=instance.environment_graph,
         routes_by_agent=routes_by_agent,
         target_node_ids_by_target_id=instance.target_node_ids_by_target_id,
     )
+
+
+def _pad_routes_to_equal_length(
+    routes_by_agent: Dict[str, List[int]],
+) -> Dict[str, List[int]]:
+    max_route_length = max(
+        len(route_node_ids) for route_node_ids in routes_by_agent.values()
+    )
+    return {
+        agent_id: route_node_ids
+        + [route_node_ids[-1]] * (max_route_length - len(route_node_ids))
+        for agent_id, route_node_ids in routes_by_agent.items()
+    }
 
 
 def print_oracle_summary(summary: Dict[str, object]) -> None:
@@ -252,6 +274,10 @@ def _oracle_optimizer_config() -> Dict[str, float]:
         "node_weight": 0.0,
         "visit_weight": 0.0,
         "ungrounded_reward_weight": 1.0,
+        "unique_target_reward": True,
+        "allow_inactive_agents": True,
+        "force_positive_target_assignment": True,
+        "minimize_distance_after_targets": True,
     }
 
 
