@@ -8,6 +8,7 @@ import pytest
 
 from graph_visualizer.loader import load_solution_payload, load_visualization_steps
 from graph_visualizer.server import start_visualizer_server
+from graph_visualizer.viewer import render_viewer_html
 
 
 def _write_json(path, payload):
@@ -121,6 +122,41 @@ def _write_route_case(root, instance_name):
     )
 
 
+def _patch_house_texture(monkeypatch):
+    def fake_generate_cached_topdown_texture(
+        *,
+        scan_id,
+        project_root,
+        instance_name,
+        connectivity_dir,
+    ):
+        texture_path = (
+            project_root
+            / "mllm_debug_outputs"
+            / str(instance_name)
+            / ("%s_topdown_texture.png" % str(scan_id))
+        )
+        texture_path.parent.mkdir(parents=True, exist_ok=True)
+        texture_path.write_bytes(b"texture")
+        return {
+            "url": "/assets/mllm_debug_outputs/%s/%s_topdown_texture.png"
+            % (str(instance_name), str(scan_id)),
+            "render_mode": "interior_cutaway_v1",
+            "cut_z": 1.35,
+            "min_x": 0.0,
+            "max_x": 1.0,
+            "min_y": 0.0,
+            "max_y": 1.0,
+            "width": 16,
+            "height": 16,
+        }
+
+    monkeypatch.setattr(
+        "graph_visualizer.loader.generate_cached_topdown_texture",
+        fake_generate_cached_topdown_texture,
+    )
+
+
 def test_load_visualization_step_with_all_raw_files(tmp_path):
     _write_step(
         tmp_path,
@@ -177,6 +213,7 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
     monkeypatch,
 ):
     _write_route_case(tmp_path, "case")
+    _patch_house_texture(monkeypatch)
     monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
 
     payload = load_solution_payload("case", project_root=tmp_path)
@@ -186,6 +223,17 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
     assert payload["environment_graph"]["scan_id"] == "scan"
     assert payload["environment_graph"]["nodes"][0]["viewpoint_id"] == "vp0"
     assert payload["environment_graph"]["edges"][0]["distance"] == pytest.approx(1.0)
+    assert payload["environment_graph"]["house_texture"] == {
+        "url": "/assets/mllm_debug_outputs/case/scan_topdown_texture.png",
+        "render_mode": "interior_cutaway_v1",
+        "cut_z": 1.35,
+        "min_x": 0.0,
+        "max_x": 1.0,
+        "min_y": 0.0,
+        "max_y": 1.0,
+        "width": 16,
+        "height": 16,
+    }
 
 
 def test_load_solution_payload_keeps_environment_connectivity_on_linux(
@@ -195,6 +243,7 @@ def test_load_solution_payload_keeps_environment_connectivity_on_linux(
     _write_route_case(tmp_path, "case")
     env_connectivity_dir = tmp_path / "env_connectivity"
     _write_connectivity(env_connectivity_dir, second_viewpoint_id="env-vp1")
+    _patch_house_texture(monkeypatch)
     monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Linux")
     monkeypatch.setenv("MATTERPORT_CONNECTIVITY_DIR", str(env_connectivity_dir))
 
@@ -211,6 +260,7 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
         target_found={"0": False},
     )
     _write_route_case(tmp_path, "case")
+    _patch_house_texture(monkeypatch)
     monkeypatch.setenv("MATTERPORT_CONNECTIVITY_DIR", str(tmp_path / "connectivity"))
     server = start_visualizer_server(
         "case",
@@ -224,8 +274,27 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
 
         assert payload["solutions"][0]["id"] == "mllm"
         assert payload["environment_graph"]["scan_id"] == "scan"
+        assert payload["environment_graph"]["house_texture"]["url"] == (
+            "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
+        )
+
+        with urlopen(
+            server.url + "assets/mllm_debug_outputs/case/scan_topdown_texture.png",
+            timeout=5,
+        ) as asset_response:
+            assert asset_response.status == 200
+            assert asset_response.read() == b"texture"
     finally:
         server.shutdown()
+
+
+def test_route_renderer_skips_wait_step_edges():
+    html = render_viewer_html()
+
+    assert "Number(routeNodeIds[routeIndex]) === Number(nextNodeId)" in html
+    assert "sameRoutePoint(point, nextPoint)" in html
+    assert 'id="houseTextureButton"' in html
+    assert '"pointer-events": "none"' in html
 
 
 def test_shutdown_endpoint_stops_visualization_server(tmp_path):

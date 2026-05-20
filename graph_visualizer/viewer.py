@@ -134,6 +134,11 @@ def render_viewer_html() -> str:
       padding: 0 10px;
       font-size: 13px;
     }
+    .graph-toolbar .house-texture-button {
+      width: auto;
+      padding: 0 10px;
+      font-size: 13px;
+    }
     svg {
       width: 100%;
       height: 100%;
@@ -419,6 +424,7 @@ def render_viewer_html() -> str:
           <button id="graphZoomInButton" type="button" title="Zoom in" aria-label="Zoom in">+</button>
           <button id="graphZoomOutButton" type="button" title="Zoom out" aria-label="Zoom out">-</button>
           <button id="graphResetViewButton" class="graph-reset-button" type="button" title="Reset view" aria-label="Reset view">Reset</button>
+          <button id="houseTextureButton" class="house-texture-button" type="button" title="Toggle house texture" aria-label="Toggle house texture" aria-pressed="true">House texture</button>
         </div>
         <svg id="graph" tabindex="0" role="img" aria-label="Graph layout"></svg>
       </section>
@@ -482,6 +488,7 @@ def render_viewer_html() -> str:
     let panState = null;
     let selectionState = null;
     let useSavedLayout = false;
+    let showHouseTexture = true;
     const positionOverrides = new Map();
     const viewportStates = new Map();
     const GRAPH_MIN_SCALE = 0.2;
@@ -494,6 +501,7 @@ def render_viewer_html() -> str:
     const graphZoomInButton = document.getElementById("graphZoomInButton");
     const graphZoomOutButton = document.getElementById("graphZoomOutButton");
     const graphResetViewButton = document.getElementById("graphResetViewButton");
+    const houseTextureButton = document.getElementById("houseTextureButton");
     const useSavedLayoutButton = document.getElementById("useSavedLayoutButton");
     const resetDefaultLayoutButton = document.getElementById("resetDefaultLayoutButton");
     const copyPreviousLayoutButton = document.getElementById("copyPreviousLayoutButton");
@@ -564,6 +572,11 @@ def render_viewer_html() -> str:
     graphResetViewButton.addEventListener("click", () => {
       graph.focus();
       resetCurrentGraphViewport();
+      renderCurrentGraph();
+    });
+    houseTextureButton.addEventListener("click", () => {
+      showHouseTexture = !showHouseTexture;
+      graph.focus();
       renderCurrentGraph();
     });
     prevButton.addEventListener("click", () => {
@@ -705,6 +718,8 @@ def render_viewer_html() -> str:
         graphZoomInButton.disabled = false;
         graphZoomOutButton.disabled = false;
         graphResetViewButton.disabled = false;
+        houseTextureButton.disabled = false;
+        houseTextureButton.setAttribute("aria-pressed", String(showHouseTexture));
         stepLabel.textContent = activeSolution.label;
         renderRouteGraph(activeSolution);
         renderSolutionDetails(activeSolution);
@@ -716,6 +731,8 @@ def render_viewer_html() -> str:
       graphZoomInButton.disabled = false;
       graphZoomOutButton.disabled = false;
       graphResetViewButton.disabled = false;
+      houseTextureButton.disabled = true;
+      houseTextureButton.setAttribute("aria-pressed", "false");
       prevButton.disabled = stepPosition === 0;
       nextButton.disabled = stepPosition === payload.steps.length - 1;
       useSavedLayoutButton.setAttribute("aria-pressed", String(useSavedLayout));
@@ -848,8 +865,9 @@ def render_viewer_html() -> str:
       const height = graph.clientHeight || 560;
       graph.setAttribute("viewBox", `0 0 ${width} ${height}`);
       const environment = payload.environment_graph;
-      const positions = routePositions(environment.nodes, width, height);
-      const contentBounds = computeRouteContentBounds(solution, positions);
+      const projection = routeProjection(environment, width, height);
+      const positions = routePositions(environment.nodes, projection);
+      const contentBounds = computeRouteContentBounds(solution, positions, projection);
       const colors = ["#d62728", "#1f77b4", "#2ca02c", "#ff7f0e", "#9467bd", "#17becf"];
 
       const defs = svgEl("defs", {});
@@ -864,6 +882,10 @@ def render_viewer_html() -> str:
 
       const viewportLayer = svgEl("g", {});
       graph.appendChild(viewportLayer);
+
+      if (showHouseTexture) {
+        appendHouseTexture(viewportLayer, environment, projection);
+      }
 
       const edgeLayer = svgEl("g", {});
       viewportLayer.appendChild(edgeLayer);
@@ -903,7 +925,10 @@ def render_viewer_html() -> str:
         const routeNodeIds = (agent.route_node_ids || []).map(Number);
         const routePoints = routeNodeIds.map(nodeId => positions.get(String(nodeId)));
         routePoints.slice(0, -1).forEach((point, routeIndex) => {
+          const nextNodeId = routeNodeIds[routeIndex + 1];
+          if (Number(routeNodeIds[routeIndex]) === Number(nextNodeId)) return;
           const nextPoint = routePoints[routeIndex + 1];
+          if (sameRoutePoint(point, nextPoint)) return;
           const segment = routeSegmentEndpoints(
             point,
             nextPoint,
@@ -974,6 +999,20 @@ def render_viewer_html() -> str:
         "transform",
         viewportTransform(getViewportState(solutionViewportKey(solution), width, height, contentBounds))
       );
+    }
+
+    function appendHouseTexture(viewportLayer, environment, projection) {
+      const texture = environment.house_texture;
+      const image = svgEl("image", {
+        href: texture.url,
+        x: projection.offsetX,
+        y: projection.offsetY,
+        width: projection.usedWidth,
+        height: projection.usedHeight,
+        preserveAspectRatio: "none",
+        "pointer-events": "none"
+      });
+      viewportLayer.appendChild(image);
     }
 
     function appendRouteArrowMarker(defs, markerId, color) {
@@ -1561,14 +1600,13 @@ def render_viewer_html() -> str:
       `).join("");
     }
 
-    function routePositions(nodes, width, height) {
+    function routeProjection(environment, width, height) {
       const padding = 48;
-      const xs = nodes.map(node => node.x);
-      const ys = nodes.map(node => node.y);
-      const minX = Math.min(...xs);
-      const maxX = Math.max(...xs);
-      const minY = Math.min(...ys);
-      const maxY = Math.max(...ys);
+      const bounds = routeWorldBounds(environment);
+      const minX = bounds.minX;
+      const maxX = bounds.maxX;
+      const minY = bounds.minY;
+      const maxY = bounds.maxY;
       const scale = Math.min(
         (width - padding * 2) / (maxX - minX),
         (height - padding * 2) / (maxY - minY)
@@ -1577,14 +1615,54 @@ def render_viewer_html() -> str:
       const usedHeight = (maxY - minY) * scale;
       const offsetX = (width - usedWidth) / 2;
       const offsetY = (height - usedHeight) / 2;
+      return {
+        minX: minX,
+        maxX: maxX,
+        minY: minY,
+        maxY: maxY,
+        scale: scale,
+        usedWidth: usedWidth,
+        usedHeight: usedHeight,
+        offsetX: offsetX,
+        offsetY: offsetY,
+        screenX: worldX => offsetX + (worldX - minX) * scale,
+        screenY: worldY => height - offsetY - (worldY - minY) * scale
+      };
+    }
+
+    function routeWorldBounds(environment) {
+      const texture = environment.house_texture;
+      if (texture) {
+        return {
+          minX: Number(texture.min_x),
+          maxX: Number(texture.max_x),
+          minY: Number(texture.min_y),
+          maxY: Number(texture.max_y)
+        };
+      }
+      const xs = environment.nodes.map(node => node.x);
+      const ys = environment.nodes.map(node => node.y);
+      return {
+        minX: Math.min(...xs),
+        maxX: Math.max(...xs),
+        minY: Math.min(...ys),
+        maxY: Math.max(...ys)
+      };
+    }
+
+    function routePositions(nodes, projection) {
       const positions = new Map();
       for (const node of nodes) {
         positions.set(String(node.node_id), {
-          x: offsetX + (node.x - minX) * scale,
-          y: height - offsetY - (node.y - minY) * scale
+          x: projection.screenX(node.x),
+          y: projection.screenY(node.y)
         });
       }
       return positions;
+    }
+
+    function sameRoutePoint(source, target) {
+      return source.x === target.x && source.y === target.y;
     }
 
     function starPoints(cx, cy, outerRadius, innerRadius) {
@@ -1709,9 +1787,16 @@ def render_viewer_html() -> str:
       return bounds;
     }
 
-    function computeRouteContentBounds(solution, positions) {
+    function computeRouteContentBounds(solution, positions, projection) {
       const bounds = emptyBounds();
       const environment = payload.environment_graph;
+      includeGraphPoint(bounds, projection.offsetX, projection.offsetY, 0);
+      includeGraphPoint(
+        bounds,
+        projection.offsetX + projection.usedWidth,
+        projection.offsetY + projection.usedHeight,
+        0
+      );
       for (const edge of environment.edges) {
         const source = positions.get(String(edge.i));
         const target = positions.get(String(edge.j));
@@ -1794,10 +1879,12 @@ def render_viewer_html() -> str:
       const height = graph.clientHeight || 560;
       const solution = currentSolution();
       if (solution) {
+        const projection = routeProjection(payload.environment_graph, width, height);
+        const positions = routePositions(payload.environment_graph.nodes, projection);
         viewportStates.set(
           solutionViewportKey(solution),
           fitViewportToBounds(
-            computeRouteContentBounds(solution, routePositions(payload.environment_graph.nodes, width, height)),
+            computeRouteContentBounds(solution, positions, projection),
             width,
             height
           )

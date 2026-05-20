@@ -8,6 +8,8 @@ from urllib.parse import quote
 
 from route_plotter import load_environment_graph
 
+from .topdown_texture import generate_cached_topdown_texture
+
 
 STEP_RE = re.compile(r"graph_layout_step_(\d{4})\.json$")
 OBSERVATION_RE = re.compile(r"observation_step_(\d{4})_agent_(.+)\.jpg$")
@@ -106,6 +108,7 @@ def _load_route_environment_graph(
         )
     else:
         environment_graph = load_environment_graph(scan_id=str(scenario["scan_id"]))
+    scan_id = str(scenario["scan_id"])
     return {
         "scan_id": environment_graph.scan_id,
         "nodes": [
@@ -125,6 +128,12 @@ def _load_route_environment_graph(
             }
             for edge_id, distance in sorted(environment_graph.edge_distances.items())
         ],
+        "house_texture": generate_cached_topdown_texture(
+            scan_id=scan_id,
+            project_root=project_root,
+            instance_name=instance_name,
+            connectivity_dir=project_root / "connectivity",
+        ),
     }
 
 
