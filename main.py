@@ -72,6 +72,15 @@ def _target_records_for_graph(
     ]
 
 
+def _id_sort_key(identifier: object):
+    text = str(identifier)
+    if text.startswith("agent") and text[len("agent") :].isdigit():
+        return (0, int(text[len("agent") :]), text)
+    if text.isdigit():
+        return (0, int(text), text)
+    return (1, text)
+
+
 def _collect_completed_targets(
     mllm_output: Dict[str, object],
     agent_observations: List[Dict[str, object]],
@@ -107,43 +116,22 @@ def _collect_completed_targets(
         if agent_id not in agent_observation_by_id:
             raise ValueError("Detection uses unknown agent_id %s." % agent_id)
 
-        target_indices = detection.get("target_indices", [])
-        founds = detection.get("founds", [])
-        target_center_xs = detection.get("target_center_xs", None)
+        found_target_indices = detection["found_target_indices"]
+        target_center_xs = detection["target_center_xs"]
 
-        if len(target_indices) != len(founds):
+        if len(found_target_indices) != len(target_center_xs):
             raise ValueError(
-                "target_indices and founds must have the same length "
-                "for agent %s." % agent_id
+                "found_target_indices and target_center_xs must have the same "
+                "length for agent %s." % agent_id
             )
 
-        if target_center_xs is not None and len(target_center_xs) != len(
-            target_indices
-        ):
-            raise ValueError(
-                "target_center_xs and target_indices must have the same length "
-                "for agent %s." % agent_id
-            )
-
-        for item_index, target_id_raw in enumerate(target_indices):
+        for item_index, target_id_raw in enumerate(found_target_indices):
             target_id = str(target_id_raw)
 
             if target_id not in valid_target_ids:
-                continue
-
-            found = founds[item_index]
-            if not isinstance(found, bool):
-                raise TypeError(
-                    "Detection founds values must be booleans for agent %s." % agent_id
-                )
-
-            if not found:
-                continue
-
-            if target_center_xs is None:
-                raise KeyError(
-                    "Found detection for agent %s target %s requires target_center_xs."
-                    % (agent_id, target_id)
+                raise ValueError(
+                    "Detection uses unknown target_id %s for agent %s."
+                    % (target_id, agent_id)
                 )
 
             target_center_x = target_center_xs[item_index]
@@ -185,7 +173,10 @@ def _collect_completed_targets(
         if not hypothesis_graph.target_found.get(target_id, False):
             hypothesis_graph.mark_target_found(target_id)
 
-        detection = found_detections_by_target[target_id][0]
+        detection = sorted(
+            found_detections_by_target[target_id],
+            key=lambda item: _id_sort_key(item["agent_id"]),
+        )[0]
 
         completed_targets.append(
             {
@@ -203,19 +194,31 @@ def _collect_completed_targets(
 def _center_completed_targets(agent_sims, agent_ids, completed_targets) -> None:
     """Rotate agents in-place to center the found targets in their view."""
 
-    completed_target_by_agent = {}
+    completed_targets_by_agent = {}
     for completed_target in completed_targets:
         agent_id = str(completed_target["agent_id"])
-        if agent_id not in completed_target_by_agent:
-            completed_target_by_agent[agent_id] = completed_target
+        completed_targets_by_agent.setdefault(agent_id, []).append(completed_target)
 
-    sims_to_rotate = []
-    target_headings = []
-    window_names = []
-    notifications = []
-    for agent_index, (agent_id, sim) in enumerate(zip(agent_ids, agent_sims)):
-        if agent_id in completed_target_by_agent:
-            completed_target = completed_target_by_agent[agent_id]
+    for agent_targets in completed_targets_by_agent.values():
+        agent_targets.sort(key=lambda item: _id_sort_key(item["target_id"]))
+
+    max_target_count = max(
+        (len(agent_targets) for agent_targets in completed_targets_by_agent.values()),
+        default=0,
+    )
+
+    for target_index in range(max_target_count):
+        sims_to_rotate = []
+        target_headings = []
+        window_names = []
+        notifications = []
+
+        for agent_index, (agent_id, sim) in enumerate(zip(agent_ids, agent_sims)):
+            agent_targets = completed_targets_by_agent.get(str(agent_id), [])
+            if target_index >= len(agent_targets):
+                continue
+
+            completed_target = agent_targets[target_index]
             sims_to_rotate.append(sim)
             target_headings.append(float(completed_target["target_heading"]))
             window_names.append("Agent %s" % agent_index)
@@ -223,7 +226,9 @@ def _center_completed_targets(agent_sims, agent_ids, completed_targets) -> None:
                 "Target %s is found." % (completed_target["target_id"])
             )
 
-    if sims_to_rotate:
+        if not sims_to_rotate:
+            continue
+
         Helper.execute_individual_rotations(
             sims=sims_to_rotate,
             target_headings=target_headings,

@@ -267,7 +267,7 @@ class MLLMClient:
         system_message = dedent("""
             You are doing only direct visual target detection from indoor panorama images.
             Return exactly one JSON object and nothing else.
-            Do not infer a target from room type. Set found=true only when the target object itself is visible in the image.
+            Do not infer a target from room type. Report a target only when the target object itself is visible in the image.
             Only evaluate the active targets listed in the user message. Do not include completed or unlisted target ids.
             """).strip()
 
@@ -280,26 +280,42 @@ class MLLMClient:
                 {agents_json}
 
                 Task:
-                For each agent image, inspect the entire panorama and decide whether each active target listed above is directly visible anywhere in that image.
+                For each agent image, inspect the entire panorama and identify which active targets are directly visible anywhere in that image.
+
                 A target can be small, off-center, partly far away, or near a viewpoint marker.
-                Use false only when the target object itself is not visible or is too ambiguous.
-                Return only active target_ids from the list above in target_indices. Do not return completed or unlisted target_ids.
+                Only report a target when the target object itself is directly visible with sufficient confidence.
+                Do not report targets that are absent, occluded beyond recognition, or too ambiguous.
+
+                Output rules:
+                - In "detections", include only agents that find at least one active target.
+                - If an agent finds no active targets, do not include that agent in "detections".
+                - Each agent may appear at most once in "detections".
+                - If an agent finds multiple active targets, list all of them in "found_target_indices".
+                - A target may appear for multiple agents if it is visible in multiple panorama images.
+                - Only use active target_ids from the list above.
+                - Do not return completed, unlisted, or not-found target_ids.
+                - If no active targets are found in any panorama image, return:
+                {{
+                    "detections": []
+                }}
 
                 Return JSON only in this exact structure:
                 {{
-                  "detections": [
+                "detections": [
                     {{
-                      "agent_id": "agent0",
-                      "target_indices": ["0"],
-                      "founds": [false],
-                      "target_center_xs": [null]
+                    "agent_id": "agent0",
+                    "found_target_indices": ["0", "3"],
+                    "target_center_xs": [0.10, 0.72]
                     }}
-                  ]
+                ]
                 }}
 
                 target_center_xs:
-                - For found=true, return the normalized horizontal center of the visible target object in the full panorama image, where 0.0 is the left edge and 1.0 is the right edge.
-                - For found=false, return null.
+                - For each found target, return the normalized horizontal center of that visible target object in the full panorama image.
+                - The value must be between 0.0 and 1.0, where 0.0 is the left edge and 1.0 is the right edge of the image.
+                - The order of "target_center_xs" must exactly match the order of "found_target_indices".
+                - "target_center_xs" must have the same number of entries as "found_target_indices".
+                - Since only found targets are included, do not return null values.
                 """)
             .strip()
             .format(
@@ -344,8 +360,7 @@ class MLLMClient:
 
             expected_keys = {
                 "agent_id",
-                "target_indices",
-                "founds",
+                "found_target_indices",
                 "target_center_xs",
             }
             if set(detection) != expected_keys:
@@ -361,101 +376,99 @@ class MLLMClient:
                 raise ValueError("Duplicated detection item for agent %s." % agent_id)
             returned_agent_ids.add(agent_id)
 
-            target_indices = detection["target_indices"]
-            founds = detection["founds"]
+            found_target_indices = detection["found_target_indices"]
             target_center_xs = detection["target_center_xs"]
 
-            if not isinstance(target_indices, list):
-                raise TypeError("detections[].target_indices must be a list.")
-            if not isinstance(founds, list):
-                raise TypeError("detections[].founds must be a list.")
+            if not isinstance(found_target_indices, list):
+                raise TypeError("detections[].found_target_indices must be a list.")
             if not isinstance(target_center_xs, list):
                 raise TypeError("detections[].target_center_xs must be a list.")
-            if len(target_indices) != len(founds):
-                raise ValueError(
-                    "detections[].target_indices and detections[].founds must have "
-                    "the same length for agent %s." % agent_id
-                )
-            if len(target_indices) != len(target_center_xs):
-                raise ValueError(
-                    "detections[].target_indices and detections[].target_center_xs "
-                    "must have the same length for agent %s." % agent_id
-                )
 
-            returned_target_ids = {str(target_id) for target_id in target_indices}
-            if returned_target_ids != target_ids:
+            if len(found_target_indices) != len(target_center_xs):
                 raise ValueError(
-                    "Detection target_indices %s do not match expected target ids %s."
-                    % (sorted(returned_target_ids), sorted(target_ids))
-                )
-            if len(target_indices) != len(returned_target_ids):
-                raise ValueError(
-                    "detections[].target_indices contains duplicated target ids for "
+                    "detections[].found_target_indices and "
+                    "detections[].target_center_xs must have the same length for "
                     "agent %s." % agent_id
                 )
+            if not found_target_indices:
+                raise ValueError(
+                    "Detection item for agent %s must include at least one found "
+                    "target." % agent_id
+                )
 
-            normalized_founds = []
-            normalized_target_indices = []
+            returned_target_ids = {
+                str(target_id) for target_id in found_target_indices
+            }
+            unknown_target_ids = returned_target_ids.difference(target_ids)
+            if unknown_target_ids:
+                raise ValueError(
+                    "Detection found_target_indices contains inactive target ids %s."
+                    % sorted(unknown_target_ids)
+                )
+            if len(found_target_indices) != len(returned_target_ids):
+                raise ValueError(
+                    "detections[].found_target_indices contains duplicated target "
+                    "ids for agent %s." % agent_id
+                )
+
+            normalized_found_target_indices = []
             normalized_target_center_xs = []
-            for target_id, found, target_center_x in zip(
-                target_indices,
-                founds,
+            for target_id, target_center_x in zip(
+                found_target_indices,
                 target_center_xs,
             ):
-                if not isinstance(found, bool):
-                    raise TypeError(
-                        "All detections[].founds values must be JSON booleans."
-                    )
-                if found:
-                    if not isinstance(target_center_x, (int, float)) or isinstance(
-                        target_center_x, bool
-                    ):
-                        raise TypeError(
-                            "target_center_xs values must be numbers when found=true."
-                        )
-                    if not (0.0 <= float(target_center_x) <= 1.0):
-                        raise ValueError(
-                            "target_center_xs values must be in [0.0, 1.0]."
-                        )
-                    normalized_target_center_xs.append(float(target_center_x))
-                else:
-                    if target_center_x is not None:
-                        raise TypeError(
-                            "target_center_xs values must be null when found=false."
-                        )
-                    normalized_target_center_xs.append(None)
-                normalized_target_indices.append(str(target_id))
-                normalized_founds.append(bool(found))
+                if not isinstance(target_center_x, (int, float)) or isinstance(
+                    target_center_x, bool
+                ):
+                    raise TypeError("target_center_xs values must be numbers.")
+                if not (0.0 <= float(target_center_x) <= 1.0):
+                    raise ValueError("target_center_xs values must be in [0.0, 1.0].")
+                normalized_found_target_indices.append(str(target_id))
+                normalized_target_center_xs.append(float(target_center_x))
 
             normalized_detections.append(
                 {
                     "agent_id": agent_id,
-                    "target_indices": normalized_target_indices,
-                    "founds": normalized_founds,
+                    "found_target_indices": normalized_found_target_indices,
                     "target_center_xs": normalized_target_center_xs,
                 }
-            )
-
-        if returned_agent_ids != expected_agent_ids:
-            raise ValueError(
-                "Returned detection agent ids %s do not match expected agent ids %s."
-                % (sorted(returned_agent_ids), sorted(expected_agent_ids))
             )
 
         return sorted(normalized_detections, key=lambda item: item["agent_id"])
 
     @staticmethod
-    def _strip_detection_localization(
+    def _build_dense_graph_detections(
         detections: List[Dict[str, object]],
+        agent_observations: List[Dict[str, object]],
+        target_ids: List[str],
     ) -> List[Dict[str, object]]:
-        return [
-            {
-                "agent_id": str(detection["agent_id"]),
-                "target_indices": list(detection["target_indices"]),
-                "founds": list(detection["founds"]),
+        ordered_target_ids = [str(target_id) for target_id in target_ids]
+        found_target_ids_by_agent = {
+            str(observation["agent_id"]): set() for observation in agent_observations
+        }
+
+        for detection in detections:
+            agent_id = str(detection["agent_id"])
+            found_target_ids_by_agent[agent_id] = {
+                str(target_id) for target_id in detection["found_target_indices"]
             }
-            for detection in detections
-        ]
+
+        dense_detections = []
+        for observation in agent_observations:
+            agent_id = str(observation["agent_id"])
+            found_target_ids = found_target_ids_by_agent[agent_id]
+            dense_detections.append(
+                {
+                    "agent_id": agent_id,
+                    "target_indices": list(ordered_target_ids),
+                    "founds": [
+                        target_id in found_target_ids
+                        for target_id in ordered_target_ids
+                    ],
+                }
+            )
+
+        return dense_detections
 
     @staticmethod
     def _filter_targets_by_found_state(
@@ -481,30 +494,13 @@ class MLLMClient:
 
         for detection in detections:
             agent_id = str(detection["agent_id"])
-            target_indices = detection["target_indices"]
-            founds = detection["founds"]
-            target_center_xs = detection.get("target_center_xs", None)
+            found_target_indices = detection["found_target_indices"]
+            target_center_xs = detection["target_center_xs"]
 
-            for item_index, target_id in enumerate(target_indices):
+            for item_index, target_id in enumerate(found_target_indices):
                 target_id = str(target_id)
 
-                if not bool(founds[item_index]):
-                    continue
-
-                if target_center_xs is None:
-                    raise KeyError(
-                        "Found detection for agent %s target %s requires target_center_xs."
-                        % (agent_id, target_id)
-                    )
-
                 target_center_x = target_center_xs[item_index]
-
-                if target_center_x is None:
-                    raise ValueError(
-                        "Found detection for agent %s target %s has null target_center_x."
-                        % (agent_id, target_id)
-                    )
-
                 target_center_x = float(target_center_x)
                 target_heading = Helper.panorama_center_x_to_heading(
                     target_center_x,
@@ -531,33 +527,25 @@ class MLLMClient:
         filtered_detections = []
 
         for detection in detections:
-            target_indices = []
-            founds = []
+            found_target_indices = []
             target_center_xs = []
 
-            has_target_center_xs = "target_center_xs" in detection
-
-            for item_index, target_id in enumerate(detection["target_indices"]):
+            for item_index, target_id in enumerate(detection["found_target_indices"]):
                 target_id = str(target_id)
                 if target_id not in target_id_set:
                     continue
 
-                target_indices.append(target_id)
-                founds.append(bool(detection["founds"][item_index]))
+                found_target_indices.append(target_id)
+                target_center_xs.append(detection["target_center_xs"][item_index])
 
-                if has_target_center_xs:
-                    target_center_xs.append(detection["target_center_xs"][item_index])
-
-            filtered_detection = {
-                "agent_id": str(detection["agent_id"]),
-                "target_indices": target_indices,
-                "founds": founds,
-            }
-
-            if has_target_center_xs:
-                filtered_detection["target_center_xs"] = target_center_xs
-
-            filtered_detections.append(filtered_detection)
+            if found_target_indices:
+                filtered_detections.append(
+                    {
+                        "agent_id": str(detection["agent_id"]),
+                        "found_target_indices": found_target_indices,
+                        "target_center_xs": target_center_xs,
+                    }
+                )
 
         return filtered_detections
 
@@ -1299,7 +1287,11 @@ class MLLMClient:
             detections=localized_detections,
             target_ids=[str(target["target_id"]) for target in graph_targets],
         )
-        fixed_detections = self._strip_detection_localization(graph_detections)
+        fixed_detections = self._build_dense_graph_detections(
+            detections=graph_detections,
+            agent_observations=agent_observations,
+            target_ids=[str(target["target_id"]) for target in graph_targets],
+        )
 
         if not graph_targets:
             self.semantic_raw_output_index = step_index + 1

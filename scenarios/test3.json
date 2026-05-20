@@ -1,0 +1,80 @@
+{
+  "scan_id": "17DRP5sb8fy",
+  "agents": [
+    {
+      "id": "agent0",
+      "start_viewpoint_id": "0f37bd0737e349de9d536263a4bdd60d",
+      "heading": 0.0,
+      "elevation": 0.0
+    },
+    {
+      "id": "agent1",
+      "start_viewpoint_id": "85c23efeaecd4d43a7dcd5b90137179e",
+      "heading": 0.0,
+      "elevation": 0.0
+    },
+    {
+      "id": "agent2",
+      "start_viewpoint_id": "30c97842da204e6290ac32904c924e17",
+      "heading": 0.0,
+      "elevation": 0.0
+    },
+    {
+      "id": "agent3",
+      "start_viewpoint_id": "c8112f69d34d476fbb29e6b3909deba2",
+      "heading": 0.0,
+      "elevation": 0.0
+    }
+  ],
+  "targets": [
+    {
+      "target_id": "0",
+      "description": "the gray pillow on the bed"
+    },
+    {
+      "target_id": "1",
+      "description": "the throw pillow on a blue armchair"
+    },
+    {
+      "target_id": "2",
+      "description": "the folded hand towel on the bathroom counter"
+    },
+    {
+      "target_id": "3",
+      "description": "the bottled water on the shelf"
+    },
+    {
+      "target_id": "4",
+      "description": "the remote control on the coffee table"
+    }
+  ],
+  "mllm": {
+    "graph_model_name": "google/gemma-4-31B-it:deepinfra",
+    "detection_model_name": "google/gemma-4-31B-it:deepinfra",
+    "max_new_tokens": 4096,
+    "read_saved_raw_outputs": true,
+    "raw_output_dir": "mllm_raw_outputs/test1",
+    "debug_output_dir": "mllm_debug_outputs/test1",
+    "max_validation_retries": 3
+  },
+  "bayes": {
+    "eta_goal": 5.0,
+    "eta_exist": 5.0,
+    "sigma_vv2": 4.0,
+    "sigma_vz2": 9.0,
+    "kappa_vv": 1.0,
+    "kappa_vz": 1.0,
+    "varrho": 0.75,
+    "omega_vz": 0.7,
+    "eta_vz": 5.0,
+    "epsilon": 1e-6
+  },
+  "optimizer": {
+    "goal_weight": 0.2,
+    "dist_weight": 0.2,
+    "arc_weight": 0.2,
+    "node_weight": 0.2,
+    "visit_weight": 0.2,
+    "ungrounded_reward_weight": 0.8
+  }
+}
