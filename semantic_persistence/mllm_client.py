@@ -242,6 +242,282 @@ class MLLMClient:
             )
         )
 
+    @staticmethod
+    def _build_semantic_payload_repair_user_message(
+        payload: Dict[str, object],
+        validation_errors: List[str],
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph_summary: Optional[Dict[str, object]] = None,
+        fixed_detections: Optional[List[Dict[str, object]]] = None,
+    ) -> str:
+        """Build a small text-only repair prompt for an invalid semantic payload.
+
+        This is different from the full graph-generation prompt. It does not send
+        panorama images and it does not ask the MLLM to regenerate the scene
+        understanding. It asks for the smallest JSON edit needed to fix the
+        reported validation error.
+        """
+        target_ids = [str(target["target_id"]) for target in targets]
+        current_viewpoint_ids = sorted(
+            {
+                int(observation["current_viewpoint_index"])
+                for observation in agent_observations
+            }
+        )
+        visible_viewpoint_ids = sorted(
+            {
+                int(item["viewpoint_index"])
+                for observation in agent_observations
+                for item in observation.get("visible_viewpoints", [])
+            }
+        )
+        current_step_allowed_viewpoint_ids = sorted(
+            set(current_viewpoint_ids) | set(visible_viewpoint_ids)
+        )
+        viewpoint_target_prob_ids = sorted(
+            set(visible_viewpoint_ids) - set(current_viewpoint_ids)
+        )
+
+        agent_context = []
+        for observation in agent_observations:
+            agent_context.append(
+                {
+                    "agent_id": str(observation["agent_id"]),
+                    "current_viewpoint_index": int(
+                        observation["current_viewpoint_index"]
+                    ),
+                    "visible_viewpoints": [
+                        {
+                            "viewpoint_index": int(item["viewpoint_index"]),
+                            "distance": float(item["distance"]),
+                        }
+                        for item in observation.get("visible_viewpoints", [])
+                    ],
+                }
+            )
+
+        graph_context = {
+            "viewpoint_to_region": {},
+            "region_nodes": [],
+        }
+        if isinstance(graph_summary, dict):
+            if isinstance(graph_summary.get("viewpoint_to_region"), dict):
+                graph_context["viewpoint_to_region"] = {
+                    str(viewpoint_id): int(region_id)
+                    for viewpoint_id, region_id in graph_summary[
+                        "viewpoint_to_region"
+                    ].items()
+                }
+
+            for node in graph_summary.get("nodes", []):
+                if not isinstance(node, dict) or node.get("type") != "region":
+                    continue
+                graph_context["region_nodes"].append(
+                    {
+                        "id": int(node["id"]),
+                        "label": str(node.get("label", "")),
+                        "exist_prob": node.get("exist_prob"),
+                        "assigned_viewpoint_ids": node.get(
+                            "assigned_viewpoint_ids", []
+                        ),
+                    }
+                )
+
+        if not validation_errors:
+            error_text = "No validation error text was captured."
+        else:
+            error_text = "\n".join(
+                "%d. %s" % (index + 1, error)
+                for index, error in enumerate(validation_errors)
+            )
+
+        repair_context = {
+            "validation_errors": validation_errors,
+            "target_ids": target_ids,
+            "agent_context": agent_context,
+            "current_viewpoint_ids": current_viewpoint_ids,
+            "current_step_allowed_viewpoint_ids": current_step_allowed_viewpoint_ids,
+            "viewpoint_target_prob_ids": viewpoint_target_prob_ids,
+            "fixed_detections": fixed_detections,
+            "graph_context": graph_context,
+            "current_payload": payload,
+        }
+
+        return (
+            dedent("""
+            The semantic graph JSON payload below failed validation.
+
+            Validation error(s):
+            {error_text}
+
+            Your task is to repair only the specific validation error(s). Do not
+            regenerate the whole graph. Do not reinterpret the panorama images.
+            Make the smallest possible edit to the JSON payload and keep all
+            unchanged fields exactly as they are unless they are directly related
+            to the listed error(s).
+
+            Important repair rules:
+            - Return one complete corrected JSON object only.
+            - Do not return a patch, explanation, markdown, or code fences.
+            - Keep the same top-level schema.
+            - If a required key is missing from one object, add only that key
+              with a valid value.
+            - If an object has an extra key, remove only the extra key.
+            - If an id list is wrong, use the expected ids in the repair context.
+            - If new_edges[].exist_prob is missing, add a value in (0, 1]. For a
+              VZ edge connected to a visible or invisible region, a reasonable
+              default is that region's exist_prob. If no region probability is
+              available, use 0.5. For a VV edge, use 0.5 unless the current
+              payload already provides clearer evidence.
+            - Do not delete a new edge only because exist_prob is missing.
+            - Do not change fixed detections unless the validation error says
+              detections do not match the fixed detections.
+            - Do not add current viewpoint ids to viewpoint_target_probs.
+            - Do not add viewpoint ids outside current_step_allowed_viewpoint_ids
+              to viewpoint_node_assigns.
+
+            Repair context and current payload:
+            {repair_context_json}
+            """)
+            .strip()
+            .format(
+                error_text=error_text,
+                repair_context_json=json.dumps(
+                    repair_context,
+                    indent=2,
+                    sort_keys=True,
+                ),
+            )
+        )
+
+    def _request_semantic_payload_repair(
+        self,
+        payload: Dict[str, object],
+        validation_errors: List[str],
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph_summary: Optional[Dict[str, object]] = None,
+        fixed_detections: Optional[List[Dict[str, object]]] = None,
+    ) -> Dict[str, object]:
+        """Ask the MLLM for a small text-only JSON repair.
+
+        This avoids re-running the full image-based graph generation call when
+        the output only needs a local schema or value correction.
+        """
+        if self.client is None:
+            raise RuntimeError(
+                "No MLLM API client is available for semantic payload repair. "
+                "Environment variable %s is not set." % self.api_key_env
+            )
+
+        system_message = dedent("""
+            You are a JSON repair module for semantic graph validation. Fix only
+            the listed validation errors in the supplied JSON payload. Return one
+            complete corrected JSON object and nothing else.
+            """).strip()
+
+        user_message = self._build_semantic_payload_repair_user_message(
+            payload=payload,
+            validation_errors=validation_errors,
+            agent_observations=agent_observations,
+            targets=targets,
+            graph_summary=graph_summary,
+            fixed_detections=fixed_detections,
+        )
+
+        messages = [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message},
+        ]
+
+        decoded = self._request_completion(
+            messages=messages,
+            model_name=getattr(self, "graph_model_name", ""),
+        )
+        raw = self._strip_code_fences(decoded)
+        repaired_payload = self._extract_json_object(raw)
+        if repaired_payload is None:
+            raise ValueError("Failed to parse repaired semantic JSON output.")
+        if not isinstance(repaired_payload, dict):
+            raise TypeError("Repaired semantic payload must be a dictionary.")
+        return repaired_payload
+
+    def _validate_payload_with_text_repair(
+        self,
+        payload: Dict[str, object],
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph_summary: Optional[Dict[str, object]] = None,
+        fixed_detections: Optional[List[Dict[str, object]]] = None,
+        semantic_payload_contract: str = "graph_mllm",
+        max_repair_retries: int = 0,
+        step_index: Optional[int] = None,
+    ) -> Dict[str, object]:
+        """Validate a semantic payload and repair only local validation errors.
+
+        The first validation pass runs all deterministic corrections inside
+        _validate_payload. If validation still fails, this method sends a small
+        text-only repair request that includes the current JSON payload and the
+        validation error. It does not resend panorama images and does not ask for
+        a full graph-generation retry.
+        """
+        current_payload = json.loads(json.dumps(payload))
+        validation_errors: List[str] = []
+
+        for repair_attempt in range(int(max_repair_retries) + 1):
+            attempt_payload = json.loads(json.dumps(current_payload))
+            try:
+                return self._validate_payload(
+                    payload=attempt_payload,
+                    agent_observations=agent_observations,
+                    targets=targets,
+                    graph_summary=graph_summary,
+                    fixed_detections=fixed_detections,
+                    semantic_payload_contract=semantic_payload_contract,
+                )
+            except Exception as exc:
+                error_message = str(exc)
+                current_payload = attempt_payload
+                if error_message not in validation_errors:
+                    validation_errors.append(error_message)
+
+                if repair_attempt >= int(max_repair_retries):
+                    raise
+
+                if step_index is None:
+                    step_text = ""
+                else:
+                    step_text = " for step %s" % step_index
+
+                print(
+                    "Semantic payload validation failed%s: %s"
+                    % (
+                        step_text,
+                        error_message,
+                    )
+                )
+                print(
+                    "Requesting text-only semantic payload repair, attempt %s of %s."
+                    % (repair_attempt + 1, int(max_repair_retries))
+                )
+
+                request_start_time = time.time()
+                current_payload = self._request_semantic_payload_repair(
+                    payload=current_payload,
+                    validation_errors=validation_errors,
+                    agent_observations=agent_observations,
+                    targets=targets,
+                    graph_summary=graph_summary,
+                    fixed_detections=fixed_detections,
+                )
+                print(
+                    "Text-only semantic payload repair%s took %.2f seconds"
+                    % (step_text, time.time() - request_start_time)
+                )
+
+        raise RuntimeError("Unexpected semantic payload repair loop exit.")
+
     def _build_detection_instruction(
         self,
         agent_observations: List[Dict[str, object]],
@@ -1357,8 +1633,6 @@ class MLLMClient:
             fixed_detections=fixed_detections,
         )
 
-        debugpy.breakpoint()  # Debug before requesting MLLM completion.
-
         max_validation_retries = getattr(self, "max_validation_retries", 0)
         validation_errors: List[str] = []
         last_error = None
@@ -1373,12 +1647,19 @@ class MLLMClient:
                     payload = self._extract_json_object(raw)
                     if payload is None:
                         raise ValueError("Failed to parse joint MLLM JSON output")
-                    payload = self._validate_payload(
+                    payload = self._validate_payload_with_text_repair(
                         payload=payload,
                         agent_observations=agent_observations,
                         targets=graph_targets,
                         graph_summary=graph_summary,
                         fixed_detections=fixed_detections,
+                        semantic_payload_contract="saved_materialized",
+                        max_repair_retries=max_validation_retries,
+                        step_index=step_index,
+                    )
+                    self._write_semantic_raw_output(
+                        step_index,
+                        json.dumps(payload, indent=2, sort_keys=True),
                     )
                     self.semantic_raw_output_index = step_index + 1
                     self._write_user_message(step_index, user_message)
@@ -1394,106 +1675,61 @@ class MLLMClient:
                     "Requesting MLLM instead." % step_index
                 )
 
-        # request MLLM completion with retries for validation failures
-        for attempt_index in range(max_validation_retries + 1):
-            if attempt_index == 0:
-                attempt_user_message = user_message
-            else:
-                attempt_user_message = self._build_validation_retry_user_message(
-                    user_message=user_message,
-                    validation_errors=validation_errors,
-                    attempt_index=attempt_index,
-                    max_validation_retries=max_validation_retries,
-                )
+        # Request one full image-based graph generation. If the returned JSON
+        # fails validation, use lightweight text-only repair calls instead of
+        # re-running the full image-based generation.
+        user_content = [{"type": "text", "text": user_message}]
+        user_content.extend(image_content)
 
-            user_content = [{"type": "text", "text": attempt_user_message}]
-            user_content.extend(image_content)
+        messages = [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_content},
+        ]
 
-            messages = [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_content},
-            ]
+        print(f"Requesting completion for step {step_index}")
+        request_start_time = time.time()
+        decoded = self._request_completion(
+            messages=messages,
+            model_name=getattr(self, "graph_model_name", ""),
+        )
+        print(
+            "MLLM completion request for step %s took %.2f seconds"
+            % (step_index, time.time() - request_start_time)
+        )
 
-            if attempt_index == 0:
-                print(f"Requesting completion for step {step_index}")
-            else:
-                print(
-                    "Retrying MLLM completion for step %s after validation "
-                    "failure, attempt %s of %s"
-                    % (step_index, attempt_index, max_validation_retries)
-                )
-            request_start_time = time.time()
-            decoded = self._request_completion(
-                messages=messages,
-                model_name=getattr(self, "graph_model_name", ""),
+        try:
+            raw = self._strip_code_fences(decoded)
+            payload = self._extract_json_object(raw)
+            if payload is None:
+                raise ValueError("Failed to parse joint MLLM JSON output")
+
+            payload = self._validate_payload_with_text_repair(
+                payload=payload,
+                agent_observations=agent_observations,
+                targets=graph_targets,
+                graph_summary=graph_summary,
+                fixed_detections=fixed_detections,
+                semantic_payload_contract="graph_mllm",
+                max_repair_retries=max_validation_retries,
+                step_index=step_index,
             )
-            # print the running time (s) for requesting completion
-            print(
-                "MLLM completion request for step %s took %.2f seconds"
-                % (step_index, time.time() - request_start_time)
+
+            self._write_semantic_raw_output(
+                step_index,
+                json.dumps(payload, indent=2, sort_keys=True),
             )
+            self._write_user_message(step_index, user_message)
 
-            try:
-                raw = self._strip_code_fences(decoded)
-                payload = self._extract_json_object(raw)
-                if payload is None:
-                    raise ValueError("Failed to parse joint MLLM JSON output")
+            self.semantic_raw_output_index = step_index + 1
+            return payload
 
-                payload = self._validate_payload(
-                    payload=payload,
-                    agent_observations=agent_observations,
-                    targets=graph_targets,
-                    graph_summary=graph_summary,
-                    fixed_detections=fixed_detections,
-                )
-
-                # Save only the accepted raw output as the final log for this step.
-                # If a retry succeeds, it overwrites the failed attempt under the
-                # normal step filename, without a retry suffix.
-                self._write_semantic_raw_output(
-                    step_index,
-                    json.dumps(payload, indent=2, sort_keys=True),
-                )
-                self._write_user_message(step_index, attempt_user_message)
-
-                self.semantic_raw_output_index = step_index + 1
-                return payload
-
-            except Exception as exc:
-                last_error = exc
-                error_message = str(exc)
-
-                if error_message not in validation_errors:
-                    validation_errors.append(error_message)
-
-                if attempt_index >= max_validation_retries:
-                    self.semantic_raw_output_index = step_index + 1
-                    accumulated_errors_text = "\n".join(
-                        "%d. %s" % (index + 1, error)
-                        for index, error in enumerate(validation_errors)
-                    )
-                    raise ValueError(
-                        "MLLM output failed validation after %s attempt(s). "
-                        "Accumulated validation errors:\n%s"
-                        % (
-                            max_validation_retries + 1,
-                            accumulated_errors_text,
-                        )
-                    ) from exc
-
-                print(
-                    "MLLM output validation failed on attempt %s of %s: %s"
-                    % (
-                        attempt_index + 1,
-                        max_validation_retries + 1,
-                        str(last_error),
-                    )
-                )
-                debugpy.breakpoint()
-
-        debugpy.breakpoint()  # Debug if the retry loop exits unexpectedly.
-
-        raise RuntimeError("Unexpected retry loop exit.")
+        except Exception as exc:
+            self.semantic_raw_output_index = step_index + 1
+            raise ValueError(
+                "MLLM output failed validation and could not be repaired after "
+                "%s text-only repair attempt(s). Last error: %s"
+                % (max_validation_retries, str(exc))
+            ) from exc
 
     @staticmethod
     def _read_text_file_if_exists(path: str) -> Optional[str]:
@@ -1729,7 +1965,13 @@ class MLLMClient:
         targets: List[Dict[str, object]],
         graph_summary: Optional[Dict[str, object]] = None,
         fixed_detections: Optional[List[Dict[str, object]]] = None,
+        semantic_payload_contract: str = "graph_mllm",
     ) -> Dict[str, object]:
+        if semantic_payload_contract not in {"graph_mllm", "saved_materialized"}:
+            raise ValueError(
+                "Unknown semantic payload contract: %s" % semantic_payload_contract
+            )
+
         required_top_level_keys = {
             "agents",
             "current_viewpoints_reassignment",
@@ -2204,6 +2446,7 @@ class MLLMClient:
 
         expected_mllm_viewpoint_prob_ids = visible_viewpoint_ids - current_viewpoint_ids
         returned_viewpoint_prob_ids = set()
+        returned_current_viewpoint_prob_ids = set()
         normalized_visible_viewpoint_target_probs = []
 
         for item in viewpoint_target_probs:
@@ -2219,17 +2462,31 @@ class MLLMClient:
             viewpoint_id = int(item["id"])
 
             if viewpoint_id in current_viewpoint_ids:
-                raise ValueError(
-                    "viewpoint_target_probs id %s is a current viewpoint. "
-                    "Current viewpoint target_probs are filled from fixed detections "
-                    "and must not be returned by the graph MLLM." % viewpoint_id
+                if semantic_payload_contract == "graph_mllm":
+                    raise ValueError(
+                        "viewpoint_target_probs id %s is a current viewpoint. "
+                        "Current viewpoint target_probs are filled from fixed detections "
+                        "and must not be returned by the graph MLLM." % viewpoint_id
+                    )
+
+                if viewpoint_id in returned_current_viewpoint_prob_ids:
+                    raise ValueError(
+                        "Duplicated current viewpoint_target_probs id %s."
+                        % viewpoint_id
+                    )
+
+                validate_target_probs_current_viewpoint(
+                    viewpoint_id,
+                    item["target_probs"],
+                    "saved current viewpoint %s" % viewpoint_id,
                 )
+                returned_current_viewpoint_prob_ids.add(viewpoint_id)
+                continue
 
             if viewpoint_id not in expected_mllm_viewpoint_prob_ids:
-                debugpy.breakpoint()
                 raise ValueError(
-                    "viewpoint_target_probs id %s is not a non-current visible "
-                    "neighboring viewpoint." % viewpoint_id
+                    "viewpoint_target_probs id %s is not a current viewpoint or "
+                    "non-current visible neighboring viewpoint." % viewpoint_id
                 )
 
             if viewpoint_id in returned_viewpoint_prob_ids:
@@ -2290,7 +2547,100 @@ class MLLMClient:
         )
         viewpoint_target_probs = payload["viewpoint_target_probs"]
 
-        assigned_viewpoint_to_region = {}
+        # Build a one-to-one viewpoint-to-region map. If the MLLM assigns the
+        # same viewpoint to multiple regions, correct this locally instead of
+        # failing validation and re-querying the MLLM. The correction chooses the
+        # candidate region whose current agent viewpoint is closest to the shared
+        # visible viewpoint. This handles cases such as viewpoint 32 being visible
+        # from both viewpoint 16 and viewpoint 20.
+        nearest_current_region_by_viewpoint = {}
+        for observation in agent_observations:
+            agent_id = str(observation["agent_id"])
+            current_viewpoint_id = int(observation["current_viewpoint_index"])
+            current_region_id = agent_current_region[agent_id]
+
+            for visible_item in observation.get("visible_viewpoints", []):
+                viewpoint_id = int(visible_item["viewpoint_index"])
+
+                try:
+                    distance = float(visible_item.get("distance", float("inf")))
+                except (TypeError, ValueError):
+                    distance = float("inf")
+
+                previous_candidate = nearest_current_region_by_viewpoint.get(
+                    viewpoint_id
+                )
+                candidate = {
+                    "distance": distance,
+                    "current_viewpoint_id": current_viewpoint_id,
+                    "region_id": current_region_id,
+                }
+
+                if previous_candidate is None:
+                    nearest_current_region_by_viewpoint[viewpoint_id] = candidate
+                    continue
+
+                previous_key = (
+                    float(previous_candidate["distance"]),
+                    int(previous_candidate["current_viewpoint_id"]),
+                    int(previous_candidate["region_id"]),
+                )
+                candidate_key = (
+                    distance,
+                    current_viewpoint_id,
+                    current_region_id,
+                )
+
+                if candidate_key < previous_key:
+                    nearest_current_region_by_viewpoint[viewpoint_id] = candidate
+
+        def choose_region_for_duplicated_assignment(
+            viewpoint_id: int,
+            candidate_region_ids: List[int],
+        ) -> int:
+            unique_candidate_region_ids = []
+            for region_id in candidate_region_ids:
+                if region_id not in unique_candidate_region_ids:
+                    unique_candidate_region_ids.append(region_id)
+
+            if len(unique_candidate_region_ids) == 1:
+                return unique_candidate_region_ids[0]
+
+            # Current viewpoints are governed by agents[].current_region_node_id.
+            if viewpoint_id in current_viewpoint_ids:
+                current_regions = []
+                for observation in agent_observations:
+                    if int(observation["current_viewpoint_index"]) != viewpoint_id:
+                        continue
+                    agent_id = str(observation["agent_id"])
+                    current_regions.append(agent_current_region[agent_id])
+
+                for region_id in current_regions:
+                    if region_id in unique_candidate_region_ids:
+                        return region_id
+
+            # If the graph already has a fixed non-current assignment and the MLLM
+            # included that region among the candidates, keep the fixed assignment.
+            # If the fixed region is missing from the MLLM output, the existing
+            # fixed-assignment correction below can still restore it.
+            fixed_region_id = graph_viewpoint_to_region.get(viewpoint_id)
+            if fixed_region_id in unique_candidate_region_ids:
+                return fixed_region_id
+
+            # Otherwise, choose the region associated with the closest current
+            # agent viewpoint that sees this shared visible viewpoint.
+            nearest_candidate = nearest_current_region_by_viewpoint.get(viewpoint_id)
+            if nearest_candidate is not None:
+                nearest_region_id = int(nearest_candidate["region_id"])
+                if nearest_region_id in unique_candidate_region_ids:
+                    return nearest_region_id
+
+            # Deterministic fallback: preserve the first region where the MLLM
+            # placed this viewpoint.
+            return unique_candidate_region_ids[0]
+
+        assignment_candidates_by_viewpoint = {}
+        assignment_region_order = []
 
         for item in viewpoint_node_assigns:
             item = require_dict(item, "viewpoint_node_assigns[] item")
@@ -2309,11 +2659,15 @@ class MLLMClient:
                     % region_node_id
                 )
 
+            if region_node_id not in assignment_region_order:
+                assignment_region_order.append(region_node_id)
+
             assigned_ids = require_list(
                 item["assigned_viewpoint_node_indices"],
                 "assigned_viewpoint_node_indices",
             )
 
+            seen_ids_in_this_region = set()
             for viewpoint_id_raw in assigned_ids:
                 viewpoint_id = int(viewpoint_id_raw)
 
@@ -2323,15 +2677,170 @@ class MLLMClient:
                         "visible neighboring viewpoint." % viewpoint_id
                     )
 
-                if viewpoint_id in assigned_viewpoint_to_region:
-                    raise ValueError(
-                        "Viewpoint id %s appears in more than one "
-                        "assigned_viewpoint_node_indices list." % viewpoint_id
+                if viewpoint_id in seen_ids_in_this_region:
+                    continue
+                seen_ids_in_this_region.add(viewpoint_id)
+
+                assignment_candidates_by_viewpoint.setdefault(viewpoint_id, []).append(
+                    region_node_id
+                )
+
+        returned_assignment_viewpoint_ids = set(assignment_candidates_by_viewpoint)
+
+        def ensure_visible_region_available(region_id: int) -> bool:
+            """Ensure a region can receive assigned viewpoints.
+
+            Assigned viewpoints must not be attached to invisible regions. If the
+            selected region already exists as an invisible region, move it to
+            visible_region_nodes. If it exists only in the graph summary, restore
+            a visible region record from the graph summary.
+            """
+            nonlocal all_region_ids
+
+            region_id = int(region_id)
+            if region_id in visible_region_ids:
+                return True
+
+            if region_id in invisible_region_ids:
+                for region in list(invisible_region_nodes):
+                    if int(region["id"]) != region_id:
+                        continue
+
+                    invisible_region_nodes.remove(region)
+                    invisible_region_ids.remove(region_id)
+                    visible_region_nodes.append(region)
+                    visible_region_ids.add(region_id)
+                    all_region_ids = visible_region_ids | invisible_region_ids
+                    return True
+
+            if region_id in graph_region_records:
+                visible_region_nodes.append(make_region_record_from_graph(region_id))
+                visible_region_ids.add(region_id)
+                all_region_ids = visible_region_ids | invisible_region_ids
+                return True
+
+            return False
+
+        def choose_region_for_missing_assignment(viewpoint_id: int) -> int:
+            """Choose a local repair region for a missing viewpoint assignment."""
+            viewpoint_id = int(viewpoint_id)
+
+            # Current viewpoints must stay in their agent current regions.
+            if viewpoint_id in current_viewpoint_ids:
+                candidate_region_ids = []
+                for observation in agent_observations:
+                    if int(observation["current_viewpoint_index"]) != viewpoint_id:
+                        continue
+                    agent_id = str(observation["agent_id"])
+                    candidate_region_ids.append(agent_current_region[agent_id])
+
+                for region_id in candidate_region_ids:
+                    if ensure_visible_region_available(region_id):
+                        return int(region_id)
+
+            # Non-current visible viewpoints should reuse the graph-summary
+            # assignment when it exists, because the prompt treats it as fixed.
+            fixed_region_id = graph_viewpoint_to_region.get(viewpoint_id)
+            if fixed_region_id is not None:
+                if ensure_visible_region_available(fixed_region_id):
+                    return int(fixed_region_id)
+
+            # Otherwise, attach the missing visible viewpoint to the region of the
+            # closest current agent viewpoint that observes it. This fixes cases
+            # such as missing viewpoint 15 by assigning it to agent1's current
+            # region 107 when viewpoint 15 is visible from agent1.
+            nearest_candidate = nearest_current_region_by_viewpoint.get(viewpoint_id)
+            if nearest_candidate is not None:
+                nearest_region_id = int(nearest_candidate["region_id"])
+                if ensure_visible_region_available(nearest_region_id):
+                    return nearest_region_id
+
+            # Final deterministic fallback: use the smallest visible current
+            # agent region. This should rarely be used because every expected id
+            # is either current or visible from some current viewpoint.
+            fallback_region_ids = sorted(
+                {
+                    int(region_id)
+                    for region_id in agent_current_region.values()
+                    if int(region_id) in visible_region_ids
+                }
+            )
+            if fallback_region_ids:
+                return fallback_region_ids[0]
+
+            raise ValueError(
+                "Cannot locally repair missing assignment for viewpoint %s because "
+                "no valid visible region can be selected." % viewpoint_id
+            )
+
+        missing_assignment_viewpoint_ids = sorted(
+            all_current_step_viewpoint_ids - returned_assignment_viewpoint_ids
+        )
+        if missing_assignment_viewpoint_ids:
+            repaired_missing_assignments = []
+            for viewpoint_id in missing_assignment_viewpoint_ids:
+                repaired_region_id = choose_region_for_missing_assignment(viewpoint_id)
+                assignment_candidates_by_viewpoint.setdefault(viewpoint_id, []).append(
+                    repaired_region_id
+                )
+                if repaired_region_id not in assignment_region_order:
+                    assignment_region_order.append(repaired_region_id)
+
+                nearest_candidate = nearest_current_region_by_viewpoint.get(
+                    viewpoint_id
+                )
+                repaired_missing_assignments.append(
+                    {
+                        "viewpoint_id": int(viewpoint_id),
+                        "assigned_region_id": int(repaired_region_id),
+                        "nearest_current_viewpoint_id": (
+                            int(nearest_candidate["current_viewpoint_id"])
+                            if nearest_candidate is not None
+                            else None
+                        ),
+                        "nearest_distance": (
+                            float(nearest_candidate["distance"])
+                            if nearest_candidate is not None
+                            else None
+                        ),
+                    }
+                )
+
+            print("Corrected missing viewpoint assignments:")
+            for repair_record in repaired_missing_assignments:
+                if repair_record["nearest_current_viewpoint_id"] is None:
+                    print(
+                        "  Viewpoint %s assigned to region %s."
+                        % (
+                            repair_record["viewpoint_id"],
+                            repair_record["assigned_region_id"],
+                        )
+                    )
+                else:
+                    print(
+                        "  Viewpoint %s assigned to region %s. Nearest current "
+                        "viewpoint: %s at distance %s."
+                        % (
+                            repair_record["viewpoint_id"],
+                            repair_record["assigned_region_id"],
+                            repair_record["nearest_current_viewpoint_id"],
+                            repair_record["nearest_distance"],
+                        )
                     )
 
-                assigned_viewpoint_to_region[viewpoint_id] = region_node_id
+            returned_assignment_viewpoint_ids = set(assignment_candidates_by_viewpoint)
 
-        returned_assignment_viewpoint_ids = set(assigned_viewpoint_to_region)
+        extra_assignment_viewpoint_ids = sorted(
+            returned_assignment_viewpoint_ids - all_current_step_viewpoint_ids
+        )
+        if extra_assignment_viewpoint_ids:
+            raise ValueError(
+                "Returned assigned viewpoint ids %s contain ids outside expected ids %s."
+                % (
+                    extra_assignment_viewpoint_ids,
+                    sorted(all_current_step_viewpoint_ids),
+                )
+            )
 
         if returned_assignment_viewpoint_ids != all_current_step_viewpoint_ids:
             raise ValueError(
@@ -2341,6 +2850,44 @@ class MLLMClient:
                     sorted(all_current_step_viewpoint_ids),
                 )
             )
+
+        assigned_viewpoint_to_region = {}
+        deduplicated_assignments = []
+
+        for viewpoint_id in sorted(assignment_candidates_by_viewpoint):
+            candidate_region_ids = assignment_candidates_by_viewpoint[viewpoint_id]
+            chosen_region_id = choose_region_for_duplicated_assignment(
+                viewpoint_id=viewpoint_id,
+                candidate_region_ids=candidate_region_ids,
+            )
+            assigned_viewpoint_to_region[viewpoint_id] = chosen_region_id
+
+            removed_region_ids = [
+                region_id
+                for region_id in candidate_region_ids
+                if region_id != chosen_region_id
+            ]
+            if removed_region_ids:
+                nearest_candidate = nearest_current_region_by_viewpoint.get(
+                    viewpoint_id
+                )
+                deduplicated_assignments.append(
+                    {
+                        "viewpoint_id": viewpoint_id,
+                        "kept_region_id": chosen_region_id,
+                        "removed_region_ids": sorted(set(removed_region_ids)),
+                        "nearest_current_viewpoint_id": (
+                            int(nearest_candidate["current_viewpoint_id"])
+                            if nearest_candidate is not None
+                            else None
+                        ),
+                        "nearest_distance": (
+                            float(nearest_candidate["distance"])
+                            if nearest_candidate is not None
+                            else None
+                        ),
+                    }
+                )
 
         # Fix visible neighboring viewpoint assignments when the graph summary
         # already gives a fixed viewpoint_to_region mapping. Current viewpoints
@@ -2502,6 +3049,16 @@ class MLLMClient:
                     % (viewpoint_id, old_region_id, fixed_region_id)
                 )
 
+        if deduplicated_assignments:
+            print("Corrected duplicated viewpoint assignments:")
+            for correction in deduplicated_assignments:
+                print(
+                    "  Viewpoint %(viewpoint_id)s kept in region %(kept_region_id)s "
+                    "and removed from regions %(removed_region_ids)s. "
+                    "Nearest current viewpoint: %(nearest_current_viewpoint_id)s "
+                    "at distance %(nearest_distance)s." % correction
+                )
+
         for observation in agent_observations:
             agent_id = str(observation["agent_id"])
             current_viewpoint_id = int(observation["current_viewpoint_index"])
@@ -2591,10 +3148,51 @@ class MLLMClient:
         cleaned_new_edges = []
         removed_new_edges = []
 
-        for edge in new_edges:
+        region_exist_prob_by_id = {}
+        for region in visible_region_nodes + invisible_region_nodes:
+            if not isinstance(region, dict):
+                continue
+            try:
+                region_id = int(region["id"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            region_exist_prob = region.get("exist_prob")
+            if is_number(region_exist_prob) and 0.0 < float(region_exist_prob) <= 1.0:
+                region_exist_prob_by_id[region_id] = float(region_exist_prob)
+
+        for edge_index, edge in enumerate(new_edges):
             edge = require_dict(edge, "new_edges[] item")
 
             expected_keys = {"i", "j", "edge_type", "exist_prob", "dist"}
+
+            # Local correction for a common small schema error: the MLLM creates
+            # a valid edge object but forgets exist_prob. Add only the missing
+            # value instead of failing validation and triggering any retry.
+            if "exist_prob" not in edge and {"i", "j", "edge_type", "dist"}.issubset(
+                edge
+            ):
+                inferred_exist_prob = 0.5
+                edge_type_for_default = str(edge.get("edge_type", "")).strip().upper()
+
+                if edge_type_for_default == "VZ":
+                    endpoint_ids = []
+                    for endpoint_key in ("i", "j"):
+                        try:
+                            endpoint_ids.append(int(edge[endpoint_key]))
+                        except (KeyError, TypeError, ValueError):
+                            pass
+
+                    for endpoint_id in endpoint_ids:
+                        if endpoint_id in region_exist_prob_by_id:
+                            inferred_exist_prob = region_exist_prob_by_id[endpoint_id]
+                            break
+
+                edge["exist_prob"] = float(inferred_exist_prob)
+                print(
+                    "Corrected new_edges[%s] by adding missing exist_prob=%.4f."
+                    % (edge_index, inferred_exist_prob)
+                )
+
             if set(edge) != expected_keys:
                 raise KeyError(
                     "new_edges item keys %s do not match expected keys %s."
