@@ -226,6 +226,8 @@ class MLLMClient:
             Do not explain the errors.
             Keep the same schema and all original rules.
             Fix all listed validation errors at the same time.
+
+            If an error mentions expected current-step viewpoint ids, use exactly that expected id list for both viewpoint_target_probs and viewpoint_node_assigns. Do not include old viewpoint ids copied from compact shared graph summary.
             """).strip()
 
         return (
@@ -781,6 +783,21 @@ class MLLMClient:
                 }
             )
 
+        current_viewpoint_ids_for_prompt = {
+            int(observation["current_viewpoint_index"])
+            for observation in agent_observations
+        }
+
+        visible_viewpoint_ids_for_prompt = {
+            int(item["viewpoint_index"])
+            for observation in agent_observations
+            for item in observation.get("visible_viewpoints", [])
+        }
+
+        current_step_allowed_viewpoint_ids = sorted(
+            current_viewpoint_ids_for_prompt | visible_viewpoint_ids_for_prompt
+        )
+
         target_prob_template = {target_id: 0.01 for target_id in target_ids}
         current_viewpoint_detection_template = {
             target_id: 0.0 for target_id in target_ids
@@ -942,10 +959,13 @@ class MLLMClient:
                 "Values must be in (0, 1]. Do not use 0.0."
             ),
             "viewpoint_target_probs": (
-                "Target-location scores for every distinct current viewpoint and visible "
-                "neighboring viewpoint in the current step. Current viewpoint entries are "
-                "binary direct-detection evidence. Visible-neighbor entries are soft "
-                "prior scores."
+                "Target-location scores for exactly the Current-step allowed viewpoint ids. "
+                "This set includes every current viewpoint and every distinct visible "
+                "neighboring viewpoint from the per-agent observation context. Do not include "
+                "any other viewpoint id, even if it appears in compact shared graph summary, "
+                "nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region. Current "
+                "viewpoint entries are binary direct-detection evidence. Visible-neighbor "
+                "entries are soft prior scores."
             ),
             "viewpoint_target_probs[].id": (
                 "Integer viewpoint id. It must be either a current viewpoint or a visible "
@@ -959,16 +979,17 @@ class MLLMClient:
                 "(0, 1] and do not use 0.0."
             ),
             "viewpoint_node_assigns": (
-                "Region-centered viewpoint assignments for the current step. Every "
-                "current viewpoint and every distinct visible neighboring viewpoint must "
-                "appear exactly once. Current viewpoints must be assigned to their agents' "
-                "current_region_node_id, inferred from the current panorama. If a current "
-                "viewpoint already has an old graph_summary.viewpoint_to_region assignment, "
-                "treat it only as prior information, not a fixed rule. Reuse that old region "
-                "only if it still matches the current panorama; otherwise reuse another "
-                "matching existing region or create a new visible_region_node. For non-current "
-                "visible neighboring viewpoints already listed in graph_summary.viewpoint_to_region, "
-                "reuse that fixed region assignment exactly."
+                "Region-centered viewpoint assignments for the current step. The assigned "
+                "viewpoint ids across all items must be exactly the Current-step allowed "
+                "viewpoint ids, no more and no fewer. Do not include any other viewpoint id, "
+                "even if it appears in compact shared graph summary, nodes, edges, region "
+                "assigned_viewpoint_ids, or viewpoint_to_region. Current viewpoints must be "
+                "assigned to their agents' current_region_node_id, inferred from the current "
+                "panorama. If a current viewpoint already has an old "
+                "graph_summary.viewpoint_to_region assignment, treat it only as prior "
+                "information, not as a fixed rule. For non-current visible neighboring "
+                "viewpoints already listed in graph_summary.viewpoint_to_region, reuse that "
+                "fixed region assignment exactly."
             ),
             "viewpoint_node_assigns[].region_node_id": (
                 "Region id containing the assigned viewpoints. If it is a current_region_node_id, "
@@ -1122,6 +1143,15 @@ class MLLMClient:
 
                 Per-agent observation context:
                 {agent_context_json}
+                
+                Strict allowed-id rule:
+                - viewpoint_node_assigns must contain exactly the Current-step allowed viewpoint ids above, no more and no fewer.
+                - viewpoint_target_probs must contain exactly the Current-step allowed viewpoint ids above, no more and no fewer.
+                - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
+                - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
+
+                Current-step allowed viewpoint ids:
+                {current_step_allowed_viewpoint_ids_json}
 
                 Fixed direct detections from the separate detection step:
                 {fixed_detections_json}
@@ -1144,8 +1174,9 @@ class MLLMClient:
                 - If the prior region label still matches, keep the assignment and do not include that viewpoint in current_viewpoints_reassignment.
                 - If the prior region label does not match, assign the viewpoint to the better-matching region and add one current_viewpoints_reassignment item.
                 - If a reassigned region is newly proposed, include its full region node record in visible_region_nodes.
-                - Include every current viewpoint and every distinct visible neighboring viewpoint exactly once in viewpoint_node_assigns.
-                - Include every current viewpoint and every distinct visible neighboring viewpoint in viewpoint_target_probs.
+                - Include exactly the Current-step allowed viewpoint ids in viewpoint_node_assigns, no more and no fewer.
+                - Include exactly the Current-step allowed viewpoint ids in viewpoint_target_probs, no more and no fewer.
+                - Do not copy old viewpoint ids from graph_summary region assigned_viewpoint_ids.
                 - For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.
                 - For visible neighboring viewpoint target_probs, use soft positive target-location scores.
                 - Estimate region target_probs using active target_id keys and active target descriptions.
@@ -1172,6 +1203,9 @@ class MLLMClient:
                 schema_json=json.dumps(schema, indent=2, sort_keys=True),
                 field_descriptions_json=json.dumps(
                     field_descriptions, indent=2, sort_keys=True
+                ),
+                current_step_allowed_viewpoint_ids_json=json.dumps(
+                    current_step_allowed_viewpoint_ids, indent=2
                 ),
             )
         )
