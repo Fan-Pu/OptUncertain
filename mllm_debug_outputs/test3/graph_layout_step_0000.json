@@ -49,6 +49,12 @@
       "type": "vv"
     },
     {
+      "grounded": false,
+      "i": 16,
+      "j": 21,
+      "type": "vv"
+    },
+    {
       "grounded": true,
       "i": 19,
       "j": 37,
@@ -137,7 +143,8 @@
     },
     {
       "connected_node_ids": [
-        0
+        0,
+        21
       ],
       "grounded": false,
       "id": 16,
@@ -177,7 +184,8 @@
     },
     {
       "connected_node_ids": [
-        0
+        0,
+        16
       ],
       "grounded": false,
       "id": 21,
@@ -285,16 +293,13 @@
     {
       "assigned_viewpoint_ids": [
         0,
-        14,
-        20,
-        21,
-        23,
-        34
+        16,
+        21
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 100,
-      "label": "modern living area with coffee table and sofa",
+      "label": "modern living area with sofa and large art",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -308,7 +313,22 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 101,
-      "label": "dark textured bedroom area with large bed",
+      "label": "dark textured lounge area near doorway",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        14,
+        20,
+        23,
+        26,
+        34
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 102,
+      "label": "bright bedroom area with large windows",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -323,20 +343,17 @@
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 102,
-      "label": "white hallway area with multiple doorways",
+      "id": 103,
+      "label": "white minimalist dining or kitchen area",
       "node_visit_times": 0,
       "type": "region"
     },
     {
-      "assigned_viewpoint_ids": [
-        16,
-        26
-      ],
+      "assigned_viewpoint_ids": [],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 103,
-      "label": "bright bedroom area beyond living room doorway",
+      "id": 104,
+      "label": "unseen bathroom area beyond doorway",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -345,11 +362,8 @@
   "region_to_viewpoints": {
     "100": [
       0,
-      14,
-      20,
-      21,
-      23,
-      34
+      16,
+      21
     ],
     "101": [
       9,
@@ -358,35 +372,38 @@
       41
     ],
     "102": [
+      14,
+      20,
+      23,
+      26,
+      34
+    ],
+    "103": [
       5,
       19,
       25,
       28,
       36,
       37
-    ],
-    "103": [
-      16,
-      26
     ]
   },
   "viewpoint_to_region": {
     "0": 100,
-    "5": 102,
+    "5": 103,
     "9": 101,
-    "14": 100,
-    "16": 103,
+    "14": 102,
+    "16": 100,
     "18": 101,
-    "19": 102,
-    "20": 100,
+    "19": 103,
+    "20": 102,
     "21": 100,
-    "23": 100,
-    "25": 102,
-    "26": 103,
-    "28": 102,
-    "34": 100,
-    "36": 102,
-    "37": 102,
+    "23": 102,
+    "25": 103,
+    "26": 102,
+    "28": 103,
+    "34": 102,
+    "36": 103,
+    "37": 103,
     "40": 101,
     "41": 101
   }

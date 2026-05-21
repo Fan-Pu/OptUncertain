@@ -227,7 +227,9 @@ class MLLMClient:
             Keep the same schema and all original rules.
             Fix all listed validation errors at the same time.
 
-            If an error mentions expected current-step viewpoint ids, use exactly that expected id list for both viewpoint_target_probs and viewpoint_node_assigns. Do not include old viewpoint ids copied from compact shared graph summary.
+            If an error mentions expected non-current visible neighboring viewpoint ids, use exactly that expected id list for viewpoint_target_probs.
+            If an error mentions expected current-step viewpoint ids or expected assigned viewpoint ids, use exactly that expected id list for viewpoint_node_assigns.
+            Do not include old viewpoint ids copied from compact shared graph summary.
             """).strip()
 
         return (
@@ -802,6 +804,14 @@ class MLLMClient:
             visible_viewpoint_ids_for_prompt - current_viewpoint_ids_for_prompt
         )
 
+        required_viewpoint_target_probs_skeleton = [
+            {
+                "id": viewpoint_id,
+                "target_probs": {target_id: 0.01 for target_id in target_ids},
+            }
+            for viewpoint_id in viewpoint_target_prob_ids_for_prompt
+        ]
+
         target_prob_template = {target_id: 0.01 for target_id in target_ids}
 
         example_agent_id = agent_context[0]["agent_id"] if agent_context else "agent0"
@@ -961,8 +971,8 @@ class MLLMClient:
                 "by code from the fixed direct detections after graph generation."
             ),
             "viewpoint_target_probs[].id": (
-                "Integer viewpoint id. It must be either a current viewpoint or a visible "
-                "neighboring viewpoint from the observation context."
+                "Integer viewpoint id. It must be a non-current visible neighboring "
+                "viewpoint from the observation context. Do not include current viewpoint ids."
             ),
             "viewpoint_target_probs[].target_probs": (
                 "Dictionary keyed by every active target_id. Use soft scores in (0, 1]. "
@@ -1105,7 +1115,6 @@ class MLLMClient:
             - invisible_region_nodes include only completely unseen regions inferred from layout cues. If any part of a region is visible, it is not invisible.
             - Do not assign viewpoints to invisible_region_nodes. A region with assigned viewpoints must be in visible_region_nodes.
             - A region id must appear in only one of visible_region_nodes or invisible_region_nodes.
-            - Use at most 5 current-step region nodes total.
             - Region labels must be room or area labels, not object names. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names. Avoid generic labels unless they include both appearance and relative location cues.
             - Detections are fixed by a separate detection step. The fixed direct detections provided here already exclude found and completed targets. Copy them exactly from the fixed direct detections in the user message. 
             - Region target_probs and non-current visible-neighbor viewpoint target_probs must contain every active target_id with values in (0, 1]. Do not generate target_probs for current viewpoints. Current-viewpoint target_probs are filled by code from the fixed direct detections.
@@ -1144,6 +1153,17 @@ class MLLMClient:
                 Current-step allowed viewpoint ids:
                 {current_step_allowed_viewpoint_ids_json}
                 
+                Required viewpoint_target_probs id skeleton:
+                {required_viewpoint_target_probs_skeleton_json}
+
+                Rule:
+                - You must output one viewpoint_target_probs item for every id in this skeleton.
+                - Keep exactly these ids.
+                - These ids are non-current visible neighboring viewpoints only.
+                - Use soft positive target-location scores in (0, 1] for every active target.
+                - Do not include current viewpoint ids.
+                - Do not delete any skeleton item.
+                
                 Non-current visible neighboring viewpoint ids for viewpoint_target_probs:
                 {viewpoint_target_prob_ids_json}
 
@@ -1168,10 +1188,10 @@ class MLLMClient:
                 - If the prior region label still matches, keep the assignment and do not include that viewpoint in current_viewpoints_reassignment.
                 - If the prior region label does not match, assign the viewpoint to the better-matching region and add one current_viewpoints_reassignment item.
                 - If a reassigned region is newly proposed, include its full region node record in visible_region_nodes.
-                - Include exactly the non-current visible neighboring viewpoint ids in viewpoint_target_probs, no more and no fewer.
+                - For viewpoint_target_probs, follow the Required viewpoint_target_probs id skeleton exactly: keep every listed id and do not add any other id.
                 - Do not include current viewpoint ids in viewpoint_target_probs.
                 - Do not copy old viewpoint ids from graph_summary region assigned_viewpoint_ids.
-                - For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.
+                - Current-viewpoint target_probs are filled by code from fixed direct detections, so do not generate them.
                 - For visible neighboring viewpoint target_probs, use soft positive target-location scores.
                 - Estimate region target_probs using active target_id keys and active target descriptions.
                 - Do not include found or completed targets in target_probs, detections, or existence hypotheses.
@@ -1203,6 +1223,9 @@ class MLLMClient:
                 ),
                 viewpoint_target_prob_ids_json=json.dumps(
                     viewpoint_target_prob_ids_for_prompt, indent=2
+                ),
+                required_viewpoint_target_probs_skeleton_json=json.dumps(
+                    required_viewpoint_target_probs_skeleton, indent=2, sort_keys=True
                 ),
             )
         )
@@ -1789,6 +1812,7 @@ class MLLMClient:
         expected_agent_ids = set(observation_by_agent)
 
         target_ids = {str(target["target_id"]) for target in targets}
+        ordered_target_ids = [str(target["target_id"]) for target in targets]
         if len(target_ids) != len(targets):
             raise ValueError("Target ids must be unique.")
 
@@ -2116,13 +2140,6 @@ class MLLMClient:
         visible_region_ids = set()
         invisible_region_ids = set()
 
-        total_region_count = len(visible_region_nodes) + len(invisible_region_nodes)
-        if total_region_count > 5:
-            raise ValueError(
-                "At most 5 current-step semantic regions are allowed, got %s."
-                % total_region_count
-            )
-
         for region_key, region_list, region_id_set in (
             ("visible_region_nodes", visible_region_nodes, visible_region_ids),
             (
@@ -2185,7 +2202,9 @@ class MLLMClient:
                     % (agent_id, current_region_node_id)
                 )
 
+        expected_mllm_viewpoint_prob_ids = visible_viewpoint_ids - current_viewpoint_ids
         returned_viewpoint_prob_ids = set()
+        normalized_visible_viewpoint_target_probs = []
 
         for item in viewpoint_target_probs:
             item = require_dict(item, "viewpoint_target_probs[] item")
@@ -2199,26 +2218,28 @@ class MLLMClient:
 
             viewpoint_id = int(item["id"])
 
-            if viewpoint_id not in all_current_step_viewpoint_ids:
-                debugpy.breakpoint()  # Debug invalid viewpoint_id in viewpoint_target_probs.
+            if viewpoint_id in current_viewpoint_ids:
                 raise ValueError(
-                    "viewpoint_target_probs id %s is not a current viewpoint or "
-                    "visible neighboring viewpoint." % viewpoint_id
+                    "viewpoint_target_probs id %s is a current viewpoint. "
+                    "Current viewpoint target_probs are filled from fixed detections "
+                    "and must not be returned by the graph MLLM." % viewpoint_id
+                )
+
+            if viewpoint_id not in expected_mllm_viewpoint_prob_ids:
+                debugpy.breakpoint()
+                raise ValueError(
+                    "viewpoint_target_probs id %s is not a non-current visible "
+                    "neighboring viewpoint." % viewpoint_id
                 )
 
             if viewpoint_id in returned_viewpoint_prob_ids:
                 raise ValueError(
                     "Duplicated viewpoint_target_probs id %s." % viewpoint_id
                 )
+
             returned_viewpoint_prob_ids.add(viewpoint_id)
 
-            if viewpoint_id in current_viewpoint_ids:
-                validate_target_probs_current_viewpoint(
-                    viewpoint_id,
-                    item["target_probs"],
-                    "current viewpoint %s" % viewpoint_id,
-                )
-            elif viewpoint_id in previously_visited_viewpoint_ids:
+            if viewpoint_id in previously_visited_viewpoint_ids:
                 validate_target_probs_allow_zero(
                     item["target_probs"],
                     "previously visited visible neighboring viewpoint %s"
@@ -2230,15 +2251,44 @@ class MLLMClient:
                     "unvisited visible neighboring viewpoint %s" % viewpoint_id,
                 )
 
-        if returned_viewpoint_prob_ids != all_current_step_viewpoint_ids:
+            normalized_visible_viewpoint_target_probs.append(
+                {
+                    "id": viewpoint_id,
+                    "target_probs": {
+                        target_id: float(item["target_probs"][target_id])
+                        for target_id in ordered_target_ids
+                    },
+                }
+            )
+
+        if returned_viewpoint_prob_ids != expected_mllm_viewpoint_prob_ids:
             raise ValueError(
                 "Returned viewpoint_target_probs ids %s do not match expected "
-                "current-step viewpoint ids %s."
+                "non-current visible neighboring viewpoint ids %s."
                 % (
                     sorted(returned_viewpoint_prob_ids),
-                    sorted(all_current_step_viewpoint_ids),
+                    sorted(expected_mllm_viewpoint_prob_ids),
                 )
             )
+
+        current_viewpoint_target_probs = []
+        for viewpoint_id in sorted(current_viewpoint_ids):
+            expected_detection = current_viewpoint_detection[viewpoint_id]
+
+            current_viewpoint_target_probs.append(
+                {
+                    "id": viewpoint_id,
+                    "target_probs": {
+                        target_id: 1.0 if expected_detection[target_id] else 0.0
+                        for target_id in ordered_target_ids
+                    },
+                }
+            )
+
+        payload["viewpoint_target_probs"] = (
+            current_viewpoint_target_probs + normalized_visible_viewpoint_target_probs
+        )
+        viewpoint_target_probs = payload["viewpoint_target_probs"]
 
         assigned_viewpoint_to_region = {}
 
@@ -2439,13 +2489,6 @@ class MLLMClient:
                     "  Viewpoint %s reassigned from old region %s to new region %s."
                     % (viewpoint_id, old_region_id, new_region_id)
                 )
-
-        if len(visible_region_nodes) + len(invisible_region_nodes) > 5:
-            raise ValueError(
-                "Fixed assignment correction requires %s current-step regions, "
-                "which exceeds the maximum of 5."
-                % (len(visible_region_nodes) + len(invisible_region_nodes))
-            )
 
         if corrected_assignments:
             print("Corrected fixed non-current viewpoint assignments:")

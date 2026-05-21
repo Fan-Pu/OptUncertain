@@ -141,7 +141,8 @@ Per-agent observation context:
 
 Strict allowed-id rule:
 - viewpoint_node_assigns must contain exactly the Current-step allowed viewpoint ids above, no more and no fewer.
-- viewpoint_target_probs must contain exactly the Current-step allowed viewpoint ids above, no more and no fewer.
+- viewpoint_target_probs must contain exactly the non-current visible neighboring viewpoint ids below, no more and no fewer.
+- Do not include current viewpoint ids in viewpoint_target_probs.
 - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
 - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
 
@@ -163,6 +164,176 @@ Current-step allowed viewpoint ids:
   34,
   36,
   37,
+  40,
+  41
+]
+
+Required viewpoint_target_probs id skeleton:
+[
+  {
+    "id": 5,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 14,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 16,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 18,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 19,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 20,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 21,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 25,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 26,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 28,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 34,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 36,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 40,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  },
+  {
+    "id": 41,
+    "target_probs": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.01,
+      "3": 0.01,
+      "4": 0.01
+    }
+  }
+]
+
+Rule:
+- You must output one viewpoint_target_probs item for every id in this skeleton.
+- Keep exactly these ids.
+- These ids are non-current visible neighboring viewpoints only.
+- Use soft positive target-location scores in (0, 1] for every active target.
+- Do not include current viewpoint ids.
+- Do not delete any skeleton item.
+
+Non-current visible neighboring viewpoint ids for viewpoint_target_probs:
+[
+  5,
+  14,
+  16,
+  18,
+  19,
+  20,
+  21,
+  25,
+  26,
+  28,
+  34,
+  36,
   40,
   41
 ]
@@ -316,16 +487,6 @@ Output schema example. Use keys and value types only. Do not copy example values
   ],
   "viewpoint_target_probs": [
     {
-      "id": 0,
-      "target_probs": {
-        "0": 0.0,
-        "1": 0.0,
-        "2": 0.0,
-        "3": 0.0,
-        "4": 0.0
-      }
-    },
-    {
       "id": 16,
       "target_probs": {
         "0": 0.01,
@@ -381,9 +542,9 @@ Field descriptions:
   "viewpoint_node_assigns": "Region-centered viewpoint assignments for the current step. The assigned viewpoint ids across all items must be exactly the Current-step allowed viewpoint ids, no more and no fewer. Do not include any other viewpoint id, even if it appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region. Current viewpoints must be assigned to their agents' current_region_node_id, inferred from the current panorama. If a current viewpoint already has an old graph_summary.viewpoint_to_region assignment, treat it only as prior information, not as a fixed rule. For non-current visible neighboring viewpoints already listed in graph_summary.viewpoint_to_region, reuse that fixed region assignment exactly.",
   "viewpoint_node_assigns[].assigned_viewpoint_node_indices": "Integer viewpoint ids assigned to this region. Current viewpoints must be assigned to their agents' current_region_node_id.",
   "viewpoint_node_assigns[].region_node_id": "Region id containing the assigned viewpoints. If it is a current_region_node_id, it must be listed in visible_region_nodes.",
-  "viewpoint_target_probs": "Target-location scores for exactly the Current-step allowed viewpoint ids. This set includes every current viewpoint and every distinct visible neighboring viewpoint from the per-agent observation context. Do not include any other viewpoint id, even if it appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region. Current viewpoint entries are binary direct-detection evidence. Visible-neighbor entries are soft prior scores.",
-  "viewpoint_target_probs[].id": "Integer viewpoint id. It must be either a current viewpoint or a visible neighboring viewpoint from the observation context.",
-  "viewpoint_target_probs[].target_probs": "Dictionary keyed by every active target_id. For a current viewpoint, use 1.0 if the active target is directly detected there, otherwise 0.0. This binary rule applies only to current viewpoints. For visible neighboring viewpoints that are not current, use soft scores in (0, 1] and do not use 0.0.",
+  "viewpoint_target_probs": "Target-location scores only for non-current visible neighboring viewpoint ids. Do not include current viewpoint ids. Current viewpoint target_probs are filled by code from the fixed direct detections after graph generation.",
+  "viewpoint_target_probs[].id": "Integer viewpoint id. It must be a non-current visible neighboring viewpoint from the observation context. Do not include current viewpoint ids.",
+  "viewpoint_target_probs[].target_probs": "Dictionary keyed by every active target_id. Use soft scores in (0, 1]. Do not use 0.0 here because current viewpoints are not included in this object.",
   "visible_region_nodes": "Current regions and any semantic area visually observable in current panoramas, even if only partially visible through a doorway, opening, or corridor. Reuse matching existing region ids.",
   "visible_region_nodes[].exist_prob": "Existence probability in (0, 1]. Use 1.0 only for a region containing a current viewpoint.",
   "visible_region_nodes[].id": "Integer region id. Use a new id only for a new physical region.",
@@ -397,10 +558,10 @@ Current step request:
 - If the prior region label still matches, keep the assignment and do not include that viewpoint in current_viewpoints_reassignment.
 - If the prior region label does not match, assign the viewpoint to the better-matching region and add one current_viewpoints_reassignment item.
 - If a reassigned region is newly proposed, include its full region node record in visible_region_nodes.
-- Include exactly the Current-step allowed viewpoint ids in viewpoint_node_assigns, no more and no fewer.
-- Include exactly the Current-step allowed viewpoint ids in viewpoint_target_probs, no more and no fewer.
+- For viewpoint_target_probs, follow the Required viewpoint_target_probs id skeleton exactly: keep every listed id and do not add any other id.
+- Do not include current viewpoint ids in viewpoint_target_probs.
 - Do not copy old viewpoint ids from graph_summary region assigned_viewpoint_ids.
-- For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.
+- Current-viewpoint target_probs are filled by code from fixed direct detections, so do not generate them.
 - For visible neighboring viewpoint target_probs, use soft positive target-location scores.
 - Estimate region target_probs using active target_id keys and active target descriptions.
 - Do not include found or completed targets in target_probs, detections, or existence hypotheses.
