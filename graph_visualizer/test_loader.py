@@ -93,7 +93,7 @@ def _write_step(
         )
 
 
-def _write_route_case(root, instance_name):
+def _write_environment_case(root, instance_name):
     _write_json(
         root / "scenarios" / ("%s.json" % instance_name),
         {
@@ -103,6 +103,10 @@ def _write_route_case(root, instance_name):
         },
     )
     _write_connectivity(root / "connectivity")
+
+
+def _write_route_case(root, instance_name):
+    _write_environment_case(root, instance_name)
     _write_json(
         root / "mllm_debug_outputs" / instance_name / ("%s_mllm_route_summary.txt" % instance_name),
         {
@@ -236,6 +240,24 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
     }
 
 
+def test_load_solution_payload_includes_environment_without_route_summaries(
+    tmp_path,
+    monkeypatch,
+):
+    _write_environment_case(tmp_path, "case")
+    _patch_house_texture(monkeypatch)
+    monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
+
+    payload = load_solution_payload("case", project_root=tmp_path)
+
+    assert payload["solutions"] == []
+    assert payload["environment_graph"]["scan_id"] == "scan"
+    assert payload["environment_graph"]["nodes"][1]["x"] == pytest.approx(1.0)
+    assert payload["environment_graph"]["house_texture"]["url"] == (
+        "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
+    )
+
+
 def test_load_solution_payload_keeps_environment_connectivity_on_linux(
     tmp_path,
     monkeypatch,
@@ -288,6 +310,35 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
         server.shutdown()
 
 
+def test_steps_api_includes_environment_without_solution_summaries(tmp_path, monkeypatch):
+    _write_step(
+        tmp_path,
+        "case",
+        0,
+        target_found={"0": False},
+    )
+    _write_environment_case(tmp_path, "case")
+    _patch_house_texture(monkeypatch)
+    monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
+    server = start_visualizer_server(
+        "case",
+        project_root=tmp_path,
+        open_browser=False,
+    )
+
+    try:
+        with urlopen(server.url + "api/steps", timeout=5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+
+        assert payload["solutions"] == []
+        assert payload["environment_graph"]["scan_id"] == "scan"
+        assert payload["environment_graph"]["house_texture"]["url"] == (
+            "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
+        )
+    finally:
+        server.shutdown()
+
+
 def test_route_renderer_skips_wait_step_edges():
     html = render_viewer_html()
 
@@ -295,15 +346,36 @@ def test_route_renderer_skips_wait_step_edges():
     assert "sameRoutePoint(point, nextPoint)" in html
     assert 'id="houseTextureButton"' in html
     assert '"pointer-events": "none"' in html
+    assert html.count("        appendHouseTexture(viewportLayer, environment, projection);") == 2
+    assert "houseTextureButton.disabled = false;" in html
+    assert 'id="graphZoomInButton"' in html
+    assert 'id="graphZoomOutButton"' in html
+    assert 'id="graphResetViewButton"' in html
 
 
-def test_shutdown_endpoint_stops_visualization_server(tmp_path):
+def test_step_renderer_removes_layout_editing_and_drag_selection_code():
+    html = render_viewer_html()
+
+    assert "Use saved layout" not in html
+    assert "Retrieve default layout" not in html
+    assert "Copy previous layout" not in html
+    assert "Save layout" not in html
+    assert "layout-positions" not in html
+    assert "draggable" not in html
+    assert "selection-window" not in html
+    assert "node-group" not in html
+
+
+def test_shutdown_endpoint_stops_visualization_server(tmp_path, monkeypatch):
     _write_step(
         tmp_path,
         "case",
         0,
         target_found={"0": False},
     )
+    _write_environment_case(tmp_path, "case")
+    _patch_house_texture(monkeypatch)
+    monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
     server = start_visualizer_server(
         "case",
         project_root=tmp_path,

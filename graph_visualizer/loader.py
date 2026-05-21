@@ -55,13 +55,11 @@ def load_solution_payload(
     )
     payload: dict[str, object] = {
         "solutions": solutions,
-        "environment_graph": None,
-    }
-    if solutions:
-        payload["environment_graph"] = _load_route_environment_graph(
+        "environment_graph": _load_route_environment_graph(
             instance_name=str(instance_name),
             project_root=root,
-        )
+        ),
+    }
     return payload
 
 

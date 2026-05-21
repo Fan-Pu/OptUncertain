@@ -256,19 +256,6 @@ def render_viewer_html() -> str:
     .node {
       cursor: pointer;
     }
-    .node.draggable {
-      cursor: grab;
-    }
-    .node.draggable.dragging {
-      cursor: grabbing;
-    }
-    .selection-window {
-      fill: rgba(122, 92, 250, 0.12);
-      stroke: #7a5cfa;
-      stroke-width: 1.5;
-      stroke-dasharray: 5 4;
-      pointer-events: none;
-    }
     .node text {
       font-size: 11px;
       fill: #111827;
@@ -351,48 +338,6 @@ def render_viewer_html() -> str:
       stroke: #111827;
       stroke-width: 4;
     }
-    .dialog-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 20;
-      display: grid;
-      place-items: center;
-      padding: 20px;
-      background: rgba(17, 24, 39, 0.46);
-    }
-    .dialog-backdrop[hidden] {
-      display: none;
-    }
-    .confirmation-dialog {
-      width: min(420px, 100%);
-      background: white;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      box-shadow: 0 20px 45px rgba(16, 24, 40, 0.24);
-      padding: 18px;
-    }
-    .confirmation-dialog h2 {
-      margin: 0 0 8px 0;
-      font-size: 16px;
-      color: var(--ink);
-    }
-    .confirmation-dialog p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.45;
-    }
-    .dialog-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 18px;
-    }
-    .dialog-actions .confirm-yes {
-      border-color: #7a5cfa;
-      background: #7a5cfa;
-      color: white;
-    }
     @media (max-width: 980px) {
       main {
         grid-template-columns: 1fr;
@@ -408,10 +353,6 @@ def render_viewer_html() -> str:
     <h1 id="title">Graph Hypothesis Visualizer</h1>
     <div class="controls">
       <div id="solutionButtons" class="solution-buttons"></div>
-      <button id="useSavedLayoutButton" type="button" aria-pressed="false">Use saved layout: Off</button>
-      <button id="resetDefaultLayoutButton" type="button" disabled>Retrieve default layout for this step</button>
-      <button id="copyPreviousLayoutButton" type="button" disabled>Copy previous layout</button>
-      <button id="saveLayoutButton" type="button" disabled>Save layout for this step</button>
       <button id="prevButton" type="button">Previous</button>
       <div id="stepLabel"></div>
       <button id="nextButton" type="button">Next</button>
@@ -469,27 +410,13 @@ def render_viewer_html() -> str:
       </section>
     </aside>
   </main>
-  <div id="confirmationDialog" class="dialog-backdrop" role="presentation" hidden>
-    <div class="confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle" aria-describedby="confirmationMessage">
-      <h2 id="confirmationTitle"></h2>
-      <p id="confirmationMessage"></p>
-      <div class="dialog-actions">
-        <button id="confirmationCancelButton" type="button">Cancel</button>
-        <button id="confirmationYesButton" class="confirm-yes" type="button">Yes</button>
-      </div>
-    </div>
-  </div>
   <script>
     let payload = null;
     let stepPosition = 0;
     let selected = null;
     let activeSolutionId = null;
-    let dragState = null;
     let panState = null;
-    let selectionState = null;
-    let useSavedLayout = false;
     let showHouseTexture = true;
-    const positionOverrides = new Map();
     const viewportStates = new Map();
     const GRAPH_MIN_SCALE = 0.2;
     const GRAPH_MAX_SCALE = 5;
@@ -502,10 +429,6 @@ def render_viewer_html() -> str:
     const graphZoomOutButton = document.getElementById("graphZoomOutButton");
     const graphResetViewButton = document.getElementById("graphResetViewButton");
     const houseTextureButton = document.getElementById("houseTextureButton");
-    const useSavedLayoutButton = document.getElementById("useSavedLayoutButton");
-    const resetDefaultLayoutButton = document.getElementById("resetDefaultLayoutButton");
-    const copyPreviousLayoutButton = document.getElementById("copyPreviousLayoutButton");
-    const saveLayoutButton = document.getElementById("saveLayoutButton");
     const prevButton = document.getElementById("prevButton");
     const nextButton = document.getElementById("nextButton");
     const stepLabel = document.getElementById("stepLabel");
@@ -516,51 +439,6 @@ def render_viewer_html() -> str:
     const detectionsSection = document.getElementById("detectionsSection");
     const semanticSection = document.getElementById("semanticSection");
     const userMessageSection = document.getElementById("userMessageSection");
-    const confirmationDialog = document.getElementById("confirmationDialog");
-    const confirmationTitle = document.getElementById("confirmationTitle");
-    const confirmationMessage = document.getElementById("confirmationMessage");
-    const confirmationYesButton = document.getElementById("confirmationYesButton");
-    const confirmationCancelButton = document.getElementById("confirmationCancelButton");
-    let confirmationAction = null;
-
-    useSavedLayoutButton.addEventListener("click", () => {
-      useSavedLayout = !useSavedLayout;
-      dragState = null;
-      selectionState = null;
-      render();
-    });
-    resetDefaultLayoutButton.addEventListener("click", () => {
-      showConfirmation(
-        "Retrieve default layout?",
-        "This will stage the default layout positions for the current step. The layout file will not change until you save this step.",
-        resetDefaultLayoutForStep
-      );
-    });
-    copyPreviousLayoutButton.addEventListener("click", () => {
-      showConfirmation(
-        "Copy previous layout?",
-        "This will stage matching current-step nodes at their previous-step positions. The layout file will not change until you save this step.",
-        copyPreviousLayoutForStep
-      );
-    });
-    saveLayoutButton.addEventListener("click", () => {
-      showConfirmation(
-        "Save layout for this step?",
-        "This will write the staged positions to the current step layout file.",
-        saveLayoutForStep
-      );
-    });
-    confirmationYesButton.addEventListener("click", () => {
-      const action = confirmationAction;
-      hideConfirmation();
-      action();
-    });
-    confirmationCancelButton.addEventListener("click", hideConfirmation);
-    confirmationDialog.addEventListener("click", event => {
-      if (event.target === confirmationDialog) {
-        hideConfirmation();
-      }
-    });
     graphZoomInButton.addEventListener("click", () => {
       graph.focus();
       zoomGraphAtCenter(GRAPH_ZOOM_FACTOR);
@@ -582,15 +460,11 @@ def render_viewer_html() -> str:
     prevButton.addEventListener("click", () => {
       stepPosition = Math.max(0, stepPosition - 1);
       selected = null;
-      dragState = null;
-      selectionState = null;
       render();
     });
     nextButton.addEventListener("click", () => {
       stepPosition = Math.min(payload.steps.length - 1, stepPosition + 1);
       selected = null;
-      dragState = null;
-      selectionState = null;
       render();
     });
     window.addEventListener("pagehide", () => {
@@ -603,46 +477,12 @@ def render_viewer_html() -> str:
       graph.focus();
       if (event.button !== 0) return;
       if (event.target !== graph) return;
-      if (activeSolutionId) {
-        beginGraphPan(event);
-        return;
-      }
-      if (event.ctrlKey) {
-        beginGraphPan(event);
-        return;
-      }
-      if (!useSavedLayout) return;
-      const point = graphPoint(event);
-      selectionState = {
-        stepIndex: currentStep().step_index,
-        pointerId: event.pointerId,
-        startX: point.x,
-        startY: point.y,
-        endX: point.x,
-        endY: point.y
-      };
-      graph.setPointerCapture(event.pointerId);
-      selected = null;
-      render();
+      beginGraphPan(event);
     });
     graph.addEventListener("pointermove", event => {
       if (panState) {
         updateGraphPan(event);
         renderCurrentGraph();
-        return;
-      }
-      if (activeSolutionId) return;
-      if (dragState) {
-        updateDragPositions(event);
-        renderGraph(currentStep());
-        updateLayoutControls(currentStep());
-        return;
-      }
-      if (selectionState) {
-        const point = graphPoint(event);
-        selectionState.endX = point.x;
-        selectionState.endY = point.y;
-        renderGraph(currentStep());
       }
     });
     graph.addEventListener("pointerup", event => {
@@ -654,28 +494,9 @@ def render_viewer_html() -> str:
         renderCurrentGraph();
         return;
       }
-      if (activeSolutionId) return;
-      if (dragState) {
-        updateDragPositions(event);
-        graph.releasePointerCapture(dragState.pointerId);
-        dragState = null;
-        render();
-        return;
-      }
-      if (selectionState) {
-        const point = graphPoint(event);
-        selectionState.endX = point.x;
-        selectionState.endY = point.y;
-        selectViewpointsInWindow(currentStep());
-        graph.releasePointerCapture(selectionState.pointerId);
-        selectionState = null;
-        render();
-      }
     });
     graph.addEventListener("pointercancel", () => {
-      dragState = null;
       panState = null;
-      selectionState = null;
       graph.classList.remove("panning");
       render();
     });
@@ -711,10 +532,6 @@ def render_viewer_html() -> str:
       if (activeSolution) {
         prevButton.disabled = true;
         nextButton.disabled = true;
-        useSavedLayoutButton.disabled = true;
-        resetDefaultLayoutButton.disabled = true;
-        copyPreviousLayoutButton.disabled = true;
-        saveLayoutButton.disabled = true;
         graphZoomInButton.disabled = false;
         graphZoomOutButton.disabled = false;
         graphResetViewButton.disabled = false;
@@ -727,19 +544,13 @@ def render_viewer_html() -> str:
         return;
       }
       const step = currentStep();
-      useSavedLayoutButton.disabled = false;
       graphZoomInButton.disabled = false;
       graphZoomOutButton.disabled = false;
       graphResetViewButton.disabled = false;
-      houseTextureButton.disabled = true;
-      houseTextureButton.setAttribute("aria-pressed", "false");
+      houseTextureButton.disabled = false;
+      houseTextureButton.setAttribute("aria-pressed", String(showHouseTexture));
       prevButton.disabled = stepPosition === 0;
       nextButton.disabled = stepPosition === payload.steps.length - 1;
-      useSavedLayoutButton.setAttribute("aria-pressed", String(useSavedLayout));
-      useSavedLayoutButton.textContent = useSavedLayout
-        ? "Use saved layout: On"
-        : "Use saved layout: Off";
-      updateLayoutControls(step);
       showStepSections();
       stepLabel.textContent = `Step ${stepPosition + 1} / ${payload.steps.length}`;
       renderGraph(step);
@@ -773,9 +584,7 @@ def render_viewer_html() -> str:
         button.addEventListener("click", () => {
           activeSolutionId = button.dataset.solutionId || null;
           selected = null;
-          dragState = null;
           panState = null;
-          selectionState = null;
           render();
         });
       }
@@ -1075,13 +884,23 @@ def render_viewer_html() -> str:
 
       const layoutNodes = step.layout.nodes;
       const hypothesisEdgeById = new Map(step.hypothesis.edges.map(edge => [edgeKey(edge.i, edge.j), edge]));
-      const positions = computePositions(step, width, height, {
-        useSavedPositions: useSavedLayout,
-        useOverrides: useSavedLayout
-      });
+      const environment = payload.environment_graph;
+      const projection = routeProjection(environment, width, height);
+      const positions = routePositions(environment.nodes, projection);
       const contentBounds = emptyBounds();
       const viewportLayer = svgEl("g", {});
       graph.appendChild(viewportLayer);
+      includeGraphPoint(contentBounds, projection.offsetX, projection.offsetY, 0);
+      includeGraphPoint(
+        contentBounds,
+        projection.offsetX + projection.usedWidth,
+        projection.offsetY + projection.usedHeight,
+        0
+      );
+
+      if (showHouseTexture) {
+        appendHouseTexture(viewportLayer, environment, projection);
+      }
 
       const regionLayer = svgEl("g", {});
       viewportLayer.appendChild(regionLayer);
@@ -1094,18 +913,9 @@ def render_viewer_html() -> str:
           includeGraphPoint(contentBounds, point.x, point.y, 8);
         }
         includeGraphPoint(contentBounds, center.x, center.y, geometry.kind === "marker" ? 28 : 18);
-        const draggable = useSavedLayout && isMovableLayoutNode(node);
         const group = svgEl("g", {
-          class: `node region ${draggable ? "draggable" : ""} ${isDraggingNode(node.id) ? "dragging" : ""} ${isSelectedNode(node.id, node.type) ? "selected" : ""}`
+          class: `node region ${isSelectedNode(node.id) ? "selected" : ""}`
         });
-        if (geometry.kind === "marker") {
-          group.addEventListener("pointerdown", event => {
-            if (!useSavedLayout) return;
-            if (event.button !== 0) return;
-            event.stopPropagation();
-            beginNodeDrag(event, step, node, positions);
-          });
-        }
         group.addEventListener("click", event => {
           event.stopPropagation();
           selected = { kind: "node", id: node.id };
@@ -1186,20 +996,10 @@ def render_viewer_html() -> str:
         const currentAgent = agentAtNode(step, node.id);
         includeGraphPoint(contentBounds, pos.x, pos.y, currentAgent ? 42 : 22);
         const group = svgEl("g", {
-          class: `node viewpoint ${useSavedLayout ? "draggable" : ""} ${isDraggingNode(node.id) ? "dragging" : ""} ${isSelectedNode(node.id, node.type) ? "selected" : ""}`
-        });
-        group.addEventListener("pointerdown", event => {
-          if (!useSavedLayout) return;
-          if (event.button !== 0) return;
-          event.stopPropagation();
-          beginNodeDrag(event, step, node, positions);
+          class: `node viewpoint ${isSelectedNode(node.id) ? "selected" : ""}`
         });
         group.addEventListener("click", event => {
           event.stopPropagation();
-          if (selected && selected.kind === "node-group" && selected.ids.map(String).includes(String(node.id))) {
-            renderSelection(step);
-            return;
-          }
           selected = { kind: "node", id: node.id };
           render();
         });
@@ -1235,164 +1035,7 @@ def render_viewer_html() -> str:
         }
         nodeLayer.appendChild(group);
       }
-      if (selectionState && Number(selectionState.stepIndex) === Number(step.step_index)) {
-        const box = normalizedSelectionBox(selectionState);
-        viewportLayer.appendChild(svgEl("rect", {
-          class: "selection-window",
-          x: box.x,
-          y: box.y,
-          width: box.width,
-          height: box.height
-        }));
-      }
       viewportLayer.setAttribute("transform", viewportTransform(getViewportState(stepViewportKey(step), width, height, contentBounds)));
-    }
-
-    function updateLayoutControls(step) {
-      resetDefaultLayoutButton.disabled = !useSavedLayout;
-      copyPreviousLayoutButton.disabled = !useSavedLayout || stepPosition === 0;
-      saveLayoutButton.disabled = !hasPositionOverridesForStep(step.step_index);
-    }
-
-    function beginNodeDrag(event, step, node, positions) {
-      const nodeId = Number(node.id);
-      const selectedIds = selectedViewpointIds();
-      const dragIds = selectedIds.includes(nodeId) ? selectedIds : [nodeId];
-      const point = graphPoint(event);
-      dragState = {
-        stepIndex: step.step_index,
-        pointerId: event.pointerId,
-        startPoint: point,
-        positions: dragIds.map(id => {
-          const position = positions.get(String(id));
-          return {
-            nodeId: id,
-            x: position.x,
-            y: position.y
-          };
-        })
-      };
-      graph.setPointerCapture(event.pointerId);
-      selected = dragIds.length === 1
-        ? { kind: "node", id: node.id }
-        : { kind: "node-group", ids: dragIds };
-      render();
-    }
-
-    function updateDragPositions(event) {
-      const point = graphPoint(event);
-      const delta = {
-        dx: point.x - dragState.startPoint.x,
-        dy: point.y - dragState.startPoint.y
-      };
-      if (delta.dx === 0 && delta.dy === 0) return;
-      for (const position of dragState.positions) {
-        setPositionOverride(
-          dragState.stepIndex,
-          position.nodeId,
-          position.x + delta.dx,
-          position.y + delta.dy
-        );
-      }
-    }
-
-    function selectViewpointsInWindow(step) {
-      const box = normalizedSelectionBox(selectionState);
-      const width = graph.clientWidth || 900;
-      const height = graph.clientHeight || 560;
-      const positions = computePositions(step, width, height, {
-        useSavedPositions: useSavedLayout,
-        useOverrides: useSavedLayout
-      });
-      const ids = step.layout.nodes
-        .filter(node => node.type === "viewpoint")
-        .filter(node => {
-          const position = positions.get(String(node.id));
-          return position.x >= box.x
-            && position.x <= box.x + box.width
-            && position.y >= box.y
-            && position.y <= box.y + box.height;
-        })
-        .map(node => Number(node.id))
-        .sort((a, b) => a - b);
-      selected = ids.length ? { kind: "node-group", ids: ids } : null;
-    }
-
-    function normalizedSelectionBox(state) {
-      const x = Math.min(state.startX, state.endX);
-      const y = Math.min(state.startY, state.endY);
-      return {
-        x: x,
-        y: y,
-        width: Math.abs(state.endX - state.startX),
-        height: Math.abs(state.endY - state.startY)
-      };
-    }
-
-    function computePositions(step, width, height, options = {}) {
-      const useSavedPositions = options.useSavedPositions === true;
-      const useOverrides = options.useOverrides === true;
-      const nodes = step.layout.nodes;
-      const regions = nodes.filter(node => node.type === "region").sort(byId);
-      const viewpoints = nodes.filter(node => node.type === "viewpoint").sort(byId);
-      const positions = new Map();
-      const cx = width / 2;
-      const cy = height / 2;
-      const regionRadius = Math.max(110, Math.min(width, height) * 0.32);
-
-      regions.forEach((region, index) => {
-        const angle = regions.length === 1
-          ? -Math.PI / 2
-          : -Math.PI / 2 + (2 * Math.PI * index / regions.length);
-        positions.set(String(region.id), {
-          x: cx + Math.cos(angle) * regionRadius,
-          y: cy + Math.sin(angle) * regionRadius
-        });
-      });
-
-      const assigned = new Set();
-      regions.forEach(region => {
-        const assignedIds = (region.assigned_viewpoint_ids || []).map(String).sort(numericStringCompare);
-        const anchor = positions.get(String(region.id));
-        const radius = 76 + Math.max(0, assignedIds.length - 2) * 9;
-        assignedIds.forEach((viewpointId, index) => {
-          assigned.add(viewpointId);
-          const angle = -Math.PI / 2 + (2 * Math.PI * index / Math.max(1, assignedIds.length));
-          positions.set(viewpointId, {
-            x: clamp(anchor.x + Math.cos(angle) * radius, 40, width - 40),
-            y: clamp(anchor.y + Math.sin(angle) * radius, 40, height - 40)
-          });
-        });
-      });
-
-      const unassigned = viewpoints.filter(node => !assigned.has(String(node.id)));
-      const outerRadius = Math.max(140, Math.min(width, height) * 0.43);
-      unassigned.forEach((node, index) => {
-        const angle = Math.PI / 2 + (2 * Math.PI * index / Math.max(1, unassigned.length));
-        positions.set(String(node.id), {
-          x: clamp(cx + Math.cos(angle) * outerRadius, 40, width - 40),
-          y: clamp(cy + Math.sin(angle) * outerRadius, 40, height - 40)
-        });
-      });
-
-      if (useSavedPositions) {
-        nodes.filter(isMovableLayoutNode).forEach(node => {
-          if (typeof node.x === "number" && typeof node.y === "number") {
-            positions.set(String(node.id), {
-              x: node.x,
-              y: node.y
-            });
-          }
-          const override = getPositionOverride(step.step_index, node.id);
-          if (useOverrides && override) {
-            positions.set(String(node.id), {
-              x: override.x,
-              y: override.y
-            });
-          }
-        });
-      }
-      return positions;
     }
 
     function regionHull(region, positions) {
@@ -1414,11 +1057,6 @@ def render_viewer_html() -> str:
 
     function assignedRegionViewpointIds(region) {
       return (region.assigned_viewpoint_ids || []).map(String).sort(numericStringCompare);
-    }
-
-    function isMovableLayoutNode(node) {
-      return node.type === "viewpoint"
-        || (node.type === "region" && assignedRegionViewpointIds(node).length === 0);
     }
 
     function regionGeometry(region, positions) {
@@ -1504,17 +1142,6 @@ def render_viewer_html() -> str:
           current_agent: agentAtNode(step, layout.id) || "",
           assigned_viewpoint_ids: (layout.assigned_viewpoint_ids || []).join(", "),
           target_probs: formatObject(hyp.target_probs)
-        });
-      } else if (selected.kind === "node-group") {
-        const currentAgents = Object.entries(step.layout.agent_current_vp_ids || {})
-          .filter(([, viewpointId]) => selected.ids.map(String).includes(String(viewpointId)))
-          .map(([agentId, viewpointId]) => `${agentId}: ${viewpointId}`)
-          .join(", ");
-        target.innerHTML = definitionList({
-          type: "viewpoint group",
-          selected_count: selected.ids.length,
-          viewpoint_ids: selected.ids.join(", "),
-          current_agents: currentAgents
         });
       } else {
         const hyp = step.hypothesis.edges.find(edge => edgeKey(edge.i, edge.j) === edgeKey(selected.i, selected.j));
@@ -1701,31 +1328,9 @@ def render_viewer_html() -> str:
       return "";
     }
 
-    function selectedViewpointIds() {
-      if (!selected) return [];
-      if (selected.kind === "node-group") {
-        return selected.ids.map(Number);
-      }
-      if (selected.kind === "node") {
-        const step = currentStep();
-        const node = step.layout.nodes.find(item => String(item.id) === String(selected.id));
-        return node && node.type === "viewpoint" ? [Number(selected.id)] : [];
-      }
-      return [];
-    }
-
-    function isSelectedNode(nodeId, nodeType) {
+    function isSelectedNode(nodeId) {
       if (!selected) return false;
-      if (selected.kind === "node") {
-        return String(selected.id) === String(nodeId);
-      }
-      return selected.kind === "node-group"
-        && nodeType === "viewpoint"
-        && selected.ids.map(String).includes(String(nodeId));
-    }
-
-    function isDraggingNode(nodeId) {
-      return dragState && dragState.positions.some(position => String(position.nodeId) === String(nodeId));
+      return selected.kind === "node" && String(selected.id) === String(nodeId);
     }
 
     function isSelectedEdge(edge) {
@@ -1760,10 +1365,15 @@ def render_viewer_html() -> str:
 
     function computeGraphContentBounds(step, width, height) {
       const bounds = emptyBounds();
-      const positions = computePositions(step, width, height, {
-        useSavedPositions: useSavedLayout,
-        useOverrides: useSavedLayout
-      });
+      const projection = routeProjection(payload.environment_graph, width, height);
+      const positions = routePositions(payload.environment_graph.nodes, projection);
+      includeGraphPoint(bounds, projection.offsetX, projection.offsetY, 0);
+      includeGraphPoint(
+        bounds,
+        projection.offsetX + projection.usedWidth,
+        projection.offsetY + projection.usedHeight,
+        0
+      );
       for (const node of step.layout.nodes.filter(item => item.type === "region").sort(byId)) {
         const geometry = regionGeometry(node, positions);
         const center = geometry.center;
@@ -1955,139 +1565,6 @@ def render_viewer_html() -> str:
       point.x = event.clientX;
       point.y = event.clientY;
       return point.matrixTransform(graph.getScreenCTM().inverse());
-    }
-
-    function graphPoint(event) {
-      const point = graphScreenPoint(event);
-      const viewport = viewportStates.get(currentViewportKey());
-      return {
-        x: (point.x - viewport.translateX) / viewport.scale,
-        y: (point.y - viewport.translateY) / viewport.scale
-      };
-    }
-
-    function positionKey(stepIndex, nodeId) {
-      return `${stepIndex}:${nodeId}`;
-    }
-
-    function getPositionOverride(stepIndex, nodeId) {
-      return positionOverrides.get(positionKey(stepIndex, nodeId));
-    }
-
-    function setPositionOverride(stepIndex, nodeId, x, y) {
-      positionOverrides.set(positionKey(stepIndex, nodeId), { x: x, y: y });
-    }
-
-    function hasPositionOverridesForStep(stepIndex) {
-      for (const key of positionOverrides.keys()) {
-        if (key.startsWith(`${stepIndex}:`)) return true;
-      }
-      return false;
-    }
-
-    function clearPositionOverridesForStep(stepIndex) {
-      for (const key of Array.from(positionOverrides.keys())) {
-        if (key.startsWith(`${stepIndex}:`)) {
-          positionOverrides.delete(key);
-        }
-      }
-    }
-
-    function showConfirmation(title, message, action) {
-      confirmationTitle.textContent = title;
-      confirmationMessage.textContent = message;
-      confirmationAction = action;
-      confirmationDialog.hidden = false;
-      confirmationYesButton.focus();
-    }
-
-    function hideConfirmation() {
-      confirmationDialog.hidden = true;
-      confirmationAction = null;
-    }
-
-    function savePositions(update) {
-      return fetch("/api/layout-positions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(update)
-      }).then(response => response.json());
-    }
-
-    function saveLayoutForStep() {
-      const step = currentStep();
-      const width = graph.clientWidth || 900;
-      const height = graph.clientHeight || 560;
-      const positions = computePositions(step, width, height, {
-        useSavedPositions: true,
-        useOverrides: true
-      });
-      const updates = step.layout.nodes
-        .filter(isMovableLayoutNode)
-        .map(node => {
-          const position = positions.get(String(node.id));
-          return {
-            node_id: Number(node.id),
-            x: position.x,
-            y: position.y
-          };
-        });
-      saveLayoutButton.disabled = true;
-      savePositions({
-        step_index: step.step_index,
-        positions: updates
-      }).then(() => {
-        for (const node of step.layout.nodes.filter(isMovableLayoutNode)) {
-          const update = updates.find(item => Number(item.node_id) === Number(node.id));
-          node.x = update.x;
-          node.y = update.y;
-        }
-        clearPositionOverridesForStep(step.step_index);
-        render();
-      });
-    }
-
-    function resetDefaultLayoutForStep() {
-      if (!useSavedLayout) return;
-      const step = currentStep();
-      const width = graph.clientWidth || 900;
-      const height = graph.clientHeight || 560;
-      const positions = computePositions(step, width, height, {
-        useSavedPositions: false,
-        useOverrides: false
-      });
-      step.layout.nodes
-        .filter(isMovableLayoutNode)
-        .forEach(node => {
-          const position = positions.get(String(node.id));
-          setPositionOverride(step.step_index, node.id, position.x, position.y);
-        });
-      render();
-    }
-
-    function copyPreviousLayoutForStep() {
-      if (!useSavedLayout || stepPosition === 0) return;
-      const step = currentStep();
-      const previousStep = payload.steps[stepPosition - 1];
-      const width = graph.clientWidth || 900;
-      const height = graph.clientHeight || 560;
-      const previousPositions = computePositions(previousStep, width, height, {
-        useSavedPositions: true,
-        useOverrides: true
-      });
-      const previousViewpointIds = new Set(
-        previousStep.layout.nodes
-          .filter(isMovableLayoutNode)
-          .map(node => String(node.id))
-      );
-      step.layout.nodes
-        .filter(isMovableLayoutNode)
-        .filter(node => previousViewpointIds.has(String(node.id)))
-        .forEach(node => {
-          const position = previousPositions.get(String(node.id));
-          setPositionOverride(step.step_index, node.id, position.x, position.y);
-        });
-      render();
     }
 
     function byId(a, b) {
