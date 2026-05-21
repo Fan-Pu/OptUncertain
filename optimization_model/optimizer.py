@@ -128,15 +128,19 @@ class RollingHorizonOptimizer:
 
         for agent_id in agent_ids:
             start_node_id = int(agent_current_vp_ids[agent_id])
-            first_hop_vp_edges = [
+            first_hop_grounded_vv_edges = [
                 (source_id, target_id)
                 for source_id, target_id in directed_edges
                 if source_id == start_node_id
-                and hypothesis_graph.nodes[target_id].type == TYPE_VP
+                and self._is_grounded_vv_edge(
+                    hypothesis_graph,
+                    source_id,
+                    target_id,
+                )
             ]
-            if not first_hop_vp_edges and not self.allow_inactive_agents:
+            if not first_hop_grounded_vv_edges and not self.allow_inactive_agents:
                 raise RuntimeError(
-                    "Agent %s has no outgoing viewpoint first-hop edge from node %s."
+                    "Agent %s has no outgoing grounded VV first-hop edge from node %s."
                     % (agent_id, start_node_id)
                 )
 
@@ -315,6 +319,16 @@ class RollingHorizonOptimizer:
                 if source_id == start_node_id
                 and hypothesis_graph.nodes[target_id].type == TYPE_VP
             )
+            first_hop_grounded_vv_count = quicksum(
+                x[(source_id, target_id, agent_id)]
+                for source_id, target_id in directed_edges
+                if source_id == start_node_id
+                and self._is_grounded_vv_edge(
+                    hypothesis_graph,
+                    source_id,
+                    target_id,
+                )
+            )
 
             if self.allow_inactive_agents:
                 model.addConstr(
@@ -326,6 +340,11 @@ class RollingHorizonOptimizer:
                     first_hop_viewpoint_count == agent_active[agent_id],
                     name="first_hop_vp_%s" % agent_id,
                 )
+
+                model.addConstr(
+                    first_hop_grounded_vv_count == agent_active[agent_id],
+                    name="first_hop_grounded_vv_%s" % agent_id,
+                )
             else:
                 model.addConstr(
                     departure_count == 1,
@@ -335,6 +354,11 @@ class RollingHorizonOptimizer:
                 model.addConstr(
                     first_hop_viewpoint_count == 1,
                     name="first_hop_vp_%s" % agent_id,
+                )
+
+                model.addConstr(
+                    first_hop_grounded_vv_count == 1,
+                    name="first_hop_grounded_vv_%s" % agent_id,
                 )
 
             model.addConstr(
@@ -543,6 +567,18 @@ class RollingHorizonOptimizer:
 
         return sorted(set(directed_edges))
 
+    def _is_grounded_vv_edge(
+        self,
+        hypothesis_graph,
+        source_id: int,
+        target_id: int,
+    ) -> bool:
+        return (
+            hypothesis_graph.nodes[source_id].type == TYPE_VP
+            and hypothesis_graph.nodes[target_id].type == TYPE_VP
+            and hypothesis_graph.edges[tuple(sorted((source_id, target_id)))].grounded
+        )
+
     def _objective_bounds(
         self,
         hypothesis_graph,
@@ -596,18 +632,22 @@ class RollingHorizonOptimizer:
         visit_lower_bound = 0.0
 
         for agent_id, start_node_id in agent_current_vp_ids.items():
-            viewpoint_outgoing_edges = [
+            first_hop_grounded_vv_edges = [
                 (source_id, target_id)
                 for source_id, target_id in directed_edges
                 if source_id == int(start_node_id)
-                and hypothesis_graph.nodes[target_id].type == TYPE_VP
+                and self._is_grounded_vv_edge(
+                    hypothesis_graph,
+                    source_id,
+                    target_id,
+                )
             ]
 
-            if not viewpoint_outgoing_edges:
+            if not first_hop_grounded_vv_edges:
                 if allow_inactive_agents:
                     continue
                 raise RuntimeError(
-                    "Agent %s has no outgoing viewpoint edge from node %s."
+                    "Agent %s has no outgoing grounded VV edge from node %s."
                     % (agent_id, start_node_id)
                 )
 
@@ -618,13 +658,13 @@ class RollingHorizonOptimizer:
                         * node_reward[first_hop_node_id][target_id]
                         for target_id in target_ids
                     )
-                    for _, first_hop_node_id in viewpoint_outgoing_edges
+                    for _, first_hop_node_id in first_hop_grounded_vv_edges
                 )
 
             if not allow_inactive_agents:
                 dist_lower_bound += min(
                     edge_distance[(source_id, target_id)]
-                    for source_id, target_id in viewpoint_outgoing_edges
+                    for source_id, target_id in first_hop_grounded_vv_edges
                 )
             non_start_edges = [
                 (source_id, target_id)
@@ -639,7 +679,7 @@ class RollingHorizonOptimizer:
             )
             dist_upper_bound += max(
                 edge_distance[(source_id, target_id)]
-                for source_id, target_id in viewpoint_outgoing_edges
+                for source_id, target_id in first_hop_grounded_vv_edges
             ) + (len(all_node_ids) - 2) * (
                 max(
                     edge_distance[(source_id, target_id)]
@@ -661,7 +701,7 @@ class RollingHorizonOptimizer:
             if not allow_inactive_agents:
                 visit_lower_bound += min(
                     revisit_penalty.get(target_id, 0.0)
-                    for _, target_id in viewpoint_outgoing_edges
+                    for _, target_id in first_hop_grounded_vv_edges
                 )
 
         node_upper_bound = sum(

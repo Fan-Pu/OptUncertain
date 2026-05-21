@@ -68,11 +68,19 @@ class _FakeNode:
 
 
 class _FakeEdge:
-    def __init__(self, source_node_id, target_node_id, distance_mean, exist_prob):
+    def __init__(
+        self,
+        source_node_id,
+        target_node_id,
+        distance_mean,
+        exist_prob,
+        grounded=True,
+    ):
         self.source_node_id = source_node_id
         self.target_node_id = target_node_id
         self.distance_mean = distance_mean
         self.exist_prob = exist_prob
+        self.grounded = grounded
 
 
 class _FakeGraph:
@@ -128,6 +136,55 @@ class _RevisitPenaltyGraph:
         self.edges = {
             (1, 2): _FakeEdge(1, 2, 1.0, 0.9),
             (1, 3): _FakeEdge(1, 3, 1.0, 0.9),
+        }
+
+
+class _UngroundedFirstHopGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 1.0}),
+            3: _FakeNode(1, True, 1.0, {"target": 0.0}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 0.01, 1.0, grounded=False),
+            (1, 3): _FakeEdge(1, 3, 10.0, 1.0, grounded=True),
+        }
+
+
+class _ObjectiveBoundsUngroundedFirstHopGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 0.9}, node_visit_times=3),
+            3: _FakeNode(1, True, 1.0, {"target": 0.4}, node_visit_times=7),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 0.2, grounded=False),
+            (1, 3): _FakeEdge(1, 3, 5.0, 0.6, grounded=True),
+        }
+
+
+class _InactiveAgentUngroundedOnlyGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            3: _FakeNode(1, True, 1.0, {"target": 1.0}),
+            4: _FakeNode(1, True, 1.0, {"target": 0.0}),
+        }
+        self.edges = {
+            (1, 3): _FakeEdge(1, 3, 0.1, 1.0, grounded=True),
+            (2, 4): _FakeEdge(2, 4, 0.1, 1.0, grounded=False),
         }
 
 
@@ -308,7 +365,11 @@ class _ZeroRewardAssignmentGraph:
 
 class MultiAgentOptimizerTest(unittest.TestCase):
     def _objective_bounds_for_graph(
-        self, graph, agent_current_vp_ids, target_found_flags
+        self,
+        graph,
+        agent_current_vp_ids,
+        target_found_flags,
+        unique_target_reward=False,
     ):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
         agent_ids = list(agent_current_vp_ids)
@@ -381,6 +442,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             node_reward=node_reward,
             node_nonexist_penalty=node_nonexist_penalty,
             revisit_penalty=revisit_penalty,
+            unique_target_reward=unique_target_reward,
         )
 
     def test_assigns_each_unfound_target_at_most_once_across_agents(self):
@@ -421,6 +483,18 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
 
         self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
+
+    def test_first_hop_must_use_grounded_vv_edge(self):
+        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_UngroundedFirstHopGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
+        self.assertIn((1, 3), result["selected_edges"]["agent0"])
+        self.assertNotIn((1, 2), result["selected_edges"]["agent0"])
 
     def test_detached_high_reward_cycle_is_not_selected(self):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
@@ -499,6 +573,21 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             [("agent0", "target0"), ("agent0", "target1")],
         )
 
+    def test_inactive_agent_does_not_need_grounded_first_hop(self):
+        optimizer = RollingHorizonOptimizer(ORACLE_INACTIVE_AGENT_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_InactiveAgentUngroundedOnlyGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["route_node_ids"], [1, 3])
+        self.assertEqual(result["agent_paths"]["agent1"]["route_node_ids"], [2])
+        self.assertEqual(
+            result["agent_paths"]["agent1"]["planned_path_node_ids"],
+            [],
+        )
+
     def test_default_mode_still_forces_each_agent_to_depart(self):
         optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
         result = optimizer.solve(
@@ -563,6 +652,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             graph=_ObjectiveBoundsGraph(),
             agent_current_vp_ids={"agent0": 1},
             target_found_flags={"target": False},
+            unique_target_reward=True,
         )
 
         self.assertEqual(
@@ -578,6 +668,29 @@ class MultiAgentOptimizerTest(unittest.TestCase):
                 0.9,
                 2.0,
                 6.0,
+            ),
+        )
+
+    def test_objective_bounds_ignore_ungrounded_first_hop_edges(self):
+        bounds = self._objective_bounds_for_graph(
+            graph=_ObjectiveBoundsUngroundedFirstHopGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(
+            bounds,
+            (
+                0.4,
+                1.3,
+                5.0,
+                10.0,
+                0.0,
+                1.6,
+                0.0,
+                0.0,
+                7.0,
+                10.0,
             ),
         )
 
