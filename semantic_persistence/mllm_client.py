@@ -1084,25 +1084,9 @@ class MLLMClient:
 
             current_region_candidates = []
 
-            if prior_assigned_region_id is not None:
-                current_region_candidates.append(
-                    {
-                        "region_id": int(prior_assigned_region_id),
-                        "region_label": graph_region_label_by_id_for_prompt.get(
-                            prior_assigned_region_id
-                        ),
-                        "evidence_source": "prior_current_viewpoint_assignment",
-                        "source_viewpoint_id": current_viewpoint_id,
-                        "distance": 0.0,
-                        "source_grounded": bool(
-                            current_status.get("prior_grounded", False)
-                        ),
-                        "source_visit_times": int(
-                            current_status.get("prior_visit_times", 0)
-                        ),
-                    }
-                )
-
+            # Add region evidence from visible neighboring viewpoints first.
+            # These candidates help the MLLM reuse an existing region when the current
+            # viewpoint marker visually belongs to that region.
             for visible in visible_viewpoints:
                 visible_region_id = visible.get("prior_assigned_region_id")
                 if visible_region_id is None:
@@ -1115,8 +1099,37 @@ class MLLMClient:
                         "evidence_source": "visible_neighbor_assignment",
                         "source_viewpoint_id": int(visible["viewpoint_index"]),
                         "distance": float(visible["distance"]),
-                        "source_grounded": bool(visible.get("prior_grounded", False)),
-                        "source_visit_times": int(visible.get("prior_visit_times", 0)),
+                    }
+                )
+
+            # Add the prior current assignment after visible-neighbor evidence.
+            # This is only a previous semantic hypothesis to verify, not a fixed label.
+            if prior_assigned_region_id is not None:
+                current_region_candidates.append(
+                    {
+                        "region_id": int(prior_assigned_region_id),
+                        "region_label": graph_region_label_by_id_for_prompt.get(
+                            prior_assigned_region_id
+                        ),
+                        "evidence_source": "prior_current_viewpoint_assignment",
+                        "source_viewpoint_id": current_viewpoint_id,
+                        "distance": 0.0,
+                    }
+                )
+
+            # Add all existing region labels as fallback choices.
+            # This allows a current viewpoint to be reassigned to an existing region even
+            # when nearby viewpoints were previously assigned to a wrong region.
+            for region_id, region_label in sorted(
+                graph_region_label_by_id_for_prompt.items()
+            ):
+                current_region_candidates.append(
+                    {
+                        "region_id": int(region_id),
+                        "region_label": region_label,
+                        "evidence_source": "existing_region_candidate",
+                        "source_viewpoint_id": None,
+                        "distance": None,
                     }
                 )
 
@@ -1541,7 +1554,7 @@ class MLLMClient:
                 - The observation context is the source of truth for current agent locations.
                 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
                 - If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
-                - If a current region already appears in the graph summary, reuse its id and label and still include it in visible_region_nodes.
+                - If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label and still include it in visible_region_nodes.
                 - For each current viewpoint, first verify the physical region that contains the robot pose before assigning any non-current neighboring viewpoints.
                 - Use current_region_candidates as candidate existing regions for the current viewpoint. These are not fixed labels. They are possible region choices from the previous graph and visible neighboring viewpoints.
                 - The prior_assigned_region_id of a current viewpoint is only a previous hypothesis. Do not keep it unless the local visual area immediately surrounding the current viewpoint marker matches the prior_assigned_region_label.
@@ -1560,8 +1573,15 @@ class MLLMClient:
                 - Do not assign a current viewpoint to a region only because that region is visible nearby, through a doorway, or at the side of the panorama.
                 - If a current viewpoint has prior_assigned_region_id, compare the prior_assigned_region_label with the local visual evidence around the current viewpoint marker.
                 - If the prior region label does not match the local area around the marker, reassign the current viewpoint to the best matching existing region from current_region_candidates when possible.
-                - If no existing candidate region matches, create a new visible_region_node.
-                - If reassigned, update all three places consistently: agents[].current_region_node_id, viewpoint_node_assigns, and current_viewpoints_reassignment.
+                - If no existing candidate region matches the local area around the current viewpoint marker, create a new visible_region_node.
+                - If a current viewpoint is reassigned, update all three places consistently: agents[].current_region_node_id, viewpoint_node_assigns, and current_viewpoints_reassignment.
+
+                - After choosing the final region for each current viewpoint, assign each non-current visible neighboring viewpoint based on the physical area containing that viewpoint marker.
+                - For a non-current visible neighboring viewpoint with prior_assigned_region_id = null, use the final region of the nearby current viewpoint when its marker lies in the same open area.
+                - Do not assign a non-current visible neighboring viewpoint to an adjacent dining area, hallway, bedroom, counter area, or doorway area only because that area is visible in the panorama.
+                - Use a different region for a non-current visible neighboring viewpoint only when the viewpoint marker itself is across a clear doorway, wall, room boundary, corridor boundary, or transition area.
+                - For non-current visible neighboring viewpoints that already have prior_assigned_region_id, keep graph_summary.viewpoint_to_region assignments as fixed historical assignments for this step.
+
                 - For viewpoint_target_probs, follow the Required viewpoint_target_probs id skeleton exactly: keep every listed id and do not add any other id.
                 - Do not include current viewpoint ids in viewpoint_target_probs.
                 - Do not copy old viewpoint ids from graph_summary region assigned_viewpoint_ids.
@@ -1575,7 +1595,7 @@ class MLLMClient:
                 - Propose only legal uncertain edges supported by observation and graph context.
                 - Propose VZ edges only to semantic regions with no assigned viewpoints; the region may be visible or invisible.
                 - Propose VV edges between two unvisited non-current viewpoints only when a directly traversable local connection is spatially plausible from the observation and graph context. The support may be uncertain, so use lower exist_prob for weak but meaningful hypotheses. Do not propose a VV edge across an apparent obstacle, large furniture, wall, blocked passage, or closed partition. Same-room or same-region membership alone is not enough.
-                - Keep graph_summary.viewpoint_to_region assignments only for non-current visible neighboring viewpoints. For current viewpoints, infer the best matching region from the current panorama and allow old assignments to be corrected.
+                - For current viewpoints, infer the best matching region from the current panorama and allow old assignments to be corrected.
                 - Return compact JSON only.
                 """)
             .strip()

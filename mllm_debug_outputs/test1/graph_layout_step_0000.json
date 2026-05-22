@@ -45,6 +45,12 @@
       "i": 32,
       "j": 35,
       "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
     }
   ],
   "nodes": [
@@ -116,7 +122,8 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        41
       ],
       "grounded": false,
       "id": 40,
@@ -126,7 +133,8 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        40
       ],
       "grounded": false,
       "id": 41,
@@ -148,25 +156,25 @@
     },
     {
       "assigned_viewpoint_ids": [
-        9,
-        18
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 101,
-      "label": "dark textured lounge area with quilted walls",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
         32,
         35
       ],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 102,
-      "label": "bedroom area with large bed and blue accent wall",
+      "id": 101,
+      "label": "bedroom area with white bed and blue accent wall",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        18
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 200,
+      "label": "dark textured lounge area with quilted walls",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -177,8 +185,8 @@
       ],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 103,
-      "label": "bright hallway area adjacent to dark lounge",
+      "id": 201,
+      "label": "bright hallway area beyond lounge doorway",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -190,26 +198,26 @@
       16
     ],
     "101": [
-      9,
-      18
-    ],
-    "102": [
       32,
       35
     ],
-    "103": [
+    "200": [
+      9,
+      18
+    ],
+    "201": [
       40,
       41
     ]
   },
   "viewpoint_to_region": {
     "0": 100,
-    "9": 101,
+    "9": 200,
     "16": 100,
-    "18": 101,
-    "32": 102,
-    "35": 102,
-    "40": 103,
-    "41": 103
+    "18": 200,
+    "32": 101,
+    "35": 101,
+    "40": 201,
+    "41": 201
   }
 }

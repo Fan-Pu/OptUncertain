@@ -1,7 +1,7 @@
 {
   "agent_current_vp_ids": {
     "agent0": 15,
-    "agent1": 40
+    "agent1": 5
   },
   "edges": [
     {
@@ -14,6 +14,60 @@
       "grounded": true,
       "i": 0,
       "j": 21,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 3,
+      "j": 25,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 3,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 7,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 13,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 19,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 25,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 28,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 37,
       "type": "vv"
     },
     {
@@ -83,7 +137,7 @@
       "type": "vv"
     },
     {
-      "grounded": false,
+      "grounded": true,
       "i": 19,
       "j": 25,
       "type": "vv"
@@ -98,6 +152,12 @@
       "grounded": true,
       "i": 21,
       "j": 27,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 25,
+      "j": 37,
       "type": "vv"
     },
     {
@@ -139,6 +199,34 @@
     },
     {
       "connected_node_ids": [
+        25,
+        37
+      ],
+      "grounded": false,
+      "id": 3,
+      "label": "558ba0761bf24428b9cf91e60333ea25",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        7,
+        13,
+        19,
+        25,
+        28,
+        36,
+        37
+      ],
+      "grounded": true,
+      "id": 5,
+      "label": "da5fa65c13e643719a20cbb818c9a85d",
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        5,
         15
       ],
       "grounded": false,
@@ -156,7 +244,7 @@
       "grounded": true,
       "id": 9,
       "label": "85c23efeaecd4d43a7dcd5b90137179e",
-      "node_visit_times": 2,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -167,6 +255,16 @@
       "grounded": false,
       "id": 11,
       "label": "6800f98e9e67463e9928a4253253bc2f",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        5
+      ],
+      "grounded": false,
+      "id": 13,
+      "label": "c429b363fd3145fe8a7631bbe9644066",
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -199,14 +297,15 @@
       "connected_node_ids": [
         9
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
+        5,
         15,
         25,
         41
@@ -231,14 +330,17 @@
     },
     {
       "connected_node_ids": [
+        3,
+        5,
         19,
+        37,
         40,
         41
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 25,
       "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -251,6 +353,16 @@
       "id": 27,
       "label": "b185432bf33645aca813ac2a961b4140",
       "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        5
+      ],
+      "grounded": false,
+      "id": 28,
+      "label": "1a41339ece1846eda6a924cdb4c417dd",
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -272,6 +384,28 @@
       "grounded": false,
       "id": 35,
       "label": "50c241453dfd45c1ba95b5d7191982ef",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        5
+      ],
+      "grounded": false,
+      "id": 36,
+      "label": "b2e9278f9b8f4661abcb0446d2cbb98e",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        3,
+        5,
+        25
+      ],
+      "grounded": false,
+      "id": 37,
+      "label": "c8112f69d34d476fbb29e6b3909deba2",
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -328,39 +462,52 @@
     },
     {
       "assigned_viewpoint_ids": [
+        32,
+        35
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 101,
+      "label": "bedroom area with white bed and blue accent wall",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
         9,
         18
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 101,
+      "id": 200,
       "label": "dark textured lounge area with quilted walls",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        32,
-        35
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 102,
-      "label": "bedroom area with large bed and blue accent wall",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
+        5,
         19,
         25,
+        37,
         40,
         41
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 103,
-      "label": "bright hallway area adjacent to dark lounge",
+      "id": 201,
+      "label": "bright hallway area beyond lounge doorway",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 300,
+      "label": "small white bathroom area beyond hallway door",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -376,34 +523,42 @@
       27
     ],
     "101": [
-      9,
-      18
-    ],
-    "102": [
       32,
       35
     ],
-    "103": [
+    "200": [
+      9,
+      18
+    ],
+    "201": [
+      5,
       19,
       25,
+      37,
       40,
       41
+    ],
+    "300": [
+      3
     ]
   },
   "viewpoint_to_region": {
     "0": 100,
-    "9": 101,
+    "3": 300,
+    "5": 201,
+    "9": 200,
     "11": 100,
     "15": 100,
     "16": 100,
-    "18": 101,
-    "19": 103,
+    "18": 200,
+    "19": 201,
     "21": 100,
-    "25": 103,
+    "25": 201,
     "27": 100,
-    "32": 102,
-    "35": 102,
-    "40": 103,
-    "41": 103
+    "32": 101,
+    "35": 101,
+    "37": 201,
+    "40": 201,
+    "41": 201
   }
 }
