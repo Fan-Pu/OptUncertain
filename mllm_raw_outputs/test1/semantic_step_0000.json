@@ -35,7 +35,15 @@
     "viewpoint_viewpoint": 1.0
   },
   "invisible_region_nodes": [],
-  "new_edges": [],
+  "new_edges": [
+    {
+      "dist": 1.2,
+      "edge_type": "VV",
+      "exist_prob": 0.7,
+      "i": 32,
+      "j": 35
+    }
+  ],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
@@ -68,6 +76,12 @@
   ],
   "viewpoint_target_probs": [
     {
+      "id": 9,
+      "target_probs": {
+        "1": 0.0
+      }
+    },
+    {
       "id": 16,
       "target_probs": {
         "1": 0.0
@@ -80,39 +94,33 @@
       }
     },
     {
+      "id": 18,
+      "target_probs": {
+        "1": 0.01
+      }
+    },
+    {
       "id": 32,
       "target_probs": {
-        "1": 0.05
+        "1": 0.01
       }
     },
     {
       "id": 35,
       "target_probs": {
-        "1": 0.05
-      }
-    },
-    {
-      "id": 9,
-      "target_probs": {
-        "1": 0.0
-      }
-    },
-    {
-      "id": 18,
-      "target_probs": {
-        "1": 0.05
+        "1": 0.01
       }
     },
     {
       "id": 40,
       "target_probs": {
-        "1": 0.1
+        "1": 0.01
       }
     },
     {
       "id": 41,
       "target_probs": {
-        "1": 0.1
+        "1": 0.01
       }
     }
   ],
@@ -128,25 +136,25 @@
     {
       "exist_prob": 0.9,
       "id": 101,
-      "label": "bedroom area with large bed beyond partition",
+      "label": "bedroom area with large bed beyond living room",
       "target_probs": {
-        "1": 0.05
+        "1": 0.01
       }
     },
     {
       "exist_prob": 1.0,
       "id": 200,
-      "label": "dark textured lounge area with quilted walls",
+      "label": "dark textured lounge area",
       "target_probs": {
-        "1": 0.05
+        "1": 0.01
       }
     },
     {
       "exist_prob": 0.9,
       "id": 201,
-      "label": "bright corridor area beyond lounge doorway",
+      "label": "bright corridor area adjacent to lounge",
       "target_probs": {
-        "1": 0.1
+        "1": 0.01
       }
     }
   ]

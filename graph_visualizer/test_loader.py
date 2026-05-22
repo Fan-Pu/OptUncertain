@@ -366,6 +366,22 @@ def test_step_renderer_removes_layout_editing_and_drag_selection_code():
     assert "node-group" not in html
 
 
+def test_step_renderer_uses_tight_region_boundaries_and_arrival_edges():
+    html = render_viewer_html()
+
+    assert "function regionHull" not in html
+    assert "function convexHull" not in html
+    assert "marchingSquaresRegionBoundary" in html
+    assert "regionBoundaryPrimitives" in html
+    assert "REGION_BOUNDARY_NODE_RADIUS" in html
+    assert "function regionColor" in html
+    assert "REGION_COLORS" in html
+    assert "function agentArrivalEdgeKeys" in html
+    assert "payload.steps[stepPosition - 1]" in html
+    assert 'class: "region-boundary"' in html
+    assert 'class: `edge ${edge.type === "vz" ? "vz" : "vv"} ${edge.grounded ? "" : "ungrounded"} ${isArrivalEdge ? "arrival" : ""}' in html
+
+
 def test_shutdown_endpoint_stops_visualization_server(tmp_path, monkeypatch):
     _write_step(
         tmp_path,

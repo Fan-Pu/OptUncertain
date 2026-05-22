@@ -39,6 +39,12 @@
       "i": 16,
       "j": 35,
       "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 32,
+      "j": 35,
+      "type": "vv"
     }
   ],
   "nodes": [
@@ -50,9 +56,7 @@
       "id": 0,
       "label": "10c252c90fa24ef3b698c6f54d984c5c",
       "node_visit_times": 0,
-      "type": "viewpoint",
-      "x": 715.5,
-      "y": 56.66
+      "type": "viewpoint"
     },
     {
       "connected_node_ids": [
@@ -64,9 +68,7 @@
       "id": 9,
       "label": "85c23efeaecd4d43a7dcd5b90137179e",
       "node_visit_times": 1,
-      "type": "viewpoint",
-      "x": 715.5,
-      "y": 528.34
+      "type": "viewpoint"
     },
     {
       "connected_node_ids": [
@@ -78,9 +80,7 @@
       "id": 16,
       "label": "0f37bd0737e349de9d536263a4bdd60d",
       "node_visit_times": 1,
-      "type": "viewpoint",
-      "x": 715.5,
-      "y": 208.66
+      "type": "viewpoint"
     },
     {
       "connected_node_ids": [
@@ -90,33 +90,29 @@
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
       "node_visit_times": 0,
-      "type": "viewpoint",
-      "x": 715.5,
-      "y": 680.34
+      "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        16
+        16,
+        35
       ],
       "grounded": false,
       "id": 32,
       "label": "e34dcf54d26a4a95869cc8a0c01cd2be",
       "node_visit_times": 0,
-      "type": "viewpoint",
-      "x": 951.34,
-      "y": 292.5
+      "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        16
+        16,
+        32
       ],
       "grounded": false,
       "id": 35,
       "label": "50c241453dfd45c1ba95b5d7191982ef",
       "node_visit_times": 0,
-      "type": "viewpoint",
-      "x": 951.34,
-      "y": 444.5
+      "type": "viewpoint"
     },
     {
       "connected_node_ids": [
@@ -126,9 +122,7 @@
       "id": 40,
       "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
       "node_visit_times": 0,
-      "type": "viewpoint",
-      "x": 470.39689599999997,
-      "y": 525.235488
+      "type": "viewpoint"
     },
     {
       "connected_node_ids": [
@@ -138,9 +132,7 @@
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
       "node_visit_times": 0,
-      "type": "viewpoint",
-      "x": 470.39689599999997,
-      "y": 677.235488
+      "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
@@ -162,7 +154,7 @@
       "connected_node_ids": [],
       "grounded": false,
       "id": 101,
-      "label": "bedroom area with large bed beyond partition",
+      "label": "bedroom area with large bed beyond living room",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -174,7 +166,7 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 200,
-      "label": "dark textured lounge area with quilted walls",
+      "label": "dark textured lounge area",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -186,7 +178,7 @@
       "connected_node_ids": [],
       "grounded": false,
       "id": 201,
-      "label": "bright corridor area beyond lounge doorway",
+      "label": "bright corridor area adjacent to lounge",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -212,12 +204,12 @@
   },
   "viewpoint_to_region": {
     "0": 100,
+    "9": 200,
     "16": 100,
     "18": 200,
     "32": 101,
     "35": 101,
     "40": 201,
-    "41": 201,
-    "9": 200
+    "41": 201
   }
 }

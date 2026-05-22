@@ -20,6 +20,7 @@ def render_viewer_html() -> str:
       --viewpoint: #7a5cfa;
       --grounded: #15803d;
       --current: #d97706;
+      --arrival: #dc2626;
       --edge: #667085;
       --edge-vz: #9a3412;
     }
@@ -279,6 +280,11 @@ def render_viewer_html() -> str:
     .edge.ungrounded line {
       opacity: 0.45;
     }
+    .edge.arrival line {
+      stroke: var(--arrival);
+      stroke-width: 5;
+      opacity: 1;
+    }
     .route-environment-edge {
       stroke: #c7ced8;
       stroke-width: 1;
@@ -328,13 +334,14 @@ def render_viewer_html() -> str:
       margin: 0 0 8px 0;
       font-size: 13px;
     }
-    .region-hull {
+    .region-boundary {
       fill-opacity: 0.18;
       stroke-width: 2;
     }
     .selected line,
     .selected circle,
-    .selected polygon {
+    .selected polygon,
+    .selected path {
       stroke: #111827;
       stroke-width: 4;
     }
@@ -422,6 +429,21 @@ def render_viewer_html() -> str:
     const GRAPH_MAX_SCALE = 5;
     const GRAPH_ZOOM_FACTOR = 1.2;
     const GRAPH_FIT_PADDING = 56;
+    const REGION_BOUNDARY_NODE_RADIUS = 38;
+    const REGION_BOUNDARY_CORRIDOR_RADIUS = 18;
+    const REGION_BOUNDARY_CELL_SIZE = 4;
+    const REGION_COLORS = [
+      "#0f766e",
+      "#2563eb",
+      "#ca8a04",
+      "#c026d3",
+      "#dc2626",
+      "#16a34a",
+      "#7c3aed",
+      "#ea580c",
+      "#0891b2",
+      "#be123c"
+    ];
 
     const graph = document.getElementById("graph");
     const solutionButtons = document.getElementById("solutionButtons");
@@ -906,7 +928,7 @@ def render_viewer_html() -> str:
       viewportLayer.appendChild(regionLayer);
       const regionMarkerGroups = [];
       for (const node of layoutNodes.filter(item => item.type === "region").sort(byId)) {
-        const geometry = regionGeometry(node, positions);
+        const geometry = regionGeometry(node, positions, environment);
         const center = geometry.center;
         positions.set(String(node.id), center);
         for (const point of geometry.points) {
@@ -924,12 +946,24 @@ def render_viewer_html() -> str:
         const title = svgEl("title", {});
         title.textContent = `${node.type} ${node.id}: ${node.label}`;
         group.appendChild(title);
-        group.appendChild(svgEl("polygon", {
-          class: "region-hull",
-          points: geometry.points.map(point => `${point.x},${point.y}`).join(" "),
-          fill: node.grounded ? "var(--grounded)" : "var(--region)",
-          stroke: node.grounded ? "var(--grounded)" : "var(--region)"
-        }));
+        const color = regionColor(node.id);
+        if (geometry.kind === "marker") {
+          group.appendChild(svgEl("polygon", {
+            class: "region-boundary",
+            points: geometry.points.map(point => `${point.x},${point.y}`).join(" "),
+            fill: color,
+            stroke: color
+          }));
+        } else {
+          for (const component of geometry.components) {
+            group.appendChild(svgEl("path", {
+              class: "region-boundary",
+              d: component.path,
+              fill: color,
+              stroke: color
+            }));
+          }
+        }
         const idText = svgEl("text", {
           x: center.x,
           y: center.y + 4,
@@ -947,14 +981,18 @@ def render_viewer_html() -> str:
 
       const edgeLayer = svgEl("g", {});
       viewportLayer.appendChild(edgeLayer);
+      const arrivalEdgeLayer = svgEl("g", {});
+      viewportLayer.appendChild(arrivalEdgeLayer);
+      const arrivalEdgeKeys = agentArrivalEdgeKeys(step);
       for (const edge of step.layout.edges) {
         const source = positions.get(String(edge.i));
         const target = positions.get(String(edge.j));
         const hyp = hypothesisEdgeById.get(edgeKey(edge.i, edge.j)) || edge;
+        const isArrivalEdge = arrivalEdgeKeys.has(edgeKey(edge.i, edge.j));
         includeGraphPoint(contentBounds, source.x, source.y, 8);
         includeGraphPoint(contentBounds, target.x, target.y, 8);
         const edgeGroup = svgEl("g", {
-          class: `edge ${edge.type === "vz" ? "vz" : "vv"} ${edge.grounded ? "" : "ungrounded"} ${isSelectedEdge(edge) ? "selected" : ""}`
+          class: `edge ${edge.type === "vz" ? "vz" : "vv"} ${edge.grounded ? "" : "ungrounded"} ${isArrivalEdge ? "arrival" : ""} ${isSelectedEdge(edge) ? "selected" : ""}`
         });
         edgeGroup.addEventListener("click", () => {
           selected = { kind: "edge", i: edge.i, j: edge.j };
@@ -980,7 +1018,7 @@ def render_viewer_html() -> str:
         });
         label.textContent = edgeLabel(hyp);
         edgeGroup.appendChild(label);
-        edgeLayer.appendChild(edgeGroup);
+        (isArrivalEdge ? arrivalEdgeLayer : edgeLayer).appendChild(edgeGroup);
       }
 
       const regionMarkerLayer = svgEl("g", {});
@@ -1038,36 +1076,115 @@ def render_viewer_html() -> str:
       viewportLayer.setAttribute("transform", viewportTransform(getViewportState(stepViewportKey(step), width, height, contentBounds)));
     }
 
-    function regionHull(region, positions) {
-      const padding = 42;
-      const samples = [];
+    function regionColor(regionId) {
+      const index = Math.abs(Number(regionId)) % REGION_COLORS.length;
+      return REGION_COLORS[index];
+    }
+
+    function agentArrivalEdgeKeys(step) {
+      const result = new Set();
+      if (stepPosition === 0) return result;
+      const previousStep = payload.steps[stepPosition - 1];
+      const layoutEdgeKeys = new Set(step.layout.edges.map(edge => edgeKey(edge.i, edge.j)));
+      for (const [agentId, currentViewpointId] of Object.entries(step.layout.agent_current_vp_ids || {})) {
+        const previousViewpointId = previousStep.layout.agent_current_vp_ids[agentId];
+        if (Number(previousViewpointId) === Number(currentViewpointId)) continue;
+        const key = edgeKey(previousViewpointId, currentViewpointId);
+        if (layoutEdgeKeys.has(key)) result.add(key);
+      }
+      return result;
+    }
+
+    function regionTightBoundary(region, positions, environment) {
       const assignedIds = assignedRegionViewpointIds(region);
-      assignedIds.forEach(id => {
+      const primitives = regionBoundaryPrimitives(assignedIds, positions, environment);
+      const bounds = emptyBounds();
+      for (const id of assignedIds) {
         const center = positions.get(id);
-        for (let index = 0; index < 16; index += 1) {
-          const angle = (2 * Math.PI * index) / 16;
-          samples.push({
-            x: center.x + Math.cos(angle) * padding,
-            y: center.y + Math.sin(angle) * padding
-          });
+        includeGraphPoint(bounds, center.x, center.y, REGION_BOUNDARY_NODE_RADIUS + REGION_BOUNDARY_CELL_SIZE * 2);
+      }
+      const components = marchingSquaresRegionBoundary(
+        primitives,
+        bounds,
+        REGION_BOUNDARY_CELL_SIZE
+      );
+      const points = components.flatMap(component => component.points);
+      return {
+        kind: "boundary",
+        components: components,
+        points: points,
+        center: assignedRegionCenter(assignedIds, positions)
+      };
+    }
+
+    function regionBoundaryPrimitives(assignedIds, positions, environment) {
+      const assigned = new Set(assignedIds);
+      const primitives = assignedIds.map(id => ({
+        kind: "disk",
+        center: positions.get(id),
+        radius: REGION_BOUNDARY_NODE_RADIUS
+      }));
+      for (const edge of environment.edges) {
+        if (!assigned.has(String(edge.i)) || !assigned.has(String(edge.j))) continue;
+        primitives.push({
+          kind: "capsule",
+          source: positions.get(String(edge.i)),
+          target: positions.get(String(edge.j)),
+          radius: REGION_BOUNDARY_CORRIDOR_RADIUS
+        });
+      }
+      return primitives;
+    }
+
+    function marchingSquaresRegionBoundary(primitives, bounds, cellSize) {
+      const minX = bounds.minX;
+      const minY = bounds.minY;
+      const columnCount = Math.ceil((bounds.maxX - bounds.minX) / cellSize);
+      const rowCount = Math.ceil((bounds.maxY - bounds.minY) / cellSize);
+      const values = [];
+      for (let row = 0; row <= rowCount; row += 1) {
+        const valueRow = [];
+        for (let column = 0; column <= columnCount; column += 1) {
+          valueRow.push(signedDistanceToRegion(
+            { x: minX + column * cellSize, y: minY + row * cellSize },
+            primitives
+          ));
         }
-      });
-      return convexHull(samples);
+        values.push(valueRow);
+      }
+
+      const segments = [];
+      for (let row = 0; row < rowCount; row += 1) {
+        for (let column = 0; column < columnCount; column += 1) {
+          const x0 = minX + column * cellSize;
+          const y0 = minY + row * cellSize;
+          const corners = {
+            topLeft: { x: x0, y: y0, value: values[row][column] },
+            topRight: { x: x0 + cellSize, y: y0, value: values[row][column + 1] },
+            bottomRight: { x: x0 + cellSize, y: y0 + cellSize, value: values[row + 1][column + 1] },
+            bottomLeft: { x: x0, y: y0 + cellSize, value: values[row + 1][column] }
+          };
+          const caseIndex =
+            (corners.topLeft.value <= 0 ? 1 : 0) |
+            (corners.topRight.value <= 0 ? 2 : 0) |
+            (corners.bottomRight.value <= 0 ? 4 : 0) |
+            (corners.bottomLeft.value <= 0 ? 8 : 0);
+          for (const segment of marchingSquareSegments(caseIndex, corners)) {
+            segments.push(segment);
+          }
+        }
+      }
+      return traceBoundaryContours(segments);
     }
 
     function assignedRegionViewpointIds(region) {
       return (region.assigned_viewpoint_ids || []).map(String).sort(numericStringCompare);
     }
 
-    function regionGeometry(region, positions) {
+    function regionGeometry(region, positions, environment) {
       const assignedIds = assignedRegionViewpointIds(region);
       if (assignedIds.length > 0) {
-        const points = regionHull(region, positions);
-        return {
-          kind: "hull",
-          points: points,
-          center: polygonCentroid(points)
-        };
+        return regionTightBoundary(region, positions, environment);
       }
 
       const center = positions.get(String(region.id));
@@ -1084,43 +1201,122 @@ def render_viewer_html() -> str:
       };
     }
 
-    function convexHull(points) {
-      const sorted = points
-        .slice()
-        .sort((a, b) => a.x === b.x ? a.y - b.y : a.x - b.x);
-      const lower = [];
-      for (const point of sorted) {
-        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
-          lower.pop();
-        }
-        lower.push(point);
-      }
-      const upper = [];
-      for (let index = sorted.length - 1; index >= 0; index -= 1) {
-        const point = sorted[index];
-        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
-          upper.pop();
-        }
-        upper.push(point);
-      }
-      lower.pop();
-      upper.pop();
-      return lower.concat(upper);
-    }
-
-    function cross(origin, a, b) {
-      return (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
-    }
-
-    function polygonCentroid(points) {
-      const total = points.reduce((acc, point) => ({
-        x: acc.x + point.x,
-        y: acc.y + point.y
-      }), { x: 0, y: 0 });
+    function assignedRegionCenter(assignedIds, positions) {
+      const total = assignedIds.reduce((acc, id) => {
+        const point = positions.get(id);
+        return { x: acc.x + point.x, y: acc.y + point.y };
+      }, { x: 0, y: 0 });
       return {
-        x: total.x / points.length,
-        y: total.y / points.length
+        x: total.x / assignedIds.length,
+        y: total.y / assignedIds.length
       };
+    }
+
+    function signedDistanceToRegion(point, primitives) {
+      return Math.min(...primitives.map(primitive => {
+        if (primitive.kind === "disk") {
+          return Math.hypot(point.x - primitive.center.x, point.y - primitive.center.y) - primitive.radius;
+        }
+        return distanceToSegment(point, primitive.source, primitive.target) - primitive.radius;
+      }));
+    }
+
+    function distanceToSegment(point, source, target) {
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const lengthSquared = dx * dx + dy * dy;
+      const t = clamp(
+        ((point.x - source.x) * dx + (point.y - source.y) * dy) / lengthSquared,
+        0,
+        1
+      );
+      return Math.hypot(point.x - (source.x + t * dx), point.y - (source.y + t * dy));
+    }
+
+    function marchingSquareSegments(caseIndex, corners) {
+      const edgePoints = {
+        top: interpolateBoundaryPoint(corners.topLeft, corners.topRight),
+        right: interpolateBoundaryPoint(corners.topRight, corners.bottomRight),
+        bottom: interpolateBoundaryPoint(corners.bottomLeft, corners.bottomRight),
+        left: interpolateBoundaryPoint(corners.topLeft, corners.bottomLeft)
+      };
+      const segmentEdgesByCase = {
+        0: [],
+        1: [["left", "top"]],
+        2: [["top", "right"]],
+        3: [["left", "right"]],
+        4: [["right", "bottom"]],
+        5: [["left", "bottom"], ["top", "right"]],
+        6: [["top", "bottom"]],
+        7: [["left", "bottom"]],
+        8: [["bottom", "left"]],
+        9: [["top", "bottom"]],
+        10: [["top", "left"], ["right", "bottom"]],
+        11: [["right", "bottom"]],
+        12: [["right", "left"]],
+        13: [["top", "right"]],
+        14: [["left", "top"]],
+        15: []
+      };
+      return segmentEdgesByCase[caseIndex].map(([sourceEdge, targetEdge]) => ({
+        source: edgePoints[sourceEdge],
+        target: edgePoints[targetEdge]
+      }));
+    }
+
+    function interpolateBoundaryPoint(source, target) {
+      const t = source.value / (source.value - target.value);
+      return {
+        x: source.x + (target.x - source.x) * t,
+        y: source.y + (target.y - source.y) * t
+      };
+    }
+
+    function traceBoundaryContours(segments) {
+      const adjacency = new Map();
+      segments.forEach((segment, index) => {
+        addContourAdjacency(adjacency, contourPointKey(segment.source), index);
+        addContourAdjacency(adjacency, contourPointKey(segment.target), index);
+      });
+
+      const used = new Set();
+      const contours = [];
+      segments.forEach((segment, index) => {
+        if (used.has(index)) return;
+        used.add(index);
+        const points = [segment.source, segment.target];
+        const startKey = contourPointKey(segment.source);
+        let currentKey = contourPointKey(segment.target);
+        while (currentKey !== startKey) {
+          const nextIndex = adjacency.get(currentKey).find(candidate => !used.has(candidate));
+          used.add(nextIndex);
+          const nextSegment = segments[nextIndex];
+          const nextPoint = contourPointKey(nextSegment.source) === currentKey
+            ? nextSegment.target
+            : nextSegment.source;
+          points.push(nextPoint);
+          currentKey = contourPointKey(nextPoint);
+        }
+        contours.push({
+          points: points,
+          path: contourPath(points)
+        });
+      });
+      return contours;
+    }
+
+    function addContourAdjacency(adjacency, key, segmentIndex) {
+      if (!adjacency.has(key)) adjacency.set(key, []);
+      adjacency.get(key).push(segmentIndex);
+    }
+
+    function contourPointKey(point) {
+      return `${point.x.toFixed(3)},${point.y.toFixed(3)}`;
+    }
+
+    function contourPath(points) {
+      const [first, ...rest] = points;
+      return `M ${first.x} ${first.y} ${rest.map(point => `L ${point.x} ${point.y}`).join(" ")} Z`;
     }
 
     function renderSelection(step) {
@@ -1375,7 +1571,7 @@ def render_viewer_html() -> str:
         0
       );
       for (const node of step.layout.nodes.filter(item => item.type === "region").sort(byId)) {
-        const geometry = regionGeometry(node, positions);
+        const geometry = regionGeometry(node, positions, payload.environment_graph);
         const center = geometry.center;
         positions.set(String(node.id), center);
         for (const point of geometry.points) {

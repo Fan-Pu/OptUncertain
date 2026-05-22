@@ -1031,19 +1031,57 @@ class MLLMClient:
                     node.get("label", "")
                 ).strip()
 
+        graph_viewpoint_status_by_id_for_prompt = {}
+        for node in graph_summary.get("nodes", []):
+            if not isinstance(node, dict):
+                continue
+            if node.get("type") == "viewpoint":
+                viewpoint_id = int(node["id"])
+                graph_viewpoint_status_by_id_for_prompt[viewpoint_id] = {
+                    "prior_grounded": bool(node.get("grounded", 0)),
+                    "prior_visit_times": int(node.get("node_visit_times", 0)),
+                }
+
         agent_context = []
         for image_index, observation in enumerate(agent_observations):
-            visible_viewpoints = [
-                {
-                    "viewpoint_index": int(item["viewpoint_index"]),
-                    "distance": float(item["distance"]),
-                }
-                for item in observation["visible_viewpoints"]
-            ]
+            visible_viewpoints = []
+
+            for item in observation["visible_viewpoints"]:
+                visible_vp_id = int(item["viewpoint_index"])
+                visible_region_id = graph_viewpoint_to_region_for_prompt.get(
+                    visible_vp_id
+                )
+                visible_status = graph_viewpoint_status_by_id_for_prompt.get(
+                    visible_vp_id, {}
+                )
+
+                visible_viewpoints.append(
+                    {
+                        "viewpoint_index": visible_vp_id,
+                        "distance": float(item["distance"]),
+                        "prior_assigned_region_id": visible_region_id,
+                        "prior_assigned_region_label": (
+                            graph_region_label_by_id_for_prompt.get(visible_region_id)
+                            if visible_region_id is not None
+                            else None
+                        ),
+                        "prior_grounded": bool(
+                            visible_status.get("prior_grounded", False)
+                        ),
+                        "prior_visit_times": int(
+                            visible_status.get("prior_visit_times", 0)
+                        ),
+                    }
+                )
+
             current_viewpoint_id = int(observation["current_viewpoint_index"])
             prior_assigned_region_id = graph_viewpoint_to_region_for_prompt.get(
                 current_viewpoint_id
             )
+            current_status = graph_viewpoint_status_by_id_for_prompt.get(
+                current_viewpoint_id, {}
+            )
+
             agent_context.append(
                 {
                     "agent_id": str(observation["agent_id"]),
@@ -1056,6 +1094,10 @@ class MLLMClient:
                         )
                         if prior_assigned_region_id is not None
                         else None
+                    ),
+                    "prior_grounded": bool(current_status.get("prior_grounded", False)),
+                    "prior_visit_times": int(
+                        current_status.get("prior_visit_times", 0)
                     ),
                     "visible_viewpoints": visible_viewpoints,
                 }
@@ -1460,6 +1502,10 @@ class MLLMClient:
 
                 Current step request:
                 - Identify each agent current semantic region.
+                - Distinguish the area physically containing a viewpoint from areas that are only visible from that viewpoint. A current viewpoint should be assigned to the region that contains the robot pose, not to an adjacent area that appears in the panorama.
+                - Use spatial continuity. If a current viewpoint is directly connected to a previously visited or grounded neighboring viewpoint with a short distance, and no clear doorway, wall, corridor, bedroom boundary, bathroom boundary, or partition separates them, prefer the same region as that grounded neighbor.
+                - For non-current visible neighboring viewpoints, do not assign them to a different semantic region only because objects from that region are visible. Assign them to a different region only when the viewpoint itself appears to be across a clear spatial boundary.
+                - A label such as "dining area beyond living room" usually describes a visible adjacent region, not necessarily the region containing the current viewpoint.
                 - For each current viewpoint with prior_assigned_region_id, check whether prior_assigned_region_label still matches the current panorama.
                 - If the prior region label still matches, keep the assignment and do not include that viewpoint in current_viewpoints_reassignment.
                 - If the prior region label does not match, assign the viewpoint to the better-matching region and add one current_viewpoints_reassignment item.
