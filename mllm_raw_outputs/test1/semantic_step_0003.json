@@ -6,7 +6,7 @@
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 201
+      "current_region_node_id": 103
     }
   ],
   "current_viewpoints_reassignment": [],
@@ -40,8 +40,8 @@
       "dist": 1.2,
       "edge_type": "VV",
       "exist_prob": 0.7,
-      "i": 3,
-      "j": 37
+      "i": 19,
+      "j": 25
     }
   ],
   "viewpoint_node_assigns": [
@@ -55,29 +55,26 @@
     },
     {
       "assigned_viewpoint_node_indices": [
-        5,
-        19,
-        25,
-        37,
-        40,
-        41
+        9
       ],
-      "region_node_id": 201
+      "region_node_id": 101
     },
     {
       "assigned_viewpoint_node_indices": [
-        3
+        40,
+        41
       ],
-      "region_node_id": 300
+      "region_node_id": 103
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        19,
+        25
+      ],
+      "region_node_id": 104
     }
   ],
   "viewpoint_target_probs": [
-    {
-      "id": 25,
-      "target_probs": {
-        "1": 0.0
-      }
-    },
     {
       "id": 27,
       "target_probs": {
@@ -85,27 +82,27 @@
       }
     },
     {
-      "id": 3,
+      "id": 41,
+      "target_probs": {
+        "1": 0.0
+      }
+    },
+    {
+      "id": 9,
       "target_probs": {
         "1": 0.05
       }
     },
     {
-      "id": 5,
-      "target_probs": {
-        "1": 0.3
-      }
-    },
-    {
       "id": 15,
       "target_probs": {
-        "1": 0.2
+        "1": 0.1
       }
     },
     {
       "id": 19,
       "target_probs": {
-        "1": 0.1
+        "1": 0.05
       }
     },
     {
@@ -115,21 +112,15 @@
       }
     },
     {
-      "id": 37,
+      "id": 25,
       "target_probs": {
-        "1": 0.1
+        "1": 0.05
       }
     },
     {
       "id": 40,
       "target_probs": {
-        "1": 0.1
-      }
-    },
-    {
-      "id": 41,
-      "target_probs": {
-        "1": 0.1
+        "1": 0.05
       }
     }
   ],
@@ -137,23 +128,31 @@
     {
       "exist_prob": 1.0,
       "id": 100,
-      "label": "modern living area with white sofa and dark floors",
+      "label": "modern living area with sofa and TV",
       "target_probs": {
-        "1": 0.2
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 201,
-      "label": "bright hallway area beyond lounge doorway",
-      "target_probs": {
-        "1": 0.4
+        "1": 0.6
       }
     },
     {
       "exist_prob": 0.9,
-      "id": 300,
-      "label": "small white bathroom area beyond hallway door",
+      "id": 101,
+      "label": "dark textured lounge area with padded walls",
+      "target_probs": {
+        "1": 0.05
+      }
+    },
+    {
+      "exist_prob": 1.0,
+      "id": 103,
+      "label": "bright corridor area beyond lounge",
+      "target_probs": {
+        "1": 0.1
+      }
+    },
+    {
+      "exist_prob": 0.8,
+      "id": 104,
+      "label": "bright white hallway beyond corridor",
       "target_probs": {
         "1": 0.05
       }

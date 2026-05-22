@@ -6,7 +6,7 @@
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 200
+      "current_region_node_id": 101
     }
   ],
   "current_viewpoints_reassignment": [],
@@ -37,18 +37,11 @@
   "invisible_region_nodes": [],
   "new_edges": [
     {
-      "dist": 1.5,
+      "dist": 1.2,
       "edge_type": "VV",
       "exist_prob": 0.7,
       "i": 32,
       "j": 35
-    },
-    {
-      "dist": 1.2,
-      "edge_type": "VV",
-      "exist_prob": 0.8,
-      "i": 40,
-      "j": 41
     }
   ],
   "viewpoint_node_assigns": [
@@ -61,24 +54,24 @@
     },
     {
       "assigned_viewpoint_node_indices": [
-        32,
-        35
+        9,
+        18
       ],
       "region_node_id": 101
     },
     {
       "assigned_viewpoint_node_indices": [
-        9,
-        18
+        32,
+        35
       ],
-      "region_node_id": 200
+      "region_node_id": 102
     },
     {
       "assigned_viewpoint_node_indices": [
         40,
         41
       ],
-      "region_node_id": 201
+      "region_node_id": 103
     }
   ],
   "viewpoint_target_probs": [
@@ -103,31 +96,31 @@
     {
       "id": 18,
       "target_probs": {
-        "1": 0.1
+        "1": 0.01
       }
     },
     {
       "id": 32,
       "target_probs": {
-        "1": 0.05
+        "1": 0.01
       }
     },
     {
       "id": 35,
       "target_probs": {
-        "1": 0.05
+        "1": 0.01
       }
     },
     {
       "id": 40,
       "target_probs": {
-        "1": 0.2
+        "1": 0.01
       }
     },
     {
       "id": 41,
       "target_probs": {
-        "1": 0.2
+        "1": 0.01
       }
     }
   ],
@@ -135,33 +128,33 @@
     {
       "exist_prob": 1.0,
       "id": 100,
-      "label": "modern living area with white sofa and dark floors",
+      "label": "modern living area with sofa and TV",
       "target_probs": {
-        "1": 0.1
-      }
-    },
-    {
-      "exist_prob": 0.8,
-      "id": 101,
-      "label": "bedroom area with white bed and blue accent wall",
-      "target_probs": {
-        "1": 0.05
+        "1": 0.2
       }
     },
     {
       "exist_prob": 1.0,
-      "id": 200,
-      "label": "dark textured lounge area with quilted walls",
+      "id": 101,
+      "label": "dark textured lounge area with padded walls",
       "target_probs": {
-        "1": 0.1
+        "1": 0.01
       }
     },
     {
-      "exist_prob": 0.7,
-      "id": 201,
-      "label": "bright hallway area beyond lounge doorway",
+      "exist_prob": 0.9,
+      "id": 102,
+      "label": "bedroom area with large bed and windows",
       "target_probs": {
-        "1": 0.2
+        "1": 0.01
+      }
+    },
+    {
+      "exist_prob": 0.9,
+      "id": 103,
+      "label": "bright corridor area beyond lounge",
+      "target_probs": {
+        "1": 0.05
       }
     }
   ]

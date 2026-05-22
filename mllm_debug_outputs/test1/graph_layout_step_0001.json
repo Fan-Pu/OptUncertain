@@ -1,7 +1,7 @@
 {
   "agent_current_vp_ids": {
     "agent0": 0,
-    "agent1": 41
+    "agent1": 18
   },
   "edges": [
     {
@@ -48,32 +48,8 @@
     },
     {
       "grounded": false,
-      "i": 19,
-      "j": 25,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 19,
-      "j": 41,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 25,
-      "j": 41,
-      "type": "vv"
-    },
-    {
-      "grounded": false,
       "i": 32,
       "j": 35,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 40,
-      "j": 41,
       "type": "vv"
     }
   ],
@@ -117,21 +93,10 @@
       "connected_node_ids": [
         9
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        25,
-        41
-      ],
-      "grounded": false,
-      "id": 19,
-      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -141,17 +106,6 @@
       "grounded": false,
       "id": 21,
       "label": "77a1a11978b04e9cbf74914c98578ab8",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        19,
-        41
-      ],
-      "grounded": false,
-      "id": 25,
-      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -179,8 +133,7 @@
     },
     {
       "connected_node_ids": [
-        9,
-        41
+        9
       ],
       "grounded": false,
       "id": 40,
@@ -190,15 +143,12 @@
     },
     {
       "connected_node_ids": [
-        9,
-        19,
-        25,
-        40
+        9
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -210,19 +160,7 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 100,
-      "label": "modern living area with white sofa and dark floors",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        32,
-        35
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 101,
-      "label": "bedroom area with white bed and blue accent wall",
+      "label": "modern living area with sofa and TV",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -233,22 +171,32 @@
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 200,
-      "label": "dark textured lounge area with quilted walls",
+      "id": 101,
+      "label": "dark textured lounge area with padded walls",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        19,
-        25,
+        32,
+        35
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 102,
+      "label": "bedroom area with large bed and windows",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
         40,
         41
       ],
       "connected_node_ids": [],
-      "grounded": true,
-      "id": 201,
-      "label": "bright hallway area beyond lounge doorway",
+      "grounded": false,
+      "id": 103,
+      "label": "bright corridor area beyond lounge",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -261,31 +209,27 @@
       21
     ],
     "101": [
-      32,
-      35
-    ],
-    "200": [
       9,
       18
     ],
-    "201": [
-      19,
-      25,
+    "102": [
+      32,
+      35
+    ],
+    "103": [
       40,
       41
     ]
   },
   "viewpoint_to_region": {
     "0": 100,
-    "9": 200,
+    "9": 101,
     "16": 100,
-    "18": 200,
-    "19": 201,
+    "18": 101,
     "21": 100,
-    "25": 201,
-    "32": 101,
-    "35": 101,
-    "40": 201,
-    "41": 201
+    "32": 102,
+    "35": 102,
+    "40": 103,
+    "41": 103
   }
 }
