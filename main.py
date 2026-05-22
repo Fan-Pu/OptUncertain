@@ -395,6 +395,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             agent_observations=agent_observations,
             targets=graph_targets,
             graph=hypothesis_graph,
+            scorer=scorer,
         )
 
         debug_step_index = int(mllm_client.semantic_raw_output_index) - 1

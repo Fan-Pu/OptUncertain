@@ -2,11 +2,11 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 100
+      "current_region_node_id": 201
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 101
+      "current_region_node_id": 200
     }
   ],
   "current_viewpoints_reassignment": [],
@@ -47,31 +47,31 @@
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        0,
-        16
+        0
       ],
       "region_node_id": 100
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        9,
-        18
-      ],
-      "region_node_id": 101
     },
     {
       "assigned_viewpoint_node_indices": [
         32,
         35
       ],
-      "region_node_id": 102
+      "region_node_id": 101
     },
     {
       "assigned_viewpoint_node_indices": [
+        9,
+        18
+      ],
+      "region_node_id": 200
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        16,
         40,
         41
       ],
-      "region_node_id": 103
+      "region_node_id": 201
     }
   ],
   "viewpoint_target_probs": [
@@ -128,33 +128,33 @@
     {
       "exist_prob": 1.0,
       "id": 100,
-      "label": "modern living area with sofa and TV",
+      "label": "modern living area with white sofa",
       "target_probs": {
-        "1": 0.2
+        "1": 0.1
+      }
+    },
+    {
+      "exist_prob": 0.9,
+      "id": 101,
+      "label": "bedroom area with large white bed",
+      "target_probs": {
+        "1": 0.01
       }
     },
     {
       "exist_prob": 1.0,
-      "id": 101,
-      "label": "dark textured lounge area with padded walls",
+      "id": 200,
+      "label": "dark textured lounge area with quilted walls",
       "target_probs": {
         "1": 0.01
       }
     },
     {
       "exist_prob": 0.9,
-      "id": 102,
-      "label": "bedroom area with large bed and windows",
-      "target_probs": {
-        "1": 0.01
-      }
-    },
-    {
-      "exist_prob": 0.9,
-      "id": 103,
+      "id": 201,
       "label": "bright corridor area beyond lounge",
       "target_probs": {
-        "1": 0.05
+        "1": 0.01
       }
     }
   ]

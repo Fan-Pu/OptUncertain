@@ -2,14 +2,19 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 100
+      "current_region_node_id": 201
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 101
+      "current_region_node_id": 200
     }
   ],
-  "current_viewpoints_reassignment": [],
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 201,
+      "viewpoint_id": 0
+    }
+  ],
   "detections": [
     {
       "agent_id": "agent0",
@@ -39,8 +44,6 @@
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        0,
-        16,
         21
       ],
       "region_node_id": 100
@@ -50,7 +53,14 @@
         9,
         18
       ],
-      "region_node_id": 101
+      "region_node_id": 200
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        0,
+        16
+      ],
+      "region_node_id": 201
     }
   ],
   "viewpoint_target_probs": [
@@ -75,13 +85,13 @@
     {
       "id": 16,
       "target_probs": {
-        "1": 0.3
+        "1": 0.2
       }
     },
     {
       "id": 21,
       "target_probs": {
-        "1": 0.5
+        "1": 0.3
       }
     }
   ],
@@ -89,17 +99,25 @@
     {
       "exist_prob": 1.0,
       "id": 100,
-      "label": "modern living area with sofa and TV",
+      "label": "modern living area with white sofa",
       "target_probs": {
-        "1": 0.6
+        "1": 0.4
       }
     },
     {
       "exist_prob": 1.0,
-      "id": 101,
-      "label": "dark textured lounge area with padded walls",
+      "id": 200,
+      "label": "dark textured lounge area with quilted walls",
       "target_probs": {
         "1": 0.1
+      }
+    },
+    {
+      "exist_prob": 0.9,
+      "id": 201,
+      "label": "bright corridor area beyond lounge",
+      "target_probs": {
+        "1": 0.2
       }
     }
   ]

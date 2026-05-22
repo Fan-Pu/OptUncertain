@@ -195,27 +195,12 @@
     },
     {
       "assigned_viewpoint_ids": [
-        0,
-        16,
-        21,
         27
       ],
       "connected_node_ids": [],
-      "grounded": true,
+      "grounded": false,
       "id": 100,
-      "label": "modern living area with sofa and TV",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        9,
-        18
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 101,
-      "label": "dark textured lounge area with padded walls",
+      "label": "modern living area with white sofa",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -227,19 +212,34 @@
       ],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 102,
-      "label": "bedroom area with large bed and windows",
+      "id": 101,
+      "label": "bedroom area with large white bed",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
+        9,
+        18
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 200,
+      "label": "dark textured lounge area with quilted walls",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        16,
+        21,
         40,
         41
       ],
       "connected_node_ids": [],
-      "grounded": false,
-      "id": 103,
+      "grounded": true,
+      "id": 201,
       "label": "bright corridor area beyond lounge",
       "node_visit_times": 0,
       "type": "region"
@@ -248,36 +248,36 @@
   "observation_step": 3,
   "region_to_viewpoints": {
     "100": [
-      0,
-      16,
-      21,
       27
     ],
     "101": [
-      9,
-      18
-    ],
-    "102": [
       11,
       32,
       35
     ],
-    "103": [
+    "200": [
+      9,
+      18
+    ],
+    "201": [
+      0,
+      16,
+      21,
       40,
       41
     ]
   },
   "viewpoint_to_region": {
-    "0": 100,
-    "9": 101,
-    "11": 102,
-    "16": 100,
-    "18": 101,
-    "21": 100,
+    "0": 201,
+    "9": 200,
+    "11": 101,
+    "16": 201,
+    "18": 200,
+    "21": 201,
     "27": 100,
-    "32": 102,
-    "35": 102,
-    "40": 103,
-    "41": 103
+    "32": 101,
+    "35": 101,
+    "40": 201,
+    "41": 201
   }
 }

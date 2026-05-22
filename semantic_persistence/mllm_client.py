@@ -18,6 +18,10 @@ if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
 
 
+class SigLIPRegionValidationError(RuntimeError):
+    pass
+
+
 class MLLMClient:
     def __init__(
         self,
@@ -450,6 +454,7 @@ class MLLMClient:
         targets: List[Dict[str, object]],
         graph_summary: Optional[Dict[str, object]] = None,
         fixed_detections: Optional[List[Dict[str, object]]] = None,
+        scorer=None,
         semantic_payload_contract: str = "graph_mllm",
         max_repair_retries: int = 0,
         step_index: Optional[int] = None,
@@ -474,8 +479,11 @@ class MLLMClient:
                     targets=targets,
                     graph_summary=graph_summary,
                     fixed_detections=fixed_detections,
+                    scorer=scorer,
                     semantic_payload_contract=semantic_payload_contract,
                 )
+            except SigLIPRegionValidationError:
+                raise
             except Exception as exc:
                 error_message = str(exc)
                 current_payload = attempt_payload
@@ -1569,6 +1577,7 @@ class MLLMClient:
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         graph: HypothesisGraph,
+        scorer,
     ) -> Optional[Dict[str, object]]:
         if self.save_debug_images:
             for image_index, observation in enumerate(agent_observations):
@@ -1709,6 +1718,7 @@ class MLLMClient:
                         targets=graph_targets,
                         graph_summary=graph_summary,
                         fixed_detections=fixed_detections,
+                        scorer=scorer,
                         semantic_payload_contract="saved_materialized",
                         max_repair_retries=max_validation_retries,
                         step_index=step_index,
@@ -1720,6 +1730,8 @@ class MLLMClient:
                     self.semantic_raw_output_index = step_index + 1
                     self._write_user_message(step_index, user_message)
                     return payload
+                except SigLIPRegionValidationError:
+                    raise
                 except Exception as exc:
                     print(
                         "Saved semantic raw output for step %s is invalid. "
@@ -1765,6 +1777,7 @@ class MLLMClient:
                 targets=graph_targets,
                 graph_summary=graph_summary,
                 fixed_detections=fixed_detections,
+                scorer=scorer,
                 semantic_payload_contract="graph_mllm",
                 max_repair_retries=max_validation_retries,
                 step_index=step_index,
@@ -1778,6 +1791,10 @@ class MLLMClient:
 
             self.semantic_raw_output_index = step_index + 1
             return payload
+
+        except SigLIPRegionValidationError:
+            self.semantic_raw_output_index = step_index + 1
+            raise
 
         except Exception as exc:
             self.semantic_raw_output_index = step_index + 1
@@ -2021,6 +2038,7 @@ class MLLMClient:
         targets: List[Dict[str, object]],
         graph_summary: Optional[Dict[str, object]] = None,
         fixed_detections: Optional[List[Dict[str, object]]] = None,
+        scorer=None,
         semantic_payload_contract: str = "graph_mllm",
     ) -> Dict[str, object]:
         if semantic_payload_contract not in {"graph_mllm", "saved_materialized"}:
@@ -2435,6 +2453,68 @@ class MLLMClient:
                 "target_probs": restored_target_probs,
             }
 
+        def make_siglip_region_record_from_graph(region_id: int) -> Dict[str, object]:
+            graph_region = graph_region_records.get(region_id)
+            if graph_region is None:
+                raise SigLIPRegionValidationError(
+                    "Cannot materialize SIGLIP-selected graph region %s because "
+                    "it is missing from graph_summary.nodes." % region_id
+                )
+
+            label = str(graph_region.get("label", "")).strip()
+            if not label:
+                raise SigLIPRegionValidationError(
+                    "Cannot materialize SIGLIP-selected graph region %s because "
+                    "the graph summary has no region label." % region_id
+                )
+
+            exist_prob = graph_region.get("exist_prob")
+            if not is_number(exist_prob) or not (0.0 < float(exist_prob) <= 1.0):
+                raise SigLIPRegionValidationError(
+                    "Cannot materialize SIGLIP-selected graph region %s because "
+                    "exist_prob is invalid: %s." % (region_id, exist_prob)
+                )
+
+            target_probs = graph_region.get("target_probs")
+            if not isinstance(target_probs, dict):
+                raise SigLIPRegionValidationError(
+                    "Cannot materialize SIGLIP-selected graph region %s because "
+                    "target_probs is not a dictionary." % region_id
+                )
+
+            target_prob_by_id = {
+                str(target_id): value for target_id, value in target_probs.items()
+            }
+            returned_target_ids = set(target_prob_by_id)
+            if returned_target_ids != target_ids:
+                raise SigLIPRegionValidationError(
+                    "Cannot materialize SIGLIP-selected graph region %s because "
+                    "target_probs keys %s do not match expected target ids %s."
+                    % (
+                        region_id,
+                        sorted(returned_target_ids),
+                        sorted(target_ids),
+                    )
+                )
+
+            restored_target_probs = {}
+            for target_id in ordered_target_ids:
+                value = target_prob_by_id[target_id]
+                if not is_number(value) or not (0.0 < float(value) <= 1.0):
+                    raise SigLIPRegionValidationError(
+                        "Cannot materialize SIGLIP-selected graph region %s because "
+                        "target_probs[%s] is invalid: %s."
+                        % (region_id, target_id, value)
+                    )
+                restored_target_probs[target_id] = float(value)
+
+            return {
+                "id": int(region_id),
+                "label": label,
+                "exist_prob": float(exist_prob),
+                "target_probs": restored_target_probs,
+            }
+
         visible_region_ids = set()
         invisible_region_ids = set()
 
@@ -2481,6 +2561,139 @@ class MLLMClient:
                 validate_target_probs_positive(
                     region["target_probs"],
                     "%s region %s" % (region_key, region_id),
+                )
+
+        siglip_current_region_by_viewpoint = {}
+
+        def make_graph_region_visible_for_siglip(region_id: int) -> None:
+            region_id = int(region_id)
+            if region_id in visible_region_ids:
+                return
+
+            if region_id in invisible_region_ids:
+                for region in list(invisible_region_nodes):
+                    if int(region["id"]) == region_id:
+                        invisible_region_nodes.remove(region)
+                        invisible_region_ids.remove(region_id)
+                        break
+
+            visible_region_nodes.append(make_siglip_region_record_from_graph(region_id))
+            visible_region_ids.add(region_id)
+
+        if scorer is not None:
+            candidate_region_labels = {}
+
+            for region_id in sorted(graph_region_records):
+                label = str(graph_region_records[region_id].get("label", "")).strip()
+                if not label:
+                    raise SigLIPRegionValidationError(
+                        "SIGLIP region candidate %s from graph_summary has an empty "
+                        "label." % region_id
+                    )
+                try:
+                    validate_region_label(
+                        label,
+                        "graph_summary region %s" % region_id,
+                    )
+                except Exception as exc:
+                    raise SigLIPRegionValidationError(
+                        "SIGLIP region candidate %s from graph_summary has an "
+                        "invalid label." % region_id
+                    ) from exc
+                candidate_region_labels[region_id] = label
+
+            for region in visible_region_nodes:
+                region_id = int(region["id"])
+                if region_id not in candidate_region_labels:
+                    candidate_region_labels[region_id] = str(region["label"]).strip()
+
+            if not candidate_region_labels:
+                raise SigLIPRegionValidationError(
+                    "SIGLIP current-viewpoint region validation has no candidate "
+                    "region labels."
+                )
+
+            siglip_assignment_records = []
+            for agent_info in agents:
+                agent_id = str(agent_info["agent_id"])
+                observation = observation_by_agent[agent_id]
+                current_viewpoint_id = int(observation["current_viewpoint_index"])
+                if "raw_panorama" not in observation:
+                    raise SigLIPRegionValidationError(
+                        "Observation for agent %s has no raw_panorama for SIGLIP "
+                        "current-viewpoint region validation." % agent_id
+                    )
+                raw_panorama = observation["raw_panorama"]
+                if raw_panorama is None:
+                    raise SigLIPRegionValidationError(
+                        "Observation for agent %s has no raw_panorama for SIGLIP "
+                        "current-viewpoint region validation." % agent_id
+                    )
+
+                selected_region_id = None
+                selected_score = None
+                for region_id in sorted(candidate_region_labels):
+                    try:
+                        score = float(
+                            scorer.score_images_text(
+                                [raw_panorama],
+                                candidate_region_labels[region_id],
+                            )
+                        )
+                    except Exception as exc:
+                        raise SigLIPRegionValidationError(
+                            "SIGLIP scorer failed for current viewpoint %s and "
+                            "region %s." % (current_viewpoint_id, region_id)
+                        ) from exc
+                    if (
+                        selected_score is None
+                        or score > selected_score
+                        or (
+                            score == selected_score
+                            and region_id < int(selected_region_id)
+                        )
+                    ):
+                        selected_region_id = region_id
+                        selected_score = score
+
+                if (
+                    current_viewpoint_id in siglip_current_region_by_viewpoint
+                    and siglip_current_region_by_viewpoint[current_viewpoint_id]
+                    != selected_region_id
+                ):
+                    raise SigLIPRegionValidationError(
+                        "Current viewpoint %s is shared by multiple agents with "
+                        "different SIGLIP region selections: %s and %s."
+                        % (
+                            current_viewpoint_id,
+                            siglip_current_region_by_viewpoint[current_viewpoint_id],
+                            selected_region_id,
+                        )
+                    )
+
+                siglip_current_region_by_viewpoint[current_viewpoint_id] = int(
+                    selected_region_id
+                )
+                if selected_region_id in graph_region_records:
+                    make_graph_region_visible_for_siglip(selected_region_id)
+
+                agent_info["current_region_node_id"] = int(selected_region_id)
+                agent_current_region[agent_id] = int(selected_region_id)
+                siglip_assignment_records.append(
+                    {
+                        "agent_id": agent_id,
+                        "viewpoint_id": current_viewpoint_id,
+                        "region_id": int(selected_region_id),
+                        "label": candidate_region_labels[selected_region_id],
+                        "score": float(selected_score),
+                    }
+                )
+
+            print("SIGLIP current-viewpoint region selections:")
+            for record in siglip_assignment_records:
+                print(
+                    "  Agent %(agent_id)s viewpoint %(viewpoint_id)s -> region "
+                    "%(region_id)s (%(label)s), score %(score)s." % record
                 )
 
         if visible_region_ids & invisible_region_ids:
@@ -2714,6 +2927,11 @@ class MLLMClient:
                     region_node_id
                 )
 
+        for viewpoint_id, region_id in sorted(siglip_current_region_by_viewpoint.items()):
+            assignment_candidates_by_viewpoint[int(viewpoint_id)] = [int(region_id)]
+            if int(region_id) not in assignment_region_order:
+                assignment_region_order.append(int(region_id))
+
         returned_assignment_viewpoint_ids = set(assignment_candidates_by_viewpoint)
 
         def ensure_visible_region_available(region_id: int) -> bool:
@@ -2930,11 +3148,10 @@ class MLLMClient:
                     )
                 )
 
-        # Validate explicit current-viewpoint region reassignment events. The
-        # final current-viewpoint assignments are still represented by agents and
-        # viewpoint_node_assigns. This object records only true changes from an
-        # existing graph_summary.viewpoint_to_region assignment.
-        returned_reassignment_by_viewpoint = {}
+        # The MLLM may omit or misstate current-viewpoint reassignment events.
+        # Validate only the event shape, then recompute the canonical event list
+        # from the final SIGLIP-normalized current assignments.
+        seen_reassignment_viewpoints = set()
         for item in current_viewpoints_reassignment:
             item = require_dict(
                 item,
@@ -2949,7 +3166,7 @@ class MLLMClient:
                 )
 
             viewpoint_id = int(item["viewpoint_id"])
-            new_region_id = int(item["new_assigned_region_id"])
+            int(item["new_assigned_region_id"])
 
             if viewpoint_id not in current_viewpoint_ids:
                 raise ValueError(
@@ -2957,43 +3174,12 @@ class MLLMClient:
                     "current viewpoint." % viewpoint_id
                 )
 
-            if viewpoint_id in returned_reassignment_by_viewpoint:
+            if viewpoint_id in seen_reassignment_viewpoints:
                 raise ValueError(
                     "Duplicated current_viewpoints_reassignment item for viewpoint %s."
                     % viewpoint_id
                 )
-
-            old_region_id = graph_viewpoint_to_region.get(viewpoint_id)
-            if old_region_id is None:
-                raise ValueError(
-                    "current_viewpoints_reassignment includes viewpoint %s, but this "
-                    "viewpoint has no prior graph_summary.viewpoint_to_region assignment."
-                    % viewpoint_id
-                )
-
-            if new_region_id == old_region_id:
-                raise ValueError(
-                    "current_viewpoints_reassignment includes viewpoint %s, but "
-                    "new_assigned_region_id %s is identical to its old region assignment."
-                    % (viewpoint_id, new_region_id)
-                )
-
-            if new_region_id not in visible_region_ids:
-                raise ValueError(
-                    "current_viewpoints_reassignment uses new_assigned_region_id %s "
-                    "for viewpoint %s, but this region is not in visible_region_nodes."
-                    % (new_region_id, viewpoint_id)
-                )
-
-            final_assigned_region_id = assigned_viewpoint_to_region.get(viewpoint_id)
-            if new_region_id != final_assigned_region_id:
-                raise ValueError(
-                    "current_viewpoints_reassignment says viewpoint %s is reassigned "
-                    "to region %s, but viewpoint_node_assigns assigns it to region %s."
-                    % (viewpoint_id, new_region_id, final_assigned_region_id)
-                )
-
-            returned_reassignment_by_viewpoint[viewpoint_id] = new_region_id
+            seen_reassignment_viewpoints.add(viewpoint_id)
 
         expected_reassignment_by_viewpoint = {}
         for current_viewpoint_id in sorted(current_viewpoint_ids):
@@ -3003,15 +3189,7 @@ class MLLMClient:
             if old_region_id is not None and new_region_id != old_region_id:
                 expected_reassignment_by_viewpoint[current_viewpoint_id] = new_region_id
 
-        if returned_reassignment_by_viewpoint != expected_reassignment_by_viewpoint:
-            raise ValueError(
-                "current_viewpoints_reassignment does not match the actual current-"
-                "viewpoint region assignment changes. Got %s, expected %s."
-                % (
-                    returned_reassignment_by_viewpoint,
-                    expected_reassignment_by_viewpoint,
-                )
-            )
+        returned_reassignment_by_viewpoint = expected_reassignment_by_viewpoint
 
         if returned_reassignment_by_viewpoint:
             print("Current viewpoint region reassignments:")

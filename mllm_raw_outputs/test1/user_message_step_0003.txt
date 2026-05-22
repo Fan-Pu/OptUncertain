@@ -74,10 +74,10 @@ Compact shared graph summary:
       "type": "vv"
     },
     {
-      "cond_exist_prob": 0.9999,
+      "cond_exist_prob": 0.9998,
       "distance_mean": 1.3925,
       "distance_var": 0.227,
-      "exist_prob": 0.9999,
+      "exist_prob": 0.9998,
       "grounded": 0,
       "i": 11,
       "j": 27,
@@ -151,7 +151,7 @@ Compact shared graph summary:
       "id": 11,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0717
+        "1": 0.1149
       },
       "type": "viewpoint"
     },
@@ -191,7 +191,7 @@ Compact shared graph summary:
       "id": 27,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.4299
+        "1": 0.3446
       },
       "type": "viewpoint"
     },
@@ -201,7 +201,7 @@ Compact shared graph summary:
       "id": 32,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1246
+        "1": 0.1351
       },
       "type": "viewpoint"
     },
@@ -211,7 +211,7 @@ Compact shared graph summary:
       "id": 35,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1246
+        "1": 0.1351
       },
       "type": "viewpoint"
     },
@@ -221,7 +221,7 @@ Compact shared graph summary:
       "id": 40,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1246
+        "1": 0.1351
       },
       "type": "viewpoint"
     },
@@ -231,39 +231,21 @@ Compact shared graph summary:
       "id": 41,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1246
+        "1": 0.1351
       },
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
-        0,
-        16,
-        21,
         27
       ],
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 100,
-      "label": "modern living area with sofa and TV",
+      "label": "modern living area with white sofa",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.7505
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        9,
-        18
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 101,
-      "label": "dark textured lounge area with padded walls",
-      "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.0345
+        "1": 0.7685
       },
       "type": "region"
     },
@@ -275,26 +257,44 @@ Compact shared graph summary:
       ],
       "exist_prob": 0.9,
       "grounded": 0,
-      "id": 102,
-      "label": "bedroom area with large bed and windows",
+      "id": 101,
+      "label": "bedroom area with large white bed",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0358
+        "1": 0.0769
       },
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
+        9,
+        18
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 200,
+      "label": "dark textured lounge area with quilted walls",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.0741
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        16,
+        21,
         40,
         41
       ],
-      "exist_prob": 0.9,
-      "grounded": 0,
-      "id": 103,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 201,
       "label": "bright corridor area beyond lounge",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.1791
+        "1": 0.0805
       },
       "type": "region"
     }
@@ -304,17 +304,17 @@ Compact shared graph summary:
     "1": false
   },
   "viewpoint_to_region": {
-    "0": 100,
-    "11": 102,
-    "16": 100,
-    "18": 101,
-    "21": 100,
+    "0": 201,
+    "11": 101,
+    "16": 201,
+    "18": 200,
+    "21": 201,
     "27": 100,
-    "32": 102,
-    "35": 102,
-    "40": 103,
-    "41": 103,
-    "9": 101
+    "32": 101,
+    "35": 101,
+    "40": 201,
+    "41": 201,
+    "9": 200
   }
 }
 
@@ -325,7 +325,7 @@ Per-agent observation context:
     "current_viewpoint_index": 27,
     "image_index": 0,
     "prior_assigned_region_id": 100,
-    "prior_assigned_region_label": "modern living area with sofa and TV",
+    "prior_assigned_region_label": "modern living area with white sofa",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
@@ -339,8 +339,8 @@ Per-agent observation context:
       },
       {
         "distance": 1.205,
-        "prior_assigned_region_id": 100,
-        "prior_assigned_region_label": "modern living area with sofa and TV",
+        "prior_assigned_region_id": 201,
+        "prior_assigned_region_label": "bright corridor area beyond lounge",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 21
@@ -351,15 +351,15 @@ Per-agent observation context:
     "agent_id": "agent1",
     "current_viewpoint_index": 41,
     "image_index": 1,
-    "prior_assigned_region_id": 103,
+    "prior_assigned_region_id": 201,
     "prior_assigned_region_label": "bright corridor area beyond lounge",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
       {
         "distance": 1.705,
-        "prior_assigned_region_id": 101,
-        "prior_assigned_region_label": "dark textured lounge area with padded walls",
+        "prior_assigned_region_id": 200,
+        "prior_assigned_region_label": "dark textured lounge area with quilted walls",
         "prior_grounded": true,
         "prior_visit_times": 2,
         "viewpoint_index": 9
@@ -382,7 +382,7 @@ Per-agent observation context:
       },
       {
         "distance": 0.666,
-        "prior_assigned_region_id": 103,
+        "prior_assigned_region_id": 201,
         "prior_assigned_region_label": "bright corridor area beyond lounge",
         "prior_grounded": false,
         "prior_visit_times": 0,
@@ -495,7 +495,7 @@ Current-step interpretation note:
 - The observation context is the source of truth for current agent locations.
 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
 - If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
-- If a current region already appears in the graph summary, reuse its id and label and still include it in visible_region_nodes.
+- If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label and still include it in visible_region_nodes.
 
 Output schema example. Use keys and value types only. Do not copy example values unless supported:
 {
@@ -614,16 +614,19 @@ Field descriptions:
 }
 
 Current step request:
-- Identify each agent current semantic region.
-- Distinguish the area physically containing a viewpoint from areas that are only visible from that viewpoint. A current viewpoint should be assigned to the region that contains the robot pose, not to an adjacent area that appears in the panorama.
-- Use spatial continuity. If a current viewpoint is directly connected to a previously visited or grounded neighboring viewpoint with a short distance, and no clear doorway, wall, corridor, bedroom boundary, bathroom boundary, or partition separates them, prefer the same region as that grounded neighbor.
-- if an ungrounded neighboring viewpoint has no prior region and is directly visible from a grounded current viewpoint, assign it to the current viewpoint's region unless the MLLM gives strong evidence that it is separated by a doorway, wall, room boundary, or clear semantic transition.
-- For non-current visible neighboring viewpoints, do not assign them to a different semantic region only because objects from that region are visible. Assign them to a different region only when the viewpoint itself appears to be across a clear spatial boundary.
-- A label such as "dining area beyond living room" usually describes a visible adjacent region, not necessarily the region containing the current viewpoint.
-- For each current viewpoint with prior_assigned_region_id, check whether prior_assigned_region_label still matches the current panorama.
-- If the prior region label still matches, keep the assignment and do not include that viewpoint in current_viewpoints_reassignment.
-- If the prior region label does not match, assign the viewpoint to the better-matching region and add one current_viewpoints_reassignment item.
-- If a reassigned region is newly proposed, include its full region node record in visible_region_nodes.
+- For each agent, inspect the current viewpoint marker in the panorama and decide which semantic region physically contains that marker.
+- Do not assign a current viewpoint to a region only because that region is visible nearby, through a doorway, or at the side of the panorama.
+- If a current viewpoint has prior_assigned_region_id, compare the prior_assigned_region_label with the local visual evidence around the current viewpoint marker.
+- If the prior region label does not match the local area around the marker, reassign the current viewpoint to the best matching existing visible region when possible.
+- If no existing region matches the local area around the current viewpoint marker, create a new visible_region_node.
+- If a current viewpoint is reassigned, update all three places consistently: agents[].current_region_node_id, viewpoint_node_assigns, and current_viewpoints_reassignment.
+
+- After choosing the final region for each current viewpoint, assign each non-current visible neighboring viewpoint by jointly considering its marker location, its distance to the current viewpoint, and whether a clear spatial boundary separates it from the current viewpoint.
+- Use prior_assigned_region_id and graph_summary.viewpoint_to_region only as historical context for non-current visible neighboring viewpoints, not as fixed assignments.
+- If a non-current visible neighboring viewpoint is close to the current viewpoint and no doorway, wall, corridor boundary, room boundary, or transition area separates them, prefer the current viewpoint's final region.
+- If a non-current visible neighboring viewpoint is farther away, or if its marker is across a clear spatial boundary, assign it to the semantic region that physically contains its marker.
+- Do not assign a non-current visible neighboring viewpoint to an adjacent dining area, hallway, bedroom, counter area, or doorway area only because that area is visible in the panorama.
+
 - For viewpoint_target_probs, follow the Required viewpoint_target_probs id skeleton exactly: keep every listed id and do not add any other id.
 - Do not include current viewpoint ids in viewpoint_target_probs.
 - Do not copy old viewpoint ids from graph_summary region assigned_viewpoint_ids.
@@ -637,5 +640,4 @@ Current step request:
 - Propose only legal uncertain edges supported by observation and graph context.
 - Propose VZ edges only to semantic regions with no assigned viewpoints; the region may be visible or invisible.
 - Propose VV edges between two unvisited non-current viewpoints only when a directly traversable local connection is spatially plausible from the observation and graph context. The support may be uncertain, so use lower exist_prob for weak but meaningful hypotheses. Do not propose a VV edge across an apparent obstacle, large furniture, wall, blocked passage, or closed partition. Same-room or same-region membership alone is not enough.
-- For non-current visible neighboring viewpoints, use graph_summary.viewpoint_to_region and prior_assigned_region_id only as historical context. Do not treat them as fixed assignments. Assign each non-current visible neighboring viewpoint by jointly considering its marker location in the panorama, its distance to the current viewpoint, and whether a clear spatial boundary separates it from the current viewpoint.
 - Return compact JSON only.
