@@ -47,7 +47,7 @@ class MLLMClient:
         self.raw_output_dir = str(raw_output_dir)
         self.raw_debug_dir = str(raw_debug_dir)
         self.max_validation_retries = max(0, int(max_validation_retries))
-        self.semantic_raw_output_index = 0
+        self.semantic_raw_output_index = 1
         self.found_target_trace = []
         self.api_key_env = str(api_key_env)
 
@@ -345,8 +345,21 @@ class MLLMClient:
             "viewpoint_target_prob_ids": viewpoint_target_prob_ids,
             "fixed_detections": fixed_detections,
             "graph_context": graph_context,
-            "current_payload": payload,
         }
+        required_top_level_keys = [
+            "agents",
+            "current_viewpoints_reassignment",
+            "detections",
+            "visible_region_nodes",
+            "invisible_region_nodes",
+            "viewpoint_target_probs",
+            "viewpoint_node_assigns",
+            "new_edges",
+            "edge_distance_variances",
+        ]
+        forbidden_top_level_keys = sorted(
+            set(repair_context) | {"current_payload", "repair_context"}
+        )
 
         return (
             dedent("""
@@ -362,9 +375,14 @@ class MLLMClient:
             to the listed error(s).
 
             Important repair rules:
-            - Return one complete corrected JSON object only.
+            - Return only the corrected current_payload JSON object.
+            - Do not return repair_context, current_payload as a wrapper key, or
+              any wrapper/context object.
             - Do not return a patch, explanation, markdown, or code fences.
-            - Keep the same top-level schema.
+            - The returned object must contain exactly these top-level keys:
+              {required_top_level_keys_json}
+            - The returned object must not contain these repair-only top-level
+              keys: {forbidden_top_level_keys_json}
             - If a required key is missing from one object, add only that key
               with a valid value.
             - If an object has an extra key, remove only the extra key.
@@ -381,14 +399,33 @@ class MLLMClient:
             - Do not add viewpoint ids outside current_step_allowed_viewpoint_ids
               to viewpoint_node_assigns.
 
-            Repair context and current payload:
+            Repair context for reference only; do not return this object:
             {repair_context_json}
+
+            Current payload to repair. Return this object after applying the
+            smallest valid edit:
+            {current_payload_json}
             """)
             .strip()
             .format(
                 error_text=error_text,
+                required_top_level_keys_json=json.dumps(
+                    required_top_level_keys,
+                    indent=2,
+                    sort_keys=True,
+                ),
+                forbidden_top_level_keys_json=json.dumps(
+                    forbidden_top_level_keys,
+                    indent=2,
+                    sort_keys=True,
+                ),
                 repair_context_json=json.dumps(
                     repair_context,
+                    indent=2,
+                    sort_keys=True,
+                ),
+                current_payload_json=json.dumps(
+                    payload,
                     indent=2,
                     sort_keys=True,
                 ),
@@ -1155,6 +1192,7 @@ class MLLMClient:
                 {
                     "agent_id": example_agent_id,
                     "current_region_node_id": 100,
+                    "observed_region_node_ids": [100, 101],
                 }
             ],
             "current_viewpoints_reassignment": [
@@ -1168,6 +1206,12 @@ class MLLMClient:
                     "id": 100,
                     "label": "bright kitchen area near dining table",
                     "exist_prob": 1.0,
+                    "target_probs": target_prob_template,
+                },
+                {
+                    "id": 101,
+                    "label": "adjacent hallway visible through doorway",
+                    "exist_prob": 0.7,
                     "target_probs": target_prob_template,
                 }
             ],
@@ -1223,6 +1267,12 @@ class MLLMClient:
                 "Region id containing the agent current viewpoint. It must appear in "
                 "visible_region_nodes. If this region already exists, reuse its id and "
                 "label and still include it."
+            ),
+            "agents[].observed_region_node_ids": (
+                "Nonempty list of visible_region_nodes ids whose regions are visually "
+                "observed in this agent's panorama image. Include the current_region_node_id "
+                "and any adjacent visible region labels observed in this same panorama. "
+                "Do not include graph-summary-only or invisible region ids."
             ),
             "current_viewpoints_reassignment": (
                 "Explicit region reassignment events for current viewpoints only. "
@@ -1433,6 +1483,7 @@ class MLLMClient:
             Core rules:
             - The per-agent observation context is the source of truth for current agent locations, even if the compact graph summary has older node status values.
             - agents has one item per agent. current_region_node_id is the region containing the agent current viewpoint and must appear in visible_region_nodes. Reuse existing region ids and labels when matched.
+            - agents[].observed_region_node_ids is the nonempty set of visible_region_nodes ids observed in that same agent panorama. It must include agents[].current_region_node_id and must not include invisible or graph-summary-only region ids.
             - For each current viewpoint with a prior_assigned_region_id in the per-agent observation context, compare prior_assigned_region_label against the current panorama. The prior assignment is a semantic hypothesis from earlier steps, not ground truth.
             - If the prior region assignment still matches the current panorama, keep the original region assignment and do not include that viewpoint in current_viewpoints_reassignment.
             - If the prior region assignment does not match the current panorama, assign the current viewpoint to the region that best matches the current observation and include exactly one item in current_viewpoints_reassignment.
@@ -1521,6 +1572,7 @@ class MLLMClient:
                 - If a current viewpoint has prior_assigned_region_id, compare the prior_assigned_region_label with the local visual evidence around the current viewpoint marker.
                 - If the prior region label does not match the local area around the marker, reassign the current viewpoint to the best matching existing visible region when possible.
                 - If no existing region matches the local area around the current viewpoint marker, create a new visible_region_node.
+                - For each agent, list every visible region id observed in that agent's panorama in agents[].observed_region_node_ids. Include the selected current region id and adjacent visible regions seen through openings, doors, or corridors.
                 - If a current viewpoint is reassigned, update all three places consistently: agents[].current_region_node_id, viewpoint_node_assigns, and current_viewpoints_reassignment.
 
                 - After choosing the final region for each current viewpoint, assign each non-current visible neighboring viewpoint by jointly considering its marker location, its distance to the current viewpoint, and whether a clear spatial boundary separates it from the current viewpoint.
@@ -1579,15 +1631,6 @@ class MLLMClient:
         graph: HypothesisGraph,
         scorer,
     ) -> Optional[Dict[str, object]]:
-        if self.save_debug_images:
-            for image_index, observation in enumerate(agent_observations):
-                panorama_image = observation["annotated_panorama"]
-                if panorama_image.dtype != np.uint8:
-                    panorama_image = panorama_image.astype(np.uint8)
-                Image.fromarray(panorama_image).save(
-                    "debug_agent_panorama_%s.png" % image_index
-                )
-
         graph_summary = graph.get_mllm_summary()
         active_detection_targets = self._filter_targets_by_found_state(
             targets=targets,
@@ -1597,7 +1640,7 @@ class MLLMClient:
         if not active_detection_targets:
             return None
 
-        step_index = getattr(self, "semantic_raw_output_index", 0)
+        step_index = getattr(self, "semantic_raw_output_index", 1)
 
         # Resize panorama arrays once. The resized images are used by both the
         # detection-only call and the graph-generation call.
@@ -2157,11 +2200,16 @@ class MLLMClient:
 
         returned_agent_ids = set()
         agent_current_region = {}
+        agent_observed_region_ids = {}
 
         for agent_info in agents:
             agent_info = require_dict(agent_info, "agents[] item")
 
-            expected_keys = {"agent_id", "current_region_node_id"}
+            expected_keys = {
+                "agent_id",
+                "current_region_node_id",
+                "observed_region_node_ids",
+            }
             if set(agent_info) != expected_keys:
                 raise KeyError(
                     "Each agents[] item must contain exactly %s, got %s."
@@ -2171,6 +2219,29 @@ class MLLMClient:
             agent_id = str(agent_info["agent_id"])
             returned_agent_ids.add(agent_id)
             agent_current_region[agent_id] = int(agent_info["current_region_node_id"])
+            observed_region_ids = require_list(
+                agent_info["observed_region_node_ids"],
+                "agents[].observed_region_node_ids",
+            )
+            if not observed_region_ids:
+                raise ValueError(
+                    "Agent %s observed_region_node_ids must be nonempty." % agent_id
+                )
+
+            normalized_observed_region_ids = []
+            seen_observed_region_ids = set()
+            for region_id_raw in observed_region_ids:
+                region_id = int(region_id_raw)
+                if region_id in seen_observed_region_ids:
+                    raise ValueError(
+                        "Agent %s observed_region_node_ids contains duplicated "
+                        "region id %s." % (agent_id, region_id)
+                    )
+                seen_observed_region_ids.add(region_id)
+                normalized_observed_region_ids.append(region_id)
+
+            agent_info["observed_region_node_ids"] = normalized_observed_region_ids
+            agent_observed_region_ids[agent_id] = normalized_observed_region_ids
 
         if returned_agent_ids != expected_agent_ids:
             raise ValueError(
@@ -2453,68 +2524,6 @@ class MLLMClient:
                 "target_probs": restored_target_probs,
             }
 
-        def make_siglip_region_record_from_graph(region_id: int) -> Dict[str, object]:
-            graph_region = graph_region_records.get(region_id)
-            if graph_region is None:
-                raise SigLIPRegionValidationError(
-                    "Cannot materialize SIGLIP-selected graph region %s because "
-                    "it is missing from graph_summary.nodes." % region_id
-                )
-
-            label = str(graph_region.get("label", "")).strip()
-            if not label:
-                raise SigLIPRegionValidationError(
-                    "Cannot materialize SIGLIP-selected graph region %s because "
-                    "the graph summary has no region label." % region_id
-                )
-
-            exist_prob = graph_region.get("exist_prob")
-            if not is_number(exist_prob) or not (0.0 < float(exist_prob) <= 1.0):
-                raise SigLIPRegionValidationError(
-                    "Cannot materialize SIGLIP-selected graph region %s because "
-                    "exist_prob is invalid: %s." % (region_id, exist_prob)
-                )
-
-            target_probs = graph_region.get("target_probs")
-            if not isinstance(target_probs, dict):
-                raise SigLIPRegionValidationError(
-                    "Cannot materialize SIGLIP-selected graph region %s because "
-                    "target_probs is not a dictionary." % region_id
-                )
-
-            target_prob_by_id = {
-                str(target_id): value for target_id, value in target_probs.items()
-            }
-            returned_target_ids = set(target_prob_by_id)
-            if returned_target_ids != target_ids:
-                raise SigLIPRegionValidationError(
-                    "Cannot materialize SIGLIP-selected graph region %s because "
-                    "target_probs keys %s do not match expected target ids %s."
-                    % (
-                        region_id,
-                        sorted(returned_target_ids),
-                        sorted(target_ids),
-                    )
-                )
-
-            restored_target_probs = {}
-            for target_id in ordered_target_ids:
-                value = target_prob_by_id[target_id]
-                if not is_number(value) or not (0.0 < float(value) <= 1.0):
-                    raise SigLIPRegionValidationError(
-                        "Cannot materialize SIGLIP-selected graph region %s because "
-                        "target_probs[%s] is invalid: %s."
-                        % (region_id, target_id, value)
-                    )
-                restored_target_probs[target_id] = float(value)
-
-            return {
-                "id": int(region_id),
-                "label": label,
-                "exist_prob": float(exist_prob),
-                "target_probs": restored_target_probs,
-            }
-
         visible_region_ids = set()
         invisible_region_ids = set()
 
@@ -2563,55 +2572,30 @@ class MLLMClient:
                     "%s region %s" % (region_key, region_id),
                 )
 
+        visible_region_label_by_id = {
+            int(region["id"]): str(region["label"]).strip()
+            for region in visible_region_nodes
+        }
+
+        for agent_id, observed_region_ids in agent_observed_region_ids.items():
+            current_region_id = agent_current_region[agent_id]
+            if current_region_id not in observed_region_ids:
+                raise ValueError(
+                    "Agent %s current_region_node_id %s is not included in "
+                    "observed_region_node_ids %s."
+                    % (agent_id, current_region_id, observed_region_ids)
+                )
+            for region_id in observed_region_ids:
+                if region_id not in visible_region_ids:
+                    raise ValueError(
+                        "Agent %s observed_region_node_ids contains region %s, "
+                        "but this id is not in visible_region_nodes."
+                        % (agent_id, region_id)
+                    )
+
         siglip_current_region_by_viewpoint = {}
 
-        def make_graph_region_visible_for_siglip(region_id: int) -> None:
-            region_id = int(region_id)
-            if region_id in visible_region_ids:
-                return
-
-            if region_id in invisible_region_ids:
-                for region in list(invisible_region_nodes):
-                    if int(region["id"]) == region_id:
-                        invisible_region_nodes.remove(region)
-                        invisible_region_ids.remove(region_id)
-                        break
-
-            visible_region_nodes.append(make_siglip_region_record_from_graph(region_id))
-            visible_region_ids.add(region_id)
-
         if scorer is not None:
-            candidate_region_labels = {}
-
-            for region_id in sorted(graph_region_records):
-                label = str(graph_region_records[region_id].get("label", "")).strip()
-                if not label:
-                    raise SigLIPRegionValidationError(
-                        "SIGLIP region candidate %s from graph_summary has an empty "
-                        "label." % region_id
-                    )
-                try:
-                    validate_region_label(
-                        label,
-                        "graph_summary region %s" % region_id,
-                    )
-                except Exception as exc:
-                    raise SigLIPRegionValidationError(
-                        "SIGLIP region candidate %s from graph_summary has an "
-                        "invalid label." % region_id
-                    ) from exc
-                candidate_region_labels[region_id] = label
-
-            for region in visible_region_nodes:
-                region_id = int(region["id"])
-                if region_id not in candidate_region_labels:
-                    candidate_region_labels[region_id] = str(region["label"]).strip()
-
-            if not candidate_region_labels:
-                raise SigLIPRegionValidationError(
-                    "SIGLIP current-viewpoint region validation has no candidate "
-                    "region labels."
-                )
 
             siglip_assignment_records = []
             for agent_info in agents:
@@ -2632,12 +2616,12 @@ class MLLMClient:
 
                 selected_region_id = None
                 selected_score = None
-                for region_id in sorted(candidate_region_labels):
+                for region_id in sorted(agent_observed_region_ids[agent_id]):
                     try:
                         score = float(
                             scorer.score_images_text(
                                 [raw_panorama],
-                                candidate_region_labels[region_id],
+                                visible_region_label_by_id[region_id],
                             )
                         )
                     except Exception as exc:
@@ -2674,9 +2658,6 @@ class MLLMClient:
                 siglip_current_region_by_viewpoint[current_viewpoint_id] = int(
                     selected_region_id
                 )
-                if selected_region_id in graph_region_records:
-                    make_graph_region_visible_for_siglip(selected_region_id)
-
                 agent_info["current_region_node_id"] = int(selected_region_id)
                 agent_current_region[agent_id] = int(selected_region_id)
                 siglip_assignment_records.append(
@@ -2684,7 +2665,7 @@ class MLLMClient:
                         "agent_id": agent_id,
                         "viewpoint_id": current_viewpoint_id,
                         "region_id": int(selected_region_id),
-                        "label": candidate_region_labels[selected_region_id],
+                        "label": visible_region_label_by_id[selected_region_id],
                         "score": float(selected_score),
                     }
                 )
@@ -2732,11 +2713,7 @@ class MLLMClient:
 
             if viewpoint_id in current_viewpoint_ids:
                 if semantic_payload_contract == "graph_mllm":
-                    raise ValueError(
-                        "viewpoint_target_probs id %s is a current viewpoint. "
-                        "Current viewpoint target_probs are filled from fixed detections "
-                        "and must not be returned by the graph MLLM." % viewpoint_id
-                    )
+                    continue
 
                 if viewpoint_id in returned_current_viewpoint_prob_ids:
                     raise ValueError(
@@ -3391,10 +3368,17 @@ class MLLMClient:
                     i_is_region and j_is_viewpoint
                 )
                 if not valid_vz:
-                    raise ValueError(
-                        "VZ edge (%s, %s) must connect one viewpoint node and one "
-                        "region node." % (i, j)
+                    removed_new_edges.append(
+                        {
+                            "edge": edge,
+                            "reason": (
+                                "VZ edge (%s, %s) does not connect exactly one "
+                                "current-step viewpoint node and one region node."
+                                % (i, j)
+                            ),
+                        }
                     )
+                    continue
 
                 viewpoint_id = i if i_is_viewpoint else j
                 region_id = i if i_is_region else j

@@ -1,7 +1,7 @@
 {
   "agent_current_vp_ids": {
-    "agent0": 27,
-    "agent1": 41
+    "agent0": 21,
+    "agent1": 9
   },
   "edges": [
     {
@@ -48,12 +48,6 @@
     },
     {
       "grounded": true,
-      "i": 15,
-      "j": 27,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
       "i": 16,
       "j": 32,
       "type": "vv"
@@ -65,39 +59,15 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 19,
-      "j": 25,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 19,
-      "j": 41,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 21,
       "j": 27,
       "type": "vv"
     },
     {
-      "grounded": true,
-      "i": 25,
-      "j": 41,
-      "type": "vv"
-    },
-    {
       "grounded": false,
       "i": 32,
       "j": 35,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 40,
-      "j": 41,
       "type": "vv"
     }
   ],
@@ -138,16 +108,6 @@
     },
     {
       "connected_node_ids": [
-        27
-      ],
-      "grounded": false,
-      "id": 15,
-      "label": "5e9f4f8654574e699480e90ecdd150c8",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
         0,
         32,
         35
@@ -170,17 +130,6 @@
     },
     {
       "connected_node_ids": [
-        25,
-        41
-      ],
-      "grounded": false,
-      "id": 19,
-      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
         0,
         11,
         27
@@ -193,25 +142,13 @@
     },
     {
       "connected_node_ids": [
-        19,
-        41
-      ],
-      "grounded": false,
-      "id": 25,
-      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
         11,
-        15,
         21
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 27,
       "label": "b185432bf33645aca813ac2a961b4140",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -238,8 +175,7 @@
     },
     {
       "connected_node_ids": [
-        9,
-        41
+        9
       ],
       "grounded": false,
       "id": 40,
@@ -249,23 +185,21 @@
     },
     {
       "connected_node_ids": [
-        9,
-        19,
-        25,
-        40
+        9
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
-        15
+        0,
+        21
       ],
       "connected_node_ids": [],
-      "grounded": false,
+      "grounded": true,
       "id": 100,
       "label": "modern living area with white sofa",
       "node_visit_times": 0,
@@ -274,21 +208,21 @@
     {
       "assigned_viewpoint_ids": [
         11,
+        16,
         32,
         35
       ],
       "connected_node_ids": [],
-      "grounded": false,
+      "grounded": true,
       "id": 101,
-      "label": "bedroom area with large white bed",
+      "label": "bedroom area with large bed beyond partition",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         9,
-        18,
-        41
+        18
       ],
       "connected_node_ids": [],
       "grounded": true,
@@ -299,61 +233,63 @@
     },
     {
       "assigned_viewpoint_ids": [
-        0,
-        16,
-        19,
-        21,
-        25,
-        27,
-        40
+        40,
+        41
       ],
       "connected_node_ids": [],
-      "grounded": true,
+      "grounded": false,
       "id": 201,
-      "label": "bright corridor area beyond lounge",
+      "label": "bright corridor area visible through doorway",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        27
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 300,
+      "label": "bright dining area with counter and stools",
       "node_visit_times": 0,
       "type": "region"
     }
   ],
-  "observation_step": 4,
+  "observation_step": 3,
   "region_to_viewpoints": {
     "100": [
-      15
+      0,
+      21
     ],
     "101": [
       11,
+      16,
       32,
       35
     ],
     "200": [
       9,
-      18,
-      41
+      18
     ],
     "201": [
-      0,
-      16,
-      19,
-      21,
-      25,
-      27,
-      40
+      40,
+      41
+    ],
+    "300": [
+      27
     ]
   },
   "viewpoint_to_region": {
-    "0": 201,
+    "0": 100,
     "9": 200,
     "11": 101,
-    "15": 100,
-    "16": 201,
+    "16": 101,
     "18": 200,
-    "19": 201,
-    "21": 201,
-    "25": 201,
-    "27": 201,
+    "21": 100,
+    "27": 300,
     "32": 101,
     "35": 101,
     "40": 201,
-    "41": 200
+    "41": 201
   }
 }

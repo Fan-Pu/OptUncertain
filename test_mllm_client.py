@@ -72,6 +72,7 @@ def _base_payload():
             {
                 "agent_id": "agent0",
                 "current_region_node_id": 100,
+                "observed_region_node_ids": [100],
             }
         ],
         "current_viewpoints_reassignment": [],
@@ -205,20 +206,34 @@ def test_graph_mllm_payload_materializes_current_viewpoint_target_probs():
     ]
 
 
-def test_graph_mllm_payload_rejects_current_viewpoint_target_probs():
+def test_graph_mllm_payload_ignores_current_viewpoint_target_probs():
     payload = _base_payload()
     payload["viewpoint_target_probs"].insert(
         0,
         {
             "id": 0,
             "target_probs": {
-                "0": 1.0,
+                "0": 0.0,
             },
         },
     )
 
-    with pytest.raises(ValueError, match="must not be returned by the graph MLLM"):
-        _validate(payload)
+    validated = _validate(payload)
+
+    assert validated["viewpoint_target_probs"] == [
+        {
+            "id": 0,
+            "target_probs": {
+                "0": 1.0,
+            },
+        },
+        {
+            "id": 1,
+            "target_probs": {
+                "0": 0.25,
+            },
+        },
+    ]
 
 
 def test_saved_materialized_payload_accepts_matching_current_viewpoint_target_probs():
@@ -273,14 +288,62 @@ def test_saved_materialized_payload_rejects_mismatched_current_viewpoint_target_
         )
 
 
-def test_siglip_replaces_current_region_with_graph_region_and_restores_visible_record():
+def test_illegal_vz_edge_is_removed_from_optional_new_edges():
     payload = _base_payload()
+    payload["new_edges"] = [
+        {
+            "i": 1,
+            "j": 2,
+            "edge_type": "VZ",
+            "exist_prob": 0.5,
+            "dist": 3.0,
+        }
+    ]
+
+    validated = _validate(payload)
+
+    assert validated["new_edges"] == []
+
+
+def test_repair_prompt_returns_corrected_current_payload_only():
+    prompt = MLLMClient._build_semantic_payload_repair_user_message(
+        payload=_base_payload(),
+        validation_errors=["Unexpected top-level keys: ['current_payload']."],
+        agent_observations=_agent_observations(),
+        targets=_targets(),
+        graph_summary=_graph_summary({100: "bedroom"}),
+        fixed_detections=_fixed_detections(),
+    )
+
+    assert "Return only the corrected current_payload JSON object." in prompt
+    assert "Do not return repair_context" in prompt
+    assert "The returned object must contain exactly these top-level keys" in prompt
+    assert "Repair context for reference only; do not return this object" in prompt
+    assert "Current payload to repair. Return this object after applying" in prompt
+    assert '"agent_context"' in prompt
+    assert '"graph_context"' in prompt
+    assert '"current_payload"' in prompt
+
+
+def test_siglip_uses_only_agent_observed_visible_regions():
+    payload = _base_payload()
+    payload["agents"][0]["observed_region_node_ids"] = [100, 101]
+    payload["visible_region_nodes"].append(
+        {
+            "id": 101,
+            "label": "kitchen",
+            "exist_prob": 1.0,
+            "target_probs": {
+                "0": 0.5,
+            },
+        }
+    )
     observations = _agent_observations()
     observations[0]["raw_panorama"] = "panorama0"
     graph_summary = _graph_summary(
         {
             100: "bedroom",
-            101: "kitchen",
+            999: "graph-only perfect match",
         },
         viewpoint_to_region={
             0: 100,
@@ -304,11 +367,16 @@ def test_siglip_replaces_current_region_with_graph_region_and_restores_visible_r
         {
             "agent_id": "agent0",
             "current_region_node_id": 101,
+            "observed_region_node_ids": [100, 101],
         }
     ]
     assert 101 in _visible_region_ids(validated)
     assert _assigned_region(validated, 0) == 101
     assert _assigned_region(validated, 1) == 100
+    assert scorer.calls == [
+        ("panorama0", "bedroom"),
+        ("panorama0", "kitchen"),
+    ]
     assert validated["current_viewpoints_reassignment"] == [
         {
             "viewpoint_id": 0,
@@ -319,6 +387,7 @@ def test_siglip_replaces_current_region_with_graph_region_and_restores_visible_r
 
 def test_siglip_visible_region_can_beat_prior_graph_region():
     payload = _base_payload()
+    payload["agents"][0]["observed_region_node_ids"] = [100, 102]
     payload["visible_region_nodes"].append(
         {
             "id": 102,
@@ -365,10 +434,22 @@ def test_siglip_visible_region_can_beat_prior_graph_region():
 
 def test_siglip_scores_every_current_viewpoint_without_prior_assignments():
     payload = _base_payload()
+    payload["agents"][0]["observed_region_node_ids"] = [100, 101]
     payload["agents"].append(
         {
             "agent_id": "agent1",
             "current_region_node_id": 100,
+            "observed_region_node_ids": [100, 101],
+        }
+    )
+    payload["visible_region_nodes"].append(
+        {
+            "id": 101,
+            "label": "kitchen",
+            "exist_prob": 1.0,
+            "target_probs": {
+                "0": 0.5,
+            },
         }
     )
     payload["detections"].append(
@@ -449,12 +530,23 @@ def test_siglip_scores_every_current_viewpoint_without_prior_assignments():
 
 def test_siglip_reassignment_not_emitted_when_prior_region_stays_selected():
     payload = _base_payload()
+    payload["agents"][0]["observed_region_node_ids"] = [100, 101]
     payload["current_viewpoints_reassignment"] = [
         {
             "viewpoint_id": 0,
             "new_assigned_region_id": 101,
         }
     ]
+    payload["visible_region_nodes"].append(
+        {
+            "id": 101,
+            "label": "kitchen",
+            "exist_prob": 1.0,
+            "target_probs": {
+                "0": 0.5,
+            },
+        }
+    )
     observations = _agent_observations()
     observations[0]["raw_panorama"] = "panorama0"
     graph_summary = _graph_summary(
@@ -483,3 +575,27 @@ def test_siglip_reassignment_not_emitted_when_prior_region_stays_selected():
     assert validated["agents"][0]["current_region_node_id"] == 100
     assert _assigned_region(validated, 0) == 100
     assert validated["current_viewpoints_reassignment"] == []
+
+
+def test_siglip_rejects_empty_observed_region_ids():
+    payload = _base_payload()
+    payload["agents"][0]["observed_region_node_ids"] = []
+
+    with pytest.raises(ValueError, match="observed_region_node_ids must be nonempty"):
+        _validate(payload)
+
+
+def test_siglip_rejects_missing_observed_region_ids():
+    payload = _base_payload()
+    del payload["agents"][0]["observed_region_node_ids"]
+
+    with pytest.raises(KeyError, match="observed_region_node_ids"):
+        _validate(payload)
+
+
+def test_siglip_rejects_observed_region_id_not_in_visible_regions():
+    payload = _base_payload()
+    payload["agents"][0]["observed_region_node_ids"] = [100, 101]
+
+    with pytest.raises(ValueError, match="not in visible_region_nodes"):
+        _validate(payload)

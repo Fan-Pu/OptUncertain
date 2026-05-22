@@ -1,7 +1,7 @@
 {
   "agent_current_vp_ids": {
-    "agent0": 15,
-    "agent1": 40
+    "agent0": 27,
+    "agent1": 41
   },
   "edges": [
     {
@@ -14,12 +14,6 @@
       "grounded": true,
       "i": 0,
       "j": 21,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 7,
-      "j": 15,
       "type": "vv"
     },
     {
@@ -55,19 +49,7 @@
     {
       "grounded": true,
       "i": 15,
-      "j": 19,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 15,
       "j": 27,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 15,
-      "j": 42,
       "type": "vv"
     },
     {
@@ -103,12 +85,6 @@
     {
       "grounded": true,
       "i": 25,
-      "j": 40,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 25,
       "j": 41,
       "type": "vv"
     },
@@ -139,16 +115,6 @@
     },
     {
       "connected_node_ids": [
-        15
-      ],
-      "grounded": false,
-      "id": 7,
-      "label": "08c774f20c984008882da2b8547850eb",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
         18,
         40,
         41
@@ -172,15 +138,12 @@
     },
     {
       "connected_node_ids": [
-        7,
-        19,
-        27,
-        42
+        27
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 15,
       "label": "5e9f4f8654574e699480e90ecdd150c8",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -207,7 +170,6 @@
     },
     {
       "connected_node_ids": [
-        15,
         25,
         41
       ],
@@ -232,7 +194,6 @@
     {
       "connected_node_ids": [
         19,
-        40,
         41
       ],
       "grounded": false,
@@ -278,13 +239,12 @@
     {
       "connected_node_ids": [
         9,
-        25,
         41
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 40,
       "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -301,18 +261,10 @@
       "type": "viewpoint"
     },
     {
-      "connected_node_ids": [
-        15
-      ],
-      "grounded": false,
-      "id": 42,
-      "label": "abe20dd6e5194f579dfc6b63a612c150",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
       "assigned_viewpoint_ids": [
-        15
+        0,
+        21,
+        27
       ],
       "connected_node_ids": [],
       "grounded": true,
@@ -324,13 +276,14 @@
     {
       "assigned_viewpoint_ids": [
         11,
+        16,
         32,
         35
       ],
       "connected_node_ids": [],
-      "grounded": false,
+      "grounded": true,
       "id": 101,
-      "label": "bedroom area with large white bed",
+      "label": "bedroom area with large bed beyond partition",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -349,29 +302,39 @@
     },
     {
       "assigned_viewpoint_ids": [
-        0,
-        16,
         19,
-        21,
         25,
-        27,
         40
       ],
       "connected_node_ids": [],
-      "grounded": true,
+      "grounded": false,
       "id": 201,
-      "label": "bright corridor area beyond lounge",
+      "label": "bright corridor area visible through doorway",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        15
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 300,
+      "label": "bright dining area with counter and stools",
       "node_visit_times": 0,
       "type": "region"
     }
   ],
-  "observation_step": 5,
+  "observation_step": 4,
   "region_to_viewpoints": {
     "100": [
-      15
+      0,
+      21,
+      27
     ],
     "101": [
       11,
+      16,
       32,
       35
     ],
@@ -381,26 +344,25 @@
       41
     ],
     "201": [
-      0,
-      16,
       19,
-      21,
       25,
-      27,
       40
+    ],
+    "300": [
+      15
     ]
   },
   "viewpoint_to_region": {
-    "0": 201,
+    "0": 100,
     "9": 200,
     "11": 101,
-    "15": 100,
-    "16": 201,
+    "15": 300,
+    "16": 101,
     "18": 200,
     "19": 201,
-    "21": 201,
+    "21": 100,
     "25": 201,
-    "27": 201,
+    "27": 100,
     "32": 101,
     "35": 101,
     "40": 201,

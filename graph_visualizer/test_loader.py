@@ -165,7 +165,7 @@ def test_load_visualization_step_with_all_raw_files(tmp_path):
     _write_step(
         tmp_path,
         "case",
-        0,
+        1,
         target_found={"0": False},
     )
 
@@ -180,7 +180,7 @@ def test_load_terminal_detection_only_step_without_semantic_or_user_message(tmp_
     _write_step(
         tmp_path,
         "case",
-        0,
+        1,
         target_found={"0": True, "1": True},
         semantic=False,
         user_message=False,
@@ -192,10 +192,10 @@ def test_load_terminal_detection_only_step_without_semantic_or_user_message(tmp_
     assert steps[0]["semantic"] is None
     assert steps[0]["user_message"] == ""
     assert steps[0]["files"]["semantic"] == (
-        "mllm_raw_outputs/case/semantic_step_0000.json"
+        "mllm_raw_outputs/case/semantic_step_0001.json"
     )
     assert steps[0]["files"]["user_message"] == (
-        "mllm_raw_outputs/case/user_message_step_0000.txt"
+        "mllm_raw_outputs/case/user_message_step_0001.txt"
     )
 
 
@@ -203,7 +203,7 @@ def test_load_nonterminal_step_without_semantic_still_crashes(tmp_path):
     _write_step(
         tmp_path,
         "case",
-        0,
+        1,
         target_found={"0": False, "1": True},
         semantic=False,
     )
@@ -278,7 +278,7 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
     _write_step(
         tmp_path,
         "case",
-        0,
+        1,
         target_found={"0": False},
     )
     _write_route_case(tmp_path, "case")
@@ -314,7 +314,7 @@ def test_steps_api_includes_environment_without_solution_summaries(tmp_path, mon
     _write_step(
         tmp_path,
         "case",
-        0,
+        1,
         target_found={"0": False},
     )
     _write_environment_case(tmp_path, "case")
@@ -378,6 +378,7 @@ def test_step_renderer_uses_tight_region_boundaries_and_arrival_edges():
     assert "REGION_COLORS" in html
     assert "function agentArrivalEdgeKeys" in html
     assert "payload.steps[stepPosition - 1]" in html
+    assert "Step ${step.step_index} / ${payload.steps.length}" in html
     assert 'class: "region-boundary"' in html
     assert 'class: `edge ${edge.type === "vz" ? "vz" : "vv"} ${edge.grounded ? "" : "ungrounded"} ${isArrivalEdge ? "arrival" : ""}' in html
 
@@ -386,7 +387,7 @@ def test_shutdown_endpoint_stops_visualization_server(tmp_path, monkeypatch):
     _write_step(
         tmp_path,
         "case",
-        0,
+        1,
         target_found={"0": False},
     )
     _write_environment_case(tmp_path, "case")

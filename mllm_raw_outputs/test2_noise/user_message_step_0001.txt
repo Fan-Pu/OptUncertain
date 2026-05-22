@@ -1,7 +1,11 @@
 Active target set:
 [
   {
-    "description": "the green plant on the dining table",
+    "description": "the long bathrobe in the bathroom",
+    "target_id": "0"
+  },
+  {
+    "description": "the toilet paper roll in the bathroom",
     "target_id": "1"
   }
 ]
@@ -9,167 +13,317 @@ Active target set:
 Compact shared graph summary:
 {
   "agent_current_vp_ids": {
-    "agent0": 16,
-    "agent1": 9
+    "agent0": 32,
+    "agent1": 40
   },
-  "edges": [],
-  "nodes": [],
-  "observation_step": 0,
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.936,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 0,
+      "j": 16,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.266,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 9,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.87,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 9,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.705,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 9,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.565,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 16,
+      "j": 32,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.466,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 16,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 0.7,
+      "distance_mean": 3.0,
+      "distance_var": 3.6,
+      "exist_prob": 0.56,
+      "grounded": 0,
+      "i": 40,
+      "j": 102,
+      "type": "vz"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 0,
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.1111,
+        "1": 0.1111
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 9,
+      "node_visit_times": 1,
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 16,
+      "node_visit_times": 1,
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 18,
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.1111,
+        "1": 0.1111
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 32,
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.1111,
+        "1": 0.1111
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 35,
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.1111,
+        "1": 0.1111
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 40,
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.4444,
+        "1": 0.4444
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 41,
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.1111,
+        "1": 0.1111
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        16
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 100,
+      "label": "modern living area with white sofa and TV",
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.0728,
+        "1": 0.0666
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        18,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 101,
+      "label": "dark textured lounge area with quilted walls",
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.08,
+        "1": 0.068
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "exist_prob": 0.8,
+      "grounded": 0,
+      "id": 102,
+      "label": "tiled bathroom area with sanitary fixtures",
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.5865,
+        "1": 0.5991
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        32,
+        35
+      ],
+      "exist_prob": 0.9,
+      "grounded": 0,
+      "id": 103,
+      "label": "bedroom area with large white bed",
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.0652,
+        "1": 0.0666
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        40
+      ],
+      "exist_prob": 0.9,
+      "grounded": 0,
+      "id": 104,
+      "label": "bright corridor area leading to other rooms",
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.1955,
+        "1": 0.1997
+      },
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
   "target_found": {
+    "0": false,
     "1": false
   },
-  "viewpoint_to_region": {}
+  "viewpoint_to_region": {
+    "0": 100,
+    "16": 100,
+    "18": 101,
+    "32": 103,
+    "35": 103,
+    "40": 104,
+    "41": 101,
+    "9": 101
+  }
 }
 
 Per-agent observation context:
 [
   {
     "agent_id": "agent0",
-    "current_viewpoint_index": 16,
+    "current_viewpoint_index": 32,
     "image_index": 0,
-    "prior_assigned_region_id": null,
-    "prior_assigned_region_label": null,
-    "prior_grounded": false,
-    "prior_visit_times": 0,
+    "prior_assigned_region_id": 103,
+    "prior_assigned_region_label": "bedroom area with large white bed",
     "visible_viewpoints": [
       {
-        "distance": 0.936,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 0
+        "distance": 1.781,
+        "viewpoint_index": 2
       },
       {
         "distance": 0.565,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 32
+        "viewpoint_index": 16
       },
       {
-        "distance": 1.466,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
+        "distance": 3.729,
+        "viewpoint_index": 17
+      },
+      {
+        "distance": 2.676,
+        "viewpoint_index": 20
+      },
+      {
+        "distance": 1.218,
         "viewpoint_index": 35
       }
     ]
   },
   {
     "agent_id": "agent1",
-    "current_viewpoint_index": 9,
+    "current_viewpoint_index": 40,
     "image_index": 1,
-    "prior_assigned_region_id": null,
-    "prior_assigned_region_label": null,
-    "prior_grounded": false,
-    "prior_visit_times": 0,
+    "prior_assigned_region_id": 104,
+    "prior_assigned_region_label": "bright corridor area leading to other rooms",
     "visible_viewpoints": [
       {
-        "distance": 1.266,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 18
-      },
-      {
         "distance": 1.87,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 40
+        "viewpoint_index": 9
       },
       {
-        "distance": 1.705,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
+        "distance": 0.767,
+        "viewpoint_index": 25
+      },
+      {
+        "distance": 0.666,
         "viewpoint_index": 41
       }
     ]
   }
-]
-
-Strict allowed-id rule:
-- viewpoint_node_assigns must contain exactly the Current-step allowed viewpoint ids above, no more and no fewer.
-- viewpoint_target_probs must contain exactly the non-current visible neighboring viewpoint ids below, no more and no fewer.
-- Do not include current viewpoint ids in viewpoint_target_probs.
-- Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
-- Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
-
-Current-step allowed viewpoint ids:
-[
-  0,
-  9,
-  16,
-  18,
-  32,
-  35,
-  40,
-  41
-]
-
-Required viewpoint_target_probs id skeleton:
-[
-  {
-    "id": 0,
-    "target_probs": {
-      "1": 0.01
-    }
-  },
-  {
-    "id": 18,
-    "target_probs": {
-      "1": 0.01
-    }
-  },
-  {
-    "id": 32,
-    "target_probs": {
-      "1": 0.01
-    }
-  },
-  {
-    "id": 35,
-    "target_probs": {
-      "1": 0.01
-    }
-  },
-  {
-    "id": 40,
-    "target_probs": {
-      "1": 0.01
-    }
-  },
-  {
-    "id": 41,
-    "target_probs": {
-      "1": 0.01
-    }
-  }
-]
-
-Rule:
-- You must output one viewpoint_target_probs item for every id in this skeleton.
-- Keep exactly these ids.
-- These ids are non-current visible neighboring viewpoints only.
-- Use soft positive target-location scores in (0, 1] for every active target.
-- Do not include current viewpoint ids.
-- Do not delete any skeleton item.
-
-Non-current visible neighboring viewpoint ids for viewpoint_target_probs:
-[
-  0,
-  18,
-  32,
-  35,
-  40,
-  41
 ]
 
 Fixed direct detections from the separate detection step:
@@ -177,18 +331,22 @@ Fixed direct detections from the separate detection step:
   {
     "agent_id": "agent0",
     "founds": [
+      false,
       false
     ],
     "target_indices": [
+      "0",
       "1"
     ]
   },
   {
     "agent_id": "agent1",
     "founds": [
+      false,
       false
     ],
     "target_indices": [
+      "0",
       "1"
     ]
   }
@@ -198,7 +356,7 @@ Current-step interpretation note:
 - The observation context is the source of truth for current agent locations.
 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
 - If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
-- If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label and still include it in visible_region_nodes.
+- If a current region already appears in the graph summary, reuse its id and label and still include it in visible_region_nodes.
 
 Output schema example. Use keys and value types only. Do not copy example values unless supported:
 {
@@ -211,16 +369,18 @@ Output schema example. Use keys and value types only. Do not copy example values
   "current_viewpoints_reassignment": [
     {
       "new_assigned_region_id": 101,
-      "viewpoint_id": 16
+      "viewpoint_id": 32
     }
   ],
   "detections": [
     {
       "agent_id": "agent0",
       "founds": [
+        false,
         false
       ],
       "target_indices": [
+        "0",
         "1"
       ]
     }
@@ -235,6 +395,7 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 900,
       "label": "unseen hallway area beyond closed doorway",
       "target_probs": {
+        "0": 0.01,
         "1": 0.01
       }
     }
@@ -244,23 +405,31 @@ Output schema example. Use keys and value types only. Do not copy example values
       "dist": 2.5,
       "edge_type": "VZ",
       "exist_prob": 0.6,
-      "i": 0,
+      "i": 2,
       "j": 900
     }
   ],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        16,
-        0
+        32,
+        2
       ],
       "region_node_id": 100
     }
   ],
   "viewpoint_target_probs": [
     {
-      "id": 0,
+      "id": 32,
       "target_probs": {
+        "0": 0.0,
+        "1": 0.0
+      }
+    },
+    {
+      "id": 2,
+      "target_probs": {
+        "0": 0.01,
         "1": 0.01
       }
     }
@@ -271,6 +440,7 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 100,
       "label": "bright kitchen area near dining table",
       "target_probs": {
+        "0": 0.01,
         "1": 0.01
       }
     }
@@ -303,12 +473,12 @@ Field descriptions:
   "new_edges[].exist_prob": "Edge existence probability in (0, 1].",
   "new_edges[].i": "One endpoint id. It may be a viewpoint or region. For VV, it must be an unvisited viewpoint.",
   "new_edges[].j": "Other endpoint id. Never region-region. For VV, it must be an unvisited viewpoint. Because edges are undirected, do not output both directions.",
-  "viewpoint_node_assigns": "Region-centered viewpoint assignments for the current step. The assigned viewpoint ids across all items must be exactly the Current-step allowed viewpoint ids, no more and no fewer. Do not include any other viewpoint id, even if it appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region. Current viewpoints must be assigned to their agents' current_region_node_id, inferred from the current panorama. If a current viewpoint already has an old graph_summary.viewpoint_to_region assignment, treat it only as prior information, not as a fixed rule. For non-current visible neighboring viewpoints, use prior_assigned_region_id only as historical context. Assign each one by jointly considering marker location, distance to the current viewpoint, and whether a clear spatial boundary separates it from the current viewpoint.",
+  "viewpoint_node_assigns": "Region-centered viewpoint assignments for the current step. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id, inferred from the current panorama. If a current viewpoint already has an old graph_summary.viewpoint_to_region assignment, treat it only as prior information, not a fixed rule. Reuse that old region only if it still matches the current panorama; otherwise reuse another matching existing region or create a new visible_region_node. For non-current visible neighboring viewpoints already listed in graph_summary.viewpoint_to_region, reuse that fixed region assignment exactly.",
   "viewpoint_node_assigns[].assigned_viewpoint_node_indices": "Integer viewpoint ids assigned to this region. Current viewpoints must be assigned to their agents' current_region_node_id.",
   "viewpoint_node_assigns[].region_node_id": "Region id containing the assigned viewpoints. If it is a current_region_node_id, it must be listed in visible_region_nodes.",
-  "viewpoint_target_probs": "Target-location scores only for non-current visible neighboring viewpoint ids. Do not include current viewpoint ids. Current viewpoint target_probs are filled by code from the fixed direct detections after graph generation.",
-  "viewpoint_target_probs[].id": "Integer viewpoint id. It must be a non-current visible neighboring viewpoint from the observation context. Do not include current viewpoint ids.",
-  "viewpoint_target_probs[].target_probs": "Dictionary keyed by every active target_id. Use soft scores in (0, 1]. Do not use 0.0 here because current viewpoints are not included in this object.",
+  "viewpoint_target_probs": "Target-location scores for every distinct current viewpoint and visible neighboring viewpoint in the current step. Current viewpoint entries are binary direct-detection evidence. Visible-neighbor entries are soft prior scores.",
+  "viewpoint_target_probs[].id": "Integer viewpoint id. It must be either a current viewpoint or a visible neighboring viewpoint from the observation context.",
+  "viewpoint_target_probs[].target_probs": "Dictionary keyed by every active target_id. For a current viewpoint, use 1.0 if the active target is directly detected there, otherwise 0.0. This binary rule applies only to current viewpoints. For visible neighboring viewpoints that are not current, use soft scores in (0, 1] and do not use 0.0.",
   "visible_region_nodes": "Current regions and any semantic area visually observable in current panoramas, even if only partially visible through a doorway, opening, or corridor. Reuse matching existing region ids.",
   "visible_region_nodes[].exist_prob": "Existence probability in (0, 1]. Use 1.0 only for a region containing a current viewpoint.",
   "visible_region_nodes[].id": "Integer region id. Use a new id only for a new physical region.",
@@ -317,23 +487,14 @@ Field descriptions:
 }
 
 Current step request:
-- For each agent, inspect the current viewpoint marker in the panorama and decide which semantic region physically contains that marker.
-- Do not assign a current viewpoint to a region only because that region is visible nearby, through a doorway, or at the side of the panorama.
-- If a current viewpoint has prior_assigned_region_id, compare the prior_assigned_region_label with the local visual evidence around the current viewpoint marker.
-- If the prior region label does not match the local area around the marker, reassign the current viewpoint to the best matching existing visible region when possible.
-- If no existing region matches the local area around the current viewpoint marker, create a new visible_region_node.
-- If a current viewpoint is reassigned, update all three places consistently: agents[].current_region_node_id, viewpoint_node_assigns, and current_viewpoints_reassignment.
-
-- After choosing the final region for each current viewpoint, assign each non-current visible neighboring viewpoint by jointly considering its marker location, its distance to the current viewpoint, and whether a clear spatial boundary separates it from the current viewpoint.
-- Use prior_assigned_region_id and graph_summary.viewpoint_to_region only as historical context for non-current visible neighboring viewpoints, not as fixed assignments.
-- If a non-current visible neighboring viewpoint is close to the current viewpoint and no doorway, wall, corridor boundary, room boundary, or transition area separates them, prefer the current viewpoint's final region.
-- If a non-current visible neighboring viewpoint is farther away, or if its marker is across a clear spatial boundary, assign it to the semantic region that physically contains its marker.
-- Do not assign a non-current visible neighboring viewpoint to an adjacent dining area, hallway, bedroom, counter area, or doorway area only because that area is visible in the panorama.
-
-- For viewpoint_target_probs, follow the Required viewpoint_target_probs id skeleton exactly: keep every listed id and do not add any other id.
-- Do not include current viewpoint ids in viewpoint_target_probs.
-- Do not copy old viewpoint ids from graph_summary region assigned_viewpoint_ids.
-- Current-viewpoint target_probs are filled by code from fixed direct detections, so do not generate them.
+- Identify each agent current semantic region.
+- For each current viewpoint with prior_assigned_region_id, check whether prior_assigned_region_label still matches the current panorama.
+- If the prior region label still matches, keep the assignment and do not include that viewpoint in current_viewpoints_reassignment.
+- If the prior region label does not match, assign the viewpoint to the better-matching region and add one current_viewpoints_reassignment item.
+- If a reassigned region is newly proposed, include its full region node record in visible_region_nodes.
+- Include every current viewpoint and every distinct visible neighboring viewpoint exactly once in viewpoint_node_assigns.
+- Include every current viewpoint and every distinct visible neighboring viewpoint in viewpoint_target_probs.
+- For current viewpoint target_probs, use binary direct-detection evidence consistent with detections.
 - For visible neighboring viewpoint target_probs, use soft positive target-location scores.
 - Estimate region target_probs using active target_id keys and active target descriptions.
 - Do not include found or completed targets in target_probs, detections, or existence hypotheses.
@@ -343,4 +504,5 @@ Current step request:
 - Propose only legal uncertain edges supported by observation and graph context.
 - Propose VZ edges only to semantic regions with no assigned viewpoints; the region may be visible or invisible.
 - Propose VV edges between two unvisited non-current viewpoints only when a directly traversable local connection is spatially plausible from the observation and graph context. The support may be uncertain, so use lower exist_prob for weak but meaningful hypotheses. Do not propose a VV edge across an apparent obstacle, large furniture, wall, blocked passage, or closed partition. Same-room or same-region membership alone is not enough.
+- Keep graph_summary.viewpoint_to_region assignments only for non-current visible neighboring viewpoints. For current viewpoints, infer the best matching region from the current panorama and allow old assignments to be corrected.
 - Return compact JSON only.

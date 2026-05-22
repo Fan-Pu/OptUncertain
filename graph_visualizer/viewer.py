@@ -577,7 +577,7 @@ def render_viewer_html() -> str:
       prevButton.disabled = stepPosition === 0;
       nextButton.disabled = stepPosition === payload.steps.length - 1;
       showStepSections();
-      stepLabel.textContent = `Step ${stepPosition + 1} / ${payload.steps.length}`;
+      stepLabel.textContent = `Step ${step.step_index} / ${payload.steps.length}`;
       renderGraph(step);
       renderSelection(step);
       renderSummary(step);

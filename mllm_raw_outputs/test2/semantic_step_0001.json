@@ -2,11 +2,19 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 103
+      "current_region_node_id": 100,
+      "observed_region_node_ids": [
+        100,
+        101
+      ]
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 104
+      "current_region_node_id": 102,
+      "observed_region_node_ids": [
+        102,
+        103
+      ]
     }
   ],
   "current_viewpoints_reassignment": [],
@@ -38,164 +46,149 @@
     "viewpoint_region": 4.0,
     "viewpoint_viewpoint": 1.0
   },
-  "invisible_region_nodes": [],
+  "invisible_region_nodes": [
+    {
+      "exist_prob": 0.7,
+      "id": 104,
+      "label": "private bathroom area with shower and toilet",
+      "target_probs": {
+        "0": 0.9,
+        "1": 0.9
+      }
+    }
+  ],
   "new_edges": [
     {
       "dist": 2.0,
       "edge_type": "VZ",
-      "exist_prob": 0.7,
-      "i": 25,
-      "j": 102
+      "exist_prob": 0.6,
+      "i": 40,
+      "j": 104
     }
   ],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
+        0,
         16
       ],
       "region_node_id": 100
     },
     {
       "assigned_viewpoint_node_indices": [
-        9,
-        41
+        32,
+        35
       ],
       "region_node_id": 101
     },
     {
       "assigned_viewpoint_node_indices": [
-        2,
-        17,
-        20,
-        32,
-        35
+        9,
+        18
       ],
-      "region_node_id": 103
+      "region_node_id": 102
     },
     {
       "assigned_viewpoint_node_indices": [
-        25,
-        40
+        40,
+        41
       ],
-      "region_node_id": 104
+      "region_node_id": 103
     }
   ],
   "viewpoint_target_probs": [
     {
-      "id": 32,
+      "id": 9,
       "target_probs": {
         "0": 0.0,
         "1": 0.0
-      }
-    },
-    {
-      "id": 35,
-      "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
-      "id": 2,
-      "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
-      "id": 17,
-      "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
-      "id": 20,
-      "target_probs": {
-        "0": 0.05,
-        "1": 0.05
       }
     },
     {
       "id": 16,
       "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
-      "id": 40,
-      "target_probs": {
         "0": 0.0,
         "1": 0.0
       }
     },
     {
-      "id": 25,
+      "id": 0,
       "target_probs": {
-        "0": 0.2,
-        "1": 0.2
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
-      "id": 9,
+      "id": 18,
       "target_probs": {
-        "0": 0.05,
-        "1": 0.05
+        "0": 0.01,
+        "1": 0.01
+      }
+    },
+    {
+      "id": 32,
+      "target_probs": {
+        "0": 0.01,
+        "1": 0.01
+      }
+    },
+    {
+      "id": 35,
+      "target_probs": {
+        "0": 0.01,
+        "1": 0.01
+      }
+    },
+    {
+      "id": 40,
+      "target_probs": {
+        "0": 0.4,
+        "1": 0.4
       }
     },
     {
       "id": 41,
       "target_probs": {
-        "0": 0.05,
-        "1": 0.05
+        "0": 0.2,
+        "1": 0.2
       }
     }
   ],
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 103,
-      "label": "bedroom area with large white bed",
-      "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 104,
-      "label": "bright corridor area leading to other rooms",
-      "target_probs": {
-        "0": 0.1,
-        "1": 0.1
-      }
-    },
-    {
-      "exist_prob": 1.0,
       "id": 100,
-      "label": "modern living area with white sofa and TV",
+      "label": "modern living area with curved sofa",
       "target_probs": {
-        "0": 0.05,
-        "1": 0.05
+        "0": 0.01,
+        "1": 0.01
+      }
+    },
+    {
+      "exist_prob": 0.9,
+      "id": 101,
+      "label": "bedroom area with large bed and windows",
+      "target_probs": {
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
       "exist_prob": 1.0,
-      "id": 101,
-      "label": "dark textured lounge area with quilted walls",
+      "id": 102,
+      "label": "dark textured lounge area with padded walls",
       "target_probs": {
-        "0": 0.05,
-        "1": 0.05
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
       "exist_prob": 0.8,
-      "id": 102,
-      "label": "tiled bathroom area with sanitary fixtures",
+      "id": 103,
+      "label": "bright transition corridor near doorway",
       "target_probs": {
-        "0": 0.6,
-        "1": 0.6
+        "0": 0.2,
+        "1": 0.2
       }
     }
   ]

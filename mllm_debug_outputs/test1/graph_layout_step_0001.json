@@ -1,19 +1,13 @@
 {
   "agent_current_vp_ids": {
-    "agent0": 0,
-    "agent1": 18
+    "agent0": 16,
+    "agent1": 9
   },
   "edges": [
     {
       "grounded": true,
       "i": 0,
       "j": 16,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 0,
-      "j": 21,
       "type": "vv"
     },
     {
@@ -56,13 +50,12 @@
   "nodes": [
     {
       "connected_node_ids": [
-        16,
-        21
+        16
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 0,
       "label": "10c252c90fa24ef3b698c6f54d984c5c",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -93,19 +86,9 @@
       "connected_node_ids": [
         9
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
-      "node_visit_times": 1,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        0
-      ],
-      "grounded": false,
-      "id": 21,
-      "label": "77a1a11978b04e9cbf74914c98578ab8",
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -153,7 +136,7 @@
     },
     {
       "assigned_viewpoint_ids": [
-        21
+        0
       ],
       "connected_node_ids": [],
       "grounded": false,
@@ -164,13 +147,14 @@
     },
     {
       "assigned_viewpoint_ids": [
+        16,
         32,
         35
       ],
       "connected_node_ids": [],
-      "grounded": false,
+      "grounded": true,
       "id": 101,
-      "label": "bedroom area with large white bed",
+      "label": "bedroom area with large bed beyond partition",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -188,25 +172,24 @@
     },
     {
       "assigned_viewpoint_ids": [
-        0,
-        16,
         40,
         41
       ],
       "connected_node_ids": [],
-      "grounded": true,
+      "grounded": false,
       "id": 201,
-      "label": "bright corridor area beyond lounge",
+      "label": "bright corridor area visible through doorway",
       "node_visit_times": 0,
       "type": "region"
     }
   ],
-  "observation_step": 2,
+  "observation_step": 1,
   "region_to_viewpoints": {
     "100": [
-      21
+      0
     ],
     "101": [
+      16,
       32,
       35
     ],
@@ -215,18 +198,15 @@
       18
     ],
     "201": [
-      0,
-      16,
       40,
       41
     ]
   },
   "viewpoint_to_region": {
-    "0": 201,
+    "0": 100,
     "9": 200,
-    "16": 201,
+    "16": 101,
     "18": 200,
-    "21": 100,
     "32": 101,
     "35": 101,
     "40": 201,
