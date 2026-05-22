@@ -432,6 +432,9 @@ def render_viewer_html() -> str:
     const REGION_BOUNDARY_NODE_RADIUS = 38;
     const REGION_BOUNDARY_CORRIDOR_RADIUS = 18;
     const REGION_BOUNDARY_CELL_SIZE = 4;
+    const UNANCHORED_REGION_RAIL_GAP = 72;
+    const UNANCHORED_REGION_RAIL_TOP = 32;
+    const UNANCHORED_REGION_RAIL_SPACING = 64;
     const REGION_COLORS = [
       "#0f766e",
       "#2563eb",
@@ -906,19 +909,13 @@ def render_viewer_html() -> str:
 
       const layoutNodes = step.layout.nodes;
       const hypothesisEdgeById = new Map(step.hypothesis.edges.map(edge => [edgeKey(edge.i, edge.j), edge]));
-      const environment = payload.environment_graph;
-      const projection = routeProjection(environment, width, height);
-      const positions = routePositions(environment.nodes, projection);
-      const contentBounds = emptyBounds();
+      const graphState = buildGraphRenderState(step, width, height);
+      const environment = graphState.environment;
+      const projection = graphState.projection;
+      const positions = graphState.positions;
+      const contentBounds = graphState.contentBounds;
       const viewportLayer = svgEl("g", {});
       graph.appendChild(viewportLayer);
-      includeGraphPoint(contentBounds, projection.offsetX, projection.offsetY, 0);
-      includeGraphPoint(
-        contentBounds,
-        projection.offsetX + projection.usedWidth,
-        projection.offsetY + projection.usedHeight,
-        0
-      );
 
       if (showHouseTexture) {
         appendHouseTexture(viewportLayer, environment, projection);
@@ -928,13 +925,8 @@ def render_viewer_html() -> str:
       viewportLayer.appendChild(regionLayer);
       const regionMarkerGroups = [];
       for (const node of layoutNodes.filter(item => item.type === "region").sort(byId)) {
-        const geometry = regionGeometry(node, positions, environment);
+        const geometry = graphState.regionGeometries.get(String(node.id));
         const center = geometry.center;
-        positions.set(String(node.id), center);
-        for (const point of geometry.points) {
-          includeGraphPoint(contentBounds, point.x, point.y, 8);
-        }
-        includeGraphPoint(contentBounds, center.x, center.y, geometry.kind === "marker" ? 28 : 18);
         const group = svgEl("g", {
           class: `node region ${isSelectedNode(node.id) ? "selected" : ""}`
         });
@@ -1076,6 +1068,112 @@ def render_viewer_html() -> str:
       viewportLayer.setAttribute("transform", viewportTransform(getViewportState(stepViewportKey(step), width, height, contentBounds)));
     }
 
+    function buildGraphRenderState(step, width, height) {
+      const environment = payload.environment_graph;
+      const projection = routeProjection(environment, width, height);
+      const positions = routePositions(environment.nodes, projection);
+      const regionGeometries = new Map();
+      const contentBounds = emptyBounds();
+      includeGraphPoint(contentBounds, projection.offsetX, projection.offsetY, 0);
+      includeGraphPoint(
+        contentBounds,
+        projection.offsetX + projection.usedWidth,
+        projection.offsetY + projection.usedHeight,
+        0
+      );
+
+      const regionNodes = step.layout.nodes.filter(item => item.type === "region").sort(byId);
+      const markerRegions = [];
+      for (const region of regionNodes) {
+        if (assignedRegionViewpointIds(region).length === 0) {
+          markerRegions.push(region);
+          continue;
+        }
+        const geometry = regionGeometry(region, positions, environment);
+        regionGeometries.set(String(region.id), geometry);
+        positions.set(String(region.id), geometry.center);
+        includeRegionGeometryBounds(contentBounds, geometry);
+      }
+
+      const railRegions = [];
+      for (const region of markerRegions) {
+        const anchorCenter = anchoredRegionMarkerCenter(region, step, positions);
+        if (anchorCenter) {
+          positions.set(String(region.id), anchorCenter);
+        } else {
+          railRegions.push(region);
+        }
+      }
+
+      const railX = projection.offsetX + projection.usedWidth + UNANCHORED_REGION_RAIL_GAP;
+      railRegions.sort(byId).forEach((region, index) => {
+        positions.set(String(region.id), {
+          x: railX,
+          y: projection.offsetY + UNANCHORED_REGION_RAIL_TOP + index * UNANCHORED_REGION_RAIL_SPACING
+        });
+      });
+
+      for (const region of markerRegions) {
+        const geometry = regionGeometry(region, positions, environment);
+        regionGeometries.set(String(region.id), geometry);
+        includeRegionGeometryBounds(contentBounds, geometry);
+      }
+
+      for (const edge of step.layout.edges) {
+        const source = positions.get(String(edge.i));
+        const target = positions.get(String(edge.j));
+        includeGraphPoint(contentBounds, source.x, source.y, 8);
+        includeGraphPoint(contentBounds, target.x, target.y, 8);
+        includeGraphPoint(contentBounds, (source.x + target.x) / 2, (source.y + target.y) / 2, 18);
+      }
+      for (const node of step.layout.nodes.filter(item => item.type === "viewpoint").sort(byId)) {
+        const pos = positions.get(String(node.id));
+        includeGraphPoint(contentBounds, pos.x, pos.y, agentAtNode(step, node.id) ? 42 : 22);
+      }
+
+      return {
+        environment: environment,
+        projection: projection,
+        positions: positions,
+        regionGeometries: regionGeometries,
+        contentBounds: contentBounds
+      };
+    }
+
+    function includeRegionGeometryBounds(bounds, geometry) {
+      for (const point of geometry.points) {
+        includeGraphPoint(bounds, point.x, point.y, 8);
+      }
+      includeGraphPoint(bounds, geometry.center.x, geometry.center.y, geometry.kind === "marker" ? 28 : 18);
+    }
+
+    function anchoredRegionMarkerCenter(region, step, positions) {
+      const anchors = [];
+      const layoutNodeIds = new Set(step.layout.nodes.map(node => String(node.id)));
+      for (const connectedId of region.connected_node_ids || []) {
+        if (!layoutNodeIds.has(String(connectedId))) continue;
+        const point = positions.get(String(connectedId));
+        if (point) anchors.push(point);
+      }
+      for (const edge of step.layout.edges) {
+        if (String(edge.i) === String(region.id)) {
+          const point = positions.get(String(edge.j));
+          if (point) anchors.push(point);
+        } else if (String(edge.j) === String(region.id)) {
+          const point = positions.get(String(edge.i));
+          if (point) anchors.push(point);
+        }
+      }
+      if (anchors.length === 0) return null;
+      const total = anchors.reduce((acc, point) => {
+        return { x: acc.x + point.x, y: acc.y + point.y };
+      }, { x: 0, y: 0 });
+      return {
+        x: total.x / anchors.length,
+        y: total.y / anchors.length
+      };
+    }
+
     function regionColor(regionId) {
       const index = Math.abs(Number(regionId)) % REGION_COLORS.length;
       return REGION_COLORS[index];
@@ -1188,6 +1286,9 @@ def render_viewer_html() -> str:
       }
 
       const center = positions.get(String(region.id));
+      if (!center) {
+        throw new Error(`Missing marker center for region ${region.id}`);
+      }
       const radius = 24;
       return {
         kind: "marker",
@@ -1560,37 +1661,7 @@ def render_viewer_html() -> str:
     }
 
     function computeGraphContentBounds(step, width, height) {
-      const bounds = emptyBounds();
-      const projection = routeProjection(payload.environment_graph, width, height);
-      const positions = routePositions(payload.environment_graph.nodes, projection);
-      includeGraphPoint(bounds, projection.offsetX, projection.offsetY, 0);
-      includeGraphPoint(
-        bounds,
-        projection.offsetX + projection.usedWidth,
-        projection.offsetY + projection.usedHeight,
-        0
-      );
-      for (const node of step.layout.nodes.filter(item => item.type === "region").sort(byId)) {
-        const geometry = regionGeometry(node, positions, payload.environment_graph);
-        const center = geometry.center;
-        positions.set(String(node.id), center);
-        for (const point of geometry.points) {
-          includeGraphPoint(bounds, point.x, point.y, 8);
-        }
-        includeGraphPoint(bounds, center.x, center.y, geometry.kind === "marker" ? 28 : 18);
-      }
-      for (const edge of step.layout.edges) {
-        const source = positions.get(String(edge.i));
-        const target = positions.get(String(edge.j));
-        includeGraphPoint(bounds, source.x, source.y, 8);
-        includeGraphPoint(bounds, target.x, target.y, 8);
-        includeGraphPoint(bounds, (source.x + target.x) / 2, (source.y + target.y) / 2, 18);
-      }
-      for (const node of step.layout.nodes.filter(item => item.type === "viewpoint").sort(byId)) {
-        const pos = positions.get(String(node.id));
-        includeGraphPoint(bounds, pos.x, pos.y, agentAtNode(step, node.id) ? 42 : 22);
-      }
-      return bounds;
+      return buildGraphRenderState(step, width, height).contentBounds;
     }
 
     function computeRouteContentBounds(solution, positions, projection) {

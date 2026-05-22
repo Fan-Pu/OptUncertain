@@ -75,6 +75,16 @@ Compact shared graph summary:
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 1.3893,
+      "distance_var": 0.1168,
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "i": 11,
+      "j": 27,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 0.565,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -141,7 +151,7 @@ Compact shared graph summary:
       "id": 11,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.375
+        "1": 0.1868
       },
       "type": "viewpoint"
     },
@@ -181,7 +191,7 @@ Compact shared graph summary:
       "id": 27,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.375
+        "1": 0.3736
       },
       "type": "viewpoint"
     },
@@ -191,7 +201,7 @@ Compact shared graph summary:
       "id": 32,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0625
+        "1": 0.1099
       },
       "type": "viewpoint"
     },
@@ -201,7 +211,7 @@ Compact shared graph summary:
       "id": 35,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0625
+        "1": 0.1099
       },
       "type": "viewpoint"
     },
@@ -211,7 +221,7 @@ Compact shared graph summary:
       "id": 40,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0625
+        "1": 0.1099
       },
       "type": "viewpoint"
     },
@@ -221,13 +231,14 @@ Compact shared graph summary:
       "id": 41,
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0625
+        "1": 0.1099
       },
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
         0,
+        11,
         16,
         21,
         27
@@ -235,25 +246,10 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 100,
-      "label": "modern living area with white sofa",
+      "label": "modern living area with white sofa and dark floors",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.5555
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        32,
-        35
-      ],
-      "exist_prob": 0.9,
-      "grounded": 0,
-      "id": 101,
-      "label": "bedroom area with large bed beyond living room",
-      "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.0265
+        "1": 0.876
       },
       "type": "region"
     },
@@ -264,11 +260,26 @@ Compact shared graph summary:
       ],
       "exist_prob": 1.0,
       "grounded": 1,
-      "id": 200,
-      "label": "dark textured lounge area",
+      "id": 101,
+      "label": "dark textured lounge area with quilted walls",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0256
+        "1": 0.0403
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        32,
+        35
+      ],
+      "exist_prob": 0.9,
+      "grounded": 0,
+      "id": 102,
+      "label": "bedroom area with large bed and blue accent wall",
+      "node_visit_times": 0,
+      "target_probs": {
+        "1": 0.0418
       },
       "type": "region"
     },
@@ -279,25 +290,11 @@ Compact shared graph summary:
       ],
       "exist_prob": 0.9,
       "grounded": 0,
-      "id": 201,
-      "label": "bright corridor area adjacent to lounge",
+      "id": 103,
+      "label": "bright hallway area adjacent to dark lounge",
       "node_visit_times": 0,
       "target_probs": {
-        "1": 0.0265
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        11
-      ],
-      "exist_prob": 0.9,
-      "grounded": 0,
-      "id": 300,
-      "label": "bright dining area with bar stools adjacent to living room",
-      "node_visit_times": 0,
-      "target_probs": {
-        "1": 0.3659
+        "1": 0.0418
       },
       "type": "region"
     }
@@ -308,16 +305,16 @@ Compact shared graph summary:
   },
   "viewpoint_to_region": {
     "0": 100,
-    "11": 300,
+    "11": 100,
     "16": 100,
-    "18": 200,
+    "18": 101,
     "21": 100,
     "27": 100,
-    "32": 101,
-    "35": 101,
-    "40": 201,
-    "41": 201,
-    "9": 200
+    "32": 102,
+    "35": 102,
+    "40": 103,
+    "41": 103,
+    "9": 101
   }
 }
 
@@ -328,7 +325,7 @@ Per-agent observation context:
     "current_viewpoint_index": 27,
     "image_index": 0,
     "prior_assigned_region_id": 100,
-    "prior_assigned_region_label": "modern living area with white sofa",
+    "prior_assigned_region_label": "modern living area with white sofa and dark floors",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
@@ -343,7 +340,7 @@ Per-agent observation context:
       {
         "distance": 1.205,
         "prior_assigned_region_id": 100,
-        "prior_assigned_region_label": "modern living area with white sofa",
+        "prior_assigned_region_label": "modern living area with white sofa and dark floors",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 21
@@ -354,15 +351,15 @@ Per-agent observation context:
     "agent_id": "agent1",
     "current_viewpoint_index": 41,
     "image_index": 1,
-    "prior_assigned_region_id": 201,
-    "prior_assigned_region_label": "bright corridor area adjacent to lounge",
+    "prior_assigned_region_id": 103,
+    "prior_assigned_region_label": "bright hallway area adjacent to dark lounge",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
       {
         "distance": 1.705,
-        "prior_assigned_region_id": 200,
-        "prior_assigned_region_label": "dark textured lounge area",
+        "prior_assigned_region_id": 101,
+        "prior_assigned_region_label": "dark textured lounge area with quilted walls",
         "prior_grounded": true,
         "prior_visit_times": 2,
         "viewpoint_index": 9
@@ -385,8 +382,8 @@ Per-agent observation context:
       },
       {
         "distance": 0.666,
-        "prior_assigned_region_id": 201,
-        "prior_assigned_region_label": "bright corridor area adjacent to lounge",
+        "prior_assigned_region_id": 103,
+        "prior_assigned_region_label": "bright hallway area adjacent to dark lounge",
         "prior_grounded": false,
         "prior_visit_times": 0,
         "viewpoint_index": 40
@@ -620,6 +617,7 @@ Current step request:
 - Identify each agent current semantic region.
 - Distinguish the area physically containing a viewpoint from areas that are only visible from that viewpoint. A current viewpoint should be assigned to the region that contains the robot pose, not to an adjacent area that appears in the panorama.
 - Use spatial continuity. If a current viewpoint is directly connected to a previously visited or grounded neighboring viewpoint with a short distance, and no clear doorway, wall, corridor, bedroom boundary, bathroom boundary, or partition separates them, prefer the same region as that grounded neighbor.
+- if an ungrounded neighboring viewpoint has no prior region and is directly visible from a grounded current viewpoint, assign it to the current viewpoint's region unless the MLLM gives strong evidence that it is separated by a doorway, wall, room boundary, or clear semantic transition.
 - For non-current visible neighboring viewpoints, do not assign them to a different semantic region only because objects from that region are visible. Assign them to a different region only when the viewpoint itself appears to be across a clear spatial boundary.
 - A label such as "dining area beyond living room" usually describes a visible adjacent region, not necessarily the region containing the current viewpoint.
 - For each current viewpoint with prior_assigned_region_id, check whether prior_assigned_region_label still matches the current panorama.
