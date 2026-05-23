@@ -44,6 +44,8 @@ def visualize_instance(
     project_root: str | Path | None = None,
     host: str = "127.0.0.1",
     port: int = 0,
+    texture_output_size: int = 1800,
+    texture_cut_z_offset: float = 0.15,
 ) -> VisualizationServer:
     return start_visualizer_server(
         instance_name=instance_name,
@@ -51,6 +53,8 @@ def visualize_instance(
         host=host,
         port=port,
         open_browser=True,
+        texture_output_size=texture_output_size,
+        texture_cut_z_offset=texture_cut_z_offset,
     )
 
 
@@ -60,6 +64,8 @@ def start_visualizer_server(
     host: str = "127.0.0.1",
     port: int = 0,
     open_browser: bool = False,
+    texture_output_size: int = 1800,
+    texture_cut_z_offset: float = 0.15,
 ) -> VisualizationServer:
     root = resolve_project_root(project_root)
     steps = load_visualization_steps(instance_name=instance_name, project_root=root)
@@ -68,7 +74,12 @@ def start_visualizer_server(
         "steps": steps,
     }
     payload.update(
-        load_solution_payload(instance_name=instance_name, project_root=root)
+        load_solution_payload(
+            instance_name=instance_name,
+            project_root=root,
+            texture_output_size=texture_output_size,
+            texture_cut_z_offset=texture_cut_z_offset,
+        )
     )
     html_bytes = render_viewer_html().encode("utf-8")
 

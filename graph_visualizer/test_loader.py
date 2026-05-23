@@ -133,6 +133,8 @@ def _patch_house_texture(monkeypatch):
         project_root,
         instance_name,
         connectivity_dir,
+        output_size=1800,
+        cut_z_offset=0.15,
     ):
         texture_path = (
             project_root
@@ -147,6 +149,8 @@ def _patch_house_texture(monkeypatch):
             % (str(instance_name), str(scan_id)),
             "render_mode": "interior_cutaway_v1",
             "cut_z": 1.35,
+            "cut_z_offset": float(cut_z_offset),
+            "output_size": int(output_size),
             "min_x": 0.0,
             "max_x": 1.0,
             "min_y": 0.0,
@@ -231,6 +235,8 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
         "url": "/assets/mllm_debug_outputs/case/scan_topdown_texture.png",
         "render_mode": "interior_cutaway_v1",
         "cut_z": 1.35,
+        "cut_z_offset": 0.15,
+        "output_size": 1800,
         "min_x": 0.0,
         "max_x": 1.0,
         "min_y": 0.0,
@@ -256,6 +262,27 @@ def test_load_solution_payload_includes_environment_without_route_summaries(
     assert payload["environment_graph"]["house_texture"]["url"] == (
         "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
     )
+    assert payload["environment_graph"]["house_texture"]["output_size"] == 1800
+    assert payload["environment_graph"]["house_texture"]["cut_z_offset"] == 0.15
+
+
+def test_load_solution_payload_forwards_texture_settings(
+    tmp_path,
+    monkeypatch,
+):
+    _write_environment_case(tmp_path, "case")
+    _patch_house_texture(monkeypatch)
+    monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
+
+    payload = load_solution_payload(
+        "case",
+        project_root=tmp_path,
+        texture_output_size=4096,
+        texture_cut_z_offset=0.9,
+    )
+
+    assert payload["environment_graph"]["house_texture"]["output_size"] == 4096
+    assert payload["environment_graph"]["house_texture"]["cut_z_offset"] == 0.9
 
 
 def test_load_solution_payload_keeps_environment_connectivity_on_linux(
@@ -353,6 +380,21 @@ def test_route_renderer_skips_wait_step_edges():
     assert 'id="graphResetViewButton"' in html
 
 
+def test_route_renderer_includes_target_descriptions_and_agent_legend():
+    html = render_viewer_html()
+
+    assert "ROUTE_COLORS" in html
+    assert "function routeTargetRows" in html
+    assert "targetDescription(targetId)" in html
+    assert "routeAgentsForNode(summary, nodeId)" in html
+    assert 'table(["target", "description", "node", "found by"], targetRows)' in html
+    assert "Agent Legend" in html
+    assert "function routeAgentLegendHtml" in html
+    assert "function routeAgentColor" in html
+    assert "routeAgentColor(agentIndex)" in html
+    assert "agents ${routeTarget.agent_ids.join" in html
+
+
 def test_step_renderer_removes_layout_editing_and_drag_selection_code():
     html = render_viewer_html()
 
@@ -381,6 +423,48 @@ def test_step_renderer_uses_tight_region_boundaries_and_arrival_edges():
     assert "Step ${step.step_index} / ${payload.steps.length}" in html
     assert 'class: "region-boundary"' in html
     assert 'class: `edge ${edge.type === "vz" ? "vz" : "vv"} ${edge.grounded ? "" : "ungrounded"} ${isArrivalEdge ? "arrival" : ""}' in html
+
+
+def test_step_renderer_moves_unassigned_regions_to_sidebar():
+    html = render_viewer_html()
+
+    assert 'id="unassignedRegionSection"' in html
+    assert "Unassigned Regions" in html
+    assert "function renderUnassignedRegions" in html
+    assert '.filter(node => node.type === "region" && !isAssignedRegion(node))' in html
+    assert "function isAssignedRegion" in html
+    assert "UNANCHORED_REGION_RAIL" not in html
+    assert "markerRegions" not in html
+    assert "anchoredRegionMarkerCenter" not in html
+    assert 'kind: "marker"' not in html
+
+
+def test_step_renderer_filters_hidden_region_edges_from_graph():
+    html = render_viewer_html()
+
+    assert "function graphVisibleNodeIds" in html
+    assert 'node.type !== "region" || isAssignedRegion(node)' in html
+    assert "function graphVisibleEdges" in html
+    assert "visibleNodeIds.has(String(edge.i)) && visibleNodeIds.has(String(edge.j))" in html
+    assert "const graphEdges = graphVisibleEdges(step);" in html
+    assert "for (const edge of graphEdges)" in html
+
+
+def test_step_renderer_includes_found_target_sidebar_and_detection_normalization():
+    html = render_viewer_html()
+
+    assert 'id="foundTargetsSection"' in html
+    assert "Found Targets This Step" in html
+    assert "function renderFoundTargets" in html
+    assert "function normalizedDetectionRows" in html
+    assert "Array.isArray(detection.found_target_indices)" in html
+    assert "detection.found_target_indices.map" in html
+    assert "found: true" in html
+    assert "detection.target_indices" in html
+    assert "Boolean(detection.founds[index])" in html
+    assert 'table(["agent", "target", "description", "center x"], rows)' in html
+    assert 'table(["agent", "target", "found", "center x"], rows)' in html
+    assert "targetDescriptionFromStep(step, targetId)" in html
 
 
 def test_shutdown_endpoint_stops_visualization_server(tmp_path, monkeypatch):

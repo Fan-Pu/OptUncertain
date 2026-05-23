@@ -14,7 +14,7 @@ from PIL import Image
 
 
 RENDER_MODE = "interior_cutaway_v1"
-CUT_Z_OFFSET_METERS = 0.15
+DEFAULT_CUT_Z_OFFSET_METERS = 0.15
 
 
 @dataclass(frozen=True)
@@ -31,6 +31,7 @@ def generate_cached_topdown_texture(
     instance_name: str,
     connectivity_dir: Path,
     output_size: int = 1800,
+    cut_z_offset: float = DEFAULT_CUT_Z_OFFSET_METERS,
 ) -> dict[str, object]:
     matterport_data_dir = Path(os.environ["MATTERPORT_DATA_DIR"])
     mesh_zip_path = (
@@ -45,13 +46,16 @@ def generate_cached_topdown_texture(
     png_path = debug_dir / ("%s_topdown_texture.png" % str(scan_id))
     metadata_path = debug_dir / ("%s_topdown_texture.json" % str(scan_id))
     cut_z = _interior_cut_z(
-        connectivity_path=connectivity_dir / ("%s_connectivity.json" % str(scan_id))
+        connectivity_path=connectivity_dir / ("%s_connectivity.json" % str(scan_id)),
+        cut_z_offset=cut_z_offset,
     )
 
     if _cached_texture_is_current(
         png_path=png_path,
         metadata_path=metadata_path,
         cut_z=cut_z,
+        output_size=output_size,
+        cut_z_offset=cut_z_offset,
     ):
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     else:
@@ -60,6 +64,7 @@ def generate_cached_topdown_texture(
             png_path=png_path,
             output_size=output_size,
             cut_z=cut_z,
+            cut_z_offset=cut_z_offset,
         )
         metadata_path.write_text(
             json.dumps(metadata, indent=2, sort_keys=True) + "\n",
@@ -79,6 +84,7 @@ def _render_topdown_texture(
     png_path: Path,
     output_size: int,
     cut_z: float,
+    cut_z_offset: float,
 ) -> dict[str, object]:
     with zipfile.ZipFile(mesh_zip_path) as archive:
         obj_name = _single_zip_member_with_suffix(archive, ".obj")
@@ -123,6 +129,8 @@ def _render_topdown_texture(
     return {
         "render_mode": RENDER_MODE,
         "cut_z": float(cut_z),
+        "cut_z_offset": float(cut_z_offset),
+        "output_size": int(output_size),
         "min_x": float(min_x),
         "max_x": float(max_x),
         "min_y": float(min_y),
@@ -137,6 +145,8 @@ def _cached_texture_is_current(
     png_path: Path,
     metadata_path: Path,
     cut_z: float,
+    output_size: int,
+    cut_z_offset: float,
 ) -> bool:
     if not png_path.exists() or not metadata_path.exists():
         return False
@@ -144,17 +154,19 @@ def _cached_texture_is_current(
     return (
         metadata.get("render_mode") == RENDER_MODE
         and float(metadata.get("cut_z")) == float(cut_z)
+        and metadata.get("output_size") == int(output_size)
+        and metadata.get("cut_z_offset") == float(cut_z_offset)
     )
 
 
-def _interior_cut_z(*, connectivity_path: Path) -> float:
+def _interior_cut_z(*, connectivity_path: Path, cut_z_offset: float) -> float:
     connectivity = json.loads(connectivity_path.read_text(encoding="utf-8"))
     viewpoint_zs = [
         float(item["pose"][11])
         for item in connectivity
         if bool(item["included"])
     ]
-    return max(viewpoint_zs) + CUT_Z_OFFSET_METERS
+    return max(viewpoint_zs) + float(cut_z_offset)
 
 
 def _single_zip_member_with_suffix(archive: zipfile.ZipFile, suffix: str) -> str:

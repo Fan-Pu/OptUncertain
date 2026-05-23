@@ -45,6 +45,8 @@ def load_visualization_steps(
 def load_solution_payload(
     instance_name: str,
     project_root: str | Path | None = None,
+    texture_output_size: int = 1800,
+    texture_cut_z_offset: float = 0.15,
 ) -> dict[str, object]:
     root = resolve_project_root(project_root)
     debug_dir = root / "mllm_debug_outputs" / str(instance_name)
@@ -58,6 +60,8 @@ def load_solution_payload(
         "environment_graph": _load_route_environment_graph(
             instance_name=str(instance_name),
             project_root=root,
+            texture_output_size=texture_output_size,
+            texture_cut_z_offset=texture_cut_z_offset,
         ),
     }
     return payload
@@ -97,6 +101,8 @@ def _load_solution_summaries(
 def _load_route_environment_graph(
     instance_name: str,
     project_root: Path,
+    texture_output_size: int,
+    texture_cut_z_offset: float,
 ) -> dict[str, object]:
     scenario = _read_json(project_root / "scenarios" / ("%s.json" % instance_name))
     if platform.system() == "Windows":
@@ -131,6 +137,8 @@ def _load_route_environment_graph(
             project_root=project_root,
             instance_name=instance_name,
             connectivity_dir=project_root / "connectivity",
+            output_size=texture_output_size,
+            cut_z_offset=texture_cut_z_offset,
         ),
     }
 

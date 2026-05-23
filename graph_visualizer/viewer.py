@@ -326,6 +326,16 @@ def render_viewer_html() -> str:
       gap: 12px;
       font-size: 13px;
     }
+    .agent-legend {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+    }
+    .agent-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .route-agent {
       border-top: 1px solid #eaecf0;
       padding-top: 10px;
@@ -395,6 +405,14 @@ def render_viewer_html() -> str:
         <h2 id="summaryTitle">Step Summary</h2>
         <div id="summary"></div>
       </section>
+      <section id="foundTargetsSection" class="panel section">
+        <h2>Found Targets This Step</h2>
+        <div id="foundTargets"></div>
+      </section>
+      <section id="unassignedRegionSection" class="panel section">
+        <h2>Unassigned Regions</h2>
+        <div id="unassignedRegions"></div>
+      </section>
       <section id="nodeTableSection" class="panel section">
         <h2>Hypothesis Nodes</h2>
         <div id="nodeTable"></div>
@@ -432,9 +450,7 @@ def render_viewer_html() -> str:
     const REGION_BOUNDARY_NODE_RADIUS = 38;
     const REGION_BOUNDARY_CORRIDOR_RADIUS = 18;
     const REGION_BOUNDARY_CELL_SIZE = 4;
-    const UNANCHORED_REGION_RAIL_GAP = 72;
-    const UNANCHORED_REGION_RAIL_TOP = 32;
-    const UNANCHORED_REGION_RAIL_SPACING = 64;
+    const ROUTE_COLORS = ["#d62728", "#1f77b4", "#2ca02c", "#ff7f0e", "#9467bd", "#17becf"];
     const REGION_COLORS = [
       "#0f766e",
       "#2563eb",
@@ -459,6 +475,8 @@ def render_viewer_html() -> str:
     const stepLabel = document.getElementById("stepLabel");
     const selectionSection = document.getElementById("selectionSection");
     const summaryTitle = document.getElementById("summaryTitle");
+    const foundTargetsSection = document.getElementById("foundTargetsSection");
+    const unassignedRegionSection = document.getElementById("unassignedRegionSection");
     const nodeTableSection = document.getElementById("nodeTableSection");
     const edgeTableSection = document.getElementById("edgeTableSection");
     const detectionsSection = document.getElementById("detectionsSection");
@@ -581,6 +599,8 @@ def render_viewer_html() -> str:
       renderGraph(step);
       renderSelection(step);
       renderSummary(step);
+      renderFoundTargets(step);
+      renderUnassignedRegions(step);
       renderNodeTable(step);
       renderEdgeTable(step);
       renderDetections(step);
@@ -617,6 +637,8 @@ def render_viewer_html() -> str:
 
     function showStepSections() {
       selectionSection.hidden = false;
+      foundTargetsSection.hidden = false;
+      unassignedRegionSection.hidden = false;
       nodeTableSection.hidden = false;
       edgeTableSection.hidden = false;
       detectionsSection.hidden = false;
@@ -627,6 +649,8 @@ def render_viewer_html() -> str:
 
     function renderSolutionDetails(solution) {
       selectionSection.hidden = false;
+      foundTargetsSection.hidden = true;
+      unassignedRegionSection.hidden = true;
       nodeTableSection.hidden = true;
       edgeTableSection.hidden = true;
       detectionsSection.hidden = true;
@@ -638,9 +662,12 @@ def render_viewer_html() -> str:
     }
 
     function routeSummaryHtml(summary) {
-      const targetRows = Object.entries(summary.target_node_ids_by_target_id || {})
-        .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
-        .map(([targetId, nodeId]) => [targetId, nodeId]);
+      const targetRows = routeTargetRows(summary).map(item => [
+        item.target_id,
+        item.description,
+        item.node_id,
+        item.agent_ids.join(", ")
+      ]);
       const agentBlocks = (summary.agents || []).map(agent => `
         <div class="route-agent">
           <h3>${escapeHtml(agent.agent_id)}</h3>
@@ -660,11 +687,54 @@ def render_viewer_html() -> str:
           })}
           <div>
             <h3>Target viewpoint indices</h3>
-            ${table(["target", "node"], targetRows)}
+            ${table(["target", "description", "node", "found by"], targetRows)}
+          </div>
+          <div>
+            <h3>Agent Legend</h3>
+            ${routeAgentLegendHtml(summary)}
           </div>
           ${agentBlocks}
         </div>
       `;
+    }
+
+    function routeTargetRows(summary) {
+      return Object.entries(summary.target_node_ids_by_target_id || {})
+        .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+        .map(([targetId, nodeId]) => ({
+          target_id: targetId,
+          description: targetDescription(targetId),
+          node_id: nodeId,
+          agent_ids: routeAgentsForNode(summary, nodeId)
+        }));
+    }
+
+    function routeAgentsForNode(summary, nodeId) {
+      return (summary.agents || [])
+        .filter(agent => (agent.route_node_ids || []).some(routeNodeId => Number(routeNodeId) === Number(nodeId)))
+        .map(agent => agent.agent_id);
+    }
+
+    function routeAgentLegendRows(summary) {
+      return (summary.agents || []).map((agent, agentIndex) => ({
+        agent_id: agent.agent_id,
+        color: routeAgentColor(agentIndex)
+      }));
+    }
+
+    function routeAgentLegendHtml(summary) {
+      const rows = routeAgentLegendRows(summary);
+      if (!rows.length) return "<p style=\"margin:0;color:var(--muted);font-size:13px;\">No agents.</p>";
+      return `<div class="agent-legend">${rows.map(item => `
+        <div class="agent-legend-row">
+          <span class="swatch" style="background:${escapeAttr(item.color)};"></span>
+          <span>${escapeHtml(item.agent_id)}</span>
+        </div>
+      `).join("")}</div>`;
+    }
+
+    function routeAgentColor(agentIndex) {
+      return ROUTE_COLORS[agentIndex % ROUTE_COLORS.length];
     }
 
     function renderRouteSelection(solution) {
@@ -675,9 +745,12 @@ def render_viewer_html() -> str:
       }
       const nodeId = Number(selected.node_id);
       const node = payload.environment_graph.nodes.find(item => Number(item.node_id) === nodeId);
-      const targetIds = Object.entries(solution.summary.target_node_ids_by_target_id || {})
-        .filter(([, targetNodeId]) => Number(targetNodeId) === nodeId)
-        .map(([targetId]) => targetId);
+      const targetRows = routeTargetRows(solution.summary)
+        .filter(item => Number(item.node_id) === nodeId);
+      const targetIds = targetRows.map(item => item.target_id);
+      const targetDescriptions = targetRows
+        .map(item => `${item.target_id}: ${item.description}`)
+        .join("\n");
       const visits = (solution.summary.agents || []).flatMap(agent => {
         return (agent.route_node_ids || [])
           .map((routeNodeId, routeIndex) => ({ routeNodeId, routeIndex }))
@@ -689,6 +762,7 @@ def render_viewer_html() -> str:
         map_x: formatNumber(node.x),
         map_y: formatNumber(node.y),
         target_ids: targetIds.join(", "),
+        target_descriptions: targetDescriptions,
         route_visits: visits.join(", ")
       });
     }
@@ -702,7 +776,6 @@ def render_viewer_html() -> str:
       const projection = routeProjection(environment, width, height);
       const positions = routePositions(environment.nodes, projection);
       const contentBounds = computeRouteContentBounds(solution, positions, projection);
-      const colors = ["#d62728", "#1f77b4", "#2ca02c", "#ff7f0e", "#9467bd", "#17becf"];
 
       const defs = svgEl("defs", {});
       graph.appendChild(defs);
@@ -710,7 +783,7 @@ def render_viewer_html() -> str:
         appendRouteArrowMarker(
           defs,
           routeArrowMarkerId(agentIndex),
-          colors[agentIndex % colors.length]
+          routeAgentColor(agentIndex)
         );
       });
 
@@ -755,7 +828,7 @@ def render_viewer_html() -> str:
       const routeLayer = svgEl("g", {});
       viewportLayer.appendChild(routeLayer);
       (solution.summary.agents || []).forEach((agent, agentIndex) => {
-        const color = colors[agentIndex % colors.length];
+        const color = routeAgentColor(agentIndex);
         const routeNodeIds = (agent.route_node_ids || []).map(Number);
         const routePoints = routeNodeIds.map(nodeId => positions.get(String(nodeId)));
         routePoints.slice(0, -1).forEach((point, routeIndex) => {
@@ -805,15 +878,15 @@ def render_viewer_html() -> str:
 
       const targetLayer = svgEl("g", {});
       viewportLayer.appendChild(targetLayer);
-      for (const [targetId, nodeId] of Object.entries(solution.summary.target_node_ids_by_target_id || {})) {
-        const position = positions.get(String(nodeId));
+      for (const routeTarget of routeTargetRows(solution.summary)) {
+        const position = positions.get(String(routeTarget.node_id));
         const star = svgEl("polygon", {
-          class: routeNodeClass("route-target-marker", nodeId),
+          class: routeNodeClass("route-target-marker", routeTarget.node_id),
           points: starPoints(position.x, position.y, 12, 5)
         });
-        star.addEventListener("click", event => selectRouteNode(event, nodeId));
+        star.addEventListener("click", event => selectRouteNode(event, routeTarget.node_id));
         const title = svgEl("title", {});
-        title.textContent = `target ${targetId}: node ${nodeId}`;
+        title.textContent = `target ${routeTarget.target_id}: ${routeTarget.description}; node ${routeTarget.node_id}; agents ${routeTarget.agent_ids.join(", ")}`;
         star.appendChild(title);
         targetLayer.appendChild(star);
         const label = svgEl("text", {
@@ -826,7 +899,7 @@ def render_viewer_html() -> str:
           stroke: "white",
           "stroke-width": 4
         });
-        label.textContent = String(targetId);
+        label.textContent = `${routeTarget.target_id}`;
         targetLayer.appendChild(label);
       }
       viewportLayer.setAttribute(
@@ -908,6 +981,7 @@ def render_viewer_html() -> str:
       graph.setAttribute("viewBox", `0 0 ${width} ${height}`);
 
       const layoutNodes = step.layout.nodes;
+      const graphEdges = graphVisibleEdges(step);
       const hypothesisEdgeById = new Map(step.hypothesis.edges.map(edge => [edgeKey(edge.i, edge.j), edge]));
       const graphState = buildGraphRenderState(step, width, height);
       const environment = graphState.environment;
@@ -923,8 +997,7 @@ def render_viewer_html() -> str:
 
       const regionLayer = svgEl("g", {});
       viewportLayer.appendChild(regionLayer);
-      const regionMarkerGroups = [];
-      for (const node of layoutNodes.filter(item => item.type === "region").sort(byId)) {
+      for (const node of layoutNodes.filter(item => item.type === "region" && isAssignedRegion(item)).sort(byId)) {
         const geometry = graphState.regionGeometries.get(String(node.id));
         const center = geometry.center;
         const group = svgEl("g", {
@@ -939,22 +1012,13 @@ def render_viewer_html() -> str:
         title.textContent = `${node.type} ${node.id}: ${node.label}`;
         group.appendChild(title);
         const color = regionColor(node.id);
-        if (geometry.kind === "marker") {
-          group.appendChild(svgEl("polygon", {
+        for (const component of geometry.components) {
+          group.appendChild(svgEl("path", {
             class: "region-boundary",
-            points: geometry.points.map(point => `${point.x},${point.y}`).join(" "),
+            d: component.path,
             fill: color,
             stroke: color
           }));
-        } else {
-          for (const component of geometry.components) {
-            group.appendChild(svgEl("path", {
-              class: "region-boundary",
-              d: component.path,
-              fill: color,
-              stroke: color
-            }));
-          }
         }
         const idText = svgEl("text", {
           x: center.x,
@@ -964,11 +1028,7 @@ def render_viewer_html() -> str:
         });
         idText.textContent = String(node.id);
         group.appendChild(idText);
-        if (geometry.kind === "marker") {
-          regionMarkerGroups.push(group);
-        } else {
-          regionLayer.appendChild(group);
-        }
+        regionLayer.appendChild(group);
       }
 
       const edgeLayer = svgEl("g", {});
@@ -976,7 +1036,7 @@ def render_viewer_html() -> str:
       const arrivalEdgeLayer = svgEl("g", {});
       viewportLayer.appendChild(arrivalEdgeLayer);
       const arrivalEdgeKeys = agentArrivalEdgeKeys(step);
-      for (const edge of step.layout.edges) {
+      for (const edge of graphEdges) {
         const source = positions.get(String(edge.i));
         const target = positions.get(String(edge.j));
         const hyp = hypothesisEdgeById.get(edgeKey(edge.i, edge.j)) || edge;
@@ -1011,12 +1071,6 @@ def render_viewer_html() -> str:
         label.textContent = edgeLabel(hyp);
         edgeGroup.appendChild(label);
         (isArrivalEdge ? arrivalEdgeLayer : edgeLayer).appendChild(edgeGroup);
-      }
-
-      const regionMarkerLayer = svgEl("g", {});
-      viewportLayer.appendChild(regionMarkerLayer);
-      for (const group of regionMarkerGroups) {
-        regionMarkerLayer.appendChild(group);
       }
 
       const nodeLayer = svgEl("g", {});
@@ -1074,6 +1128,7 @@ def render_viewer_html() -> str:
       const positions = routePositions(environment.nodes, projection);
       const regionGeometries = new Map();
       const contentBounds = emptyBounds();
+      const graphEdges = graphVisibleEdges(step);
       includeGraphPoint(contentBounds, projection.offsetX, projection.offsetY, 0);
       includeGraphPoint(
         contentBounds,
@@ -1082,44 +1137,17 @@ def render_viewer_html() -> str:
         0
       );
 
-      const regionNodes = step.layout.nodes.filter(item => item.type === "region").sort(byId);
-      const markerRegions = [];
+      const regionNodes = step.layout.nodes
+        .filter(item => item.type === "region" && isAssignedRegion(item))
+        .sort(byId);
       for (const region of regionNodes) {
-        if (assignedRegionViewpointIds(region).length === 0) {
-          markerRegions.push(region);
-          continue;
-        }
         const geometry = regionGeometry(region, positions, environment);
         regionGeometries.set(String(region.id), geometry);
         positions.set(String(region.id), geometry.center);
         includeRegionGeometryBounds(contentBounds, geometry);
       }
 
-      const railRegions = [];
-      for (const region of markerRegions) {
-        const anchorCenter = anchoredRegionMarkerCenter(region, step, positions);
-        if (anchorCenter) {
-          positions.set(String(region.id), anchorCenter);
-        } else {
-          railRegions.push(region);
-        }
-      }
-
-      const railX = projection.offsetX + projection.usedWidth + UNANCHORED_REGION_RAIL_GAP;
-      railRegions.sort(byId).forEach((region, index) => {
-        positions.set(String(region.id), {
-          x: railX,
-          y: projection.offsetY + UNANCHORED_REGION_RAIL_TOP + index * UNANCHORED_REGION_RAIL_SPACING
-        });
-      });
-
-      for (const region of markerRegions) {
-        const geometry = regionGeometry(region, positions, environment);
-        regionGeometries.set(String(region.id), geometry);
-        includeRegionGeometryBounds(contentBounds, geometry);
-      }
-
-      for (const edge of step.layout.edges) {
+      for (const edge of graphEdges) {
         const source = positions.get(String(edge.i));
         const target = positions.get(String(edge.j));
         includeGraphPoint(contentBounds, source.x, source.y, 8);
@@ -1144,34 +1172,7 @@ def render_viewer_html() -> str:
       for (const point of geometry.points) {
         includeGraphPoint(bounds, point.x, point.y, 8);
       }
-      includeGraphPoint(bounds, geometry.center.x, geometry.center.y, geometry.kind === "marker" ? 28 : 18);
-    }
-
-    function anchoredRegionMarkerCenter(region, step, positions) {
-      const anchors = [];
-      const layoutNodeIds = new Set(step.layout.nodes.map(node => String(node.id)));
-      for (const connectedId of region.connected_node_ids || []) {
-        if (!layoutNodeIds.has(String(connectedId))) continue;
-        const point = positions.get(String(connectedId));
-        if (point) anchors.push(point);
-      }
-      for (const edge of step.layout.edges) {
-        if (String(edge.i) === String(region.id)) {
-          const point = positions.get(String(edge.j));
-          if (point) anchors.push(point);
-        } else if (String(edge.j) === String(region.id)) {
-          const point = positions.get(String(edge.i));
-          if (point) anchors.push(point);
-        }
-      }
-      if (anchors.length === 0) return null;
-      const total = anchors.reduce((acc, point) => {
-        return { x: acc.x + point.x, y: acc.y + point.y };
-      }, { x: 0, y: 0 });
-      return {
-        x: total.x / anchors.length,
-        y: total.y / anchors.length
-      };
+      includeGraphPoint(bounds, geometry.center.x, geometry.center.y, 18);
     }
 
     function regionColor(regionId) {
@@ -1279,27 +1280,25 @@ def render_viewer_html() -> str:
       return (region.assigned_viewpoint_ids || []).map(String).sort(numericStringCompare);
     }
 
-    function regionGeometry(region, positions, environment) {
-      const assignedIds = assignedRegionViewpointIds(region);
-      if (assignedIds.length > 0) {
-        return regionTightBoundary(region, positions, environment);
-      }
+    function isAssignedRegion(node) {
+      return assignedRegionViewpointIds(node).length > 0;
+    }
 
-      const center = positions.get(String(region.id));
-      if (!center) {
-        throw new Error(`Missing marker center for region ${region.id}`);
-      }
-      const radius = 24;
-      return {
-        kind: "marker",
-        center: center,
-        points: [
-          { x: center.x, y: center.y - radius },
-          { x: center.x + radius, y: center.y },
-          { x: center.x, y: center.y + radius },
-          { x: center.x - radius, y: center.y }
-        ]
-      };
+    function graphVisibleNodeIds(step) {
+      return new Set(step.layout.nodes
+        .filter(node => node.type !== "region" || isAssignedRegion(node))
+        .map(node => String(node.id)));
+    }
+
+    function graphVisibleEdges(step) {
+      const visibleNodeIds = graphVisibleNodeIds(step);
+      return step.layout.edges.filter(edge => (
+        visibleNodeIds.has(String(edge.i)) && visibleNodeIds.has(String(edge.j))
+      ));
+    }
+
+    function regionGeometry(region, positions, environment) {
+      return regionTightBoundary(region, positions, environment);
     }
 
     function assignedRegionCenter(assignedIds, positions) {
@@ -1471,6 +1470,53 @@ def render_viewer_html() -> str:
       });
     }
 
+    function renderFoundTargets(step) {
+      const rows = normalizedDetectionRows(step)
+        .filter(item => item.found)
+        .map(item => [
+          item.agent_id,
+          item.target_id,
+          item.description,
+          formatNumber(item.target_center_x)
+        ]);
+      const target = document.getElementById("foundTargets");
+      if (!rows.length) {
+        target.innerHTML = "<p style=\"margin:0;color:var(--muted);font-size:13px;\">No targets found in this step.</p>";
+        return;
+      }
+      target.innerHTML = table(["agent", "target", "description", "center x"], rows);
+    }
+
+    function renderUnassignedRegions(step) {
+      const hypById = new Map(step.hypothesis.nodes.map(node => [String(node.id), node]));
+      const rows = step.layout.nodes
+        .filter(node => node.type === "region" && !isAssignedRegion(node))
+        .sort(byId)
+        .map(node => {
+          const hyp = hypById.get(String(node.id)) || node;
+          return `
+            <tr data-node-id="${escapeAttr(node.id)}">
+              <td>${escapeHtml(String(node.id))}</td>
+              <td>${escapeHtml(shortLabel(node.label, 34))}</td>
+              <td>${escapeHtml(formatNumber(hyp.exist_prob))}</td>
+              <td>${escapeHtml(formatObject(hyp.target_probs))}</td>
+            </tr>
+          `;
+        });
+      const target = document.getElementById("unassignedRegions");
+      if (!rows.length) {
+        target.innerHTML = "<p style=\"margin:0;color:var(--muted);font-size:13px;\">No unassigned regions.</p>";
+        return;
+      }
+      target.innerHTML = `<table><thead><tr><th>id</th><th>label</th><th>exist</th><th>target probs</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+      for (const row of target.querySelectorAll("tr[data-node-id]")) {
+        row.addEventListener("click", () => {
+          selected = { kind: "node", id: row.dataset.nodeId };
+          render();
+        });
+      }
+    }
+
     function renderNodeTable(step) {
       const rows = step.hypothesis.nodes
         .slice()
@@ -1503,16 +1549,49 @@ def render_viewer_html() -> str:
     }
 
     function renderDetections(step) {
-      const rows = (step.detection.detections || []).flatMap(detection => {
-        return detection.target_indices.map((targetId, index) => [
-          detection.agent_id,
-          targetId,
-          detection.founds[index],
-          detection.target_center_xs ? detection.target_center_xs[index] : ""
-        ]);
-      });
+      const rows = normalizedDetectionRows(step).map(item => [
+        item.agent_id,
+        item.target_id,
+        item.found,
+        formatNumber(item.target_center_x)
+      ]);
       document.getElementById("detections").innerHTML =
         table(["agent", "target", "found", "center x"], rows);
+    }
+
+    function normalizedDetectionRows(step) {
+      return (step.detection.detections || []).flatMap(detection => {
+        if (Array.isArray(detection.found_target_indices)) {
+          return detection.found_target_indices.map((targetId, index) => ({
+            agent_id: detection.agent_id,
+            target_id: String(targetId),
+            description: targetDescriptionFromStep(step, targetId),
+            found: true,
+            target_center_x: detection.target_center_xs ? detection.target_center_xs[index] : ""
+          }));
+        }
+        return (detection.target_indices || []).map((targetId, index) => ({
+          agent_id: detection.agent_id,
+          target_id: String(targetId),
+          description: targetDescriptionFromStep(step, targetId),
+          found: Boolean(detection.founds[index]),
+          target_center_x: detection.target_center_xs ? detection.target_center_xs[index] : ""
+        }));
+      });
+    }
+
+    function targetDescriptionFromStep(step, targetId) {
+      const target = (step.hypothesis.targets || [])
+        .find(item => String(item.target_id) === String(targetId));
+      return target ? target.description : "";
+    }
+
+    function targetDescription(targetId) {
+      for (const step of payload.steps || []) {
+        const description = targetDescriptionFromStep(step, targetId);
+        if (description) return description;
+      }
+      return "";
     }
 
     function renderImages(step) {

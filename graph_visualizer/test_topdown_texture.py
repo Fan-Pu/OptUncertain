@@ -83,6 +83,8 @@ def test_generate_cached_topdown_texture_from_obj_mtl_zip(tmp_path, monkeypatch)
     assert metadata["url"] == "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
     assert metadata["render_mode"] == "interior_cutaway_v1"
     assert metadata["cut_z"] == 0.8
+    assert metadata["cut_z_offset"] == 0.15
+    assert metadata["output_size"] == 8
     assert metadata["min_x"] == 0.0
     assert metadata["max_x"] == 1.0
     assert metadata["min_y"] == 0.0
@@ -93,6 +95,21 @@ def test_generate_cached_topdown_texture_from_obj_mtl_zip(tmp_path, monkeypatch)
         Image.open(tmp_path / "mllm_debug_outputs" / "case" / "scan_topdown_texture.png")
     )
     assert np.any(image != 255)
+
+    custom_metadata = generate_cached_topdown_texture(
+        scan_id=scan_id,
+        project_root=tmp_path,
+        instance_name="case-custom",
+        connectivity_dir=connectivity_dir,
+        output_size=10,
+        cut_z_offset=0.5,
+    )
+
+    assert custom_metadata["cut_z"] == 1.15
+    assert custom_metadata["cut_z_offset"] == 0.5
+    assert custom_metadata["output_size"] == 10
+    assert custom_metadata["width"] == 10
+    assert custom_metadata["height"] == 10
 
 
 def test_cutaway_removes_above_cut_ceiling_triangles(tmp_path, monkeypatch):
@@ -146,6 +163,7 @@ def test_cutaway_removes_above_cut_ceiling_triangles(tmp_path, monkeypatch):
     )
 
     assert metadata["cut_z"] == 0.8
+    assert metadata["cut_z_offset"] == 0.15
     image = np.asarray(
         Image.open(tmp_path / "mllm_debug_outputs" / "case" / "scan_topdown_texture.png")
     )
@@ -213,7 +231,16 @@ def test_stale_topdown_cache_is_regenerated(tmp_path, monkeypatch):
     cache_dir.mkdir(parents=True)
     (cache_dir / "scan_topdown_texture.png").write_bytes(b"stale")
     (cache_dir / "scan_topdown_texture.json").write_text(
-        json.dumps({"width": 1, "height": 1}),
+        json.dumps(
+            {
+                "render_mode": "interior_cutaway_v1",
+                "cut_z": 0.8,
+                "cut_z_offset": 0.15,
+                "output_size": 4,
+                "width": 1,
+                "height": 1,
+            }
+        ),
         encoding="utf-8",
     )
     monkeypatch.setenv("MATTERPORT_DATA_DIR", str(tmp_path / "data"))
@@ -228,4 +255,5 @@ def test_stale_topdown_cache_is_regenerated(tmp_path, monkeypatch):
     )
 
     assert metadata["render_mode"] == "interior_cutaway_v1"
+    assert metadata["output_size"] == 8
     Image.open(cache_dir / "scan_topdown_texture.png").verify()
