@@ -1,7 +1,7 @@
 {
   "agent_current_vp_ids": {
-    "agent0": 2,
-    "agent1": 41
+    "agent0": 20,
+    "agent1": 40
   },
   "edges": [
     {
@@ -109,7 +109,31 @@
     {
       "grounded": true,
       "i": 20,
+      "j": 23,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 20,
       "j": 32,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 20,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 25,
+      "j": 40,
       "type": "vv"
     },
     {
@@ -243,16 +267,30 @@
     {
       "connected_node_ids": [
         2,
-        32
+        23,
+        26,
+        32,
+        34
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 20,
       "label": "3a6d2322867f40d9a3d2758ab88df288",
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        20
+      ],
+      "grounded": false,
+      "id": 23,
+      "label": "30c97842da204e6290ac32904c924e17",
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
+        40,
         41
       ],
       "grounded": false,
@@ -263,7 +301,8 @@
     },
     {
       "connected_node_ids": [
-        2
+        2,
+        20
       ],
       "grounded": false,
       "id": 26,
@@ -298,6 +337,7 @@
     {
       "connected_node_ids": [
         2,
+        20,
         35
       ],
       "grounded": false,
@@ -332,12 +372,13 @@
     {
       "connected_node_ids": [
         9,
+        25,
         41
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 40,
       "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -372,6 +413,7 @@
         16,
         17,
         20,
+        23,
         26,
         30,
         32,
@@ -412,7 +454,7 @@
       "type": "region"
     }
   ],
-  "observation_step": 4,
+  "observation_step": 5,
   "region_to_viewpoints": {
     "44": [
       0
@@ -424,6 +466,7 @@
       16,
       17,
       20,
+      23,
       26,
       30,
       32,
@@ -451,6 +494,7 @@
     "18": 46,
     "19": 46,
     "20": 45,
+    "23": 45,
     "25": 46,
     "26": 45,
     "30": 45,

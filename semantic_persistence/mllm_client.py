@@ -132,7 +132,7 @@ class MLLMClient:
                 "environment variable %s is not set." % self.api_key_env
             )
 
-        self._print_request_size_report(messages=messages, model_name=model_name)
+        # self._print_request_size_report(messages=messages, model_name=model_name)
 
         try:
             completion = self.client.chat.completions.create(
@@ -1076,6 +1076,26 @@ class MLLMClient:
                     node.get("label", "")
                 ).strip()
 
+        region_start_id = int(len(Helper.viewpoint_vp_label_by_index))
+
+        existing_region_ids = sorted(graph_region_label_by_id_for_prompt)
+
+        invalid_existing_region_ids = [
+            region_id
+            for region_id in existing_region_ids
+            if int(region_id) < region_start_id
+        ]
+        if invalid_existing_region_ids:
+            raise ValueError(
+                "Graph summary contains region ids below region_start_id=%s: %s. "
+                "This indicates region-viewpoint id collision in saved graph state."
+                % (region_start_id, invalid_existing_region_ids)
+            )
+
+        next_new_region_id = region_start_id
+        if existing_region_ids:
+            next_new_region_id = max(region_start_id, max(existing_region_ids) + 1)
+
         graph_viewpoint_status_by_id_for_prompt = {}
         for node in graph_summary.get("nodes", []):
             if not isinstance(node, dict):
@@ -1187,29 +1207,35 @@ class MLLMClient:
             else 13
         )
 
+        example_current_region_id = next_new_region_id
+        example_adjacent_region_id = next_new_region_id + 1
+        example_invisible_region_id = next_new_region_id + 2
         schema = {
             "agents": [
                 {
                     "agent_id": example_agent_id,
-                    "current_region_node_id": 100,
-                    "observed_region_node_ids": [100, 101],
+                    "current_region_node_id": example_current_region_id,
+                    "observed_region_node_ids": [
+                        example_current_region_id,
+                        example_adjacent_region_id,
+                    ],
                 }
             ],
             "current_viewpoints_reassignment": [
                 {
                     "viewpoint_id": example_current_viewpoint_id,
-                    "new_assigned_region_id": 101,
+                    "new_assigned_region_id": example_adjacent_region_id,
                 }
             ],
             "visible_region_nodes": [
                 {
-                    "id": 100,
+                    "id": example_current_region_id,
                     "label": "bright kitchen area near dining table",
                     "exist_prob": 1.0,
                     "target_probs": target_prob_template,
                 },
                 {
-                    "id": 101,
+                    "id": example_adjacent_region_id,
                     "label": "adjacent hallway visible through doorway",
                     "exist_prob": 0.7,
                     "target_probs": target_prob_template,
@@ -1217,7 +1243,7 @@ class MLLMClient:
             ],
             "invisible_region_nodes": [
                 {
-                    "id": 900,
+                    "id": example_invisible_region_id,
                     "label": "unseen hallway area beyond closed doorway",
                     "exist_prob": 0.6,
                     "target_probs": target_prob_template,
@@ -1231,7 +1257,7 @@ class MLLMClient:
             ],
             "viewpoint_node_assigns": [
                 {
-                    "region_node_id": 100,
+                    "region_node_id": example_current_region_id,
                     "assigned_viewpoint_node_indices": [
                         example_current_viewpoint_id,
                         example_visible_viewpoint_id,
@@ -1241,7 +1267,7 @@ class MLLMClient:
             "new_edges": [
                 {
                     "i": example_visible_viewpoint_id,
-                    "j": 900,
+                    "j": example_invisible_region_id,
                     "edge_type": "VZ",
                     "exist_prob": 0.6,
                     "dist": 2.5,
@@ -1299,7 +1325,8 @@ class MLLMClient:
                 "or corridor. Reuse matching existing region ids."
             ),
             "visible_region_nodes[].id": (
-                "Integer region id. Use a new id only for a new physical region."
+                "Integer region id. Region ids must be >= region_start_id. "
+                "Use a new id only for a new physical region."
             ),
             "visible_region_nodes[].label": (
                 "Room or area label only, not an object name. The label must describe one "
@@ -1326,8 +1353,8 @@ class MLLMClient:
                 "no assigned viewpoints."
             ),
             "invisible_region_nodes[].id": (
-                "Integer region id. Use a new id only if the region is not represented "
-                "in the graph summary."
+                "Integer region id. Region ids must be >= region_start_id. "
+                "Use a new id only if the region is not represented in the graph summary."
             ),
             "invisible_region_nodes[].label": (
                 "Room or area label only, not an object name. Include appearance cue, "
@@ -1533,6 +1560,10 @@ class MLLMClient:
                 - Do not include current viewpoint ids in viewpoint_target_probs.
                 - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
                 - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
+                - Region ids must be >= {region_start_id}.
+                - New region ids must start from {next_new_region_id}.
+                - Existing region ids in the graph summary may be reused.
+                - Never use a viewpoint id as a region id.
 
                 Current-step allowed viewpoint ids:
                 {current_step_allowed_viewpoint_ids_json}
@@ -1619,6 +1650,8 @@ class MLLMClient:
                 required_viewpoint_target_probs_skeleton_json=json.dumps(
                     required_viewpoint_target_probs_skeleton, indent=2, sort_keys=True
                 ),
+                region_start_id=region_start_id,
+                next_new_region_id=next_new_region_id,
             )
         )
 
@@ -2785,6 +2818,34 @@ class MLLMClient:
 
         all_region_ids = visible_region_ids | invisible_region_ids
 
+        region_start_id = int(len(Helper.viewpoint_vp_label_by_index))
+        all_region_ids_for_namespace_check = set(visible_region_ids) | set(
+            invisible_region_ids
+        )
+        invalid_region_ids = sorted(
+            region_id
+            for region_id in all_region_ids_for_namespace_check
+            if int(region_id) < region_start_id
+        )
+        if invalid_region_ids:
+            raise ValueError(
+                "Region ids must be >= region_start_id=%s, but got %s. "
+                "These ids overlap with the offline-map viewpoint id range."
+                % (region_start_id, invalid_region_ids)
+            )
+
+        invalid_graph_region_ids = sorted(
+            region_id
+            for region_id in graph_region_records
+            if int(region_id) < region_start_id
+        )
+        if invalid_graph_region_ids:
+            raise ValueError(
+                "Graph summary contains region ids below region_start_id=%s: %s. "
+                "This saved graph state is invalid because region ids overlap "
+                "with viewpoint ids." % (region_start_id, invalid_graph_region_ids)
+            )
+
         for agent_id, current_region_node_id in agent_current_region.items():
             if current_region_node_id not in visible_region_ids:
                 raise ValueError(
@@ -3420,6 +3481,17 @@ class MLLMClient:
             j_is_viewpoint = j in all_current_step_viewpoint_ids
             i_is_region = i in all_region_ids
             j_is_region = j in all_region_ids
+
+            if edge_type == "VZ":
+                i_is_region = int(i) >= region_start_id
+                j_is_region = int(j) >= region_start_id
+
+                if i_is_region == j_is_region:
+                    raise ValueError(
+                        "VZ edge (%s, %s) must connect one viewpoint id "
+                        "below region_start_id=%s and one region id greater "
+                        "than or equal to region_start_id." % (i, j, region_start_id)
+                    )
 
             if edge_type == "VV":
                 if not (i_is_viewpoint and j_is_viewpoint):

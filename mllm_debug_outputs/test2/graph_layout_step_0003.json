@@ -1,6 +1,6 @@
 {
   "agent_current_vp_ids": {
-    "agent0": 2,
+    "agent0": 35,
     "agent1": 9
   },
   "edges": [
@@ -13,55 +13,13 @@
     {
       "grounded": true,
       "i": 2,
-      "j": 11,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 2,
-      "j": 14,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 2,
-      "j": 20,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 2,
-      "j": 26,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 2,
-      "j": 30,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 2,
       "j": 32,
       "type": "vv"
     },
     {
       "grounded": true,
       "i": 2,
-      "j": 34,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 2,
       "j": 35,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 2,
-      "j": 39,
       "type": "vv"
     },
     {
@@ -111,6 +69,12 @@
       "i": 32,
       "j": 35,
       "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 34,
+      "j": 35,
+      "type": "vv"
     }
   ],
   "nodes": [
@@ -125,56 +89,15 @@
       "type": "viewpoint"
     },
     {
-      "assigned_viewpoint_ids": [
-        0
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 1,
-      "label": "bright living area near fireplace with sofa",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
       "connected_node_ids": [
-        11,
-        14,
-        20,
-        26,
-        30,
         32,
-        34,
-        35,
-        39
+        35
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 2,
       "label": "51857544c192476faebf212acb1b3d90",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        9,
-        18,
-        40,
-        41
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 4,
-      "label": "metallic lounge area with tufted seating",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 5,
-      "label": "adjacent dark room visible through door",
-      "node_visit_times": 0,
-      "type": "region"
     },
     {
       "connected_node_ids": [
@@ -186,26 +109,6 @@
       "id": 9,
       "label": "85c23efeaecd4d43a7dcd5b90137179e",
       "node_visit_times": 2,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        2
-      ],
-      "grounded": false,
-      "id": 11,
-      "label": "6800f98e9e67463e9928a4253253bc2f",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        2
-      ],
-      "grounded": false,
-      "id": 14,
-      "label": "1e86968849944444b66d9537efb5da9e",
-      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -242,32 +145,11 @@
     },
     {
       "connected_node_ids": [
-        2,
         32
       ],
       "grounded": false,
       "id": 20,
       "label": "3a6d2322867f40d9a3d2758ab88df288",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        2
-      ],
-      "grounded": false,
-      "id": 26,
-      "label": "23ec8bbec8eb40478411cba2e55b732e",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        2
-      ],
-      "grounded": false,
-      "id": 30,
-      "label": "902e65564f81489687878425d9b3cb55",
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -287,7 +169,7 @@
     },
     {
       "connected_node_ids": [
-        2
+        35
       ],
       "grounded": false,
       "id": 34,
@@ -299,22 +181,13 @@
       "connected_node_ids": [
         2,
         16,
-        32
+        32,
+        34
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 35,
       "label": "50c241453dfd45c1ba95b5d7191982ef",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        2
-      ],
-      "grounded": false,
-      "id": 39,
-      "label": "5b9b2794954e4694a45fc424a8643081",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -336,28 +209,74 @@
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
       "node_visit_times": 0,
       "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 44,
+      "label": "bright living room area with fireplace and sofa",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        16,
+        17,
+        20,
+        32,
+        34,
+        35
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 45,
+      "label": "adjacent bedroom visible through doorway",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        18,
+        40,
+        41
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 46,
+      "label": "metal-clad lounge area with tufted seating",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 47,
+      "label": "adjacent dark room visible through doorway",
+      "node_visit_times": 0,
+      "type": "region"
     }
   ],
   "observation_step": 3,
   "region_to_viewpoints": {
-    "1": [
+    "44": [
       0
     ],
-    "2": [
+    "45": [
       2,
-      11,
-      14,
       16,
       17,
       20,
-      26,
-      30,
       32,
       34,
-      35,
-      39
+      35
     ],
-    "4": [
+    "46": [
       9,
       18,
       40,
@@ -365,22 +284,17 @@
     ]
   },
   "viewpoint_to_region": {
-    "0": 1,
-    "2": 2,
-    "9": 4,
-    "11": 2,
-    "14": 2,
-    "16": 2,
-    "17": 2,
-    "18": 4,
-    "20": 2,
-    "26": 2,
-    "30": 2,
-    "32": 2,
-    "34": 2,
-    "35": 2,
-    "39": 2,
-    "40": 4,
-    "41": 4
+    "0": 44,
+    "2": 45,
+    "9": 46,
+    "16": 45,
+    "17": 45,
+    "18": 46,
+    "20": 45,
+    "32": 45,
+    "34": 45,
+    "35": 45,
+    "40": 46,
+    "41": 46
   }
 }

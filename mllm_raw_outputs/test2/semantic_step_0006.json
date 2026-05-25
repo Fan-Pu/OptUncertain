@@ -5,39 +5,41 @@
       "current_region_node_id": 45,
       "observed_region_node_ids": [
         45,
-        46
+        44
       ]
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 46,
+      "current_region_node_id": 47,
       "observed_region_node_ids": [
-        46
+        46,
+        47
       ]
     }
   ],
-  "current_viewpoints_reassignment": [],
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 47,
+      "viewpoint_id": 25
+    }
+  ],
   "detections": [
     {
       "agent_id": "agent0",
       "founds": [
-        false,
         false
       ],
       "target_indices": [
-        "0",
-        "1"
+        "0"
       ]
     },
     {
       "agent_id": "agent1",
       "founds": [
-        false,
         false
       ],
       "target_indices": [
-        "0",
-        "1"
+        "0"
       ]
     }
   ],
@@ -51,133 +53,109 @@
     {
       "assigned_viewpoint_node_indices": [
         2,
-        11,
-        14,
+        16,
+        17,
         20,
-        26,
-        30,
         32,
-        34,
-        35,
-        39
+        35
       ],
       "region_node_id": 45
     },
     {
       "assigned_viewpoint_node_indices": [
-        9,
         19,
-        25,
+        37,
         40,
         41
       ],
       "region_node_id": 46
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        3,
+        5,
+        25
+      ],
+      "region_node_id": 47
     }
   ],
   "viewpoint_target_probs": [
     {
-      "id": 2,
-      "target_probs": {
-        "0": 0.0,
-        "1": 0.0
-      }
-    },
-    {
-      "id": 41,
-      "target_probs": {
-        "0": 0.0,
-        "1": 0.0
-      }
-    },
-    {
-      "id": 9,
-      "target_probs": {
-        "0": 0.01,
-        "1": 0.01
-      }
-    },
-    {
-      "id": 11,
-      "target_probs": {
-        "0": 0.01,
-        "1": 0.01
-      }
-    },
-    {
-      "id": 14,
-      "target_probs": {
-        "0": 0.01,
-        "1": 0.01
-      }
-    },
-    {
-      "id": 19,
-      "target_probs": {
-        "0": 0.01,
-        "1": 0.01
-      }
-    },
-    {
-      "id": 20,
-      "target_probs": {
-        "0": 0.01,
-        "1": 0.01
-      }
-    },
-    {
       "id": 25,
       "target_probs": {
-        "0": 0.01,
-        "1": 0.01
-      }
-    },
-    {
-      "id": 26,
-      "target_probs": {
-        "0": 0.01,
-        "1": 0.01
-      }
-    },
-    {
-      "id": 30,
-      "target_probs": {
-        "0": 0.01,
-        "1": 0.01
+        "0": 0.0
       }
     },
     {
       "id": 32,
       "target_probs": {
-        "0": 0.01,
-        "1": 0.01
+        "0": 0.0
       }
     },
     {
-      "id": 34,
+      "id": 2,
       "target_probs": {
-        "0": 0.01,
-        "1": 0.01
+        "0": 0.01
+      }
+    },
+    {
+      "id": 3,
+      "target_probs": {
+        "0": 0.01
+      }
+    },
+    {
+      "id": 5,
+      "target_probs": {
+        "0": 0.01
+      }
+    },
+    {
+      "id": 16,
+      "target_probs": {
+        "0": 0.01
+      }
+    },
+    {
+      "id": 17,
+      "target_probs": {
+        "0": 0.01
+      }
+    },
+    {
+      "id": 19,
+      "target_probs": {
+        "0": 0.01
+      }
+    },
+    {
+      "id": 20,
+      "target_probs": {
+        "0": 0.01
       }
     },
     {
       "id": 35,
       "target_probs": {
-        "0": 0.01,
-        "1": 0.01
+        "0": 0.01
       }
     },
     {
-      "id": 39,
+      "id": 37,
       "target_probs": {
-        "0": 0.01,
-        "1": 0.01
+        "0": 0.01
       }
     },
     {
       "id": 40,
       "target_probs": {
-        "0": 0.01,
-        "1": 0.01
+        "0": 0.01
+      }
+    },
+    {
+      "id": 41,
+      "target_probs": {
+        "0": 0.01
       }
     }
   ],
@@ -187,8 +165,15 @@
       "id": 45,
       "label": "adjacent bedroom visible through doorway",
       "target_probs": {
-        "0": 0.01,
-        "1": 0.01
+        "0": 0.01
+      }
+    },
+    {
+      "exist_prob": 1.0,
+      "id": 44,
+      "label": "bright living room area with fireplace and sofa",
+      "target_probs": {
+        "0": 0.01
       }
     },
     {
@@ -196,8 +181,15 @@
       "id": 46,
       "label": "metal-clad lounge area with tufted seating",
       "target_probs": {
-        "0": 0.01,
-        "1": 0.01
+        "0": 0.01
+      }
+    },
+    {
+      "exist_prob": 0.7,
+      "id": 47,
+      "label": "adjacent dark room visible through doorway",
+      "target_probs": {
+        "0": 0.01
       }
     }
   ]

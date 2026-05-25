@@ -106,6 +106,10 @@ Strict allowed-id rule:
 - Do not include current viewpoint ids in viewpoint_target_probs.
 - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
 - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
+- Region ids must be >= 44.
+- New region ids must start from 44.
+- Existing region ids in the graph summary may be reused.
+- Never use a viewpoint id as a region id.
 
 Current-step allowed viewpoint ids:
 [
@@ -220,16 +224,16 @@ Output schema example. Use keys and value types only. Do not copy example values
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 100,
+      "current_region_node_id": 44,
       "observed_region_node_ids": [
-        100,
-        101
+        44,
+        45
       ]
     }
   ],
   "current_viewpoints_reassignment": [
     {
-      "new_assigned_region_id": 101,
+      "new_assigned_region_id": 45,
       "viewpoint_id": 16
     }
   ],
@@ -253,7 +257,7 @@ Output schema example. Use keys and value types only. Do not copy example values
   "invisible_region_nodes": [
     {
       "exist_prob": 0.6,
-      "id": 900,
+      "id": 46,
       "label": "unseen hallway area beyond closed doorway",
       "target_probs": {
         "0": 0.01,
@@ -267,7 +271,7 @@ Output schema example. Use keys and value types only. Do not copy example values
       "edge_type": "VZ",
       "exist_prob": 0.6,
       "i": 0,
-      "j": 900
+      "j": 46
     }
   ],
   "viewpoint_node_assigns": [
@@ -276,7 +280,7 @@ Output schema example. Use keys and value types only. Do not copy example values
         16,
         0
       ],
-      "region_node_id": 100
+      "region_node_id": 44
     }
   ],
   "viewpoint_target_probs": [
@@ -291,7 +295,7 @@ Output schema example. Use keys and value types only. Do not copy example values
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 100,
+      "id": 44,
       "label": "bright kitchen area near dining table",
       "target_probs": {
         "0": 0.01,
@@ -300,7 +304,7 @@ Output schema example. Use keys and value types only. Do not copy example values
     },
     {
       "exist_prob": 0.7,
-      "id": 101,
+      "id": 45,
       "label": "adjacent hallway visible through doorway",
       "target_probs": {
         "0": 0.01,
@@ -328,7 +332,7 @@ Field descriptions:
   "edge_distance_variances.viewpoint_viewpoint": "Positive variance for ungrounded VV distance estimates.",
   "invisible_region_nodes": "Completely unseen semantic regions inferred only from layout cues. Do not include partially visible areas. Invisible regions must have no assigned viewpoints.",
   "invisible_region_nodes[].exist_prob": "Existence probability in (0, 1]. Use lower values for weak layout cues.",
-  "invisible_region_nodes[].id": "Integer region id. Use a new id only if the region is not represented in the graph summary.",
+  "invisible_region_nodes[].id": "Integer region id. Region ids must be >= region_start_id. Use a new id only if the region is not represented in the graph summary.",
   "invisible_region_nodes[].label": "Room or area label only, not an object name. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names.",
   "invisible_region_nodes[].target_probs": "Unnormalized target-location scores keyed by every active target_id. Values must be in (0, 1]. Do not use 0.0.",
   "new_edges": "Uncertain hypothesis edges. Use legal VV or VZ edges only. For VV edges, include plausible directly traversable local connections between unvisited non-current viewpoints. The evidence may be uncertain, but the connection should not cross an apparent obstacle, large furniture, wall, blocked passage, or other visible barrier. Two viewpoints being in the same room or same semantic region is not sufficient by itself. Use lower exist_prob for weaker but still traversable hypotheses. A VZ edge may connect a viewpoint to any semantic region with no assigned viewpoints, whether the region is visible or invisible. Do not add a VZ edge to a region with assigned viewpoints or to the viewpoint's assigned region.",
@@ -345,7 +349,7 @@ Field descriptions:
   "viewpoint_target_probs[].target_probs": "Dictionary keyed by every active target_id. Use soft scores in (0, 1]. Do not use 0.0 here because current viewpoints are not included in this object.",
   "visible_region_nodes": "Current regions and any semantic area visually observable in current panoramas, even if only partially visible through a doorway, opening, or corridor. Reuse matching existing region ids.",
   "visible_region_nodes[].exist_prob": "Existence probability in (0, 1]. Use 1.0 only for a region containing a current viewpoint.",
-  "visible_region_nodes[].id": "Integer region id. Use a new id only for a new physical region.",
+  "visible_region_nodes[].id": "Integer region id. Region ids must be >= region_start_id. Use a new id only for a new physical region.",
   "visible_region_nodes[].label": "Room or area label only, not an object name. The label must describe one spatially coherent area. Do not merge adjacent rooms or areas separated by a doorway, wall, opening, or clear boundary. Avoid mixed labels such as 'living and bedroom area' or 'kitchen and hallway area'. Include appearance cue, area type, and physical relative location cue, such as near doorway, beside window, beyond hallway, adjacent to kitchen, or at the end of the room. Do not mention agent ids or names.",
   "visible_region_nodes[].target_probs": "Unnormalized target-location scores keyed by every active target_id. Values must be in (0, 1]. Do not use 0.0. Use active target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak."
 }
