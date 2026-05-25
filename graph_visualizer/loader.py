@@ -47,6 +47,9 @@ def load_solution_payload(
     project_root: str | Path | None = None,
     texture_output_size: int = 1800,
     texture_cut_z_offset: float = 0.15,
+    texture_render_mode: str = "multi_slice_composite",
+    texture_composite_max_z_offset: float = 1.6,
+    texture_composite_slices: int = 5,
 ) -> dict[str, object]:
     root = resolve_project_root(project_root)
     debug_dir = root / "mllm_debug_outputs" / str(instance_name)
@@ -62,6 +65,9 @@ def load_solution_payload(
             project_root=root,
             texture_output_size=texture_output_size,
             texture_cut_z_offset=texture_cut_z_offset,
+            texture_render_mode=texture_render_mode,
+            texture_composite_max_z_offset=texture_composite_max_z_offset,
+            texture_composite_slices=texture_composite_slices,
         ),
     }
     return payload
@@ -103,6 +109,9 @@ def _load_route_environment_graph(
     project_root: Path,
     texture_output_size: int,
     texture_cut_z_offset: float,
+    texture_render_mode: str,
+    texture_composite_max_z_offset: float,
+    texture_composite_slices: int,
 ) -> dict[str, object]:
     scenario = _read_json(project_root / "scenarios" / ("%s.json" % instance_name))
     if platform.system() == "Windows":
@@ -139,6 +148,9 @@ def _load_route_environment_graph(
             connectivity_dir=project_root / "connectivity",
             output_size=texture_output_size,
             cut_z_offset=texture_cut_z_offset,
+            render_mode=texture_render_mode,
+            composite_max_z_offset=texture_composite_max_z_offset,
+            composite_slices=texture_composite_slices,
         ),
     }
 

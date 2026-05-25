@@ -1,7 +1,7 @@
 {
   "agent_current_vp_ids": {
     "agent0": 32,
-    "agent1": 40
+    "agent1": 18
   },
   "edges": [
     {
@@ -60,27 +60,9 @@
     },
     {
       "grounded": true,
-      "i": 25,
-      "j": 40,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
       "i": 32,
       "j": 35,
       "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 40,
-      "j": 41,
-      "type": "vv"
-    },
-    {
-      "grounded": false,
-      "i": 40,
-      "j": 104,
-      "type": "vz"
     }
   ],
   "nodes": [
@@ -95,6 +77,17 @@
       "type": "viewpoint"
     },
     {
+      "assigned_viewpoint_ids": [
+        0
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 1,
+      "label": "bright living area with large sofa and fireplace",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
       "connected_node_ids": [
         32
       ],
@@ -103,6 +96,29 @@
       "label": "51857544c192476faebf212acb1b3d90",
       "node_visit_times": 0,
       "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        18,
+        40,
+        41
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 4,
+      "label": "metallic lounge area with tufted seating",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 5,
+      "label": "adjacent dark room visible through door",
+      "node_visit_times": 0,
+      "type": "region"
     },
     {
       "connected_node_ids": [
@@ -142,10 +158,10 @@
       "connected_node_ids": [
         9
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -155,16 +171,6 @@
       "grounded": false,
       "id": 20,
       "label": "3a6d2322867f40d9a3d2758ab88df288",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        40
-      ],
-      "grounded": false,
-      "id": 25,
-      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -195,127 +201,56 @@
     },
     {
       "connected_node_ids": [
-        9,
-        25,
-        41,
-        104
+        9
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 40,
       "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        9,
-        40
+        9
       ],
       "grounded": false,
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
       "node_visit_times": 0,
       "type": "viewpoint"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        0,
-        16
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 100,
-      "label": "modern living area with curved sofa",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        2,
-        17,
-        20,
-        32,
-        35
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 101,
-      "label": "bedroom area with large bed and windows",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        9,
-        18,
-        40
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 102,
-      "label": "dark textured lounge area with padded walls",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        25,
-        41
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 103,
-      "label": "bright transition corridor near doorway",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [
-        40
-      ],
-      "grounded": false,
-      "id": 104,
-      "label": "private bathroom area with shower and toilet",
-      "node_visit_times": 0,
-      "type": "region"
     }
   ],
   "observation_step": 2,
   "region_to_viewpoints": {
-    "100": [
-      0,
-      16
+    "1": [
+      0
     ],
-    "101": [
+    "2": [
       2,
+      16,
       17,
       20,
       32,
       35
     ],
-    "102": [
+    "4": [
       9,
       18,
-      40
-    ],
-    "103": [
-      25,
+      40,
       41
     ]
   },
   "viewpoint_to_region": {
-    "0": 100,
-    "2": 101,
-    "9": 102,
-    "16": 100,
-    "17": 101,
-    "18": 102,
-    "20": 101,
-    "25": 103,
-    "32": 101,
-    "35": 101,
-    "40": 102,
-    "41": 103
+    "0": 1,
+    "2": 2,
+    "9": 4,
+    "16": 2,
+    "17": 2,
+    "18": 4,
+    "20": 2,
+    "32": 2,
+    "35": 2,
+    "40": 4,
+    "41": 4
   }
 }

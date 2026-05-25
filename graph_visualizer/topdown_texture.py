@@ -13,8 +13,15 @@ import numpy as np
 from PIL import Image
 
 
-RENDER_MODE = "interior_cutaway_v1"
+SINGLE_CUTAWAY_RENDER_MODE = "single_cutaway_v1"
+MULTI_SLICE_RENDER_MODE = "multi_slice_hole_fill_v1"
+TEXTURE_RENDER_MODES = {
+    "single_cutaway": SINGLE_CUTAWAY_RENDER_MODE,
+    "multi_slice_composite": MULTI_SLICE_RENDER_MODE,
+}
 DEFAULT_CUT_Z_OFFSET_METERS = 0.15
+DEFAULT_COMPOSITE_MAX_Z_OFFSET_METERS = 1.6
+DEFAULT_COMPOSITE_SLICES = 5
 
 
 @dataclass(frozen=True)
@@ -32,6 +39,9 @@ def generate_cached_topdown_texture(
     connectivity_dir: Path,
     output_size: int = 1800,
     cut_z_offset: float = DEFAULT_CUT_Z_OFFSET_METERS,
+    render_mode: str = "multi_slice_composite",
+    composite_max_z_offset: float = DEFAULT_COMPOSITE_MAX_Z_OFFSET_METERS,
+    composite_slices: int = DEFAULT_COMPOSITE_SLICES,
 ) -> dict[str, object]:
     matterport_data_dir = Path(os.environ["MATTERPORT_DATA_DIR"])
     mesh_zip_path = (
@@ -45,10 +55,12 @@ def generate_cached_topdown_texture(
     debug_dir.mkdir(parents=True, exist_ok=True)
     png_path = debug_dir / ("%s_topdown_texture.png" % str(scan_id))
     metadata_path = debug_dir / ("%s_topdown_texture.json" % str(scan_id))
-    cut_z = _interior_cut_z(
-        connectivity_path=connectivity_dir / ("%s_connectivity.json" % str(scan_id)),
-        cut_z_offset=cut_z_offset,
+    viewpoint_z = _interior_reference_z(
+        connectivity_path=connectivity_dir / ("%s_connectivity.json" % str(scan_id))
     )
+    cut_z = viewpoint_z + float(cut_z_offset)
+    composite_max_z = viewpoint_z + float(composite_max_z_offset)
+    metadata_render_mode = TEXTURE_RENDER_MODES[render_mode]
 
     if _cached_texture_is_current(
         png_path=png_path,
@@ -56,6 +68,10 @@ def generate_cached_topdown_texture(
         cut_z=cut_z,
         output_size=output_size,
         cut_z_offset=cut_z_offset,
+        render_mode=metadata_render_mode,
+        composite_max_z_offset=composite_max_z_offset,
+        composite_max_z=composite_max_z,
+        composite_slices=composite_slices,
     ):
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     else:
@@ -65,6 +81,10 @@ def generate_cached_topdown_texture(
             output_size=output_size,
             cut_z=cut_z,
             cut_z_offset=cut_z_offset,
+            render_mode=metadata_render_mode,
+            composite_max_z_offset=composite_max_z_offset,
+            composite_max_z=composite_max_z,
+            composite_slices=composite_slices,
         )
         metadata_path.write_text(
             json.dumps(metadata, indent=2, sort_keys=True) + "\n",
@@ -85,6 +105,10 @@ def _render_topdown_texture(
     output_size: int,
     cut_z: float,
     cut_z_offset: float,
+    render_mode: str,
+    composite_max_z_offset: float,
+    composite_max_z: float,
+    composite_slices: int,
 ) -> dict[str, object]:
     with zipfile.ZipFile(mesh_zip_path) as archive:
         obj_name = _single_zip_member_with_suffix(archive, ".obj")
@@ -107,13 +131,9 @@ def _render_topdown_texture(
         max_y=max_y,
         output_size=output_size,
     )
-    image, depth = _blank_canvas(width=width, height=height)
-    for face in mesh.faces:
-        _rasterize_textured_triangle(
-            image=image,
-            depth=depth,
+    if render_mode == SINGLE_CUTAWAY_RENDER_MODE:
+        image, _ = _render_topdown_slice(
             mesh=mesh,
-            face=face,
             textures=textures,
             min_x=min_x,
             max_x=max_x,
@@ -123,13 +143,30 @@ def _render_topdown_texture(
             height=height,
             cut_z=cut_z,
         )
+    else:
+        image = _render_multi_slice_composite(
+            mesh=mesh,
+            textures=textures,
+            min_x=min_x,
+            max_x=max_x,
+            min_y=min_y,
+            max_y=max_y,
+            width=width,
+            height=height,
+            cut_z=cut_z,
+            composite_max_z=composite_max_z,
+            composite_slices=composite_slices,
+        )
 
     png_path.parent.mkdir(parents=True, exist_ok=True)
     Image.fromarray(image, mode="RGB").save(png_path)
     return {
-        "render_mode": RENDER_MODE,
+        "render_mode": render_mode,
         "cut_z": float(cut_z),
         "cut_z_offset": float(cut_z_offset),
+        "composite_max_z": float(composite_max_z),
+        "composite_max_z_offset": float(composite_max_z_offset),
+        "composite_slices": int(composite_slices),
         "output_size": int(output_size),
         "min_x": float(min_x),
         "max_x": float(max_x),
@@ -147,26 +184,102 @@ def _cached_texture_is_current(
     cut_z: float,
     output_size: int,
     cut_z_offset: float,
+    render_mode: str,
+    composite_max_z_offset: float,
+    composite_max_z: float,
+    composite_slices: int,
 ) -> bool:
     if not png_path.exists() or not metadata_path.exists():
         return False
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     return (
-        metadata.get("render_mode") == RENDER_MODE
+        metadata.get("render_mode") == render_mode
         and float(metadata.get("cut_z")) == float(cut_z)
         and metadata.get("output_size") == int(output_size)
         and metadata.get("cut_z_offset") == float(cut_z_offset)
+        and metadata.get("composite_max_z_offset") == float(composite_max_z_offset)
+        and metadata.get("composite_max_z") == float(composite_max_z)
+        and metadata.get("composite_slices") == int(composite_slices)
     )
 
 
-def _interior_cut_z(*, connectivity_path: Path, cut_z_offset: float) -> float:
+def _render_topdown_slice(
+    *,
+    mesh: ObjMesh,
+    textures: dict[str, np.ndarray],
+    min_x: float,
+    max_x: float,
+    min_y: float,
+    max_y: float,
+    width: int,
+    height: int,
+    cut_z: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    image, depth = _blank_canvas(width=width, height=height)
+    for face in mesh.faces:
+        _rasterize_textured_triangle(
+            image=image,
+            depth=depth,
+            mesh=mesh,
+            face=face,
+            textures=textures,
+            min_x=min_x,
+            max_x=max_x,
+            min_y=min_y,
+            max_y=max_y,
+            width=width,
+            height=height,
+            cut_z=cut_z,
+        )
+    return image, depth
+
+
+def _render_multi_slice_composite(
+    *,
+    mesh: ObjMesh,
+    textures: dict[str, np.ndarray],
+    min_x: float,
+    max_x: float,
+    min_y: float,
+    max_y: float,
+    width: int,
+    height: int,
+    cut_z: float,
+    composite_max_z: float,
+    composite_slices: int,
+) -> np.ndarray:
+    composite = np.full((height, width, 3), 255, dtype=np.uint8)
+    composite_covered = np.zeros((height, width), dtype=bool)
+    cut_values = np.linspace(float(cut_z), float(composite_max_z), int(composite_slices))
+
+    for slice_index, slice_cut_z in enumerate(cut_values):
+        slice_image, slice_depth = _render_topdown_slice(
+            mesh=mesh,
+            textures=textures,
+            min_x=min_x,
+            max_x=max_x,
+            min_y=min_y,
+            max_y=max_y,
+            width=width,
+            height=height,
+            cut_z=float(slice_cut_z),
+        )
+        slice_covered = slice_depth > -np.inf
+        newly_covered = slice_covered & ~composite_covered
+        composite[newly_covered] = slice_image[newly_covered]
+        composite_covered |= slice_covered
+
+    return composite
+
+
+def _interior_reference_z(*, connectivity_path: Path) -> float:
     connectivity = json.loads(connectivity_path.read_text(encoding="utf-8"))
     viewpoint_zs = [
         float(item["pose"][11])
         for item in connectivity
         if bool(item["included"])
     ]
-    return max(viewpoint_zs) + float(cut_z_offset)
+    return max(viewpoint_zs)
 
 
 def _single_zip_member_with_suffix(archive: zipfile.ZipFile, suffix: str) -> str:

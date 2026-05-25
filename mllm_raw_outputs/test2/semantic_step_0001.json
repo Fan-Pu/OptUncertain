@@ -2,18 +2,18 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 100,
+      "current_region_node_id": 2,
       "observed_region_node_ids": [
-        100,
-        101
+        1,
+        2
       ]
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 102,
+      "current_region_node_id": 4,
       "observed_region_node_ids": [
-        102,
-        103
+        4,
+        5
       ]
     }
   ],
@@ -46,54 +46,31 @@
     "viewpoint_region": 4.0,
     "viewpoint_viewpoint": 1.0
   },
-  "invisible_region_nodes": [
-    {
-      "exist_prob": 0.7,
-      "id": 104,
-      "label": "private bathroom area with shower and toilet",
-      "target_probs": {
-        "0": 0.9,
-        "1": 0.9
-      }
-    }
-  ],
-  "new_edges": [
-    {
-      "dist": 2.0,
-      "edge_type": "VZ",
-      "exist_prob": 0.6,
-      "i": 40,
-      "j": 104
-    }
-  ],
+  "invisible_region_nodes": [],
+  "new_edges": [],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        0,
-        16
+        0
       ],
-      "region_node_id": 100
+      "region_node_id": 1
     },
     {
       "assigned_viewpoint_node_indices": [
+        16,
         32,
         35
       ],
-      "region_node_id": 101
+      "region_node_id": 2
     },
     {
       "assigned_viewpoint_node_indices": [
         9,
-        18
-      ],
-      "region_node_id": 102
-    },
-    {
-      "assigned_viewpoint_node_indices": [
+        18,
         40,
         41
       ],
-      "region_node_id": 103
+      "region_node_id": 4
     }
   ],
   "viewpoint_target_probs": [
@@ -142,32 +119,32 @@
     {
       "id": 40,
       "target_probs": {
-        "0": 0.4,
-        "1": 0.4
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
       "id": 41,
       "target_probs": {
-        "0": 0.2,
-        "1": 0.2
+        "0": 0.01,
+        "1": 0.01
       }
     }
   ],
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 100,
-      "label": "modern living area with curved sofa",
+      "id": 1,
+      "label": "bright living area with large sofa and fireplace",
       "target_probs": {
         "0": 0.01,
         "1": 0.01
       }
     },
     {
-      "exist_prob": 0.9,
-      "id": 101,
-      "label": "bedroom area with large bed and windows",
+      "exist_prob": 0.7,
+      "id": 2,
+      "label": "adjacent bedroom visible through doorway",
       "target_probs": {
         "0": 0.01,
         "1": 0.01
@@ -175,20 +152,20 @@
     },
     {
       "exist_prob": 1.0,
-      "id": 102,
-      "label": "dark textured lounge area with padded walls",
+      "id": 4,
+      "label": "metallic lounge area with tufted seating",
       "target_probs": {
         "0": 0.01,
         "1": 0.01
       }
     },
     {
-      "exist_prob": 0.8,
-      "id": 103,
-      "label": "bright transition corridor near doorway",
+      "exist_prob": 0.7,
+      "id": 5,
+      "label": "adjacent dark room visible through door",
       "target_probs": {
-        "0": 0.2,
-        "1": 0.2
+        "0": 0.01,
+        "1": 0.01
       }
     }
   ]

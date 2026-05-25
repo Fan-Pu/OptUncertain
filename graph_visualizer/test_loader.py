@@ -135,6 +135,9 @@ def _patch_house_texture(monkeypatch):
         connectivity_dir,
         output_size=1800,
         cut_z_offset=0.15,
+        render_mode="multi_slice_composite",
+        composite_max_z_offset=1.6,
+        composite_slices=5,
     ):
         texture_path = (
             project_root
@@ -150,6 +153,10 @@ def _patch_house_texture(monkeypatch):
             "render_mode": "interior_cutaway_v1",
             "cut_z": 1.35,
             "cut_z_offset": float(cut_z_offset),
+            "composite_max_z": 2.8,
+            "composite_max_z_offset": float(composite_max_z_offset),
+            "composite_slices": int(composite_slices),
+            "requested_render_mode": render_mode,
             "output_size": int(output_size),
             "min_x": 0.0,
             "max_x": 1.0,
@@ -236,6 +243,10 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
         "render_mode": "interior_cutaway_v1",
         "cut_z": 1.35,
         "cut_z_offset": 0.15,
+        "composite_max_z": 2.8,
+        "composite_max_z_offset": 1.6,
+        "composite_slices": 5,
+        "requested_render_mode": "multi_slice_composite",
         "output_size": 1800,
         "min_x": 0.0,
         "max_x": 1.0,
@@ -279,10 +290,16 @@ def test_load_solution_payload_forwards_texture_settings(
         project_root=tmp_path,
         texture_output_size=4096,
         texture_cut_z_offset=0.9,
+        texture_render_mode="single_cutaway",
+        texture_composite_max_z_offset=2.1,
+        texture_composite_slices=7,
     )
 
     assert payload["environment_graph"]["house_texture"]["output_size"] == 4096
     assert payload["environment_graph"]["house_texture"]["cut_z_offset"] == 0.9
+    assert payload["environment_graph"]["house_texture"]["requested_render_mode"] == "single_cutaway"
+    assert payload["environment_graph"]["house_texture"]["composite_max_z_offset"] == 2.1
+    assert payload["environment_graph"]["house_texture"]["composite_slices"] == 7
 
 
 def test_load_solution_payload_keeps_environment_connectivity_on_linux(

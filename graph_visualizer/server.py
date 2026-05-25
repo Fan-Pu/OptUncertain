@@ -46,6 +46,9 @@ def visualize_instance(
     port: int = 0,
     texture_output_size: int = 1800,
     texture_cut_z_offset: float = 0.15,
+    texture_render_mode: str = "multi_slice_composite",
+    texture_composite_max_z_offset: float = 1.6,
+    texture_composite_slices: int = 5,
 ) -> VisualizationServer:
     return start_visualizer_server(
         instance_name=instance_name,
@@ -55,6 +58,9 @@ def visualize_instance(
         open_browser=True,
         texture_output_size=texture_output_size,
         texture_cut_z_offset=texture_cut_z_offset,
+        texture_render_mode=texture_render_mode,
+        texture_composite_max_z_offset=texture_composite_max_z_offset,
+        texture_composite_slices=texture_composite_slices,
     )
 
 
@@ -66,6 +72,9 @@ def start_visualizer_server(
     open_browser: bool = False,
     texture_output_size: int = 1800,
     texture_cut_z_offset: float = 0.15,
+    texture_render_mode: str = "multi_slice_composite",
+    texture_composite_max_z_offset: float = 1.6,
+    texture_composite_slices: int = 5,
 ) -> VisualizationServer:
     root = resolve_project_root(project_root)
     steps = load_visualization_steps(instance_name=instance_name, project_root=root)
@@ -79,6 +88,9 @@ def start_visualizer_server(
             project_root=root,
             texture_output_size=texture_output_size,
             texture_cut_z_offset=texture_cut_z_offset,
+            texture_render_mode=texture_render_mode,
+            texture_composite_max_z_offset=texture_composite_max_z_offset,
+            texture_composite_slices=texture_composite_slices,
         )
     )
     html_bytes = render_viewer_html().encode("utf-8")

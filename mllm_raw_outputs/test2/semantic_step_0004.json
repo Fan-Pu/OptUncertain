@@ -2,18 +2,17 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 101,
+      "current_region_node_id": 2,
       "observed_region_node_ids": [
-        101,
-        100
+        2,
+        4
       ]
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 104,
+      "current_region_node_id": 4,
       "observed_region_node_ids": [
-        104,
-        103
+        4
       ]
     }
   ],
@@ -22,19 +21,23 @@
     {
       "agent_id": "agent0",
       "founds": [
+        false,
         false
       ],
       "target_indices": [
-        "0"
+        "0",
+        "1"
       ]
     },
     {
       "agent_id": "agent1",
       "founds": [
+        false,
         false
       ],
       "target_indices": [
-        "0"
+        "0",
+        "1"
       ]
     }
   ],
@@ -43,189 +46,118 @@
     "viewpoint_viewpoint": 1.0
   },
   "invisible_region_nodes": [],
-  "new_edges": [
-    {
-      "dist": 1.5,
-      "edge_type": "VV",
-      "exist_prob": 0.7,
-      "i": 11,
-      "j": 14
-    },
-    {
-      "dist": 1.2,
-      "edge_type": "VV",
-      "exist_prob": 0.6,
-      "i": 26,
-      "j": 30
-    }
-  ],
+  "new_edges": [],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        14
+        2,
+        35
       ],
-      "region_node_id": 100
+      "region_node_id": 2
     },
     {
       "assigned_viewpoint_node_indices": [
-        2,
-        11,
-        20,
-        26,
-        30,
+        9,
+        16,
+        19,
+        25,
         32,
         34,
-        35,
-        39
+        40,
+        41
       ],
-      "region_node_id": 101
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        19,
-        28
-      ],
-      "region_node_id": 103
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        3,
-        6,
-        22,
-        25
-      ],
-      "region_node_id": 104
+      "region_node_id": 4
     }
   ],
   "viewpoint_target_probs": [
     {
+      "id": 35,
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0
+      }
+    },
+    {
+      "id": 41,
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0
+      }
+    },
+    {
       "id": 2,
       "target_probs": {
-        "0": 0.0
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
-      "id": 3,
+      "id": 9,
       "target_probs": {
-        "0": 0.0
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
-      "id": 6,
+      "id": 16,
       "target_probs": {
-        "0": 0.8
-      }
-    },
-    {
-      "id": 11,
-      "target_probs": {
-        "0": 0.05
-      }
-    },
-    {
-      "id": 14,
-      "target_probs": {
-        "0": 0.02
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
       "id": 19,
       "target_probs": {
-        "0": 0.1
-      }
-    },
-    {
-      "id": 20,
-      "target_probs": {
-        "0": 0.05
-      }
-    },
-    {
-      "id": 22,
-      "target_probs": {
-        "0": 0.8
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
       "id": 25,
       "target_probs": {
-        "0": 0.7
-      }
-    },
-    {
-      "id": 26,
-      "target_probs": {
-        "0": 0.05
-      }
-    },
-    {
-      "id": 28,
-      "target_probs": {
-        "0": 0.1
-      }
-    },
-    {
-      "id": 30,
-      "target_probs": {
-        "0": 0.05
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
       "id": 32,
       "target_probs": {
-        "0": 0.05
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
       "id": 34,
       "target_probs": {
-        "0": 0.05
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
-      "id": 35,
+      "id": 40,
       "target_probs": {
-        "0": 0.05
-      }
-    },
-    {
-      "id": 39,
-      "target_probs": {
-        "0": 0.05
+        "0": 0.01,
+        "1": 0.01
       }
     }
   ],
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 100,
-      "label": "modern living area with curved sofa",
+      "id": 2,
+      "label": "bright bedroom area with large bed and metal wall panel",
       "target_probs": {
-        "0": 0.01
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
       "exist_prob": 1.0,
-      "id": 101,
-      "label": "bedroom area with large bed and windows",
+      "id": 4,
+      "label": "metallic lounge area with tufted seating and dark walls",
       "target_probs": {
-        "0": 0.01
-      }
-    },
-    {
-      "exist_prob": 0.8,
-      "id": 103,
-      "label": "bright transition corridor near doorway",
-      "target_probs": {
-        "0": 0.1
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 104,
-      "label": "private bathroom area with shower and toilet",
-      "target_probs": {
-        "0": 0.9
+        "0": 0.01,
+        "1": 0.01
       }
     }
   ]

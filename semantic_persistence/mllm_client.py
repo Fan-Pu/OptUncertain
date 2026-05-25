@@ -1213,7 +1213,7 @@ class MLLMClient:
                     "label": "adjacent hallway visible through doorway",
                     "exist_prob": 0.7,
                     "target_probs": target_prob_template,
-                }
+                },
             ],
             "invisible_region_nodes": [
                 {
@@ -2577,26 +2577,125 @@ class MLLMClient:
             for region in visible_region_nodes
         }
 
-        for agent_id, observed_region_ids in agent_observed_region_ids.items():
-            current_region_id = agent_current_region[agent_id]
-            if current_region_id not in observed_region_ids:
-                raise ValueError(
-                    "Agent %s current_region_node_id %s is not included in "
-                    "observed_region_node_ids %s."
-                    % (agent_id, current_region_id, observed_region_ids)
+        def refresh_visible_region_label_by_id() -> None:
+            visible_region_label_by_id.clear()
+            visible_region_label_by_id.update(
+                {
+                    int(region["id"]): str(region["label"]).strip()
+                    for region in visible_region_nodes
+                }
+            )
+
+        def ensure_region_record_is_visible(region_id: int) -> bool:
+            """Make a referenced region available as a visible region if possible.
+
+            This is used for local repair when agents[].observed_region_node_ids
+            references a region that is not currently listed in visible_region_nodes.
+            """
+            region_id = int(region_id)
+
+            if region_id in visible_region_ids:
+                refresh_visible_region_label_by_id()
+                return True
+
+            # If the MLLM placed an observed region in invisible_region_nodes, move it
+            # to visible_region_nodes because observed_region_node_ids means the region
+            # is visible in the current panorama.
+            if region_id in invisible_region_ids:
+                for region in list(invisible_region_nodes):
+                    if int(region["id"]) != region_id:
+                        continue
+
+                    invisible_region_nodes.remove(region)
+                    invisible_region_ids.remove(region_id)
+                    visible_region_nodes.append(region)
+                    visible_region_ids.add(region_id)
+                    refresh_visible_region_label_by_id()
+
+                    print(
+                        "Moved region %s from invisible_region_nodes to "
+                        "visible_region_nodes because it appears in "
+                        "observed_region_node_ids." % region_id
+                    )
+                    return True
+
+            # If the region exists in the prior graph summary, restore its full
+            # region record locally instead of asking the MLLM to repair it.
+            if region_id in graph_region_records:
+                visible_region_nodes.append(make_region_record_from_graph(region_id))
+                visible_region_ids.add(region_id)
+                refresh_visible_region_label_by_id()
+
+                print(
+                    "Restored graph-summary region %s into visible_region_nodes "
+                    "because it appears in observed_region_node_ids." % region_id
                 )
-            for region_id in observed_region_ids:
-                if region_id not in visible_region_ids:
+                return True
+
+            return False
+
+        for agent_info in agents:
+            agent_id = str(agent_info["agent_id"])
+            current_region_id = int(agent_current_region[agent_id])
+            observed_region_ids = list(agent_observed_region_ids[agent_id])
+
+            # Local repair: current_region_node_id must always be included.
+            if current_region_id not in observed_region_ids:
+                observed_region_ids = [current_region_id] + observed_region_ids
+                print(
+                    "Added current_region_node_id %s to agent %s "
+                    "observed_region_node_ids." % (current_region_id, agent_id)
+                )
+
+            cleaned_observed_region_ids = []
+            removed_unknown_region_ids = []
+
+            for region_id_raw in observed_region_ids:
+                region_id = int(region_id_raw)
+
+                if region_id in visible_region_ids or ensure_region_record_is_visible(
+                    region_id
+                ):
+                    if region_id not in cleaned_observed_region_ids:
+                        cleaned_observed_region_ids.append(region_id)
+                    continue
+
+                # If the missing region is the current region, this is not safely
+                # repairable because the current viewpoint would have no visible
+                # region label for SIGLIP validation.
+                if region_id == current_region_id:
                     raise ValueError(
-                        "Agent %s observed_region_node_ids contains region %s, "
-                        "but this id is not in visible_region_nodes."
+                        "Agent %s has current_region_node_id %s, but this region "
+                        "is not in visible_region_nodes, invisible_region_nodes, "
+                        "or graph_summary.nodes. It cannot be repaired locally."
                         % (agent_id, region_id)
                     )
+
+                # If it is only an extra observed adjacent region, remove it.
+                # Without a region record, there is no label to score and no safe
+                # semantic content to restore.
+                removed_unknown_region_ids.append(region_id)
+
+            if current_region_id not in cleaned_observed_region_ids:
+                raise ValueError(
+                    "Agent %s current_region_node_id %s is not included in repaired "
+                    "observed_region_node_ids %s."
+                    % (agent_id, current_region_id, cleaned_observed_region_ids)
+                )
+
+            if removed_unknown_region_ids:
+                print(
+                    "Removed unknown observed region ids %s from agent %s because "
+                    "they have no visible, invisible, or graph-summary region record."
+                    % (removed_unknown_region_ids, agent_id)
+                )
+
+            agent_info["observed_region_node_ids"] = cleaned_observed_region_ids
+            agent_observed_region_ids[agent_id] = cleaned_observed_region_ids
 
         siglip_current_region_by_viewpoint = {}
 
         if scorer is not None:
-
             siglip_assignment_records = []
             for agent_info in agents:
                 agent_id = str(agent_info["agent_id"])
@@ -2904,7 +3003,9 @@ class MLLMClient:
                     region_node_id
                 )
 
-        for viewpoint_id, region_id in sorted(siglip_current_region_by_viewpoint.items()):
+        for viewpoint_id, region_id in sorted(
+            siglip_current_region_by_viewpoint.items()
+        ):
             assignment_candidates_by_viewpoint[int(viewpoint_id)] = [int(region_id)]
             if int(region_id) not in assignment_region_order:
                 assignment_region_order.append(int(region_id))
@@ -2912,38 +3013,12 @@ class MLLMClient:
         returned_assignment_viewpoint_ids = set(assignment_candidates_by_viewpoint)
 
         def ensure_visible_region_available(region_id: int) -> bool:
-            """Ensure a region can receive assigned viewpoints.
-
-            Assigned viewpoints must not be attached to invisible regions. If the
-            selected region already exists as an invisible region, move it to
-            visible_region_nodes. If it exists only in the graph summary, restore
-            a visible region record from the graph summary.
-            """
+            """Ensure a region can receive assigned viewpoints."""
             nonlocal all_region_ids
 
-            region_id = int(region_id)
-            if region_id in visible_region_ids:
-                return True
-
-            if region_id in invisible_region_ids:
-                for region in list(invisible_region_nodes):
-                    if int(region["id"]) != region_id:
-                        continue
-
-                    invisible_region_nodes.remove(region)
-                    invisible_region_ids.remove(region_id)
-                    visible_region_nodes.append(region)
-                    visible_region_ids.add(region_id)
-                    all_region_ids = visible_region_ids | invisible_region_ids
-                    return True
-
-            if region_id in graph_region_records:
-                visible_region_nodes.append(make_region_record_from_graph(region_id))
-                visible_region_ids.add(region_id)
-                all_region_ids = visible_region_ids | invisible_region_ids
-                return True
-
-            return False
+            repaired = ensure_region_record_is_visible(region_id)
+            all_region_ids = visible_region_ids | invisible_region_ids
+            return repaired
 
         def choose_region_for_missing_assignment(viewpoint_id: int) -> int:
             """Choose a local repair region for a missing viewpoint assignment."""

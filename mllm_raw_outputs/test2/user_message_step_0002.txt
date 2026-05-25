@@ -14,7 +14,7 @@ Compact shared graph summary:
 {
   "agent_current_vp_ids": {
     "agent0": 32,
-    "agent1": 40
+    "agent1": 18
   },
   "edges": [
     {
@@ -76,16 +76,6 @@ Compact shared graph summary:
       "i": 16,
       "j": 35,
       "type": "vv"
-    },
-    {
-      "cond_exist_prob": 0.6,
-      "distance_mean": 2.0,
-      "distance_var": 3.6,
-      "exist_prob": 0.42,
-      "grounded": 0,
-      "i": 40,
-      "j": 104,
-      "type": "vz"
     }
   ],
   "nodes": [
@@ -95,10 +85,73 @@ Compact shared graph summary:
       "id": 0,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.0156,
-        "1": 0.0156
+        "0": 0.1667,
+        "1": 0.1667
       },
       "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0
+      ],
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 1,
+      "label": "bright living area with large sofa and fireplace",
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.2301,
+        "1": 0.2487
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        16,
+        32,
+        35
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 2,
+      "label": "adjacent bedroom visible through doorway",
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.2572,
+        "1": 0.2487
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        18,
+        40,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 4,
+      "label": "metallic lounge area with tufted seating",
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.2826,
+        "1": 0.254
+      },
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "exist_prob": 0.7,
+      "grounded": 0,
+      "id": 5,
+      "label": "adjacent dark room visible through door",
+      "node_visit_times": 0,
+      "target_probs": {
+        "0": 0.2301,
+        "1": 0.2487
+      },
+      "type": "region"
     },
     {
       "exist_prob": 1.0,
@@ -124,12 +177,12 @@ Compact shared graph summary:
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 18,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.0156,
-        "1": 0.0156
+        "0": 0.1667,
+        "1": 0.1667
       },
       "type": "viewpoint"
     },
@@ -139,8 +192,8 @@ Compact shared graph summary:
       "id": 32,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.0156,
-        "1": 0.0156
+        "0": 0.1667,
+        "1": 0.1667
       },
       "type": "viewpoint"
     },
@@ -150,19 +203,19 @@ Compact shared graph summary:
       "id": 35,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.0156,
-        "1": 0.0156
+        "0": 0.1667,
+        "1": 0.1667
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 40,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.625,
-        "1": 0.625
+        "0": 0.1667,
+        "1": 0.1667
       },
       "type": "viewpoint"
     },
@@ -172,87 +225,10 @@ Compact shared graph summary:
       "id": 41,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.3125,
-        "1": 0.3125
+        "0": 0.1667,
+        "1": 0.1667
       },
       "type": "viewpoint"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        0,
-        16
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 100,
-      "label": "modern living area with curved sofa",
-      "node_visit_times": 0,
-      "target_probs": {
-        "0": 0.0099,
-        "1": 0.0088
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        32,
-        35
-      ],
-      "exist_prob": 0.9,
-      "grounded": 0,
-      "id": 101,
-      "label": "bedroom area with large bed and windows",
-      "node_visit_times": 0,
-      "target_probs": {
-        "0": 0.0088,
-        "1": 0.0088
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        9,
-        18
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 102,
-      "label": "dark textured lounge area with padded walls",
-      "node_visit_times": 0,
-      "target_probs": {
-        "0": 0.0108,
-        "1": 0.009
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        40,
-        41
-      ],
-      "exist_prob": 0.8,
-      "grounded": 0,
-      "id": 103,
-      "label": "bright transition corridor near doorway",
-      "node_visit_times": 0,
-      "target_probs": {
-        "0": 0.1765,
-        "1": 0.177
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "exist_prob": 0.7,
-      "grounded": 0,
-      "id": 104,
-      "label": "private bathroom area with shower and toilet",
-      "node_visit_times": 0,
-      "target_probs": {
-        "0": 0.794,
-        "1": 0.7963
-      },
-      "type": "region"
     }
   ],
   "observation_step": 1,
@@ -261,14 +237,14 @@ Compact shared graph summary:
     "1": false
   },
   "viewpoint_to_region": {
-    "0": 100,
-    "16": 100,
-    "18": 102,
-    "32": 101,
-    "35": 101,
-    "40": 103,
-    "41": 103,
-    "9": 102
+    "0": 1,
+    "16": 2,
+    "18": 4,
+    "32": 2,
+    "35": 2,
+    "40": 4,
+    "41": 4,
+    "9": 4
   }
 }
 
@@ -278,8 +254,8 @@ Per-agent observation context:
     "agent_id": "agent0",
     "current_viewpoint_index": 32,
     "image_index": 0,
-    "prior_assigned_region_id": 101,
-    "prior_assigned_region_label": "bedroom area with large bed and windows",
+    "prior_assigned_region_id": 2,
+    "prior_assigned_region_label": "adjacent bedroom visible through doorway",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
@@ -293,8 +269,8 @@ Per-agent observation context:
       },
       {
         "distance": 0.565,
-        "prior_assigned_region_id": 100,
-        "prior_assigned_region_label": "modern living area with curved sofa",
+        "prior_assigned_region_id": 2,
+        "prior_assigned_region_label": "adjacent bedroom visible through doorway",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 16
@@ -317,8 +293,8 @@ Per-agent observation context:
       },
       {
         "distance": 1.218,
-        "prior_assigned_region_id": 101,
-        "prior_assigned_region_label": "bedroom area with large bed and windows",
+        "prior_assigned_region_id": 2,
+        "prior_assigned_region_label": "adjacent bedroom visible through doorway",
         "prior_grounded": false,
         "prior_visit_times": 0,
         "viewpoint_index": 35
@@ -327,36 +303,20 @@ Per-agent observation context:
   },
   {
     "agent_id": "agent1",
-    "current_viewpoint_index": 40,
+    "current_viewpoint_index": 18,
     "image_index": 1,
-    "prior_assigned_region_id": 103,
-    "prior_assigned_region_label": "bright transition corridor near doorway",
+    "prior_assigned_region_id": 4,
+    "prior_assigned_region_label": "metallic lounge area with tufted seating",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
       {
-        "distance": 1.87,
-        "prior_assigned_region_id": 102,
-        "prior_assigned_region_label": "dark textured lounge area with padded walls",
+        "distance": 1.266,
+        "prior_assigned_region_id": 4,
+        "prior_assigned_region_label": "metallic lounge area with tufted seating",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 9
-      },
-      {
-        "distance": 0.767,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 25
-      },
-      {
-        "distance": 0.666,
-        "prior_assigned_region_id": 103,
-        "prior_assigned_region_label": "bright transition corridor near doorway",
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 41
       }
     ]
   }
@@ -375,12 +335,10 @@ Current-step allowed viewpoint ids:
   9,
   16,
   17,
+  18,
   20,
-  25,
   32,
-  35,
-  40,
-  41
+  35
 ]
 
 Required viewpoint_target_probs id skeleton:
@@ -421,21 +379,7 @@ Required viewpoint_target_probs id skeleton:
     }
   },
   {
-    "id": 25,
-    "target_probs": {
-      "0": 0.01,
-      "1": 0.01
-    }
-  },
-  {
     "id": 35,
-    "target_probs": {
-      "0": 0.01,
-      "1": 0.01
-    }
-  },
-  {
-    "id": 41,
     "target_probs": {
       "0": 0.01,
       "1": 0.01
@@ -458,9 +402,7 @@ Non-current visible neighboring viewpoint ids for viewpoint_target_probs:
   16,
   17,
   20,
-  25,
-  35,
-  41
+  35
 ]
 
 Fixed direct detections from the separate detection step:
