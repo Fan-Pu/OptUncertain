@@ -1188,14 +1188,14 @@ class MLLMClient:
         )
 
         required_viewpoint_target_probs_skeleton = [
-            {
-                "id": viewpoint_id,
-                "target_probs": {target_id: 0.01 for target_id in target_ids},
-            }
+            {"id": viewpoint_id}
             for viewpoint_id in viewpoint_target_prob_ids_for_prompt
         ]
 
-        target_prob_template = {target_id: 0.01 for target_id in target_ids}
+        target_prob_template = {
+            target_id: max(round(0.2 + 0.15 * index, 2), 0.9)
+            for index, target_id in enumerate(target_ids)
+        }
 
         example_agent_id = agent_context[0]["agent_id"] if agent_context else "agent0"
         example_current_viewpoint_id = (
@@ -1575,9 +1575,16 @@ class MLLMClient:
                 - You must output one viewpoint_target_probs item for every id in this skeleton.
                 - Keep exactly these ids.
                 - These ids are non-current visible neighboring viewpoints only.
-                - Use soft positive target-location scores in (0, 1] for every active target.
+                - Use positive but meaningful target-location scores in (0, 1]. Avoid uniform scores unless the visual evidence is truly the same.
                 - Do not include current viewpoint ids.
                 - Do not delete any skeleton item.
+                
+                Target probability rule:
+                - Do not copy default values from the schema or examples.
+                - Assign target_probs based on room type, visible objects, and spatial context.
+                - Bathroom-related targets should be higher in bathroom regions/viewpoints than in bedroom, lounge, hallway, or kitchen areas.
+                - Use different scores when evidence differs.
+                - Use low values such as 0.01 only when the target is very unlikely there.
                 
                 Non-current visible neighboring viewpoint ids for viewpoint_target_probs:
                 {viewpoint_target_prob_ids_json}
