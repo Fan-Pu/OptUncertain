@@ -14,6 +14,14 @@ from PIL import Image
 
 import Helper
 
+TEMPERATURE = 0.6
+TOP_P = 0.95
+TOP_K = 20
+MIN_P = 0.0
+PRESENCE_PENALTY = 1.5
+REPETITION_PENALTY = 1.0
+MAX_TOKENS = 81920
+
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
 
@@ -29,7 +37,6 @@ class MLLMClient:
         detection_model_name: str = "",  # read from config
         base_url: str = "https://router.huggingface.co/v1",
         api_key_env: str = "HF_TOKEN",
-        max_new_tokens: int = -1,  # read from config
         request_timeout: float = 120.0,
         save_debug_images: bool = True,
         read_saved_raw_outputs: bool = False,
@@ -40,7 +47,6 @@ class MLLMClient:
         self.graph_model_name = graph_model_name
         self.detection_model_name = detection_model_name
         self.base_url = base_url
-        self.max_new_tokens = int(max_new_tokens)
         self.request_timeout = float(request_timeout)
         self.save_debug_images = bool(save_debug_images)
         self.read_saved_raw_outputs = bool(read_saved_raw_outputs)
@@ -138,19 +144,22 @@ class MLLMClient:
             completion = self.client.chat.completions.create(
                 model=model_name,
                 messages=messages,
-                temperature=0.0,
-                top_p=1.0,
-                seed=42,
-                max_tokens=self.max_new_tokens,
+                temperature=TEMPERATURE,
+                top_p=TOP_P,
+                presence_penalty=PRESENCE_PENALTY,
+                max_tokens=MAX_TOKENS,
                 response_format={"type": "json_object"},
+                extra_body={
+                    "top_k": TOP_K,
+                    "min_p": MIN_P,
+                    "repetition_penalty": REPETITION_PENALTY,
+                },
             )
 
             print("usage:", completion.usage)
             print("model:", completion.model)
-            print(
-                "system_fingerprint:", getattr(completion, "system_fingerprint", None)
-            )
             print("finish_reason:", completion.choices[0].finish_reason)
+            print()
 
         except BadRequestError as exc:
             message = str(exc)
@@ -1204,10 +1213,12 @@ class MLLMClient:
         )
 
         required_viewpoint_target_prob_ids_for_prompt = sorted(
-            visible_neighbor_viewpoint_ids_for_prompt - graph_viewpoint_node_ids_for_prompt
+            visible_neighbor_viewpoint_ids_for_prompt
+            - graph_viewpoint_node_ids_for_prompt
         )
         optional_viewpoint_target_prob_ids_for_prompt = sorted(
-            visible_neighbor_viewpoint_ids_for_prompt & graph_viewpoint_node_ids_for_prompt
+            visible_neighbor_viewpoint_ids_for_prompt
+            & graph_viewpoint_node_ids_for_prompt
         )
 
         required_viewpoint_target_probs_skeleton = [
@@ -2673,86 +2684,86 @@ class MLLMClient:
 
         siglip_current_region_by_viewpoint = {}
 
-        if scorer is not None:
-            siglip_assignment_records = []
-            for agent_info in agents:
-                agent_id = str(agent_info["agent_id"])
-                observation = observation_by_agent[agent_id]
-                current_viewpoint_id = int(observation["current_viewpoint_index"])
-                if "raw_panorama" not in observation:
-                    raise SigLIPRegionValidationError(
-                        "Observation for agent %s has no raw_panorama for SIGLIP "
-                        "current-viewpoint region validation." % agent_id
-                    )
-                raw_panorama = observation["raw_panorama"]
-                if raw_panorama is None:
-                    raise SigLIPRegionValidationError(
-                        "Observation for agent %s has no raw_panorama for SIGLIP "
-                        "current-viewpoint region validation." % agent_id
-                    )
+        # if scorer is not None:
+        #     siglip_assignment_records = []
+        #     for agent_info in agents:
+        #         agent_id = str(agent_info["agent_id"])
+        #         observation = observation_by_agent[agent_id]
+        #         current_viewpoint_id = int(observation["current_viewpoint_index"])
+        #         if "raw_panorama" not in observation:
+        #             raise SigLIPRegionValidationError(
+        #                 "Observation for agent %s has no raw_panorama for SIGLIP "
+        #                 "current-viewpoint region validation." % agent_id
+        #             )
+        #         raw_panorama = observation["raw_panorama"]
+        #         if raw_panorama is None:
+        #             raise SigLIPRegionValidationError(
+        #                 "Observation for agent %s has no raw_panorama for SIGLIP "
+        #                 "current-viewpoint region validation." % agent_id
+        #             )
 
-                selected_region_id = None
-                selected_score = None
-                for region_id in sorted(agent_observed_region_ids[agent_id]):
-                    try:
-                        score = float(
-                            scorer.score_images_text(
-                                [raw_panorama],
-                                visible_region_label_by_id[region_id],
-                            )
-                        )
-                    except Exception as exc:
-                        raise SigLIPRegionValidationError(
-                            "SIGLIP scorer failed for current viewpoint %s and "
-                            "region %s." % (current_viewpoint_id, region_id)
-                        ) from exc
-                    if (
-                        selected_score is None
-                        or score > selected_score
-                        or (
-                            score == selected_score
-                            and region_id < int(selected_region_id)
-                        )
-                    ):
-                        selected_region_id = region_id
-                        selected_score = score
+        #         selected_region_id = None
+        #         selected_score = None
+        #         for region_id in sorted(agent_observed_region_ids[agent_id]):
+        #             try:
+        #                 score = float(
+        #                     scorer.score_images_text(
+        #                         [raw_panorama],
+        #                         visible_region_label_by_id[region_id],
+        #                     )
+        #                 )
+        #             except Exception as exc:
+        #                 raise SigLIPRegionValidationError(
+        #                     "SIGLIP scorer failed for current viewpoint %s and "
+        #                     "region %s." % (current_viewpoint_id, region_id)
+        #                 ) from exc
+        #             if (
+        #                 selected_score is None
+        #                 or score > selected_score
+        #                 or (
+        #                     score == selected_score
+        #                     and region_id < int(selected_region_id)
+        #                 )
+        #             ):
+        #                 selected_region_id = region_id
+        #                 selected_score = score
 
-                if (
-                    current_viewpoint_id in siglip_current_region_by_viewpoint
-                    and siglip_current_region_by_viewpoint[current_viewpoint_id]
-                    != selected_region_id
-                ):
-                    raise SigLIPRegionValidationError(
-                        "Current viewpoint %s is shared by multiple agents with "
-                        "different SIGLIP region selections: %s and %s."
-                        % (
-                            current_viewpoint_id,
-                            siglip_current_region_by_viewpoint[current_viewpoint_id],
-                            selected_region_id,
-                        )
-                    )
+        #         if (
+        #             current_viewpoint_id in siglip_current_region_by_viewpoint
+        #             and siglip_current_region_by_viewpoint[current_viewpoint_id]
+        #             != selected_region_id
+        #         ):
+        #             raise SigLIPRegionValidationError(
+        #                 "Current viewpoint %s is shared by multiple agents with "
+        #                 "different SIGLIP region selections: %s and %s."
+        #                 % (
+        #                     current_viewpoint_id,
+        #                     siglip_current_region_by_viewpoint[current_viewpoint_id],
+        #                     selected_region_id,
+        #                 )
+        #             )
 
-                siglip_current_region_by_viewpoint[current_viewpoint_id] = int(
-                    selected_region_id
-                )
-                agent_info["current_region_node_id"] = int(selected_region_id)
-                agent_current_region[agent_id] = int(selected_region_id)
-                siglip_assignment_records.append(
-                    {
-                        "agent_id": agent_id,
-                        "viewpoint_id": current_viewpoint_id,
-                        "region_id": int(selected_region_id),
-                        "label": visible_region_label_by_id[selected_region_id],
-                        "score": float(selected_score),
-                    }
-                )
+        #         siglip_current_region_by_viewpoint[current_viewpoint_id] = int(
+        #             selected_region_id
+        #         )
+        #         agent_info["current_region_node_id"] = int(selected_region_id)
+        #         agent_current_region[agent_id] = int(selected_region_id)
+        #         siglip_assignment_records.append(
+        #             {
+        #                 "agent_id": agent_id,
+        #                 "viewpoint_id": current_viewpoint_id,
+        #                 "region_id": int(selected_region_id),
+        #                 "label": visible_region_label_by_id[selected_region_id],
+        #                 "score": float(selected_score),
+        #             }
+        #         )
 
-            print("SIGLIP current-viewpoint region selections:")
-            for record in siglip_assignment_records:
-                print(
-                    "  Agent %(agent_id)s viewpoint %(viewpoint_id)s -> region "
-                    "%(region_id)s (%(label)s), score %(score)s." % record
-                )
+        #     print("SIGLIP current-viewpoint region selections:")
+        #     for record in siglip_assignment_records:
+        #         print(
+        #             "  Agent %(agent_id)s viewpoint %(viewpoint_id)s -> region "
+        #             "%(region_id)s (%(label)s), score %(score)s." % record
+        #         )
 
         if visible_region_ids & invisible_region_ids:
             raise ValueError(

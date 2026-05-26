@@ -358,7 +358,6 @@ def run_scenario(config_path: str) -> Dict[str, object]:
     mllm_client = MLLMClient(
         graph_model_name=str(scenario["mllm"]["graph_model_name"]),
         detection_model_name=str(scenario["mllm"]["detection_model_name"]),
-        max_new_tokens=int(scenario["mllm"]["max_new_tokens"]),
         read_saved_raw_outputs=bool(
             scenario["mllm"].get("read_saved_raw_outputs", False)
         ),
@@ -496,7 +495,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         for _ in range(2):
             print()
 
-        if debug_step_index == 7:
+        if debug_step_index == 3:
             debugpy.breakpoint()
 
 
