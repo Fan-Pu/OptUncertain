@@ -6,8 +6,9 @@ The graph follows the paper's two-layer representation:
   - region nodes: semantic zones proposed by the MLLM
 
 Target probabilities are maintained separately on the viewpoint and region
-layers, and uncertain region existence / edge distance / edge existence are
-updated with the paper's Bayesian rules.
+layers from direct MLLM scores, then normalized per layer. Uncertain region
+existence / edge distance / edge existence are updated with the paper's
+Bayesian rules.
 """
 
 from __future__ import annotations
@@ -395,7 +396,7 @@ class HypothesisGraph:
                     node_type=TYPE_VP,
                     exist_prob=1.0,
                     grounded=already_grounded,
-                    target_probs=self._zero_target_probs(),
+                    target_probs=None,
                 )
 
                 candidate_viewpoint_ids.add(visible_vp_id)
@@ -535,7 +536,7 @@ class HypothesisGraph:
 
         self._drop_invalid_vz_edges()
 
-        self._update_target_posteriors(
+        self._update_target_probabilities(
             previous_target_probs=previous_target_probs,
             existing_node_ids=existing_node_ids,
             region_initial_probs=region_initial_probs,
@@ -544,7 +545,7 @@ class HypothesisGraph:
         )
 
         # Remove all found targets from every node's target_probs.
-        # This must be after _update_target_posteriors, because that update may
+        # This must be after _update_target_probabilities, because that update may
         # otherwise add the found target keys back.
         self._remove_found_target_probs_from_nodes()
 
@@ -1068,7 +1069,7 @@ class HypothesisGraph:
             for viewpoint_id in assigned_viewpoints
         )
 
-    def _update_target_posteriors(
+    def _update_target_probabilities(
         self,
         previous_target_probs: Dict[int, Dict[str, float]],
         existing_node_ids: Set[int],
@@ -1076,8 +1077,6 @@ class HypothesisGraph:
         viewpoint_initial_probs: Dict[int, Dict[str, float]],
         scorer,
     ) -> None:
-        eta_goal = float(self.bayes_config["eta_goal"])
-
         viewpoint_node_ids = [
             node_id for node_id, node in self.nodes.items() if node.type == TYPE_VP
         ]
@@ -1092,21 +1091,23 @@ class HypothesisGraph:
             viewpoint_scores = {}
 
             for node_id in viewpoint_node_ids:
-                # Grounded viewpoints are assumed to have already verified existence of their targets
-                if self.nodes[node_id].grounded:
-                    viewpoint_scores[node_id] = 0.0
-                    continue
-                if node_id in existing_node_ids:
-                    prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
-                else:
-                    prior_prob = viewpoint_initial_probs.get(node_id, {}).get(
+                if node_id in viewpoint_initial_probs:
+                    viewpoint_scores[node_id] = viewpoint_initial_probs[node_id].get(
                         target_id, 0.0
                     )
-
-                likelihood = math.exp(
-                    eta_goal * self._target_visual_score(node_id, target_id, scorer)
-                )
-                viewpoint_scores[node_id] = prior_prob * likelihood
+                elif self.nodes[node_id].grounded:
+                    viewpoint_scores[node_id] = self.nodes[node_id].target_probs.get(
+                        target_id, 0.0
+                    )
+                elif node_id in existing_node_ids:
+                    prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
+                    viewpoint_scores[node_id] = prior_prob
+                else:
+                    viewpoint_scores[node_id] = viewpoint_initial_probs.get(
+                        node_id, {}
+                    ).get(
+                        target_id, 0.0
+                    )
 
             viewpoint_norm = sum(viewpoint_scores.values())
 
@@ -1124,17 +1125,18 @@ class HypothesisGraph:
             region_scores = {}
 
             for node_id in region_node_ids:
-                if node_id in existing_node_ids:
-                    prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
-                else:
-                    prior_prob = region_initial_probs.get(node_id, {}).get(
+                if node_id in region_initial_probs:
+                    region_scores[node_id] = region_initial_probs[node_id].get(
                         target_id, 0.0
                     )
-
-                likelihood = math.exp(
-                    eta_goal * self._target_visual_score(node_id, target_id, scorer)
-                )
-                region_scores[node_id] = prior_prob * likelihood
+                elif node_id in existing_node_ids:
+                    region_scores[node_id] = previous_target_probs[node_id].get(
+                        target_id, 0.0
+                    )
+                else:
+                    region_scores[node_id] = region_initial_probs.get(node_id, {}).get(
+                        target_id, 0.0
+                    )
 
             region_norm = sum(region_scores.values())
 
