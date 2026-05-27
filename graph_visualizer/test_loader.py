@@ -127,6 +127,8 @@ def _write_route_case(root, instance_name):
 
 
 def _patch_house_texture(monkeypatch):
+    calls = []
+
     def fake_generate_cached_topdown_texture(
         *,
         scan_id,
@@ -139,6 +141,17 @@ def _patch_house_texture(monkeypatch):
         composite_max_z_offset=1.6,
         composite_slices=5,
     ):
+        calls.append(
+            {
+                "scan_id": scan_id,
+                "instance_name": instance_name,
+                "output_size": output_size,
+                "cut_z_offset": cut_z_offset,
+                "render_mode": render_mode,
+                "composite_max_z_offset": composite_max_z_offset,
+                "composite_slices": composite_slices,
+            }
+        )
         texture_path = (
             project_root
             / "mllm_debug_outputs"
@@ -170,6 +183,7 @@ def _patch_house_texture(monkeypatch):
         "graph_visualizer.loader.generate_cached_topdown_texture",
         fake_generate_cached_topdown_texture,
     )
+    return calls
 
 
 def test_load_visualization_step_with_all_raw_files(tmp_path):
@@ -326,23 +340,52 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
         target_found={"0": False},
     )
     _write_route_case(tmp_path, "case")
-    _patch_house_texture(monkeypatch)
+    texture_calls = _patch_house_texture(monkeypatch)
     monkeypatch.setenv("MATTERPORT_CONNECTIVITY_DIR", str(tmp_path / "connectivity"))
     server = start_visualizer_server(
         "case",
         project_root=tmp_path,
         open_browser=False,
+        texture_output_size=4096,
+        texture_cut_z_offset=0.9,
+        texture_render_mode="single_cutaway",
+        texture_composite_max_z_offset=2.1,
+        texture_composite_slices=7,
     )
 
     try:
+        assert texture_calls == []
+
         with urlopen(server.url + "api/steps", timeout=5) as response:
             payload = json.loads(response.read().decode("utf-8"))
 
         assert payload["solutions"][0]["id"] == "mllm"
         assert payload["environment_graph"]["scan_id"] == "scan"
-        assert payload["environment_graph"]["house_texture"]["url"] == (
+        assert "house_texture" not in payload["environment_graph"]
+        assert texture_calls == []
+
+        with urlopen(server.url + "api/house-texture", timeout=5) as response:
+            house_texture = json.loads(response.read().decode("utf-8"))
+
+        assert house_texture["url"] == (
             "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
         )
+        assert house_texture["output_size"] == 4096
+        assert house_texture["cut_z_offset"] == 0.9
+        assert house_texture["requested_render_mode"] == "single_cutaway"
+        assert house_texture["composite_max_z_offset"] == 2.1
+        assert house_texture["composite_slices"] == 7
+        assert texture_calls == [
+            {
+                "scan_id": "scan",
+                "instance_name": "case",
+                "output_size": 4096,
+                "cut_z_offset": 0.9,
+                "render_mode": "single_cutaway",
+                "composite_max_z_offset": 2.1,
+                "composite_slices": 7,
+            }
+        ]
 
         with urlopen(
             server.url + "assets/mllm_debug_outputs/case/scan_topdown_texture.png",
@@ -362,7 +405,7 @@ def test_steps_api_includes_environment_without_solution_summaries(tmp_path, mon
         target_found={"0": False},
     )
     _write_environment_case(tmp_path, "case")
-    _patch_house_texture(monkeypatch)
+    texture_calls = _patch_house_texture(monkeypatch)
     monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
     server = start_visualizer_server(
         "case",
@@ -376,9 +419,8 @@ def test_steps_api_includes_environment_without_solution_summaries(tmp_path, mon
 
         assert payload["solutions"] == []
         assert payload["environment_graph"]["scan_id"] == "scan"
-        assert payload["environment_graph"]["house_texture"]["url"] == (
-            "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
-        )
+        assert "house_texture" not in payload["environment_graph"]
+        assert texture_calls == []
     finally:
         server.shutdown()
 
@@ -391,10 +433,15 @@ def test_route_renderer_skips_wait_step_edges():
     assert 'id="houseTextureButton"' in html
     assert '"pointer-events": "none"' in html
     assert html.count("        appendHouseTexture(viewportLayer, environment, projection);") == 2
+    assert html.count("if (showHouseTexture && environment.house_texture)") == 2
     assert "houseTextureButton.disabled = false;" in html
     assert 'id="graphZoomInButton"' in html
     assert 'id="graphZoomOutButton"' in html
     assert 'id="graphResetViewButton"' in html
+    assert 'fetch("/api/house-texture")' in html
+    assert "function fetchHouseTexture()" in html
+    assert "payload.environment_graph.house_texture = houseTexture;" in html
+    assert "function clearDefaultViewportStates()" in html
 
 
 def test_route_renderer_includes_target_descriptions_and_agent_legend():

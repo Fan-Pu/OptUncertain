@@ -558,8 +558,19 @@ def render_viewer_html() -> str:
         document.getElementById("title").textContent =
           `Graph Hypothesis Visualizer: ${payload.instance_name}`;
         render();
+        fetchHouseTexture();
         window.addEventListener("resize", renderCurrentGraph);
       });
+
+    function fetchHouseTexture() {
+      fetch("/api/house-texture")
+        .then(response => response.json())
+        .then(houseTexture => {
+          payload.environment_graph.house_texture = houseTexture;
+          clearDefaultViewportStates();
+          if (showHouseTexture) renderCurrentGraph();
+        });
+    }
 
     function currentStep() {
       return payload.steps[stepPosition];
@@ -790,7 +801,7 @@ def render_viewer_html() -> str:
       const viewportLayer = svgEl("g", {});
       graph.appendChild(viewportLayer);
 
-      if (showHouseTexture) {
+      if (showHouseTexture && environment.house_texture) {
         appendHouseTexture(viewportLayer, environment, projection);
       }
 
@@ -991,7 +1002,7 @@ def render_viewer_html() -> str:
       const viewportLayer = svgEl("g", {});
       graph.appendChild(viewportLayer);
 
-      if (showHouseTexture) {
+      if (showHouseTexture && environment.house_texture) {
         appendHouseTexture(viewportLayer, environment, projection);
       }
 
@@ -1810,6 +1821,12 @@ def render_viewer_html() -> str:
         return fitted;
       }
       return current;
+    }
+
+    function clearDefaultViewportStates() {
+      for (const [key, viewport] of viewportStates.entries()) {
+        if (viewport.isDefault) viewportStates.delete(key);
+      }
     }
 
     function fitViewportToBounds(bounds, width, height) {

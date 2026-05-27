@@ -9,7 +9,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from .loader import load_solution_payload, load_visualization_steps, resolve_project_root
+from .loader import (
+    load_house_texture_payload,
+    load_solution_payload,
+    load_visualization_steps,
+    resolve_project_root,
+)
 from .viewer import render_viewer_html
 
 
@@ -91,6 +96,7 @@ def start_visualizer_server(
             texture_render_mode=texture_render_mode,
             texture_composite_max_z_offset=texture_composite_max_z_offset,
             texture_composite_slices=texture_composite_slices,
+            include_house_texture=False,
         )
     )
     html_bytes = render_viewer_html().encode("utf-8")
@@ -102,6 +108,18 @@ def start_visualizer_server(
                 self._send_bytes(html_bytes, "text/html; charset=utf-8")
             elif parsed.path == "/api/steps":
                 payload_bytes = json.dumps(payload, sort_keys=True).encode("utf-8")
+                self._send_bytes(payload_bytes, "application/json; charset=utf-8")
+            elif parsed.path == "/api/house-texture":
+                house_texture = load_house_texture_payload(
+                    instance_name=instance_name,
+                    project_root=root,
+                    texture_output_size=texture_output_size,
+                    texture_cut_z_offset=texture_cut_z_offset,
+                    texture_render_mode=texture_render_mode,
+                    texture_composite_max_z_offset=texture_composite_max_z_offset,
+                    texture_composite_slices=texture_composite_slices,
+                )
+                payload_bytes = json.dumps(house_texture, sort_keys=True).encode("utf-8")
                 self._send_bytes(payload_bytes, "application/json; charset=utf-8")
             elif parsed.path.startswith("/assets/"):
                 asset_path = root / unquote(parsed.path[len("/assets/") :])

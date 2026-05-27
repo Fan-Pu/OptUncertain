@@ -50,6 +50,7 @@ def load_solution_payload(
     texture_render_mode: str = "multi_slice_composite",
     texture_composite_max_z_offset: float = 1.6,
     texture_composite_slices: int = 5,
+    include_house_texture: bool = True,
 ) -> dict[str, object]:
     root = resolve_project_root(project_root)
     debug_dir = root / "mllm_debug_outputs" / str(instance_name)
@@ -63,14 +64,44 @@ def load_solution_payload(
         "environment_graph": _load_route_environment_graph(
             instance_name=str(instance_name),
             project_root=root,
+        ),
+    }
+    if include_house_texture:
+        payload["environment_graph"]["house_texture"] = load_house_texture_payload(
+            instance_name=instance_name,
+            project_root=root,
             texture_output_size=texture_output_size,
             texture_cut_z_offset=texture_cut_z_offset,
             texture_render_mode=texture_render_mode,
             texture_composite_max_z_offset=texture_composite_max_z_offset,
             texture_composite_slices=texture_composite_slices,
-        ),
-    }
+        )
     return payload
+
+
+def load_house_texture_payload(
+    instance_name: str,
+    project_root: str | Path | None = None,
+    texture_output_size: int = 1800,
+    texture_cut_z_offset: float = 0.15,
+    texture_render_mode: str = "multi_slice_composite",
+    texture_composite_max_z_offset: float = 1.6,
+    texture_composite_slices: int = 5,
+) -> dict[str, object]:
+    root = resolve_project_root(project_root)
+    scenario = _read_json(root / "scenarios" / ("%s.json" % str(instance_name)))
+    scan_id = str(scenario["scan_id"])
+    return generate_cached_topdown_texture(
+        scan_id=scan_id,
+        project_root=root,
+        instance_name=str(instance_name),
+        connectivity_dir=root / "connectivity",
+        output_size=texture_output_size,
+        cut_z_offset=texture_cut_z_offset,
+        render_mode=texture_render_mode,
+        composite_max_z_offset=texture_composite_max_z_offset,
+        composite_slices=texture_composite_slices,
+    )
 
 
 def _load_solution_summaries(
@@ -107,11 +138,6 @@ def _load_solution_summaries(
 def _load_route_environment_graph(
     instance_name: str,
     project_root: Path,
-    texture_output_size: int,
-    texture_cut_z_offset: float,
-    texture_render_mode: str,
-    texture_composite_max_z_offset: float,
-    texture_composite_slices: int,
 ) -> dict[str, object]:
     scenario = _read_json(project_root / "scenarios" / ("%s.json" % instance_name))
     if platform.system() == "Windows":
@@ -121,7 +147,6 @@ def _load_route_environment_graph(
         )
     else:
         environment_graph = load_environment_graph(scan_id=str(scenario["scan_id"]))
-    scan_id = str(scenario["scan_id"])
     return {
         "scan_id": environment_graph.scan_id,
         "nodes": [
@@ -141,17 +166,6 @@ def _load_route_environment_graph(
             }
             for edge_id, distance in sorted(environment_graph.edge_distances.items())
         ],
-        "house_texture": generate_cached_topdown_texture(
-            scan_id=scan_id,
-            project_root=project_root,
-            instance_name=instance_name,
-            connectivity_dir=project_root / "connectivity",
-            output_size=texture_output_size,
-            cut_z_offset=texture_cut_z_offset,
-            render_mode=texture_render_mode,
-            composite_max_z_offset=texture_composite_max_z_offset,
-            composite_slices=texture_composite_slices,
-        ),
     }
 
 
