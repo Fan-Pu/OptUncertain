@@ -15,9 +15,9 @@ from PIL import Image
 import Helper
 
 # for detection only: conservative, reduce false target detections
-DETECTION_TEMPERATURE = 0.0
-DETECTION_TOP_P = 0.8
-DETECTION_TOP_K = 20
+DETECTION_TEMPERATURE = 0.1
+DETECTION_TOP_P = 0.9
+DETECTION_TOP_K = 40
 DETECTION_PRESENCE_PENALTY = 0.0
 
 # for graph generation: still stable, but allows non-uniform probabilities
@@ -644,10 +644,12 @@ class MLLMClient:
         ]
 
         system_message = dedent("""
-            You are doing only direct visual target detection from indoor panorama images.
+            You are doing direct visual target detection from indoor panorama images.
             Return exactly one JSON object and nothing else.
-            Do not infer a target from room type. Report a target only when the target object itself is visible in the image.
-            Only evaluate the active targets listed in the user message. Do not include completed or unlisted target ids.
+            Only report a target when the target object itself is visible.
+            Do not infer a target only from room type or common object location.
+            If the object is partly visible but recognizable, report it.
+            If the object is too small, blurry, occluded, or ambiguous, do not report it.
             """).strip()
 
         user_message = (
@@ -659,50 +661,38 @@ class MLLMClient:
                 {agents_json}
 
                 Task:
-                For each agent image, inspect the entire panorama and identify which active targets are directly visible anywhere in that image.
+                Inspect each panorama image carefully. For each agent, find active targets that are directly visible in the image.
 
-                A target can be small, off-center, partly far away, or near a viewpoint marker.
-                Only report a target when the target object itself is directly visible with sufficient confidence.
-                Do not report targets that are absent, occluded beyond recognition, or too ambiguous.
+                Detection rule:
+                - Report a target only when the object itself is visible and recognizable.
+                - Do not report a target only because the room type suggests it may exist there.
+                - Partly visible targets can be reported if they are recognizable.
+                - Do not report targets that are absent, too blurry, too small, heavily occluded, or visually ambiguous.
 
                 Output rules:
-                - In "detections", include only agents that find at least one active target.
-                - If an agent finds no active targets, do not include that agent in "detections".
-                - Each agent may appear at most once in "detections".
-                - If an agent finds multiple active targets, list all of them in "found_target_indices".
-                - A target may appear for multiple agents if it is visible in multiple panorama images.
+                - Return exactly one JSON object.
+                - If no active target is visible in any image, return exactly:
+                  {{"detections":[]}}
+                - Include only agents that detect at least one target.
+                - Each agent may appear at most once.
                 - Only use active target_ids from the list above.
-                - Do not return completed, unlisted, or not-found target_ids.
-                - If no active targets are found in any panorama image, return exactly:
+                - Do not include completed, unlisted, or not-found targets.
+
+                Required format:
                 {{
-                    "detections": []
+                  "detections": [
+                    {{
+                      "agent_id": "agent0",
+                      "found_target_indices": ["0"],
+                      "target_center_xs": [0.52]
+                    }}
+                  ]
                 }}
-                - After returning this object, stop immediately.
-                - Do not repeat the JSON object.
-                - Do not repeat any key.
-
-                Return exactly one JSON object.
-
-                If no active target is directly visible, return exactly:
-                {{"detections":[]}}
-
-                If one or more active targets are directly visible, return:
-                {{"detections":[{{"agent_id":"<agent_id>","found_target_indices":["<target_id>"],"target_center_xs":[<center_x>]}}]}}
-
-                Do not copy the placeholder values.
-                Replace <agent_id> only with an agent_id from Agent-image mapping.
-                Replace <target_id> only with a visible active target_id.
-                Replace <center_x> with the normalized horizontal center of the visible target.
-                After the final closing brace, stop immediately.
-                Do not repeat the JSON object.
-                Do not repeat the "detections" key.
 
                 target_center_xs:
-                - For each found target, return the normalized horizontal center of that visible target object in the full panorama image.
-                - The value must be between 0.0 and 1.0, where 0.0 is the left edge and 1.0 is the right edge of the image.
-                - The order of "target_center_xs" must exactly match the order of "found_target_indices".
-                - "target_center_xs" must have the same number of entries as "found_target_indices".
-                - Since only found targets are included, do not return null values.
+                - Use the normalized horizontal center of the visible target in the full panorama.
+                - The value must be in [0.0, 1.0].
+                - The order must match found_target_indices.
                 """)
             .strip()
             .format(
@@ -1267,7 +1257,7 @@ class MLLMClient:
         ]
 
         target_prob_template = {
-            target_id: max(round(0.2 + 0.15 * index, 2), 0.9)
+            target_id: min(round(0.2 + 0.15 * index, 2), 0.9)
             for index, target_id in enumerate(target_ids)
         }
 
@@ -1823,8 +1813,7 @@ class MLLMClient:
             localized_detections,
             agent_observations,
         )
-        if step_index == 6:
-            debugpy.breakpoint()
+
         # Append newly found targets to the found_target_trace. This trace keeps a chronological record of when each target was first detected as found, along with the associated agent and localization information at that step.
         for target_id, detections in newly_found_targets_by_id.items():
             for detection in detections:

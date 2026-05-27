@@ -154,15 +154,15 @@ def _patch_house_texture(monkeypatch):
         )
         texture_path = (
             project_root
-            / "mllm_debug_outputs"
-            / str(instance_name)
-            / ("%s_topdown_texture.png" % str(scan_id))
+            / "topdown_texture_cache"
+            / str(scan_id)
+            / ("%s_fake_topdown_texture.png" % str(scan_id))
         )
         texture_path.parent.mkdir(parents=True, exist_ok=True)
         texture_path.write_bytes(b"texture")
         return {
-            "url": "/assets/mllm_debug_outputs/%s/%s_topdown_texture.png"
-            % (str(instance_name), str(scan_id)),
+            "url": "/assets/topdown_texture_cache/%s/%s_fake_topdown_texture.png"
+            % (str(scan_id), str(scan_id)),
             "render_mode": "interior_cutaway_v1",
             "cut_z": 1.35,
             "cut_z_offset": float(cut_z_offset),
@@ -253,7 +253,7 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
     assert payload["environment_graph"]["nodes"][0]["viewpoint_id"] == "vp0"
     assert payload["environment_graph"]["edges"][0]["distance"] == pytest.approx(1.0)
     assert payload["environment_graph"]["house_texture"] == {
-        "url": "/assets/mllm_debug_outputs/case/scan_topdown_texture.png",
+        "url": "/assets/topdown_texture_cache/scan/scan_fake_topdown_texture.png",
         "render_mode": "interior_cutaway_v1",
         "cut_z": 1.35,
         "cut_z_offset": 0.15,
@@ -285,7 +285,7 @@ def test_load_solution_payload_includes_environment_without_route_summaries(
     assert payload["environment_graph"]["scan_id"] == "scan"
     assert payload["environment_graph"]["nodes"][1]["x"] == pytest.approx(1.0)
     assert payload["environment_graph"]["house_texture"]["url"] == (
-        "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
+        "/assets/topdown_texture_cache/scan/scan_fake_topdown_texture.png"
     )
     assert payload["environment_graph"]["house_texture"]["output_size"] == 1800
     assert payload["environment_graph"]["house_texture"]["cut_z_offset"] == 0.15
@@ -368,7 +368,7 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
             house_texture = json.loads(response.read().decode("utf-8"))
 
         assert house_texture["url"] == (
-            "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
+            "/assets/topdown_texture_cache/scan/scan_fake_topdown_texture.png"
         )
         assert house_texture["output_size"] == 4096
         assert house_texture["cut_z_offset"] == 0.9
@@ -388,7 +388,7 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
         ]
 
         with urlopen(
-            server.url + "assets/mllm_debug_outputs/case/scan_topdown_texture.png",
+            server.url + "assets/topdown_texture_cache/scan/scan_fake_topdown_texture.png",
             timeout=5,
         ) as asset_response:
             assert asset_response.status == 200
@@ -440,6 +440,14 @@ def test_route_renderer_skips_wait_step_edges():
     assert 'id="graphResetViewButton"' in html
     assert 'fetch("/api/house-texture")' in html
     assert "function fetchHouseTexture()" in html
+    assert 'id="textureStatus"' in html
+    assert 'role="status"' in html
+    assert 'showTextureStatus("Preparing house texture...");' in html
+    assert 'showTextureStatus("House texture ready", 1800);' in html
+    assert "function setTextureLoading(isLoading)" in html
+    assert "setTextureLoading(true);" in html
+    assert "setTextureLoading(false);" in html
+    assert 'houseTextureButton.setAttribute("aria-busy", String(Boolean(isLoading)));' in html
     assert "payload.environment_graph.house_texture = houseTexture;" in html
     assert "function clearDefaultViewportStates()" in html
 

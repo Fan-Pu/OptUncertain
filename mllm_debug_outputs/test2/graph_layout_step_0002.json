@@ -77,6 +77,12 @@
       "type": "vv"
     },
     {
+      "grounded": false,
+      "i": 25,
+      "j": 50,
+      "type": "vz"
+    },
+    {
       "grounded": true,
       "i": 32,
       "j": 35,
@@ -178,7 +184,8 @@
     {
       "connected_node_ids": [
         19,
-        41
+        41,
+        50
       ],
       "grounded": false,
       "id": 25,
@@ -243,22 +250,19 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 44,
-      "label": "modern living area with white sofa and TV",
+      "label": "modern living area with dark floors and white walls",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        2,
-        17,
-        20,
         32,
         35
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 45,
-      "label": "bedroom area with large bed and blue accents",
+      "label": "bedroom area with large bed and window blinds",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -270,7 +274,7 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 46,
-      "label": "dark textured lounge area with quilted walls",
+      "label": "textured blue padded lounge area",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -282,7 +286,20 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 47,
-      "label": "bright corridor area adjacent to lounge",
+      "label": "bright corridor area visible through doorway",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        17,
+        20
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 48,
+      "label": "small room with brown chair visible through doorway",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -293,8 +310,19 @@
       ],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 48,
-      "label": "white minimalist hallway area beyond corridor",
+      "id": 49,
+      "label": "white hallway area visible through open door",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [
+        25
+      ],
+      "grounded": false,
+      "id": 50,
+      "label": "hidden bathroom area inferred from layout",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -306,9 +334,6 @@
       16
     ],
     "45": [
-      2,
-      17,
-      20,
       32,
       35
     ],
@@ -321,20 +346,25 @@
       41
     ],
     "48": [
+      2,
+      17,
+      20
+    ],
+    "49": [
       19,
       25
     ]
   },
   "viewpoint_to_region": {
     "0": 44,
-    "2": 45,
+    "2": 48,
     "9": 46,
     "16": 44,
-    "17": 45,
+    "17": 48,
     "18": 46,
-    "19": 48,
-    "20": 45,
-    "25": 48,
+    "19": 49,
+    "20": 48,
+    "25": 49,
     "32": 45,
     "35": 45,
     "40": 47,

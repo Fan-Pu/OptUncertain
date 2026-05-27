@@ -495,8 +495,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         for _ in range(2):
             print()
 
-        if debug_step_index == 3:
-            debugpy.breakpoint()
+        # if debug_step_index == 3:
+        #     debugpy.breakpoint()
 
 
 def _resolve_scenario_config(case_or_config: str) -> str:

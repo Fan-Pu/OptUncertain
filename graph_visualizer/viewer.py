@@ -140,6 +140,25 @@ def render_viewer_html() -> str:
       padding: 0 10px;
       font-size: 13px;
     }
+    .graph-toolbar .house-texture-button.loading {
+      color: #475467;
+      background: #f2f4f7;
+    }
+    .texture-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 10px;
+      border: 1px solid #98a2b3;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.94);
+      color: #344054;
+      font-size: 13px;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, 0.16);
+    }
+    .texture-status[hidden] {
+      display: none;
+    }
     svg {
       width: 100%;
       height: 100%;
@@ -383,6 +402,7 @@ def render_viewer_html() -> str:
           <button id="graphZoomOutButton" type="button" title="Zoom out" aria-label="Zoom out">-</button>
           <button id="graphResetViewButton" class="graph-reset-button" type="button" title="Reset view" aria-label="Reset view">Reset</button>
           <button id="houseTextureButton" class="house-texture-button" type="button" title="Toggle house texture" aria-label="Toggle house texture" aria-pressed="true">House texture</button>
+          <div id="textureStatus" class="texture-status" role="status" aria-live="polite" hidden></div>
         </div>
         <svg id="graph" tabindex="0" role="img" aria-label="Graph layout"></svg>
       </section>
@@ -470,6 +490,7 @@ def render_viewer_html() -> str:
     const graphZoomOutButton = document.getElementById("graphZoomOutButton");
     const graphResetViewButton = document.getElementById("graphResetViewButton");
     const houseTextureButton = document.getElementById("houseTextureButton");
+    const textureStatus = document.getElementById("textureStatus");
     const prevButton = document.getElementById("prevButton");
     const nextButton = document.getElementById("nextButton");
     const stepLabel = document.getElementById("stepLabel");
@@ -563,13 +584,33 @@ def render_viewer_html() -> str:
       });
 
     function fetchHouseTexture() {
+      setTextureLoading(true);
+      showTextureStatus("Preparing house texture...");
       fetch("/api/house-texture")
         .then(response => response.json())
         .then(houseTexture => {
           payload.environment_graph.house_texture = houseTexture;
           clearDefaultViewportStates();
           if (showHouseTexture) renderCurrentGraph();
+          setTextureLoading(false);
+          showTextureStatus("House texture ready", 1800);
         });
+    }
+
+    function setTextureLoading(isLoading) {
+      houseTextureButton.disabled = Boolean(isLoading);
+      houseTextureButton.classList.toggle("loading", Boolean(isLoading));
+      houseTextureButton.setAttribute("aria-busy", String(Boolean(isLoading)));
+    }
+
+    function showTextureStatus(message, hideAfterMs) {
+      textureStatus.textContent = message;
+      textureStatus.hidden = false;
+      if (hideAfterMs) {
+        window.setTimeout(() => {
+          if (textureStatus.textContent === message) textureStatus.hidden = true;
+        }, hideAfterMs);
+      }
     }
 
     function currentStep() {

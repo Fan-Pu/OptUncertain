@@ -185,11 +185,11 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 44,
-      "label": "modern living area with white sofa and TV",
+      "label": "modern living area with dark floors and white walls",
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.1429,
-        "1": 0.1429
+        "0": 0.125,
+        "1": 0.125
       },
       "type": "region"
     },
@@ -198,14 +198,14 @@ Compact shared graph summary:
         32,
         35
       ],
-      "exist_prob": 0.9,
+      "exist_prob": 1.0,
       "grounded": 0,
       "id": 45,
-      "label": "bedroom area with large bed and blue accents",
+      "label": "bedroom area with large bed and window blinds",
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.2857,
-        "1": 0.2857
+        "0": 0.25,
+        "1": 0.25
       },
       "type": "region"
     },
@@ -217,11 +217,11 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 46,
-      "label": "dark textured lounge area with quilted walls",
+      "label": "textured blue padded lounge area",
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.1429,
-        "1": 0.1429
+        "0": 0.125,
+        "1": 0.125
       },
       "type": "region"
     },
@@ -233,11 +233,11 @@ Compact shared graph summary:
       "exist_prob": 0.8,
       "grounded": 0,
       "id": 47,
-      "label": "bright corridor area adjacent to lounge",
+      "label": "bright corridor area visible through doorway",
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.4286,
-        "1": 0.4286
+        "0": 0.5,
+        "1": 0.5
       },
       "type": "region"
     }
@@ -266,7 +266,7 @@ Per-agent observation context:
     "current_viewpoint_index": 32,
     "image_index": 0,
     "prior_assigned_region_id": 45,
-    "prior_assigned_region_label": "bedroom area with large bed and blue accents",
+    "prior_assigned_region_label": "bedroom area with large bed and window blinds",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
@@ -281,7 +281,7 @@ Per-agent observation context:
       {
         "distance": 0.565,
         "prior_assigned_region_id": 44,
-        "prior_assigned_region_label": "modern living area with white sofa and TV",
+        "prior_assigned_region_label": "modern living area with dark floors and white walls",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 16
@@ -305,7 +305,7 @@ Per-agent observation context:
       {
         "distance": 1.218,
         "prior_assigned_region_id": 45,
-        "prior_assigned_region_label": "bedroom area with large bed and blue accents",
+        "prior_assigned_region_label": "bedroom area with large bed and window blinds",
         "prior_grounded": false,
         "prior_visit_times": 0,
         "viewpoint_index": 35
@@ -317,14 +317,14 @@ Per-agent observation context:
     "current_viewpoint_index": 41,
     "image_index": 1,
     "prior_assigned_region_id": 47,
-    "prior_assigned_region_label": "bright corridor area adjacent to lounge",
+    "prior_assigned_region_label": "bright corridor area visible through doorway",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
       {
         "distance": 1.705,
         "prior_assigned_region_id": 46,
-        "prior_assigned_region_label": "dark textured lounge area with quilted walls",
+        "prior_assigned_region_label": "textured blue padded lounge area",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 9
@@ -348,7 +348,7 @@ Per-agent observation context:
       {
         "distance": 0.666,
         "prior_assigned_region_id": 47,
-        "prior_assigned_region_label": "bright corridor area adjacent to lounge",
+        "prior_assigned_region_label": "bright corridor area visible through doorway",
         "prior_grounded": false,
         "prior_visit_times": 0,
         "viewpoint_index": 40
@@ -512,8 +512,8 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 50,
       "label": "unseen hallway area beyond closed doorway",
       "target_probs": {
-        "0": 0.9,
-        "1": 0.9
+        "0": 0.2,
+        "1": 0.35
       }
     }
   ],
@@ -539,8 +539,8 @@ Output schema example. Use keys and value types only. Do not copy example values
     {
       "id": 2,
       "target_probs": {
-        "0": 0.9,
-        "1": 0.9
+        "0": 0.2,
+        "1": 0.35
       }
     }
   ],
@@ -550,8 +550,8 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 48,
       "label": "bright kitchen area near dining table",
       "target_probs": {
-        "0": 0.9,
-        "1": 0.9
+        "0": 0.2,
+        "1": 0.35
       }
     },
     {
@@ -559,8 +559,8 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 49,
       "label": "adjacent hallway visible through doorway",
       "target_probs": {
-        "0": 0.9,
-        "1": 0.9
+        "0": 0.2,
+        "1": 0.35
       }
     }
   ]

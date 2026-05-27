@@ -4,6 +4,7 @@ import json
 import math
 import os
 import posixpath
+import re
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,6 +23,7 @@ TEXTURE_RENDER_MODES = {
 DEFAULT_CUT_Z_OFFSET_METERS = 0.15
 DEFAULT_COMPOSITE_MAX_Z_OFFSET_METERS = 1.6
 DEFAULT_COMPOSITE_SLICES = 5
+TEXTURE_CACHE_DIR_NAME = "topdown_texture_cache"
 
 
 @dataclass(frozen=True)
@@ -51,16 +53,21 @@ def generate_cached_topdown_texture(
         / str(scan_id)
         / "matterport_mesh.zip"
     )
-    debug_dir = project_root / "mllm_debug_outputs" / str(instance_name)
-    debug_dir.mkdir(parents=True, exist_ok=True)
-    png_path = debug_dir / ("%s_topdown_texture.png" % str(scan_id))
-    metadata_path = debug_dir / ("%s_topdown_texture.json" % str(scan_id))
     viewpoint_z = _interior_reference_z(
         connectivity_path=connectivity_dir / ("%s_connectivity.json" % str(scan_id))
     )
     cut_z = viewpoint_z + float(cut_z_offset)
     composite_max_z = viewpoint_z + float(composite_max_z_offset)
     metadata_render_mode = TEXTURE_RENDER_MODES[render_mode]
+    png_path, metadata_path = _topdown_texture_cache_paths(
+        project_root=project_root,
+        scan_id=scan_id,
+        render_mode=metadata_render_mode,
+        output_size=output_size,
+        cut_z_offset=cut_z_offset,
+        composite_max_z_offset=composite_max_z_offset,
+        composite_slices=composite_slices,
+    )
 
     if _cached_texture_is_current(
         png_path=png_path,
@@ -96,6 +103,57 @@ def generate_cached_topdown_texture(
         **metadata,
         "url": "/assets/%s" % quote(asset_path, safe="/"),
     }
+
+
+def _topdown_texture_cache_paths(
+    *,
+    project_root: Path,
+    scan_id: str,
+    render_mode: str,
+    output_size: int,
+    cut_z_offset: float,
+    composite_max_z_offset: float,
+    composite_slices: int,
+) -> tuple[Path, Path]:
+    cache_key = _topdown_texture_cache_key(
+        scan_id=scan_id,
+        render_mode=render_mode,
+        output_size=output_size,
+        cut_z_offset=cut_z_offset,
+        composite_max_z_offset=composite_max_z_offset,
+        composite_slices=composite_slices,
+    )
+    cache_dir = project_root / TEXTURE_CACHE_DIR_NAME / str(scan_id)
+    return (
+        cache_dir / ("%s_topdown_texture.png" % cache_key),
+        cache_dir / ("%s_topdown_texture.json" % cache_key),
+    )
+
+
+def _topdown_texture_cache_key(
+    *,
+    scan_id: str,
+    render_mode: str,
+    output_size: int,
+    cut_z_offset: float,
+    composite_max_z_offset: float,
+    composite_slices: int,
+) -> str:
+    raw_key = "_".join(
+        [
+            str(scan_id),
+            str(render_mode),
+            "size%s" % int(output_size),
+            "cut%s" % _cache_float_token(cut_z_offset),
+            "comp%s" % _cache_float_token(composite_max_z_offset),
+            "slices%s" % int(composite_slices),
+        ]
+    )
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", raw_key)
+
+
+def _cache_float_token(value: float) -> str:
+    return repr(float(value)).replace("-", "m").replace(".", "p")
 
 
 def _render_topdown_texture(

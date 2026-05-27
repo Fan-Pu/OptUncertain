@@ -7,7 +7,9 @@ import numpy as np
 from PIL import Image
 
 from graph_visualizer.topdown_texture import (
+    TEXTURE_RENDER_MODES,
     _clip_triangle_at_z,
+    _topdown_texture_cache_paths,
     generate_cached_topdown_texture,
 )
 
@@ -28,6 +30,32 @@ def _write_connectivity(tmp_path, scan_id, viewpoint_z=0.65):
         encoding="utf-8",
     )
     return connectivity_dir
+
+
+def _cache_png_path(
+    project_root,
+    scan_id,
+    *,
+    output_size=1800,
+    cut_z_offset=0.15,
+    render_mode="multi_slice_composite",
+    composite_max_z_offset=1.6,
+    composite_slices=5,
+):
+    png_path, _ = _topdown_texture_cache_paths(
+        project_root=project_root,
+        scan_id=scan_id,
+        render_mode=TEXTURE_RENDER_MODES[render_mode],
+        output_size=output_size,
+        cut_z_offset=cut_z_offset,
+        composite_max_z_offset=composite_max_z_offset,
+        composite_slices=composite_slices,
+    )
+    return png_path
+
+
+def _asset_url(project_root, path):
+    return "/assets/%s" % path.relative_to(project_root).as_posix()
 
 
 def test_generate_cached_topdown_texture_from_obj_mtl_zip(tmp_path, monkeypatch):
@@ -80,7 +108,8 @@ def test_generate_cached_topdown_texture_from_obj_mtl_zip(tmp_path, monkeypatch)
         output_size=8,
     )
 
-    assert metadata["url"] == "/assets/mllm_debug_outputs/case/scan_topdown_texture.png"
+    cache_png_path = _cache_png_path(tmp_path, scan_id, output_size=8)
+    assert metadata["url"] == _asset_url(tmp_path, cache_png_path)
     assert metadata["render_mode"] == "multi_slice_hole_fill_v1"
     assert metadata["cut_z"] == 0.8
     assert metadata["cut_z_offset"] == 0.15
@@ -94,10 +123,24 @@ def test_generate_cached_topdown_texture_from_obj_mtl_zip(tmp_path, monkeypatch)
     assert metadata["max_y"] == 1.0
     assert metadata["width"] == 8
     assert metadata["height"] == 8
-    image = np.asarray(
-        Image.open(tmp_path / "mllm_debug_outputs" / "case" / "scan_topdown_texture.png")
-    )
+    image = np.asarray(Image.open(cache_png_path))
     assert np.any(image != 255)
+
+    reused_metadata = generate_cached_topdown_texture(
+        scan_id=scan_id,
+        project_root=tmp_path,
+        instance_name="case-reuse",
+        connectivity_dir=connectivity_dir,
+        output_size=8,
+    )
+
+    assert reused_metadata["url"] == metadata["url"]
+    assert not (
+        tmp_path / "mllm_debug_outputs" / "case" / "scan_topdown_texture.png"
+    ).exists()
+    assert not (
+        tmp_path / "mllm_debug_outputs" / "case-reuse" / "scan_topdown_texture.png"
+    ).exists()
 
     custom_metadata = generate_cached_topdown_texture(
         scan_id=scan_id,
@@ -171,8 +214,14 @@ def test_cutaway_removes_above_cut_ceiling_triangles(tmp_path, monkeypatch):
     assert metadata["render_mode"] == "single_cutaway_v1"
     assert metadata["cut_z"] == 0.8
     assert metadata["cut_z_offset"] == 0.15
+    cache_png_path = _cache_png_path(
+        tmp_path,
+        scan_id,
+        output_size=8,
+        render_mode="single_cutaway",
+    )
     image = np.asarray(
-        Image.open(tmp_path / "mllm_debug_outputs" / "case" / "scan_topdown_texture.png")
+        Image.open(cache_png_path)
     )
     assert np.any(np.all(image == [220, 40, 40], axis=2))
 
@@ -236,10 +285,26 @@ def test_multi_slice_composite_includes_higher_mesh_surfaces(tmp_path, monkeypat
     )
 
     single_image = np.asarray(
-        Image.open(tmp_path / "mllm_debug_outputs" / "single" / "scan_topdown_texture.png")
+        Image.open(
+            _cache_png_path(
+                tmp_path,
+                scan_id,
+                output_size=16,
+                render_mode="single_cutaway",
+            )
+        )
     )
     multi_image = np.asarray(
-        Image.open(tmp_path / "mllm_debug_outputs" / "multi" / "scan_topdown_texture.png")
+        Image.open(
+            _cache_png_path(
+                tmp_path,
+                scan_id,
+                output_size=16,
+                render_mode="multi_slice_composite",
+                composite_max_z_offset=0.6,
+                composite_slices=3,
+            )
+        )
     )
     assert single_metadata["render_mode"] == "single_cutaway_v1"
     assert multi_metadata["render_mode"] == "multi_slice_hole_fill_v1"
@@ -297,7 +362,16 @@ def test_multi_slice_composite_preserves_lower_surface_on_overlap(tmp_path, monk
     )
 
     image = np.asarray(
-        Image.open(tmp_path / "mllm_debug_outputs" / "case" / "scan_topdown_texture.png")
+        Image.open(
+            _cache_png_path(
+                tmp_path,
+                scan_id,
+                output_size=16,
+                render_mode="multi_slice_composite",
+                composite_max_z_offset=0.6,
+                composite_slices=3,
+            )
+        )
     )
     assert metadata["render_mode"] == "multi_slice_hole_fill_v1"
     assert np.any(np.all(image == [255, 0, 0], axis=2))
@@ -361,10 +435,18 @@ def test_stale_topdown_cache_is_regenerated(tmp_path, monkeypatch):
             "newmtl material0\nmap_Kd texture.png\n",
         )
         archive.write(texture_path, "scan//matterport_mesh/mesh/texture.png")
-    cache_dir = tmp_path / "mllm_debug_outputs" / "case"
-    cache_dir.mkdir(parents=True)
-    (cache_dir / "scan_topdown_texture.png").write_bytes(b"stale")
-    (cache_dir / "scan_topdown_texture.json").write_text(
+    cache_png_path, cache_metadata_path = _topdown_texture_cache_paths(
+        project_root=tmp_path,
+        scan_id=scan_id,
+        render_mode=TEXTURE_RENDER_MODES["multi_slice_composite"],
+        output_size=8,
+        cut_z_offset=0.15,
+        composite_max_z_offset=1.7,
+        composite_slices=6,
+    )
+    cache_png_path.parent.mkdir(parents=True)
+    cache_png_path.write_bytes(b"stale")
+    cache_metadata_path.write_text(
         json.dumps(
             {
                 "render_mode": "single_cutaway_v1",
@@ -398,4 +480,4 @@ def test_stale_topdown_cache_is_regenerated(tmp_path, monkeypatch):
     assert metadata["output_size"] == 8
     assert metadata["composite_max_z_offset"] == 1.7
     assert metadata["composite_slices"] == 6
-    Image.open(cache_dir / "scan_topdown_texture.png").verify()
+    Image.open(cache_png_path).verify()
