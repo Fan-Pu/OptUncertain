@@ -14,13 +14,30 @@ from PIL import Image
 
 import Helper
 
-TEMPERATURE = 0.6
-TOP_P = 0.95
-TOP_K = 20
+# for detection only: conservative, reduce false target detections
+DETECTION_TEMPERATURE = 0.0
+DETECTION_TOP_P = 0.8
+DETECTION_TOP_K = 20
+DETECTION_PRESENCE_PENALTY = 0.0
+
+# for graph generation: still stable, but allows non-uniform probabilities
+GRAPH_TEMPERATURE = 0.4
+GRAPH_TOP_P = 0.8
+GRAPH_TOP_K = 20
+GRAPH_PRESENCE_PENALTY = 0.5
+
+# for text-only JSON repair: should be stable
+REPAIR_TEMPERATURE = 0.2
+REPAIR_TOP_P = 0.8
+REPAIR_TOP_K = 20
+REPAIR_PRESENCE_PENALTY = 0.0
+
 MIN_P = 0.0
-PRESENCE_PENALTY = 1.5
 REPETITION_PENALTY = 1.0
-MAX_TOKENS = 81920
+
+DETECTION_MAX_NEW_TOKENS = 512
+GRAPH_MAX_NEW_TOKENS = 8192
+REPAIR_MAX_NEW_TOKENS = 2048
 
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
@@ -35,8 +52,9 @@ class MLLMClient:
         self,
         graph_model_name: str = "",  # read from config
         detection_model_name: str = "",  # read from config
-        base_url: str = "https://router.huggingface.co/v1",
-        api_key_env: str = "HF_TOKEN",
+        base_url: str = "https://api.deepinfra.com/v1/openai",
+        # api_key_env: str = "HF_TOKEN",
+        api_key_env: str = "DEEPINFRA_TOKEN",
         request_timeout: float = 120.0,
         save_debug_images: bool = True,
         read_saved_raw_outputs: bool = False,
@@ -130,7 +148,9 @@ class MLLMClient:
         encoded = base64.b64encode(image_bytes).decode("ascii")
         return "data:image/jpeg;base64,%s" % encoded
 
-    def _request_completion(self, messages, model_name: str) -> str:
+    def _request_completion(
+        self, messages, model_name: str, request_type: str = "graph"
+    ) -> str:
         if self.client is None:
             raise RuntimeError(
                 "No MLLM API client is available. A saved raw output file was "
@@ -138,19 +158,36 @@ class MLLMClient:
                 "environment variable %s is not set." % self.api_key_env
             )
 
-        # self._print_request_size_report(messages=messages, model_name=model_name)
+        if request_type == "detection":
+            temperature = DETECTION_TEMPERATURE
+            top_p = DETECTION_TOP_P
+            top_k = DETECTION_TOP_K
+            presence_penalty = DETECTION_PRESENCE_PENALTY
+            max_tokens = DETECTION_MAX_NEW_TOKENS
+        elif request_type == "repair":
+            temperature = REPAIR_TEMPERATURE
+            top_p = REPAIR_TOP_P
+            top_k = REPAIR_TOP_K
+            presence_penalty = REPAIR_PRESENCE_PENALTY
+            max_tokens = REPAIR_MAX_NEW_TOKENS
+        else:
+            temperature = GRAPH_TEMPERATURE
+            top_p = GRAPH_TOP_P
+            top_k = GRAPH_TOP_K
+            presence_penalty = GRAPH_PRESENCE_PENALTY
+            max_tokens = GRAPH_MAX_NEW_TOKENS
 
         try:
             completion = self.client.chat.completions.create(
                 model=model_name,
                 messages=messages,
-                temperature=TEMPERATURE,
-                top_p=TOP_P,
-                presence_penalty=PRESENCE_PENALTY,
-                max_tokens=MAX_TOKENS,
+                temperature=temperature,
+                top_p=top_p,
+                presence_penalty=presence_penalty,
+                max_tokens=max_tokens,
                 response_format={"type": "json_object"},
                 extra_body={
-                    "top_k": TOP_K,
+                    "top_k": top_k,
                     "min_p": MIN_P,
                     "repetition_penalty": REPETITION_PENALTY,
                 },
@@ -166,22 +203,15 @@ class MLLMClient:
 
             if "chat_template_kwargs" in message or "enable_thinking" in message:
                 raise RuntimeError(
-                    "The current Hugging Face router provider did not accept "
-                    "'%s' thinking-mode parameters. Try a provider that supports "
-                    "'%s' chat_template_kwargs, or run '%s' through vLLM with "
-                    "--reasoning-parser '%s'."
-                    % (
-                        model_name,
-                        model_name,
-                        model_name,
-                        model_name,
-                    )
+                    "The current provider did not accept thinking-mode parameters. "
+                    "For Qwen/Qwen3-VL-30B-A3B-Instruct, remove enable_thinking. "
+                    "Use a Thinking-version model only if the provider explicitly supports it."
                 ) from exc
 
             if "model_not_found" in message or "does not exist" in message:
                 raise RuntimeError(
-                    "The configured Hugging Face router model was not found. "
-                    "Resolved model='%s'." % model_name
+                    "The configured model was not found. Resolved model='%s'."
+                    % model_name
                 ) from exc
 
             raise
@@ -498,6 +528,7 @@ class MLLMClient:
         decoded = self._request_completion(
             messages=messages,
             model_name=getattr(self, "graph_model_name", ""),
+            request_type="repair",
         )
         raw = self._strip_code_fences(decoded)
         repaired_payload = self._extract_json_object(raw)
@@ -549,7 +580,7 @@ class MLLMClient:
                 current_payload = attempt_payload
                 if error_message not in validation_errors:
                     validation_errors.append(error_message)
-
+                debugpy.breakpoint()
                 if repair_attempt >= int(max_repair_retries):
                     raise
 
@@ -642,21 +673,29 @@ class MLLMClient:
                 - A target may appear for multiple agents if it is visible in multiple panorama images.
                 - Only use active target_ids from the list above.
                 - Do not return completed, unlisted, or not-found target_ids.
-                - If no active targets are found in any panorama image, return:
+                - If no active targets are found in any panorama image, return exactly:
                 {{
                     "detections": []
                 }}
+                - After returning this object, stop immediately.
+                - Do not repeat the JSON object.
+                - Do not repeat any key.
 
-                Return JSON only in this exact structure:
-                {{
-                "detections": [
-                    {{
-                    "agent_id": "agent0",
-                    "found_target_indices": ["0", "3"],
-                    "target_center_xs": [0.10, 0.72]
-                    }}
-                ]
-                }}
+                Return exactly one JSON object.
+
+                If no active target is directly visible, return exactly:
+                {{"detections":[]}}
+
+                If one or more active targets are directly visible, return:
+                {{"detections":[{{"agent_id":"<agent_id>","found_target_indices":["<target_id>"],"target_center_xs":[<center_x>]}}]}}
+
+                Do not copy the placeholder values.
+                Replace <agent_id> only with an agent_id from Agent-image mapping.
+                Replace <target_id> only with a visible active target_id.
+                Replace <center_x> with the normalized horizontal center of the visible target.
+                After the final closing brace, stop immediately.
+                Do not repeat the JSON object.
+                Do not repeat the "detections" key.
 
                 target_center_xs:
                 - For each found target, return the normalized horizontal center of that visible target object in the full panorama image.
@@ -1021,6 +1060,7 @@ class MLLMClient:
             decoded = self._request_completion(
                 messages=messages,
                 model_name=getattr(self, "detection_model_name", ""),
+                request_type="detection",
             )
 
             try:
@@ -1826,8 +1866,6 @@ class MLLMClient:
         )
 
         max_validation_retries = getattr(self, "max_validation_retries", 0)
-        validation_errors: List[str] = []
-        last_error = None
 
         # read local raw output if enabled, otherwise request MLLM completion directly
         if getattr(self, "read_saved_raw_outputs", False):
@@ -1886,6 +1924,7 @@ class MLLMClient:
         decoded = self._request_completion(
             messages=messages,
             model_name=getattr(self, "graph_model_name", ""),
+            request_type="graph",
         )
         print(
             "MLLM completion request for step %s took %.2f seconds"
