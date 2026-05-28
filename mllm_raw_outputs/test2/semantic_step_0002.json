@@ -2,24 +2,28 @@
   "agents": [
     {
       "agent_id": "agent0",
-      "current_region_node_id": 45,
+      "current_region_node_id": 47,
       "observed_region_node_ids": [
-        44,
-        45,
+        47,
         48
       ]
     },
     {
       "agent_id": "agent1",
-      "current_region_node_id": 47,
+      "current_region_node_id": 46,
       "observed_region_node_ids": [
         46,
-        47,
+        45,
         49
       ]
     }
   ],
-  "current_viewpoints_reassignment": [],
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 47,
+      "viewpoint_id": 32
+    }
+  ],
   "detections": [
     {
       "agent_id": "agent0",
@@ -48,57 +52,35 @@
     "viewpoint_region": 4.0,
     "viewpoint_viewpoint": 1.0
   },
-  "invisible_region_nodes": [
-    {
-      "exist_prob": 0.7,
-      "id": 50,
-      "label": "hidden bathroom area inferred from layout",
-      "target_probs": {
-        "0": 0.8,
-        "1": 0.8
-      }
-    }
-  ],
+  "invisible_region_nodes": [],
   "new_edges": [
     {
-      "dist": 1.2,
+      "dist": 1.5,
       "edge_type": "VV",
       "exist_prob": 0.6,
       "i": 19,
       "j": 25
-    },
-    {
-      "dist": 2.0,
-      "edge_type": "VZ",
-      "exist_prob": 0.5,
-      "i": 25,
-      "j": 50
     }
   ],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        16
-      ],
-      "region_node_id": 44
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        32,
-        35
+        9
       ],
       "region_node_id": 45
     },
     {
       "assigned_viewpoint_node_indices": [
-        9
+        40,
+        41
       ],
       "region_node_id": 46
     },
     {
       "assigned_viewpoint_node_indices": [
-        40,
-        41
+        16,
+        32,
+        35
       ],
       "region_node_id": 47
     },
@@ -122,8 +104,8 @@
     {
       "id": 2,
       "target_probs": {
-        "0": 0.1,
-        "1": 0.1
+        "0": 0.05,
+        "1": 0.05
       }
     },
     {
@@ -136,19 +118,47 @@
     {
       "id": 19,
       "target_probs": {
-        "0": 0.3,
-        "1": 0.3
+        "0": 0.1,
+        "1": 0.1
       }
     },
     {
       "id": 20,
+      "target_probs": {
+        "0": 0.05,
+        "1": 0.05
+      }
+    },
+    {
+      "id": 25,
       "target_probs": {
         "0": 0.1,
         "1": 0.1
       }
     },
     {
-      "id": 25,
+      "id": 9,
+      "target_probs": {
+        "0": 0.01,
+        "1": 0.01
+      }
+    },
+    {
+      "id": 16,
+      "target_probs": {
+        "0": 0.05,
+        "1": 0.05
+      }
+    },
+    {
+      "id": 35,
+      "target_probs": {
+        "0": 0.05,
+        "1": 0.05
+      }
+    },
+    {
+      "id": 40,
       "target_probs": {
         "0": 0.3,
         "1": 0.3
@@ -158,56 +168,47 @@
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 44,
-      "label": "modern living area with dark floors and white walls",
-      "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 45,
-      "label": "bedroom area with large bed and window blinds",
-      "target_probs": {
-        "0": 0.1,
-        "1": 0.1
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 46,
-      "label": "textured blue padded lounge area",
-      "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
-      "exist_prob": 1.0,
       "id": 47,
-      "label": "bright corridor area visible through doorway",
+      "label": "modern bedroom area with white bedding",
       "target_probs": {
-        "0": 0.2,
-        "1": 0.2
+        "0": 0.05,
+        "1": 0.05
       }
     },
     {
       "exist_prob": 0.8,
       "id": 48,
-      "label": "small room with brown chair visible through doorway",
+      "label": "adjacent living area with curved sofa",
       "target_probs": {
-        "0": 0.1,
-        "1": 0.1
+        "0": 0.05,
+        "1": 0.05
+      }
+    },
+    {
+      "exist_prob": 1.0,
+      "id": 46,
+      "label": "bright room with white walls",
+      "target_probs": {
+        "0": 0.4,
+        "1": 0.4
+      }
+    },
+    {
+      "exist_prob": 0.8,
+      "id": 45,
+      "label": "dark blue quilted lounge area",
+      "target_probs": {
+        "0": 0.01,
+        "1": 0.01
       }
     },
     {
       "exist_prob": 0.8,
       "id": 49,
-      "label": "white hallway area visible through open door",
+      "label": "white hallway visible through doorway",
       "target_probs": {
-        "0": 0.3,
-        "1": 0.3
+        "0": 0.1,
+        "1": 0.1
       }
     }
   ]

@@ -321,6 +321,32 @@ def _write_mllm_completion_route_summary(
     return summary
 
 
+def _build_open_vocab_detector(mllm_config: Dict[str, object]):
+    open_vocab_config = mllm_config.get("open_vocab_verification", {})
+
+    if not bool(open_vocab_config.get("enabled", True)):
+        return None
+
+    from semantic_persistence import OpenVocabularyDetector
+    from semantic_persistence.mllm_client import OPEN_VOCAB_SCORE_THRESHOLD
+
+    return OpenVocabularyDetector(
+        model_name=str(
+            open_vocab_config.get(
+                "model_name",
+                "google/owlv2-base-patch16-ensemble",
+            )
+        ),
+        score_threshold=float(
+            open_vocab_config.get(
+                "score_threshold",
+                OPEN_VOCAB_SCORE_THRESHOLD,
+            )
+        ),
+        device=open_vocab_config.get("device"),
+    )
+
+
 def run_scenario(config_path: str) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
     from semantic_persistence import HypothesisGraph, MLLMClient, SigLIPScorer
@@ -355,15 +381,24 @@ def run_scenario(config_path: str) -> Dict[str, object]:
 
     optimizer = RollingHorizonOptimizer(scenario["optimizer"])
 
+    open_vocab_detector = _build_open_vocab_detector(scenario["mllm"])
+
+    # for huggingface, use base_url="https://router.huggingface.co/v1" and api_key_env="HF_TOKEN"
+    # for DeepInfra, use base_url="https://api.deepinfra.com/v1/openai" and api_key_env="DEEPINFRA_TOKEN"
     mllm_client = MLLMClient(
         graph_model_name=str(scenario["mllm"]["graph_model_name"]),
         detection_model_name=str(scenario["mllm"]["detection_model_name"]),
+        detection_base_url="https://api.deepinfra.com/v1/openai",
+        detection_api_key_env="DEEPINFRA_TOKEN",
+        graph_base_url="https://api.deepinfra.com/v1/openai",
+        graph_api_key_env="DEEPINFRA_TOKEN",
         read_saved_raw_outputs=bool(
             scenario["mllm"].get("read_saved_raw_outputs", False)
         ),
         raw_output_dir=run_output_dir,
         raw_debug_dir=debug_output_dir,
         max_validation_retries=int(scenario["mllm"].get("max_validation_retries", 2)),
+        open_vocab_detector=open_vocab_detector,
     )
 
     scorer = SigLIPScorer()
@@ -495,8 +530,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         for _ in range(2):
             print()
 
-        # if debug_step_index == 3:
-        #     debugpy.breakpoint()
+        if debug_step_index >= 10:
+            debugpy.breakpoint()
 
 
 def _resolve_scenario_config(case_or_config: str) -> str:

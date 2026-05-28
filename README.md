@@ -40,8 +40,20 @@ The scenario file must contain:
   "mllm": {
     "model_name": "meta-llama/Llama-4-Maverick-17B-128E-Instruct:cheapest",
     "max_new_tokens": 160,
+    "base_url": "https://api.deepinfra.com/v1/openai",
+    "graph_base_url": "https://api.deepinfra.com/v1/openai",
+    "detection_base_url": "https://api.deepinfra.com/v1/openai",
+    "api_key_env": "DEEPINFRA_TOKEN",
+    "graph_api_key_env": "DEEPINFRA_TOKEN",
+    "detection_api_key_env": "DEEPINFRA_TOKEN",
     "read_saved_raw_outputs": false,
-    "raw_output_dir": "mllm_raw_outputs"
+    "raw_output_dir": "mllm_raw_outputs",
+    "open_vocab_verification": {
+      "enabled": true,
+      "model_name": "google/owlv2-base-patch16-ensemble",
+      "score_threshold": 0.15,
+      "device": "cuda"
+    }
   },
   "bayes": {
     "eta_goal": 5.0,
@@ -74,6 +86,16 @@ SigLIP scoring requires:
 pip install torch transformers
 ```
 
-The MLLM client uses the Hugging Face router through the OpenAI-compatible API and requires `HF_TOKEN`.
+Open-vocabulary verification uses OWLv2 through Transformers. If
+`open_vocab_verification.device` is omitted, CUDA is used when available,
+otherwise CPU is used. The default `score_threshold` is
+`OPEN_VOCAB_SCORE_THRESHOLD` in `semantic_persistence/mllm_client.py`.
+Verification traces include each checked target's `score`, `score_threshold`,
+accepted/rejected flag, and boxes at or above the threshold.
+
+The MLLM client uses OpenAI-compatible APIs. `base_url` and `api_key_env`
+configure both detection and graph calls by default. `graph_base_url`,
+`detection_base_url`, `graph_api_key_env`, and `detection_api_key_env` can split
+the routers.
 
 The optimizer requires `gurobipy` and a working Gurobi license.

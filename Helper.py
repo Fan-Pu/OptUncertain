@@ -110,6 +110,7 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
                 "viewpoint_id": str(location.viewpointId),
                 "viewpoint_index": int(viewpoint_index),
                 "distance": float(location.rel_distance),
+                "xy": [float(location.x), float(location.y)],
             }
         )
 
@@ -171,13 +172,41 @@ def render_sim_state(
     cv2.waitKey(1)
 
 
-def build_truncated_panorama(horizon_frames):
+def build_truncated_panorama(horizon_frames, add_guides=False):
     strip_width = int(round(horizon_frames[0].shape[1] * DELTA_HEADING_RAD / HFOV))
     center_x = horizon_frames[0].shape[1] // 2
     start_x = center_x - strip_width // 2
     end_x = start_x + strip_width
+
     strips = [frame[:, start_x:end_x].copy() for frame in horizon_frames]
-    return np.concatenate(strips, axis=1)
+    panorama = np.concatenate(strips, axis=1)
+
+    if add_guides:
+        image_height = panorama.shape[0]
+
+        for horizon_index in range(0, len(horizon_frames), 12):
+            x_coord = int(horizon_index * strip_width)
+            heading_deg = int(round(horizon_index * DELTA_HEADING_DEG))
+
+            cv2.line(
+                panorama,
+                (x_coord, 0),
+                (x_coord, image_height - 1),
+                (255, 255, 255),
+                thickness=2,
+            )
+
+            cv2.putText(
+                panorama,
+                "%d deg" % heading_deg,
+                (x_coord + 4, 28),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (255, 255, 255),
+                thickness=2,
+            )
+
+    return panorama
 
 
 def _scan_state_to_observation(
@@ -203,6 +232,10 @@ def _scan_state_to_observation(
         "start_state": start_state,
         "current_viewpoint_id": current_viewpoint_id,
         "current_viewpoint_index": current_viewpoint_index,
+        "current_xy": [
+            float(start_state.location.x),
+            float(start_state.location.y),
+        ],
         "visible_viewpoints": [
             visible_viewpoints_by_index[index]
             for index in sorted(visible_viewpoints_by_index)
@@ -216,7 +249,10 @@ def _scan_state_to_observation(
         "horizon_depths": horizon_depths,
         "raw_panorama": build_truncated_panorama(horizon_rgb_frames),
         "depth_panorama": build_truncated_panorama(horizon_depths),
-        "annotated_panorama": build_truncated_panorama(horizon_mllm_frames),
+        "annotated_panorama": build_truncated_panorama(
+            horizon_mllm_frames,
+            add_guides=True,
+        ),
     }
 
 
@@ -263,6 +299,10 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
                 "viewpoint_id": str(visible_viewpoint["viewpoint_id"]),
                 "viewpoint_index": int(visible_viewpoint["viewpoint_index"]),
                 "distance": round(float(visible_viewpoint["distance"]), 3),
+                "xy": [
+                    float(visible_viewpoint["xy"][0]),
+                    float(visible_viewpoint["xy"][1]),
+                ],
             }
 
         current_heading = float(state.heading)

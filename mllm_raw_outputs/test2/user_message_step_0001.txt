@@ -31,6 +31,10 @@ Per-agent observation context:
   {
     "agent_id": "agent0",
     "current_viewpoint_index": 16,
+    "current_xy": [
+      -6.421979904174805,
+      1.3795599937438965
+    ],
     "image_index": 0,
     "prior_assigned_region_id": null,
     "prior_assigned_region_label": null,
@@ -43,7 +47,11 @@ Per-agent observation context:
         "prior_assigned_region_label": null,
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 0
+        "viewpoint_index": 0,
+        "xy": [
+          -5.48891019821167,
+          1.4484000205993652
+        ]
       },
       {
         "distance": 0.565,
@@ -51,7 +59,11 @@ Per-agent observation context:
         "prior_assigned_region_label": null,
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 32
+        "viewpoint_index": 32,
+        "xy": [
+          -6.9864501953125,
+          1.40146005153656
+        ]
       },
       {
         "distance": 1.466,
@@ -59,13 +71,21 @@ Per-agent observation context:
         "prior_assigned_region_label": null,
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 35
+        "viewpoint_index": 35,
+        "xy": [
+          -7.2459797859191895,
+          2.591140031814575
+        ]
       }
     ]
   },
   {
     "agent_id": "agent1",
     "current_viewpoint_index": 9,
+    "current_xy": [
+      2.146049976348877,
+      3.058229923248291
+    ],
     "image_index": 1,
     "prior_assigned_region_id": null,
     "prior_assigned_region_label": null,
@@ -78,7 +98,11 @@ Per-agent observation context:
         "prior_assigned_region_label": null,
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 18
+        "viewpoint_index": 18,
+        "xy": [
+          2.3672099113464355,
+          4.303619861602783
+        ]
       },
       {
         "distance": 1.87,
@@ -86,7 +110,11 @@ Per-agent observation context:
         "prior_assigned_region_label": null,
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 40
+        "viewpoint_index": 40,
+        "xy": [
+          1.7444700002670288,
+          1.232740044593811
+        ]
       },
       {
         "distance": 1.705,
@@ -94,11 +122,29 @@ Per-agent observation context:
         "prior_assigned_region_label": null,
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 41
+        "viewpoint_index": 41,
+        "xy": [
+          2.394059896469116,
+          1.3718299865722656
+        ]
       }
     ]
   }
 ]
+
+Panorama direction note:
+- The annotated panorama image may include vertical guide lines and degree labels such as 0 deg, 120 deg, and 240 deg.
+- These degree labels indicate viewing direction along the horizontal panorama.
+- Areas that appear near the far left and far right edges may be close in viewing direction because the panorama wraps around.
+- Use the degree labels only as directional cues in the panorama image. Use current_xy and visible_viewpoints[].xy for physical floor-plan distance.
+
+Coordinate meaning note:
+- current_xy is the 2D floor-plan coordinate of the current viewpoint, which is the panorama camera location.
+- visible_viewpoints[].xy is the 2D floor-plan coordinate of that visible neighboring viewpoint.
+- All xy coordinates use the same floor-plan coordinate system and are approximately measured in meters.
+- Use the Euclidean distance between current_xy and visible_viewpoints[].xy as the floor-plan distance. A larger value means the two viewpoints are farther apart on the floor plan.
+- The visible_viewpoints[].distance value is an additional local distance from the current viewpoint to that visible neighboring viewpoint in the observation context.
+- Do not put two viewpoints into the same semantic region only because their room labels look similar. If their xy coordinates indicate that they are far apart or located in different physical areas, assign them to different region nodes.
 
 Strict allowed-id rule:
 - viewpoint_node_assigns must contain exactly the Current-step allowed viewpoint ids above, no more and no fewer.
@@ -149,7 +195,7 @@ Required newly observed viewpoint_target_probs id skeleton:
 Optional previously observed viewpoint_target_probs ids:
 []
 
-Rule:
+Viewpoint target probability rule:
 - You must output one viewpoint_target_probs item for every id in this skeleton.
 - You may additionally output viewpoint_target_probs items for optional ids only when the current observation supports updating that viewpoint.
 - These ids are non-current visible neighboring viewpoints only.
@@ -328,7 +374,7 @@ Field descriptions:
   "new_edges[].exist_prob": "Edge existence probability in (0, 1].",
   "new_edges[].i": "One endpoint id. It may be a viewpoint or region. For VV, it must be an unvisited viewpoint.",
   "new_edges[].j": "Other endpoint id. Never region-region. For VV, it must be an unvisited viewpoint. Because edges are undirected, do not output both directions.",
-  "viewpoint_node_assigns": "Region-centered viewpoint assignments for the current step. The assigned viewpoint ids across all items must be exactly the Current-step allowed viewpoint ids, no more and no fewer. Do not include any other viewpoint id, even if it appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region. Current viewpoints must be assigned to their agents' current_region_node_id, inferred from the current panorama. If a current viewpoint already has an old graph_summary.viewpoint_to_region assignment, treat it only as prior information, not as a fixed rule. For non-current visible neighboring viewpoints, use prior_assigned_region_id only as historical context. Assign each one by jointly considering marker location, distance to the current viewpoint, and whether a clear spatial boundary separates it from the current viewpoint.",
+  "viewpoint_node_assigns": "Region-centered viewpoint assignments for the current step. The assigned viewpoint ids across all items must be exactly the Current-step allowed viewpoint ids, no more and no fewer. Do not include any other viewpoint id, even if it appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region. Current viewpoints must be assigned to their agents' current_region_node_id. For current viewpoints, use prior_assigned_region_id only as historical context, not as a fixed rule. For non-current visible neighboring viewpoints, use prior_assigned_region_id only as historical context. Assign each non-current visible neighboring viewpoint by jointly considering its red marker location, xy-based floor-plan distance from current_xy, visible_viewpoints[].distance, and whether a clear spatial boundary separates it from the current viewpoint.",
   "viewpoint_node_assigns[].assigned_viewpoint_node_indices": "Integer viewpoint ids assigned to this region. Current viewpoints must be assigned to their agents' current_region_node_id.",
   "viewpoint_node_assigns[].region_node_id": "Region id containing the assigned viewpoints. If it is a current_region_node_id, it must be listed in visible_region_nodes.",
   "viewpoint_target_probs": "Target-location scores only for non-current visible neighboring viewpoint ids. Include every newly observed visible neighboring viewpoint that does not appear as a viewpoint node in the graph summary. Previously observed visible neighboring viewpoints may be omitted unless the current observation supports updating them. Do not include current viewpoint ids.",
@@ -336,37 +382,28 @@ Field descriptions:
   "viewpoint_target_probs[].target_probs": "Dictionary keyed by every active target_id. Use soft scores in (0, 1]. Do not use 0.0 here because current viewpoints are not included in this object.",
   "visible_region_nodes": "Current regions and any semantic area visually observable in current panoramas, even if only partially visible through a doorway, opening, or corridor. Reuse matching existing region ids.",
   "visible_region_nodes[].exist_prob": "Existence probability in (0, 1]. Use 1.0 only for a region containing a current viewpoint.",
-  "visible_region_nodes[].id": "Integer region id. Region ids must be >= region_start_id. Use a new id only for a new physical region.",
+  "visible_region_nodes[].id": "Integer region id. Region ids must be >= region_start_id. Use a new id only for a new physical region. If the same physical area already exists in the graph summary or in the current visible_region_nodes, reuse the existing region id.",
   "visible_region_nodes[].label": "Room or area label only, not an object name. The label must describe one spatially coherent area. Do not merge adjacent rooms or areas separated by a doorway, wall, opening, or clear boundary. Avoid mixed labels such as 'living and bedroom area' or 'kitchen and hallway area'. Include appearance cue, area type, and physical relative location cue, such as near doorway, beside window, beyond hallway, adjacent to kitchen, or at the end of the room. Do not mention agent ids or names.",
   "visible_region_nodes[].target_probs": "Unnormalized target-location scores keyed by every active target_id. Values must be in (0, 1]. Do not use 0.0. Use active target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak."
 }
 
 Current step request:
-- For each agent, inspect the current viewpoint marker in the panorama and decide which semantic region physically contains that marker.
+- For each agent, treat the current viewpoint as the camera location that generated the panorama. The current viewpoint is not drawn as a red numbered marker.
+- Decide which semantic region encloses the panorama camera location.
+- Red numbered markers are non-current visible neighboring viewpoints only.
+- Do not assign a current viewpoint to a region only because a red neighboring marker appears inside that region.
 - Do not assign a current viewpoint to a region only because that region is visible nearby, through a doorway, or at the side of the panorama.
-- If a current viewpoint has prior_assigned_region_id, compare the prior_assigned_region_label with the local visual evidence around the current viewpoint marker.
-- If the prior region label does not match the local area around the marker, reassign the current viewpoint to the best matching existing visible region when possible.
-- If no existing region matches the local area around the current viewpoint marker, create a new visible_region_node.
+- If a current viewpoint has prior_assigned_region_id, compare the prior_assigned_region_label with the local visual evidence around the panorama camera location.
+- If the prior region label does not match the local area around the panorama camera location, reassign the current viewpoint to the best matching existing visible region when possible.
+- If no existing region matches the local area around the panorama camera location, create a new visible_region_node.
 - For each agent, list every visible region id observed in that agent's panorama in agents[].observed_region_node_ids. Include the selected current region id and adjacent visible regions seen through openings, doors, or corridors.
 - If a current viewpoint is reassigned, update all three places consistently: agents[].current_region_node_id, viewpoint_node_assigns, and current_viewpoints_reassignment.
-
-- After choosing the final region for each current viewpoint, assign each non-current visible neighboring viewpoint by jointly considering its marker location, its distance to the current viewpoint, and whether a clear spatial boundary separates it from the current viewpoint.
+- After choosing the final region for each current viewpoint, assign each non-current visible neighboring viewpoint by jointly considering its red marker location, its xy-based floor-plan distance from current_xy, its visible_viewpoints[].distance value, and whether a clear spatial boundary separates it from the current viewpoint.
 - Use prior_assigned_region_id and graph_summary.viewpoint_to_region only as historical context for non-current visible neighboring viewpoints, not as fixed assignments.
 - If a non-current visible neighboring viewpoint is close to the current viewpoint and no doorway, wall, corridor boundary, room boundary, or transition area separates them, prefer the current viewpoint's final region.
-- If a non-current visible neighboring viewpoint is farther away, or if its marker is across a clear spatial boundary, assign it to the semantic region that physically contains its marker.
-- Do not assign a non-current visible neighboring viewpoint to an adjacent dining area, hallway, bedroom, counter area, or doorway area only because that area is visible in the panorama.
-
-- For viewpoint_target_probs, include every required newly observed id. You may include optional previously observed ids only when updating them. Do not add any other id.
-- Do not include current viewpoint ids in viewpoint_target_probs.
-- Do not copy old viewpoint ids from graph_summary region assigned_viewpoint_ids.
-- Current-viewpoint target_probs are fixed by code from direct detections, so do not generate them.
-- For returned visible neighboring viewpoint target_probs, use soft positive target-location scores.
-- Estimate region target_probs using active target_id keys and active target descriptions.
-- Do not include found or completed targets in target_probs, detections, or existence hypotheses.
-- Copy the fixed direct detections exactly into detections. Do not change founds.
+- If a non-current visible neighboring viewpoint is farther away, or if its red marker is across a clear spatial boundary, assign it to the semantic region that physically contains that red marker.
+- Do not assign a non-current visible neighboring viewpoint to an adjacent area only because that area is visible in the panorama. Assign it to that adjacent area only when its red marker lies inside that area, or when distance and spatial context strongly support that assignment.
 - Propose invisible_region_nodes only for completely unseen areas inferred from layout cues.
 - Treat partially visible adjacent areas as visible_region_nodes, not invisible_region_nodes.
-- Propose only legal uncertain edges supported by observation and graph context.
-- Propose VZ edges only to semantic regions with no assigned viewpoints; the region may be visible or invisible.
-- Propose VV edges between two unvisited non-current viewpoints only when a directly traversable local connection is spatially plausible from the observation and graph context. The support may be uncertain, so use lower exist_prob for weak but meaningful hypotheses. Do not propose a VV edge across an apparent obstacle, large furniture, wall, blocked passage, or closed partition. Same-room or same-region membership alone is not enough.
+- Propose only legal VV and VZ edges using the new_edges rules in Core rules and Field descriptions.
 - Return compact JSON only.

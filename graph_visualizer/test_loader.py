@@ -50,6 +50,9 @@ def _write_step(
     step_index,
     *,
     target_found,
+    targets=None,
+    detection=None,
+    open_vocab_verification=None,
     semantic=True,
     user_message=True,
 ):
@@ -70,15 +73,20 @@ def _write_step(
         debug_dir / ("hypothesis_step_%s.json" % suffix),
         {
             "target_found": target_found,
-            "targets": [],
+            "targets": targets or [],
             "nodes": [],
             "edges": [],
         },
     )
     _write_json(
         raw_dir / ("detection_step_%s.json" % suffix),
-        {"detections": []},
+        detection or {"detections": []},
     )
+    if open_vocab_verification is not None:
+        _write_json(
+            raw_dir / ("open_vocab_verification_step_%s.json" % suffix),
+            open_vocab_verification,
+        )
 
     if semantic:
         _write_json(
@@ -187,17 +195,47 @@ def _patch_house_texture(monkeypatch):
 
 
 def test_load_visualization_step_with_all_raw_files(tmp_path):
+    detection = {
+        "detections": [
+            {
+                "agent_id": "agent0",
+                "found_target_indices": ["0"],
+                "target_center_xs": [0.25],
+            },
+        ],
+    }
+    open_vocab_verification = {
+        "step_index": 1,
+        "checks": [
+            {
+                "agent_id": "agent0",
+                "target_id": "0",
+                "description": "target zero",
+                "score": 0.2,
+                "score_threshold": 0.3,
+                "accepted": False,
+                "open_vocab_detections": [],
+            },
+        ],
+    }
     _write_step(
         tmp_path,
         "case",
         1,
         target_found={"0": False},
+        detection=detection,
+        open_vocab_verification=open_vocab_verification,
     )
 
     steps = load_visualization_steps("case", project_root=tmp_path)
 
     assert len(steps) == 1
     assert steps[0]["semantic"] == {"visible_region_nodes": []}
+    assert steps[0]["detection"] == detection
+    assert steps[0]["open_vocab_verification"] == open_vocab_verification
+    assert steps[0]["files"]["open_vocab_verification"] == (
+        "mllm_raw_outputs/case/open_vocab_verification_step_0001.json"
+    )
     assert steps[0]["user_message"] == "prompt text"
 
 
@@ -522,20 +560,27 @@ def test_step_renderer_filters_hidden_region_edges_from_graph():
     assert "for (const edge of graphEdges)" in html
 
 
-def test_step_renderer_includes_found_target_sidebar_and_detection_normalization():
+def test_step_renderer_includes_target_detection_sidebar_and_verification_normalization():
     html = render_viewer_html()
 
-    assert 'id="foundTargetsSection"' in html
-    assert "Found Targets This Step" in html
-    assert "function renderFoundTargets" in html
+    assert 'id="targetDetectionsSection"' in html
+    assert "Target Detections This Step" in html
+    assert "function renderTargetDetections" in html
     assert "function normalizedDetectionRows" in html
     assert "Array.isArray(detection.found_target_indices)" in html
     assert "detection.found_target_indices.map" in html
-    assert "found: true" in html
     assert "detection.target_indices" in html
     assert "Boolean(detection.founds[index])" in html
-    assert 'table(["agent", "target", "description", "center x"], rows)' in html
-    assert 'table(["agent", "target", "found", "center x"], rows)' in html
+    assert "function openVocabularyVerificationChecks" in html
+    assert "verificationKey(check.agent_id, check.target_id)" in html
+    assert "function verificationStatus" in html
+    assert 'return check.accepted ? "accepted" : "rejected";' in html
+    assert 'if (verification === "rejected") return false;' in html
+    assert (
+        'table(["agent", "target", "description", "verification", "score", '
+        '"threshold", "center x"], rows)'
+    ) in html
+    assert 'table(["agent", "target", "found", "verification", "center x"], rows)' in html
     assert "targetDescriptionFromStep(step, targetId)" in html
 
 

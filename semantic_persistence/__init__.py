@@ -1,6 +1,7 @@
 __all__ = [
     "HypothesisGraph",
     "MLLMClient",
+    "OpenVocabularyDetector",
     "SigLIPScorer",
     "load_nav_graph",
     "shortest_path_next_hop",
@@ -17,6 +18,10 @@ def __getattr__(name):
         from .mllm_client import MLLMClient
 
         return MLLMClient
+    if name == "OpenVocabularyDetector":
+        from .open_vocab_detector import OpenVocabularyDetector
+
+        return OpenVocabularyDetector
     if name == "SigLIPScorer":
         from .siglip_scorer import SigLIPScorer
 

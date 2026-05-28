@@ -194,11 +194,19 @@ def _load_step(
     hypothesis_path = debug_dir / ("hypothesis_step_%s.json" % suffix)
     semantic_path = raw_dir / ("semantic_step_%s.json" % suffix)
     detection_path = raw_dir / ("detection_step_%s.json" % suffix)
+    open_vocab_verification_path = raw_dir / (
+        "open_vocab_verification_step_%s.json" % suffix
+    )
     user_message_path = raw_dir / ("user_message_step_%s.txt" % suffix)
 
     layout = _read_json(layout_path)
     hypothesis = _read_json(hypothesis_path)
     detection = _read_json(detection_path)
+    open_vocab_verification = (
+        _read_json(open_vocab_verification_path)
+        if open_vocab_verification_path.exists()
+        else None
+    )
     semantic, user_message = _load_semantic_and_user_message(
         semantic_path=semantic_path,
         user_message_path=user_message_path,
@@ -219,12 +227,17 @@ def _load_step(
             "hypothesis": _relative_posix(project_root, hypothesis_path),
             "semantic": _relative_posix(project_root, semantic_path),
             "detection": _relative_posix(project_root, detection_path),
+            "open_vocab_verification": _relative_posix(
+                project_root,
+                open_vocab_verification_path,
+            ),
             "user_message": _relative_posix(project_root, user_message_path),
         },
         "layout": layout,
         "hypothesis": hypothesis,
         "semantic": semantic,
         "detection": detection,
+        "open_vocab_verification": open_vocab_verification,
         "user_message": user_message,
         "observation_images": observation_images,
     }

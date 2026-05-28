@@ -14,11 +14,18 @@ from PIL import Image
 
 import Helper
 
+ENABLE_SIGLIP_REGION_REPAIR = (
+    False  # whether to attempt region assignment repair for SigLIP validation errors
+)
+
 # for detection only: conservative, reduce false target detections
 DETECTION_TEMPERATURE = 0.1
 DETECTION_TOP_P = 0.9
 DETECTION_TOP_K = 40
 DETECTION_PRESENCE_PENALTY = 0.0
+OPEN_VOCAB_SCORE_THRESHOLD = (
+    0.3  # the threshold for considering an open-vocab detection valid.
+)
 
 # for graph generation: still stable, but allows non-uniform probabilities
 GRAPH_TEMPERATURE = 0.4
@@ -52,19 +59,22 @@ class MLLMClient:
         self,
         graph_model_name: str = "",  # read from config
         detection_model_name: str = "",  # read from config
-        base_url: str = "https://api.deepinfra.com/v1/openai",
-        # api_key_env: str = "HF_TOKEN",
-        api_key_env: str = "DEEPINFRA_TOKEN",
+        graph_base_url: str = "",
+        detection_base_url: str = "",
+        graph_api_key_env: str = "",
+        detection_api_key_env: str = "",
         request_timeout: float = 120.0,
         save_debug_images: bool = True,
         read_saved_raw_outputs: bool = False,
         raw_output_dir: str = "mllm_raw_outputs",
         raw_debug_dir: str = "mllm_debug_outputs",
         max_validation_retries: int = 2,
+        open_vocab_detector=None,
     ):
         self.graph_model_name = graph_model_name
         self.detection_model_name = detection_model_name
-        self.base_url = base_url
+        self.graph_base_url = str(graph_base_url)
+        self.detection_base_url = str(detection_base_url)
         self.request_timeout = float(request_timeout)
         self.save_debug_images = bool(save_debug_images)
         self.read_saved_raw_outputs = bool(read_saved_raw_outputs)
@@ -73,21 +83,40 @@ class MLLMClient:
         self.max_validation_retries = max(0, int(max_validation_retries))
         self.semantic_raw_output_index = 1
         self.found_target_trace = []
-        self.api_key_env = str(api_key_env)
+        self.graph_api_key_env = str(graph_api_key_env)
+        self.detection_api_key_env = str(detection_api_key_env)
+        self.open_vocab_detector = open_vocab_detector
+        self.last_open_vocab_verification_trace = None
 
+        self.graph_client = self._create_openai_client(
+            base_url=self.graph_base_url,
+            api_key_env=self.graph_api_key_env,
+            router_name="graph",
+        )
+        self.detection_client = self._create_openai_client(
+            base_url=self.detection_base_url,
+            api_key_env=self.detection_api_key_env,
+            router_name="detection",
+        )
+        self.client = self.graph_client
+
+    def _create_openai_client(
+        self,
+        base_url: str,
+        api_key_env: str,
+        router_name: str,
+    ):
         api_key = os.environ.get(api_key_env)
         if not api_key:
             if self.read_saved_raw_outputs:
-                self.client = None
-                return
-            else:
-                raise RuntimeError(
-                    "Environment variable %s is required for the Hugging Face router API."
-                    % api_key_env
-                )
+                return None
+            raise RuntimeError(
+                "Environment variable %s is required for the %s MLLM API."
+                % (api_key_env, router_name)
+            )
 
-        self.client = OpenAI(
-            base_url=self.base_url,
+        return OpenAI(
+            base_url=base_url,
             api_key=api_key,
             timeout=self.request_timeout,
         )
@@ -151,11 +180,20 @@ class MLLMClient:
     def _request_completion(
         self, messages, model_name: str, request_type: str = "graph"
     ) -> str:
-        if self.client is None:
+        if request_type == "detection":
+            client = self.detection_client
+            api_key_env = self.detection_api_key_env
+            router_name = "detection"
+        else:
+            client = self.graph_client
+            api_key_env = self.graph_api_key_env
+            router_name = "graph"
+
+        if client is None:
             raise RuntimeError(
-                "No MLLM API client is available. A saved raw output file was "
+                "No %s MLLM API client is available. A saved raw output file was "
                 "missing or invalid, so the code tried to request the MLLM, but "
-                "environment variable %s is not set." % self.api_key_env
+                "environment variable %s is not set." % (router_name, api_key_env)
             )
 
         if request_type == "detection":
@@ -178,7 +216,7 @@ class MLLMClient:
             max_tokens = GRAPH_MAX_NEW_TOKENS
 
         try:
-            completion = self.client.chat.completions.create(
+            completion = client.chat.completions.create(
                 model=model_name,
                 messages=messages,
                 temperature=temperature,
@@ -236,6 +274,12 @@ class MLLMClient:
             "detection_step_%04d.json" % int(step_index),
         )
 
+    def _open_vocab_verification_raw_output_path(self, step_index: int) -> str:
+        return os.path.join(
+            getattr(self, "raw_output_dir", "mllm_raw_outputs"),
+            "open_vocab_verification_step_%04d.json" % int(step_index),
+        )
+
     def _observation_image_path(self, step_index: int, agent_id: str) -> str:
         return os.path.join(
             getattr(self, "raw_debug_dir", "mllm_debug_outputs"),
@@ -271,8 +315,8 @@ class MLLMClient:
             Fix all listed validation errors at the same time.
 
             If an error mentions missing required newly observed visible neighboring viewpoint ids, add exactly those ids to viewpoint_target_probs.
-            If an error mentions expected current-step viewpoint ids or expected assigned viewpoint ids, use exactly that expected id list for viewpoint_node_assigns.
-            Do not include old viewpoint ids copied from compact shared graph summary.
+            If an error mentions expected assigned viewpoint ids, use exactly that expected id list for viewpoint_node_assigns.
+            Do not include viewpoint ids outside the expected assigned viewpoint id list.
             """).strip()
 
         return (
@@ -322,6 +366,7 @@ class MLLMClient:
             current_viewpoint_ids
         )
         graph_viewpoint_node_ids = set()
+        graph_viewpoint_status_by_id = {}
 
         agent_context = []
         for observation in agent_observations:
@@ -331,10 +376,12 @@ class MLLMClient:
                     "current_viewpoint_index": int(
                         observation["current_viewpoint_index"]
                     ),
+                    "current_xy": observation.get("current_xy"),
                     "visible_viewpoints": [
                         {
                             "viewpoint_index": int(item["viewpoint_index"]),
                             "distance": float(item["distance"]),
+                            "xy": item.get("xy"),
                         }
                         for item in observation.get("visible_viewpoints", [])
                     ],
@@ -345,6 +392,7 @@ class MLLMClient:
             "viewpoint_to_region": {},
             "region_nodes": [],
         }
+
         if isinstance(graph_summary, dict):
             if isinstance(graph_summary.get("viewpoint_to_region"), dict):
                 graph_context["viewpoint_to_region"] = {
@@ -357,11 +405,19 @@ class MLLMClient:
             for node in graph_summary.get("nodes", []):
                 if not isinstance(node, dict):
                     continue
+
                 if node.get("type") == "viewpoint":
-                    graph_viewpoint_node_ids.add(int(node["id"]))
+                    viewpoint_id = int(node["id"])
+                    graph_viewpoint_node_ids.add(viewpoint_id)
+                    graph_viewpoint_status_by_id[viewpoint_id] = {
+                        "prior_grounded": bool(node.get("grounded", 0)),
+                        "prior_visit_times": int(node.get("node_visit_times", 0)),
+                    }
                     continue
+
                 if node.get("type") != "region":
                     continue
+
                 graph_context["region_nodes"].append(
                     {
                         "id": int(node["id"]),
@@ -378,6 +434,34 @@ class MLLMClient:
         )
         optional_viewpoint_target_prob_ids = sorted(
             visible_neighbor_viewpoint_ids & graph_viewpoint_node_ids
+        )
+
+        new_visible_neighbor_assignment_viewpoint_ids = sorted(
+            visible_neighbor_viewpoint_ids - graph_viewpoint_node_ids
+        )
+
+        first_reached_current_viewpoint_ids = sorted(
+            viewpoint_id
+            for viewpoint_id in current_viewpoint_ids
+            if (
+                viewpoint_id not in graph_viewpoint_node_ids
+                or not bool(
+                    graph_viewpoint_status_by_id.get(viewpoint_id, {}).get(
+                        "prior_grounded", False
+                    )
+                )
+                or int(
+                    graph_viewpoint_status_by_id.get(viewpoint_id, {}).get(
+                        "prior_visit_times", 0
+                    )
+                )
+                <= 0
+            )
+        )
+
+        assignment_required_viewpoint_ids = sorted(
+            set(new_visible_neighbor_assignment_viewpoint_ids)
+            | set(first_reached_current_viewpoint_ids)
         )
 
         if not validation_errors:
@@ -398,11 +482,13 @@ class MLLMClient:
             "optional_viewpoint_target_prob_ids": optional_viewpoint_target_prob_ids,
             "fixed_detections": fixed_detections,
             "graph_context": graph_context,
+            "new_visible_neighbor_assignment_viewpoint_ids": new_visible_neighbor_assignment_viewpoint_ids,
+            "first_reached_current_viewpoint_ids": first_reached_current_viewpoint_ids,
+            "assignment_required_viewpoint_ids": assignment_required_viewpoint_ids,
         }
         required_top_level_keys = [
             "agents",
             "current_viewpoints_reassignment",
-            "detections",
             "visible_region_nodes",
             "invisible_region_nodes",
             "viewpoint_target_probs",
@@ -449,8 +535,10 @@ class MLLMClient:
             - Do not change fixed detections unless the validation error says
               detections do not match the fixed detections.
             - Do not add current viewpoint ids to viewpoint_target_probs.
-            - Do not add viewpoint ids outside current_step_allowed_viewpoint_ids
-              to viewpoint_node_assigns.
+            - For graph MLLM output, viewpoint_node_assigns must include exactly assignment_required_viewpoint_ids.
+            - assignment_required_viewpoint_ids includes new visible neighboring viewpoints and first-reached current viewpoints.
+            - Do not add viewpoint ids outside assignment_required_viewpoint_ids to viewpoint_node_assigns.
+            - Previous viewpoint-region assignments remain unchanged unless current_viewpoints_reassignment changes a current viewpoint.
 
             Repair context for reference only; do not return this object:
             {repair_context_json}
@@ -499,10 +587,10 @@ class MLLMClient:
         This avoids re-running the full image-based graph generation call when
         the output only needs a local schema or value correction.
         """
-        if self.client is None:
+        if self.graph_client is None:
             raise RuntimeError(
-                "No MLLM API client is available for semantic payload repair. "
-                "Environment variable %s is not set." % self.api_key_env
+                "No graph MLLM API client is available for semantic payload repair. "
+                "Environment variable %s is not set." % self.graph_api_key_env
             )
 
         system_message = dedent("""
@@ -644,13 +732,18 @@ class MLLMClient:
         ]
 
         system_message = dedent("""
-            You are doing direct visual target detection from indoor panorama images.
+            You are doing strict direct visual target detection from indoor panorama images.
             Return exactly one JSON object and nothing else.
-            Only report a target when the target object itself is visible.
-            Do not infer a target only from room type or common object location.
-            If the object is partly visible but recognizable, report it.
-            If the object is too small, blurry, occluded, or ambiguous, do not report it.
-            """).strip()
+
+            Match the exact target object identity, not a broad object category.
+            The target description may contain object type, color, size, shape, material, location, or context. Use all visible parts of the description when deciding whether the target is present.
+
+            Do not report a visually similar or semantically related object as the target.
+            Do not report a target only because the room type or nearby objects suggest it may exist there.
+            If the visible evidence is not enough to distinguish the target from a similar non-target object, do not report it.
+
+            When uncertain, prefer false negative over false positive.
+        """).strip()
 
         user_message = (
             dedent("""
@@ -661,13 +754,17 @@ class MLLMClient:
                 {agents_json}
 
                 Task:
-                Inspect each panorama image carefully. For each agent, find active targets that are directly visible in the image.
+                Inspect each panorama image carefully. For each agent, find active targets that are directly visible and visually match the exact target descriptions.
 
                 Detection rule:
-                - Report a target only when the object itself is visible and recognizable.
-                - Do not report a target only because the room type suggests it may exist there.
-                - Partly visible targets can be reported if they are recognizable.
-                - Do not report targets that are absent, too blurry, too small, heavily occluded, or visually ambiguous.
+                - Report a target only when the exact target object itself is visible and recognizable.
+                - The visible object must match the target description at the object-type level, not only at a broad semantic level.
+                - Use all visible descriptive cues in the target description, including object type, color, size, shape, material, and location when available.
+                - Do not report a visually similar, functionally related, or contextually related non-target object.
+                - Partly visible targets can be reported only if the visible part contains enough target-specific evidence.
+                - If multiple object identities are plausible for the same visible object, do not report it.
+                - If the object is absent, too blurry, too small, heavily occluded, or visually ambiguous, do not report it.
+                - When uncertain, prefer not reporting the target.
 
                 Output rules:
                 - Return exactly one JSON object.
@@ -677,6 +774,7 @@ class MLLMClient:
                 - Each agent may appear at most once.
                 - Only use active target_ids from the list above.
                 - Do not include completed, unlisted, or not-found targets.
+                - Do not include an agent-target pair if the detected object could reasonably be a different object type than the target description.
 
                 Required format:
                 {{
@@ -1084,6 +1182,94 @@ class MLLMClient:
 
         raise RuntimeError("Unexpected detection retry loop exit.")
 
+    def _verify_detections_with_open_vocab(
+        self,
+        detections: List[Dict[str, object]],
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        step_index: int,
+    ) -> List[Dict[str, object]]:
+        detector = self.open_vocab_detector
+        agent_observation_by_id = {
+            str(observation["agent_id"]): observation
+            for observation in agent_observations
+        }
+        target_description_by_id = {
+            str(target["target_id"]): str(target["description"]) for target in targets
+        }
+
+        verified_detections = []
+        trace = {
+            "step_index": int(step_index),
+            "checks": [],
+        }
+
+        for detection in detections:
+            agent_id = str(detection["agent_id"])
+            claimed_target_ids = [
+                str(target_id) for target_id in detection["found_target_indices"]
+            ]
+            target_center_xs = [
+                float(target_center_x)
+                for target_center_x in detection["target_center_xs"]
+            ]
+            text_queries = [
+                target_description_by_id[target_id] for target_id in claimed_target_ids
+            ]
+
+            open_vocab_results = detector.score_queries(
+                image=agent_observation_by_id[agent_id]["annotated_panorama"],
+                text_queries=text_queries,
+            )
+
+            results_by_query_index = {}
+            for result in open_vocab_results:
+                if "label_index" in result:
+                    query_index = int(result["label_index"])
+                else:
+                    query_index = text_queries.index(str(result["query"]))
+                results_by_query_index[query_index] = result
+
+            verified_target_ids = []
+            verified_target_center_xs = []
+
+            for query_index, target_id in enumerate(claimed_target_ids):
+                open_vocab_result = results_by_query_index[query_index]
+                open_vocab_matches = open_vocab_result["open_vocab_detections"]
+                score = float(open_vocab_result["score"])
+                score_threshold = float(open_vocab_result["score_threshold"])
+                accepted = score >= score_threshold
+
+                trace["checks"].append(
+                    {
+                        "agent_id": agent_id,
+                        "target_id": target_id,
+                        "description": target_description_by_id[target_id],
+                        "score": score,
+                        "score_threshold": score_threshold,
+                        "accepted": accepted,
+                        "open_vocab_detections": open_vocab_matches,
+                    }
+                )
+
+                if accepted:
+                    verified_target_ids.append(target_id)
+                    verified_target_center_xs.append(target_center_xs[query_index])
+
+            if verified_target_ids:
+                verified_detections.append(
+                    {
+                        "agent_id": agent_id,
+                        "found_target_indices": verified_target_ids,
+                        "target_center_xs": verified_target_center_xs,
+                    }
+                )
+
+        self.last_open_vocab_verification_trace = trace
+        self._write_open_vocab_verification_trace(step_index, trace)
+
+        return verified_detections
+
     def _build_instruction(
         self,
         agent_observations: List[Dict[str, object]],
@@ -1179,6 +1365,7 @@ class MLLMClient:
                     {
                         "viewpoint_index": visible_vp_id,
                         "distance": float(item["distance"]),
+                        "xy": item.get("xy"),
                         "prior_assigned_region_id": visible_region_id,
                         "prior_assigned_region_label": (
                             graph_region_label_by_id_for_prompt.get(visible_region_id)
@@ -1207,6 +1394,7 @@ class MLLMClient:
                     "agent_id": str(observation["agent_id"]),
                     "image_index": image_index,
                     "current_viewpoint_index": current_viewpoint_id,
+                    "current_xy": observation.get("current_xy"),
                     "prior_assigned_region_id": prior_assigned_region_id,
                     "prior_assigned_region_label": (
                         graph_region_label_by_id_for_prompt.get(
@@ -1236,6 +1424,41 @@ class MLLMClient:
 
         current_step_allowed_viewpoint_ids = sorted(
             current_viewpoint_ids_for_prompt | visible_viewpoint_ids_for_prompt
+        )
+
+        new_visible_neighbor_assignment_viewpoint_ids_for_prompt = sorted(
+            visible_viewpoint_ids_for_prompt
+            - current_viewpoint_ids_for_prompt
+            - graph_viewpoint_node_ids_for_prompt
+        )
+
+        first_reached_current_viewpoint_ids_for_prompt = sorted(
+            viewpoint_id
+            for viewpoint_id in current_viewpoint_ids_for_prompt
+            if (
+                viewpoint_id not in graph_viewpoint_node_ids_for_prompt
+                or not bool(
+                    graph_viewpoint_status_by_id_for_prompt.get(viewpoint_id, {}).get(
+                        "prior_grounded", False
+                    )
+                )
+                or int(
+                    graph_viewpoint_status_by_id_for_prompt.get(viewpoint_id, {}).get(
+                        "prior_visit_times", 0
+                    )
+                )
+                <= 0
+            )
+        )
+
+        assignment_required_viewpoint_ids_for_prompt = sorted(
+            set(new_visible_neighbor_assignment_viewpoint_ids_for_prompt)
+            | set(first_reached_current_viewpoint_ids_for_prompt)
+        )
+
+        assignment_not_required_current_step_viewpoint_ids_for_prompt = sorted(
+            set(current_step_allowed_viewpoint_ids)
+            - set(assignment_required_viewpoint_ids_for_prompt)
         )
 
         visible_neighbor_viewpoint_ids_for_prompt = (
@@ -1341,13 +1564,6 @@ class MLLMClient:
                 "viewpoint_viewpoint": 1.0,
                 "viewpoint_region": 4.0,
             },
-            "detections": [
-                {
-                    "agent_id": example_agent_id,
-                    "target_indices": target_ids,
-                    "founds": [False for _ in target_ids],
-                }
-            ],
         }
 
         field_descriptions = {
@@ -1377,9 +1593,10 @@ class MLLMClient:
             ),
             "current_viewpoints_reassignment[].new_assigned_region_id": (
                 "Final region id assigned to this current viewpoint after checking the "
-                "current panorama. It must match the region used for this viewpoint in "
-                "viewpoint_node_assigns and the corresponding "
-                "agents[].current_region_node_id. It must appear in visible_region_nodes. "
+                "current panorama. It must match the corresponding "
+                "agents[].current_region_node_id. If this current viewpoint requires "
+                "region assignment in this step and appears in viewpoint_node_assigns, "
+                "it must also match there. It must appear in visible_region_nodes. "
                 "If this is a newly proposed region id, its full region record must be "
                 "included in visible_region_nodes."
             ),
@@ -1390,7 +1607,9 @@ class MLLMClient:
             ),
             "visible_region_nodes[].id": (
                 "Integer region id. Region ids must be >= region_start_id. "
-                "Use a new id only for a new physical region."
+                "Use a new id only for a new physical region. If the same physical area "
+                "already exists in the graph summary or in the current visible_region_nodes, "
+                "reuse the existing region id."
             ),
             "visible_region_nodes[].label": (
                 "Room or area label only, not an object name. The label must describe one "
@@ -1449,27 +1668,24 @@ class MLLMClient:
                 "Do not use 0.0 here because current viewpoints are not included in this object."
             ),
             "viewpoint_node_assigns": (
-                "Region-centered viewpoint assignments for the current step. The assigned "
-                "viewpoint ids across all items must be exactly the Current-step allowed "
-                "viewpoint ids, no more and no fewer. Do not include any other viewpoint id, "
-                "even if it appears in compact shared graph summary, nodes, edges, region "
-                "assigned_viewpoint_ids, or viewpoint_to_region. Current viewpoints must be "
-                "assigned to their agents' current_region_node_id, inferred from the current "
-                "panorama. If a current viewpoint already has an old "
-                "graph_summary.viewpoint_to_region assignment, treat it only as prior "
-                "information, not as a fixed rule. For non-current visible neighboring "
-                "viewpoints, use prior_assigned_region_id only as historical context. "
-                "Assign each one by jointly considering marker location, distance to the "
-                "current viewpoint, and whether a clear spatial boundary separates it from "
-                "the current viewpoint."
+                "Incremental region-centered assignments for viewpoint ids requiring "
+                "region assignment in this step. This set includes visible neighboring "
+                "viewpoints that appear in the current observation but do not already "
+                "exist as viewpoint nodes in graph_summary, and current agent viewpoints "
+                "that are physically reached for the first time. The assigned viewpoint "
+                "ids across all items must be exactly this required assignment id set, "
+                "no more and no fewer. If no viewpoint id requires assignment, return an "
+                "empty list. Other current-step viewpoints keep their previous "
+                "graph_summary viewpoint-to-region assignments unless a current viewpoint "
+                "is explicitly listed in current_viewpoints_reassignment."
             ),
             "viewpoint_node_assigns[].region_node_id": (
                 "Region id containing the assigned viewpoints. If it is a current_region_node_id, "
                 "it must be listed in visible_region_nodes."
             ),
             "viewpoint_node_assigns[].assigned_viewpoint_node_indices": (
-                "Integer viewpoint ids assigned to this region. Current viewpoints must "
-                "be assigned to their agents' current_region_node_id."
+                "Integer viewpoint ids requiring region assignment in this step. Do not "
+                "include other current-step viewpoint ids."
             ),
             "new_edges": (
                 "Uncertain hypothesis edges. Use legal VV or VZ edges only. "
@@ -1516,20 +1732,6 @@ class MLLMClient:
             "edge_distance_variances.viewpoint_region": (
                 "Positive variance for VZ surrogate distance estimates."
             ),
-            "detections": (
-                "Copy the fixed direct detections from the separate detection step exactly. "
-                "Do not revise founds during graph generation. Found and completed "
-                "targets are omitted."
-            ),
-            "detections[].agent_id": "Must match an input agent id exactly.",
-            "detections[].target_indices": (
-                "Every active target_id exactly once. Do not include found, completed, "
-                "or unlisted target ids. Order must match founds."
-            ),
-            "detections[].founds": (
-                "JSON booleans copied exactly from the fixed direct detections. "
-                "Order must match target_indices."
-            ),
         }
 
         def round_json_value(value):
@@ -1567,38 +1769,42 @@ class MLLMClient:
         system_message = dedent("""
             You are an indoor hypothesis-graph proposal module for cooperative many-agent, many-target navigation. Analyze one annotated RGB panorama per agent and the compact shared graph summary. Propose an uncertain graph update for downstream optimization. Do not select robot actions or produce a final map.
 
-            The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, active target_ids, and viewpoint ids exactly. Reuse provided region ids exactly when a matching region already exists. For newly proposed regions, assign new integer region ids that do not conflict with existing ids. Use active target_id in target_probs and detections[].target_indices. Use active target descriptions only to understand the remaining targets. Found targets are complete and must not appear in target_probs, detections[].target_indices, or existence hypotheses.
+            The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, active target_ids, and viewpoint ids exactly. Reuse provided region ids exactly when a matching region already exists. For newly proposed regions, assign new integer region ids that do not conflict with existing ids. Use active target_id in target_probs. Use active target descriptions only to understand the remaining targets. Found targets are complete and must not appear in target_probs or existence hypotheses.
 
             Return exactly one valid JSON object matching the user schema. Do not output markdown, code fences, comments, text outside JSON, extra top-level keys, trailing commas, or non-JSON booleans.
 
             Required top-level keys:
-            agents, current_viewpoints_reassignment, visible_region_nodes, invisible_region_nodes, viewpoint_target_probs, viewpoint_node_assigns, new_edges, edge_distance_variances, detections.
+            agents, current_viewpoints_reassignment, visible_region_nodes, invisible_region_nodes, viewpoint_target_probs, viewpoint_node_assigns, new_edges, edge_distance_variances.
 
             Core rules:
             - The per-agent observation context is the source of truth for current agent locations, even if the compact graph summary has older node status values.
+            - In each panorama, the current viewpoint means the camera location that generated the panorama. It is not drawn as a red numbered marker.
+            - Red numbered markers are non-current visible neighboring viewpoints only.
+            - Do not infer the current viewpoint's region from a red numbered marker. Red numbered markers should be used only for assigning non-current visible neighboring viewpoints.
             - agents has one item per agent. current_region_node_id is the region containing the agent current viewpoint and must appear in visible_region_nodes. Reuse existing region ids and labels when matched.
             - agents[].observed_region_node_ids is the nonempty set of visible_region_nodes ids observed in that same agent panorama. It must include agents[].current_region_node_id and must not include invisible or graph-summary-only region ids.
-            - For each current viewpoint with a prior_assigned_region_id in the per-agent observation context, compare prior_assigned_region_label against the current panorama. The prior assignment is a semantic hypothesis from earlier steps, not ground truth.
+            - For each current viewpoint with a prior_assigned_region_id in the per-agent observation context, compare prior_assigned_region_label against the visual evidence around the panorama camera location, not around a red numbered marker. The prior assignment is a semantic hypothesis from earlier steps, not ground truth.
             - If the prior region assignment still matches the current panorama, keep the original region assignment and do not include that viewpoint in current_viewpoints_reassignment.
             - If the prior region assignment does not match the current panorama, assign the current viewpoint to the region that best matches the current observation and include exactly one item in current_viewpoints_reassignment.
             - current_viewpoints_reassignment must contain only true region changes for current viewpoints. Return [] when no current viewpoint requires reassignment.
-            - For each current_viewpoints_reassignment item, new_assigned_region_id must equal the final region assignment used in agents[].current_region_node_id and viewpoint_node_assigns.
+            - For each current_viewpoints_reassignment item, new_assigned_region_id must equal the final region assignment used in agents[].current_region_node_id. If the reassigned current viewpoint requires region assignment in this step and appears in viewpoint_node_assigns, it must also match there.
             - If new_assigned_region_id is a newly proposed region, include the complete region node record in visible_region_nodes.
             - visible_region_nodes include current regions and any adjacent area that is visually observable in current panoramas, even if only partially visible through a doorway, opening, or corridor.
+            - Before creating a new visible_region_node, compare it with existing visible_region_nodes and graph-summary region nodes. If the same physical area is already represented, reuse that existing region id and label. Do not create two region nodes for the same hallway, corridor, bathroom, bedroom, or room only because the wording is slightly different across panoramas.
             - invisible_region_nodes include only completely unseen regions inferred from layout cues. If any part of a region is visible, it is not invisible.
             - Do not assign viewpoints to invisible_region_nodes. A region with assigned viewpoints must be in visible_region_nodes.
             - A region id must appear in only one of visible_region_nodes or invisible_region_nodes.
             - Region labels must be room or area labels, not object names. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names. Avoid generic labels unless they include both appearance and relative location cues.
-            - Detections are fixed by a separate detection step. The fixed direct detections provided here already exclude found and completed targets. Copy them exactly from the fixed direct detections in the user message. 
+            - Detections are handled by a separate detection step outside this graph MLLM call. Do not output detections.
             - Region target_probs and returned non-current visible-neighbor viewpoint target_probs must contain every active target_id with values in (0, 1]. Do not generate target_probs for current viewpoints.
             - Use active target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak.
             - viewpoint_target_probs must include every newly observed non-current visible neighboring viewpoint that is absent from compact shared graph summary nodes. Previously observed visible neighboring viewpoints may be omitted; include one only when the current observation supports updating its target existence probability. Exclude current agent viewpoints.
-            - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. Every current viewpoint and every distinct visible neighboring viewpoint must appear exactly once. Current viewpoints must be assigned to their agents' current_region_node_id based on the current panorama. If a current viewpoint has an old graph_summary.viewpoint_to_region assignment, use it only as prior information, not as a fixed assignment. Reuse the old region only if it still matches the current panorama; otherwise reuse another matching existing region or create a new visible_region_node.
+            - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. It is incremental and must include exactly the viewpoint ids requiring region assignment in this step. This set includes new visible neighboring viewpoints and first-reached current viewpoints. Do not include other current-step viewpoints. Other current-step viewpoints keep their previous graph_summary assignment unless a current viewpoint is explicitly listed in current_viewpoints_reassignment.
             - For non-current visible neighboring viewpoints, use prior_assigned_region_id only as historical context, not as a fixed assignment.
-            - Assign each non-current visible neighboring viewpoint by jointly considering the marker location in the panorama, its distance to the current viewpoint, and whether a clear spatial boundary separates it from the current viewpoint.
+            - Assign each non-current visible neighboring viewpoint by jointly considering its marker location in the panorama, xy-based floor-plan distance from current_xy, visible_viewpoints[].distance, and whether a clear spatial boundary separates it from the current viewpoint.
             - If a non-current visible neighboring viewpoint is close to the current viewpoint and no doorway, wall, corridor boundary, room boundary, or transition area separates them, prefer the current viewpoint's final region.
             - If a non-current visible neighboring viewpoint is farther away, or if its marker is across a clear spatial boundary, assign it to the semantic region that physically contains its marker.
-            - Do not assign a non-current visible neighboring viewpoint to an adjacent dining area, hallway, bedroom, counter area, or doorway area only because that area is visible in the panorama.
+            - Do not assign a non-current visible neighboring viewpoint to an adjacent area only because that area is visible in the panorama. Assign it to that adjacent area only when its red marker lies inside that area, or when distance and spatial context strongly support that assignment.
             - new_edges may contain only VV or VZ edges. Never use region-region edges. Do not add edges between a current viewpoint and its visible neighboring viewpoints, because those local edges are already provided by the navigation system. Do not add an edge between a viewpoint and its assigned region.
             - A VV edge may be proposed only between two viewpoint nodes that satisfy all of the following conditions: both are non-current viewpoints and both are marked as unvisited according to the compact shared graph summary. The MLLM may hypothesize a direct local connection when it is spatially plausible and appears directly traversable from the current panoramas and graph context. The evidence does not need to be certain, but the proposed connection should not cross an apparent obstacle, large furniture, wall, blocked passage, closed partition, or other visible barrier. Two viewpoints being visible from the same current viewpoint, or belonging to the same semantic region, is not sufficient by itself. Use lower exist_prob when the support is weak but the local connection still appears passable. If visit-state information is unavailable for a candidate viewpoint, treat the candidate as not eligible for a new VV edge unless the user message explicitly identifies it as unvisited.
             - A VZ edge connects a viewpoint to a semantic region with no assigned viewpoints. The region may be visible or invisible. Do not add a VZ edge to a region with assigned viewpoints or between a viewpoint and its assigned region.
@@ -1621,8 +1827,27 @@ class MLLMClient:
                 Per-agent observation context:
                 {agent_context_json}
                 
+                Panorama direction note:
+                - The annotated panorama image may include vertical guide lines and degree labels such as 0 deg, 120 deg, and 240 deg.
+                - These degree labels indicate viewing direction along the horizontal panorama.
+                - Areas that appear near the far left and far right edges may be close in viewing direction because the panorama wraps around.
+                - Use the degree labels only as directional cues in the panorama image. Use current_xy and visible_viewpoints[].xy for physical floor-plan distance.
+                
+                Coordinate meaning note:
+                - current_xy is the 2D floor-plan coordinate of the current viewpoint, which is the panorama camera location.
+                - visible_viewpoints[].xy is the 2D floor-plan coordinate of that visible neighboring viewpoint.
+                - All xy coordinates use the same floor-plan coordinate system and are approximately measured in meters.
+                - Use the Euclidean distance between current_xy and visible_viewpoints[].xy as the floor-plan distance. A larger value means the two viewpoints are farther apart on the floor plan.
+                - The visible_viewpoints[].distance value is an additional local distance from the current viewpoint to that visible neighboring viewpoint in the observation context.
+                - Do not put two viewpoints into the same semantic region only because their room labels look similar. If their xy coordinates indicate that they are far apart or located in different physical areas, assign them to different region nodes.
+                
                 Strict allowed-id rule:
-                - viewpoint_node_assigns must contain exactly the Current-step allowed viewpoint ids above, no more and no fewer.
+                - viewpoint_node_assigns is incremental.
+                - viewpoint_node_assigns must contain exactly the Viewpoint ids requiring region assignment in this step, no more and no fewer.
+                - If there are no such viewpoint ids, return "viewpoint_node_assigns": [].
+                - Do not include viewpoint ids listed under Current-step viewpoint ids not requiring region assignment in this step.
+                - Previously observed viewpoints keep their previous graph_summary viewpoint-to-region assignment by default.
+                - If a previously observed current viewpoint should move to a different region, report that change only in current_viewpoints_reassignment.
                 - viewpoint_target_probs must contain every required newly observed non-current visible neighboring viewpoint id below.
                 - viewpoint_target_probs may also contain optional previously observed non-current visible neighboring viewpoint ids below when the current observation supports updating them.
                 - Do not include current viewpoint ids in viewpoint_target_probs.
@@ -1636,13 +1861,23 @@ class MLLMClient:
                 Current-step allowed viewpoint ids:
                 {current_step_allowed_viewpoint_ids_json}
                 
+                Viewpoint ids requiring region assignment in this step:
+                {assignment_required_viewpoint_ids_json}
+
+                These ids include:
+                - visible neighboring viewpoints that appear in the current observation but do not already exist as viewpoint nodes in graph_summary;
+                - current agent viewpoints that are physically reached for the first time.
+
+                Current-step viewpoint ids not requiring region assignment in this step:
+                {assignment_not_required_current_step_viewpoint_ids_json}
+                
                 Required newly observed viewpoint_target_probs id skeleton:
                 {required_viewpoint_target_probs_skeleton_json}
 
                 Optional previously observed viewpoint_target_probs ids:
                 {optional_viewpoint_target_prob_ids_json}
 
-                Rule:
+                Viewpoint target probability rule:
                 - You must output one viewpoint_target_probs item for every id in this skeleton.
                 - You may additionally output viewpoint_target_probs items for optional ids only when the current observation supports updating that viewpoint.
                 - These ids are non-current visible neighboring viewpoints only.
@@ -1660,15 +1895,12 @@ class MLLMClient:
                 All non-current visible neighboring viewpoint ids:
                 {visible_neighbor_viewpoint_ids_json}
 
-                Fixed direct detections from the separate detection step:
-                {fixed_detections_json}
-
                 Current-step interpretation note:
                 - The observation context is the source of truth for current agent locations.
                 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
                 - If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
                 - If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label and still include it in visible_region_nodes.
-
+                
                 Output schema example. Use keys and value types only. Do not copy example values unless supported:
                 {schema_json}
 
@@ -1676,33 +1908,24 @@ class MLLMClient:
                 {field_descriptions_json}
 
                 Current step request:
-                - For each agent, inspect the current viewpoint marker in the panorama and decide which semantic region physically contains that marker.
+                - For each agent, treat the current viewpoint as the camera location that generated the panorama. The current viewpoint is not drawn as a red numbered marker.
+                - Decide which semantic region encloses the panorama camera location.
+                - Red numbered markers are non-current visible neighboring viewpoints only.
+                - Do not assign a current viewpoint to a region only because a red neighboring marker appears inside that region.
                 - Do not assign a current viewpoint to a region only because that region is visible nearby, through a doorway, or at the side of the panorama.
-                - If a current viewpoint has prior_assigned_region_id, compare the prior_assigned_region_label with the local visual evidence around the current viewpoint marker.
-                - If the prior region label does not match the local area around the marker, reassign the current viewpoint to the best matching existing visible region when possible.
-                - If no existing region matches the local area around the current viewpoint marker, create a new visible_region_node.
+                - If a current viewpoint has prior_assigned_region_id, compare the prior_assigned_region_label with the local visual evidence around the panorama camera location.
+                - If the prior region label does not match the local area around the panorama camera location, reassign the current viewpoint to the best matching existing visible region when possible.
+                - If no existing region matches the local area around the panorama camera location, create a new visible_region_node.
                 - For each agent, list every visible region id observed in that agent's panorama in agents[].observed_region_node_ids. Include the selected current region id and adjacent visible regions seen through openings, doors, or corridors.
-                - If a current viewpoint is reassigned, update all three places consistently: agents[].current_region_node_id, viewpoint_node_assigns, and current_viewpoints_reassignment.
-
-                - After choosing the final region for each current viewpoint, assign each non-current visible neighboring viewpoint by jointly considering its marker location, its distance to the current viewpoint, and whether a clear spatial boundary separates it from the current viewpoint.
+                - If a current viewpoint is reassigned, update agents[].current_region_node_id and current_viewpoints_reassignment consistently. Only include the current viewpoint in viewpoint_node_assigns if it is listed under Viewpoint ids requiring region assignment in this step.
+                - After choosing the final region for each current viewpoint, assign each non-current visible neighboring viewpoint by jointly considering its red marker location, its xy-based floor-plan distance from current_xy, its visible_viewpoints[].distance value, and whether a clear spatial boundary separates it from the current viewpoint.
                 - Use prior_assigned_region_id and graph_summary.viewpoint_to_region only as historical context for non-current visible neighboring viewpoints, not as fixed assignments.
                 - If a non-current visible neighboring viewpoint is close to the current viewpoint and no doorway, wall, corridor boundary, room boundary, or transition area separates them, prefer the current viewpoint's final region.
-                - If a non-current visible neighboring viewpoint is farther away, or if its marker is across a clear spatial boundary, assign it to the semantic region that physically contains its marker.
-                - Do not assign a non-current visible neighboring viewpoint to an adjacent dining area, hallway, bedroom, counter area, or doorway area only because that area is visible in the panorama.
-
-                - For viewpoint_target_probs, include every required newly observed id. You may include optional previously observed ids only when updating them. Do not add any other id.
-                - Do not include current viewpoint ids in viewpoint_target_probs.
-                - Do not copy old viewpoint ids from graph_summary region assigned_viewpoint_ids.
-                - Current-viewpoint target_probs are fixed by code from direct detections, so do not generate them.
-                - For returned visible neighboring viewpoint target_probs, use soft positive target-location scores.
-                - Estimate region target_probs using active target_id keys and active target descriptions.
-                - Do not include found or completed targets in target_probs, detections, or existence hypotheses.
-                - Copy the fixed direct detections exactly into detections. Do not change founds.
+                - If a non-current visible neighboring viewpoint is farther away, or if its red marker is across a clear spatial boundary, assign it to the semantic region that physically contains that red marker.
+                - Do not assign a non-current visible neighboring viewpoint to an adjacent area only because that area is visible in the panorama. Assign it to that adjacent area only when its red marker lies inside that area, or when distance and spatial context strongly support that assignment.
                 - Propose invisible_region_nodes only for completely unseen areas inferred from layout cues.
                 - Treat partially visible adjacent areas as visible_region_nodes, not invisible_region_nodes.
-                - Propose only legal uncertain edges supported by observation and graph context.
-                - Propose VZ edges only to semantic regions with no assigned viewpoints; the region may be visible or invisible.
-                - Propose VV edges between two unvisited non-current viewpoints only when a directly traversable local connection is spatially plausible from the observation and graph context. The support may be uncertain, so use lower exist_prob for weak but meaningful hypotheses. Do not propose a VV edge across an apparent obstacle, large furniture, wall, blocked passage, or closed partition. Same-room or same-region membership alone is not enough.
+                - Propose only legal VV and VZ edges using the new_edges rules in Core rules and Field descriptions.
                 - Return compact JSON only.
                 """)
             .strip()
@@ -1712,15 +1935,19 @@ class MLLMClient:
                     prompt_graph_summary, indent=2, sort_keys=True
                 ),
                 agent_context_json=json.dumps(agent_context, indent=2, sort_keys=True),
-                fixed_detections_json=json.dumps(
-                    fixed_detections, indent=2, sort_keys=True
-                ),
                 schema_json=json.dumps(schema, indent=2, sort_keys=True),
                 field_descriptions_json=json.dumps(
                     field_descriptions, indent=2, sort_keys=True
                 ),
                 current_step_allowed_viewpoint_ids_json=json.dumps(
                     current_step_allowed_viewpoint_ids, indent=2
+                ),
+                assignment_required_viewpoint_ids_json=json.dumps(
+                    assignment_required_viewpoint_ids_for_prompt, indent=2
+                ),
+                assignment_not_required_current_step_viewpoint_ids_json=json.dumps(
+                    assignment_not_required_current_step_viewpoint_ids_for_prompt,
+                    indent=2,
                 ),
                 visible_neighbor_viewpoint_ids_json=json.dumps(
                     sorted(visible_neighbor_viewpoint_ids_for_prompt), indent=2
@@ -1808,6 +2035,13 @@ class MLLMClient:
             image_content=image_content,
             step_index=step_index,
         )
+        if self.open_vocab_detector is not None:
+            localized_detections = self._verify_detections_with_open_vocab(
+                detections=localized_detections,
+                agent_observations=agent_observations,
+                targets=active_detection_targets,
+                step_index=step_index,
+            )
         self.last_direct_detections = localized_detections
         newly_found_targets_by_id = self._found_targets_from_detections(
             localized_detections,
@@ -1922,6 +2156,8 @@ class MLLMClient:
             % (step_index, time.time() - request_start_time)
         )
 
+        # if step_index == 1:
+        #     debugpy.breakpoint()  # Debug the first step to check the raw MLLM output format before validation and repair.
         try:
             raw = self._strip_code_fences(decoded)
             payload = self._extract_json_object(raw)
@@ -2013,6 +2249,21 @@ class MLLMClient:
             encoding="utf-8",
         ) as file_handle:
             file_handle.write(decoded)
+
+    def _write_open_vocab_verification_trace(
+        self,
+        step_index: int,
+        trace: Dict[str, object],
+    ) -> None:
+        raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
+        os.makedirs(raw_output_dir, exist_ok=True)
+
+        with open(
+            self._open_vocab_verification_raw_output_path(step_index),
+            "w",
+            encoding="utf-8",
+        ) as file_handle:
+            json.dump(trace, file_handle, indent=2, sort_keys=True)
 
     def _write_observation_image(
         self,
@@ -2203,17 +2454,29 @@ class MLLMClient:
                 "Unknown semantic payload contract: %s" % semantic_payload_contract
             )
 
-        required_top_level_keys = {
-            "agents",
-            "current_viewpoints_reassignment",
-            "detections",
-            "visible_region_nodes",
-            "invisible_region_nodes",
-            "viewpoint_target_probs",
-            "viewpoint_node_assigns",
-            "new_edges",
-            "edge_distance_variances",
-        }
+        if semantic_payload_contract == "graph_mllm":
+            required_top_level_keys = {
+                "agents",
+                "current_viewpoints_reassignment",
+                "visible_region_nodes",
+                "invisible_region_nodes",
+                "viewpoint_target_probs",
+                "viewpoint_node_assigns",
+                "new_edges",
+                "edge_distance_variances",
+            }
+        else:
+            required_top_level_keys = {
+                "agents",
+                "current_viewpoints_reassignment",
+                "detections",
+                "visible_region_nodes",
+                "invisible_region_nodes",
+                "viewpoint_target_probs",
+                "viewpoint_node_assigns",
+                "new_edges",
+                "edge_distance_variances",
+            }
 
         if not isinstance(payload, dict):
             raise TypeError("payload must be a dictionary.")
@@ -2271,7 +2534,10 @@ class MLLMClient:
             payload["current_viewpoints_reassignment"],
             "current_viewpoints_reassignment",
         )
-        detections = require_list(payload["detections"], "detections")
+        if semantic_payload_contract == "graph_mllm":
+            detections = fixed_detections or []
+        else:
+            detections = require_list(payload["detections"], "detections")
         visible_region_nodes = require_list(
             payload["visible_region_nodes"], "visible_region_nodes"
         )
@@ -2477,6 +2743,48 @@ class MLLMClient:
                         graph_viewpoint_to_region.setdefault(
                             int(viewpoint_id_raw), node_id
                         )
+
+        graph_viewpoint_status_by_id = {}
+
+        if isinstance(graph_summary, dict):
+            for node in graph_summary.get("nodes", []):
+                if not isinstance(node, dict):
+                    continue
+
+                if node.get("type") == "viewpoint":
+                    viewpoint_id = int(node["id"])
+                    graph_viewpoint_node_ids.add(viewpoint_id)
+                    graph_viewpoint_status_by_id[viewpoint_id] = {
+                        "prior_grounded": bool(node.get("grounded", 0)),
+                        "prior_visit_times": int(node.get("node_visit_times", 0)),
+                    }
+
+        new_visible_neighbor_assignment_viewpoint_ids = (
+            visible_viewpoint_ids - current_viewpoint_ids - graph_viewpoint_node_ids
+        )
+
+        first_reached_current_viewpoint_ids = set()
+        for viewpoint_id in current_viewpoint_ids:
+            status = graph_viewpoint_status_by_id.get(viewpoint_id, {})
+            prior_grounded = bool(status.get("prior_grounded", False))
+            prior_visit_times = int(status.get("prior_visit_times", 0))
+
+            if (
+                viewpoint_id not in graph_viewpoint_node_ids
+                or not prior_grounded
+                or prior_visit_times <= 0
+            ):
+                first_reached_current_viewpoint_ids.add(viewpoint_id)
+
+        assignment_required_viewpoint_ids = (
+            new_visible_neighbor_assignment_viewpoint_ids
+            | first_reached_current_viewpoint_ids
+        )
+
+        if semantic_payload_contract == "graph_mllm":
+            expected_assignment_viewpoint_ids = assignment_required_viewpoint_ids
+        else:
+            expected_assignment_viewpoint_ids = all_current_step_viewpoint_ids
 
         def validate_target_probs_positive(
             target_probs: Dict[str, object],
@@ -2714,86 +3022,86 @@ class MLLMClient:
 
         siglip_current_region_by_viewpoint = {}
 
-        # if scorer is not None:
-        #     siglip_assignment_records = []
-        #     for agent_info in agents:
-        #         agent_id = str(agent_info["agent_id"])
-        #         observation = observation_by_agent[agent_id]
-        #         current_viewpoint_id = int(observation["current_viewpoint_index"])
-        #         if "raw_panorama" not in observation:
-        #             raise SigLIPRegionValidationError(
-        #                 "Observation for agent %s has no raw_panorama for SIGLIP "
-        #                 "current-viewpoint region validation." % agent_id
-        #             )
-        #         raw_panorama = observation["raw_panorama"]
-        #         if raw_panorama is None:
-        #             raise SigLIPRegionValidationError(
-        #                 "Observation for agent %s has no raw_panorama for SIGLIP "
-        #                 "current-viewpoint region validation." % agent_id
-        #             )
+        if scorer is not None and ENABLE_SIGLIP_REGION_REPAIR:
+            siglip_assignment_records = []
+            for agent_info in agents:
+                agent_id = str(agent_info["agent_id"])
+                observation = observation_by_agent[agent_id]
+                current_viewpoint_id = int(observation["current_viewpoint_index"])
+                if "raw_panorama" not in observation:
+                    raise SigLIPRegionValidationError(
+                        "Observation for agent %s has no raw_panorama for SIGLIP "
+                        "current-viewpoint region validation." % agent_id
+                    )
+                raw_panorama = observation["raw_panorama"]
+                if raw_panorama is None:
+                    raise SigLIPRegionValidationError(
+                        "Observation for agent %s has no raw_panorama for SIGLIP "
+                        "current-viewpoint region validation." % agent_id
+                    )
 
-        #         selected_region_id = None
-        #         selected_score = None
-        #         for region_id in sorted(agent_observed_region_ids[agent_id]):
-        #             try:
-        #                 score = float(
-        #                     scorer.score_images_text(
-        #                         [raw_panorama],
-        #                         visible_region_label_by_id[region_id],
-        #                     )
-        #                 )
-        #             except Exception as exc:
-        #                 raise SigLIPRegionValidationError(
-        #                     "SIGLIP scorer failed for current viewpoint %s and "
-        #                     "region %s." % (current_viewpoint_id, region_id)
-        #                 ) from exc
-        #             if (
-        #                 selected_score is None
-        #                 or score > selected_score
-        #                 or (
-        #                     score == selected_score
-        #                     and region_id < int(selected_region_id)
-        #                 )
-        #             ):
-        #                 selected_region_id = region_id
-        #                 selected_score = score
+                selected_region_id = None
+                selected_score = None
+                for region_id in sorted(agent_observed_region_ids[agent_id]):
+                    try:
+                        score = float(
+                            scorer.score_images_text(
+                                [raw_panorama],
+                                visible_region_label_by_id[region_id],
+                            )
+                        )
+                    except Exception as exc:
+                        raise SigLIPRegionValidationError(
+                            "SIGLIP scorer failed for current viewpoint %s and "
+                            "region %s." % (current_viewpoint_id, region_id)
+                        ) from exc
+                    if (
+                        selected_score is None
+                        or score > selected_score
+                        or (
+                            score == selected_score
+                            and region_id < int(selected_region_id)
+                        )
+                    ):
+                        selected_region_id = region_id
+                        selected_score = score
 
-        #         if (
-        #             current_viewpoint_id in siglip_current_region_by_viewpoint
-        #             and siglip_current_region_by_viewpoint[current_viewpoint_id]
-        #             != selected_region_id
-        #         ):
-        #             raise SigLIPRegionValidationError(
-        #                 "Current viewpoint %s is shared by multiple agents with "
-        #                 "different SIGLIP region selections: %s and %s."
-        #                 % (
-        #                     current_viewpoint_id,
-        #                     siglip_current_region_by_viewpoint[current_viewpoint_id],
-        #                     selected_region_id,
-        #                 )
-        #             )
+                if (
+                    current_viewpoint_id in siglip_current_region_by_viewpoint
+                    and siglip_current_region_by_viewpoint[current_viewpoint_id]
+                    != selected_region_id
+                ):
+                    raise SigLIPRegionValidationError(
+                        "Current viewpoint %s is shared by multiple agents with "
+                        "different SIGLIP region selections: %s and %s."
+                        % (
+                            current_viewpoint_id,
+                            siglip_current_region_by_viewpoint[current_viewpoint_id],
+                            selected_region_id,
+                        )
+                    )
 
-        #         siglip_current_region_by_viewpoint[current_viewpoint_id] = int(
-        #             selected_region_id
-        #         )
-        #         agent_info["current_region_node_id"] = int(selected_region_id)
-        #         agent_current_region[agent_id] = int(selected_region_id)
-        #         siglip_assignment_records.append(
-        #             {
-        #                 "agent_id": agent_id,
-        #                 "viewpoint_id": current_viewpoint_id,
-        #                 "region_id": int(selected_region_id),
-        #                 "label": visible_region_label_by_id[selected_region_id],
-        #                 "score": float(selected_score),
-        #             }
-        #         )
+                siglip_current_region_by_viewpoint[current_viewpoint_id] = int(
+                    selected_region_id
+                )
+                agent_info["current_region_node_id"] = int(selected_region_id)
+                agent_current_region[agent_id] = int(selected_region_id)
+                siglip_assignment_records.append(
+                    {
+                        "agent_id": agent_id,
+                        "viewpoint_id": current_viewpoint_id,
+                        "region_id": int(selected_region_id),
+                        "label": visible_region_label_by_id[selected_region_id],
+                        "score": float(selected_score),
+                    }
+                )
 
-        #     print("SIGLIP current-viewpoint region selections:")
-        #     for record in siglip_assignment_records:
-        #         print(
-        #             "  Agent %(agent_id)s viewpoint %(viewpoint_id)s -> region "
-        #             "%(region_id)s (%(label)s), score %(score)s." % record
-        #         )
+            print("SIGLIP current-viewpoint region selections:")
+            for record in siglip_assignment_records:
+                print(
+                    "  Agent %(agent_id)s viewpoint %(viewpoint_id)s -> region "
+                    "%(region_id)s (%(label)s), score %(score)s." % record
+                )
 
         if visible_region_ids & invisible_region_ids:
             raise ValueError(
@@ -3008,10 +3316,11 @@ class MLLMClient:
             for viewpoint_id_raw in assigned_ids:
                 viewpoint_id = int(viewpoint_id_raw)
 
-                if viewpoint_id not in all_current_step_viewpoint_ids:
+                if viewpoint_id not in expected_assignment_viewpoint_ids:
                     raise ValueError(
-                        "Assigned viewpoint id %s is not a current viewpoint or "
-                        "visible neighboring viewpoint." % viewpoint_id
+                        "Assigned viewpoint id %s is not expected in viewpoint_node_assigns. "
+                        "For graph_mllm output, viewpoint_node_assigns must include only viewpoint "
+                        "ids requiring region assignment in this step." % viewpoint_id
                     )
 
                 if viewpoint_id in seen_ids_in_this_region:
@@ -3085,7 +3394,7 @@ class MLLMClient:
             )
 
         missing_assignment_viewpoint_ids = sorted(
-            all_current_step_viewpoint_ids - returned_assignment_viewpoint_ids
+            expected_assignment_viewpoint_ids - returned_assignment_viewpoint_ids
         )
         if missing_assignment_viewpoint_ids:
             repaired_missing_assignments = []
@@ -3142,23 +3451,23 @@ class MLLMClient:
             returned_assignment_viewpoint_ids = set(assignment_candidates_by_viewpoint)
 
         extra_assignment_viewpoint_ids = sorted(
-            returned_assignment_viewpoint_ids - all_current_step_viewpoint_ids
+            returned_assignment_viewpoint_ids - expected_assignment_viewpoint_ids
         )
         if extra_assignment_viewpoint_ids:
             raise ValueError(
                 "Returned assigned viewpoint ids %s contain ids outside expected ids %s."
                 % (
                     extra_assignment_viewpoint_ids,
-                    sorted(all_current_step_viewpoint_ids),
+                    sorted(expected_assignment_viewpoint_ids),
                 )
             )
 
-        if returned_assignment_viewpoint_ids != all_current_step_viewpoint_ids:
+        if returned_assignment_viewpoint_ids != expected_assignment_viewpoint_ids:
             raise ValueError(
                 "Returned assigned viewpoint ids %s do not match expected ids %s."
                 % (
                     sorted(returned_assignment_viewpoint_ids),
-                    sorted(all_current_step_viewpoint_ids),
+                    sorted(expected_assignment_viewpoint_ids),
                 )
             )
 
@@ -3200,17 +3509,60 @@ class MLLMClient:
                     }
                 )
 
-        # check for current-viewpoint old-assignment correction
+        reassigned_current_viewpoint_to_region = {}
+
+        for item in current_viewpoints_reassignment:
+            item = require_dict(
+                item,
+                "current_viewpoints_reassignment[] item",
+            )
+
+            expected_keys = {"viewpoint_id", "new_assigned_region_id"}
+            if set(item) != expected_keys:
+                raise KeyError(
+                    "Each current_viewpoints_reassignment item must contain exactly "
+                    "%s, got %s." % (sorted(expected_keys), sorted(item))
+                )
+
+            viewpoint_id = int(item["viewpoint_id"])
+            new_region_id = int(item["new_assigned_region_id"])
+
+            if viewpoint_id not in current_viewpoint_ids:
+                raise ValueError(
+                    "current_viewpoints_reassignment viewpoint_id %s is not a "
+                    "current viewpoint." % viewpoint_id
+                )
+
+            if new_region_id not in visible_region_ids:
+                raise ValueError(
+                    "current_viewpoints_reassignment new_assigned_region_id %s must "
+                    "appear in visible_region_nodes." % new_region_id
+                )
+
+            reassigned_current_viewpoint_to_region[viewpoint_id] = new_region_id
+
+        # check current-viewpoint final assignment
         for observation in agent_observations:
             agent_id = str(observation["agent_id"])
             current_viewpoint_id = int(observation["current_viewpoint_index"])
             agent_region_id = agent_current_region[agent_id]
-            assigned_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
+
+            if current_viewpoint_id in expected_assignment_viewpoint_ids:
+                assigned_region_id = assigned_viewpoint_to_region.get(
+                    current_viewpoint_id
+                )
+            else:
+                assigned_region_id = reassigned_current_viewpoint_to_region.get(
+                    current_viewpoint_id,
+                    graph_viewpoint_to_region.get(current_viewpoint_id),
+                )
 
             if assigned_region_id != agent_region_id:
                 raise ValueError(
-                    "Agent %s current viewpoint %s is assigned to region %s, "
-                    "but its current_region_node_id is %s."
+                    "Agent %s current viewpoint %s has effective assigned region %s, "
+                    "but its current_region_node_id is %s. If this current viewpoint "
+                    "should move from its prior region to a new region, use "
+                    "current_viewpoints_reassignment."
                     % (
                         agent_id,
                         current_viewpoint_id,
@@ -3255,7 +3607,17 @@ class MLLMClient:
         expected_reassignment_by_viewpoint = {}
         for current_viewpoint_id in sorted(current_viewpoint_ids):
             old_region_id = graph_viewpoint_to_region.get(current_viewpoint_id)
-            new_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
+            if current_viewpoint_id in expected_assignment_viewpoint_ids:
+                new_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
+            else:
+                new_region_id = agent_current_region[
+                    next(
+                        str(observation["agent_id"])
+                        for observation in agent_observations
+                        if int(observation["current_viewpoint_index"])
+                        == current_viewpoint_id
+                    )
+                ]
 
             if old_region_id is not None and new_region_id != old_region_id:
                 expected_reassignment_by_viewpoint[current_viewpoint_id] = new_region_id
@@ -3281,24 +3643,6 @@ class MLLMClient:
                     "and removed from regions %(removed_region_ids)s. "
                     "Nearest current viewpoint: %(nearest_current_viewpoint_id)s "
                     "at distance %(nearest_distance)s." % correction
-                )
-
-        for observation in agent_observations:
-            agent_id = str(observation["agent_id"])
-            current_viewpoint_id = int(observation["current_viewpoint_index"])
-            agent_region_id = agent_current_region[agent_id]
-            assigned_region_id = assigned_viewpoint_to_region.get(current_viewpoint_id)
-
-            if assigned_region_id != agent_region_id:
-                raise ValueError(
-                    "Agent %s current viewpoint %s is assigned to region %s, "
-                    "but its current_region_node_id is %s."
-                    % (
-                        agent_id,
-                        current_viewpoint_id,
-                        assigned_region_id,
-                        agent_region_id,
-                    )
                 )
 
         region_to_assigned_viewpoints = {}
@@ -3528,5 +3872,8 @@ class MLLMClient:
                 print("  Removed edge %s. Reason: %s" % (item["edge"], item["reason"]))
 
         payload["new_edges"] = cleaned_new_edges
+
+        if semantic_payload_contract == "graph_mllm":
+            payload["detections"] = json.loads(json.dumps(fixed_detections or []))
 
         return payload

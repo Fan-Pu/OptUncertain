@@ -425,9 +425,9 @@ def render_viewer_html() -> str:
         <h2 id="summaryTitle">Step Summary</h2>
         <div id="summary"></div>
       </section>
-      <section id="foundTargetsSection" class="panel section">
-        <h2>Found Targets This Step</h2>
-        <div id="foundTargets"></div>
+      <section id="targetDetectionsSection" class="panel section">
+        <h2>Target Detections This Step</h2>
+        <div id="targetDetections"></div>
       </section>
       <section id="unassignedRegionSection" class="panel section">
         <h2>Unassigned Regions</h2>
@@ -496,7 +496,7 @@ def render_viewer_html() -> str:
     const stepLabel = document.getElementById("stepLabel");
     const selectionSection = document.getElementById("selectionSection");
     const summaryTitle = document.getElementById("summaryTitle");
-    const foundTargetsSection = document.getElementById("foundTargetsSection");
+    const targetDetectionsSection = document.getElementById("targetDetectionsSection");
     const unassignedRegionSection = document.getElementById("unassignedRegionSection");
     const nodeTableSection = document.getElementById("nodeTableSection");
     const edgeTableSection = document.getElementById("edgeTableSection");
@@ -651,7 +651,7 @@ def render_viewer_html() -> str:
       renderGraph(step);
       renderSelection(step);
       renderSummary(step);
-      renderFoundTargets(step);
+      renderTargetDetections(step);
       renderUnassignedRegions(step);
       renderNodeTable(step);
       renderEdgeTable(step);
@@ -689,7 +689,7 @@ def render_viewer_html() -> str:
 
     function showStepSections() {
       selectionSection.hidden = false;
-      foundTargetsSection.hidden = false;
+      targetDetectionsSection.hidden = false;
       unassignedRegionSection.hidden = false;
       nodeTableSection.hidden = false;
       edgeTableSection.hidden = false;
@@ -701,7 +701,7 @@ def render_viewer_html() -> str:
 
     function renderSolutionDetails(solution) {
       selectionSection.hidden = false;
-      foundTargetsSection.hidden = true;
+      targetDetectionsSection.hidden = true;
       unassignedRegionSection.hidden = true;
       nodeTableSection.hidden = true;
       edgeTableSection.hidden = true;
@@ -1522,21 +1522,24 @@ def render_viewer_html() -> str:
       });
     }
 
-    function renderFoundTargets(step) {
+    function renderTargetDetections(step) {
       const rows = normalizedDetectionRows(step)
-        .filter(item => item.found)
+        .filter(item => item.raw_found)
         .map(item => [
           item.agent_id,
           item.target_id,
           item.description,
+          item.verification,
+          formatNumber(item.score),
+          formatNumber(item.score_threshold),
           formatNumber(item.target_center_x)
         ]);
-      const target = document.getElementById("foundTargets");
+      const target = document.getElementById("targetDetections");
       if (!rows.length) {
-        target.innerHTML = "<p style=\"margin:0;color:var(--muted);font-size:13px;\">No targets found in this step.</p>";
+        target.innerHTML = "<p style=\"margin:0;color:var(--muted);font-size:13px;\">No target detections in this step.</p>";
         return;
       }
-      target.innerHTML = table(["agent", "target", "description", "center x"], rows);
+      target.innerHTML = table(["agent", "target", "description", "verification", "score", "threshold", "center x"], rows);
     }
 
     function renderUnassignedRegions(step) {
@@ -1605,31 +1608,78 @@ def render_viewer_html() -> str:
         item.agent_id,
         item.target_id,
         item.found,
+        item.verification,
         formatNumber(item.target_center_x)
       ]);
       document.getElementById("detections").innerHTML =
-        table(["agent", "target", "found", "center x"], rows);
+        table(["agent", "target", "found", "verification", "center x"], rows);
     }
 
     function normalizedDetectionRows(step) {
+      const verificationChecks = openVocabularyVerificationChecks(step);
       return (step.detection.detections || []).flatMap(detection => {
         if (Array.isArray(detection.found_target_indices)) {
-          return detection.found_target_indices.map((targetId, index) => ({
-            agent_id: detection.agent_id,
-            target_id: String(targetId),
-            description: targetDescriptionFromStep(step, targetId),
-            found: true,
-            target_center_x: detection.target_center_xs ? detection.target_center_xs[index] : ""
-          }));
+          return detection.found_target_indices.map((targetId, index) =>
+            normalizedDetectionRow({
+              step: step,
+              verificationChecks: verificationChecks,
+              agentId: detection.agent_id,
+              targetId: targetId,
+              rawFound: true,
+              targetCenterX: detection.target_center_xs ? detection.target_center_xs[index] : ""
+            })
+          );
         }
-        return (detection.target_indices || []).map((targetId, index) => ({
-          agent_id: detection.agent_id,
-          target_id: String(targetId),
-          description: targetDescriptionFromStep(step, targetId),
-          found: Boolean(detection.founds[index]),
-          target_center_x: detection.target_center_xs ? detection.target_center_xs[index] : ""
-        }));
+        return (detection.target_indices || []).map((targetId, index) =>
+          normalizedDetectionRow({
+            step: step,
+            verificationChecks: verificationChecks,
+            agentId: detection.agent_id,
+            targetId: targetId,
+            rawFound: Boolean(detection.founds[index]),
+            targetCenterX: detection.target_center_xs ? detection.target_center_xs[index] : ""
+          })
+        );
       });
+    }
+
+    function normalizedDetectionRow({ step, verificationChecks, agentId, targetId, rawFound, targetCenterX }) {
+      const check = verificationChecks.get(verificationKey(agentId, targetId));
+      const verification = verificationStatus(check);
+      return {
+        agent_id: agentId,
+        target_id: String(targetId),
+        description: targetDescriptionFromStep(step, targetId),
+        raw_found: rawFound,
+        found: verifiedFound(rawFound, verification),
+        verification: verification,
+        score: check ? check.score : "",
+        score_threshold: check ? check.score_threshold : "",
+        target_center_x: targetCenterX
+      };
+    }
+
+    function openVocabularyVerificationChecks(step) {
+      const checks = new Map();
+      for (const check of ((step.open_vocab_verification || {}).checks || [])) {
+        checks.set(verificationKey(check.agent_id, check.target_id), check);
+      }
+      return checks;
+    }
+
+    function verificationKey(agentId, targetId) {
+      return `${String(agentId)}\u0000${String(targetId)}`;
+    }
+
+    function verificationStatus(check) {
+      if (!check) return "unverified";
+      return check.accepted ? "accepted" : "rejected";
+    }
+
+    function verifiedFound(rawFound, verification) {
+      if (verification === "accepted") return true;
+      if (verification === "rejected") return false;
+      return rawFound;
     }
 
     function targetDescriptionFromStep(step, targetId) {
