@@ -33,18 +33,11 @@ GRAPH_TOP_P = 0.8
 GRAPH_TOP_K = 20
 GRAPH_PRESENCE_PENALTY = 0.5
 
-# for text-only JSON repair: should be stable
-REPAIR_TEMPERATURE = 0.2
-REPAIR_TOP_P = 0.8
-REPAIR_TOP_K = 20
-REPAIR_PRESENCE_PENALTY = 0.0
-
 MIN_P = 0.0
 REPETITION_PENALTY = 1.0
 
 DETECTION_MAX_NEW_TOKENS = 512
 GRAPH_MAX_NEW_TOKENS = 8192
-REPAIR_MAX_NEW_TOKENS = 2048
 
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
@@ -202,12 +195,6 @@ class MLLMClient:
             top_k = DETECTION_TOP_K
             presence_penalty = DETECTION_PRESENCE_PENALTY
             max_tokens = DETECTION_MAX_NEW_TOKENS
-        elif request_type == "repair":
-            temperature = REPAIR_TEMPERATURE
-            top_p = REPAIR_TOP_P
-            top_k = REPAIR_TOP_K
-            presence_penalty = REPAIR_PRESENCE_PENALTY
-            max_tokens = REPAIR_MAX_NEW_TOKENS
         else:
             temperature = GRAPH_TEMPERATURE
             top_p = GRAPH_TOP_P
@@ -260,6 +247,15 @@ class MLLMClient:
         return os.path.join(
             getattr(self, "raw_output_dir", "mllm_raw_outputs"),
             "semantic_step_%04d.json" % int(step_index),
+        )
+
+    def _semantic_attempt_error_raw_output_path(
+        self, step_index: int, attempt_index: int
+    ) -> str:
+        return os.path.join(
+            getattr(self, "raw_output_dir", "mllm_raw_outputs"),
+            "semantic_step_%04d_attempt_%02d_error.txt"
+            % (int(step_index), int(attempt_index)),
         )
 
     def _user_message_raw_output_path(self, step_index: int) -> str:
@@ -328,382 +324,6 @@ class MLLMClient:
                 error_list=error_list,
             )
         )
-
-    @staticmethod
-    def _build_semantic_payload_repair_user_message(
-        payload: Dict[str, object],
-        validation_errors: List[str],
-        agent_observations: List[Dict[str, object]],
-        targets: List[Dict[str, object]],
-        graph_summary: Optional[Dict[str, object]] = None,
-        fixed_detections: Optional[List[Dict[str, object]]] = None,
-    ) -> str:
-        """Build a small text-only repair prompt for an invalid semantic payload.
-
-        This is different from the full graph-generation prompt. It does not send
-        panorama images and it does not ask the MLLM to regenerate the scene
-        understanding. It asks for the smallest JSON edit needed to fix the
-        reported validation error.
-        """
-        target_ids = [str(target["target_id"]) for target in targets]
-        current_viewpoint_ids = sorted(
-            {
-                int(observation["current_viewpoint_index"])
-                for observation in agent_observations
-            }
-        )
-        visible_viewpoint_ids = sorted(
-            {
-                int(item["viewpoint_index"])
-                for observation in agent_observations
-                for item in observation.get("visible_viewpoints", [])
-            }
-        )
-        current_step_allowed_viewpoint_ids = sorted(
-            set(current_viewpoint_ids) | set(visible_viewpoint_ids)
-        )
-        visible_neighbor_viewpoint_ids = set(visible_viewpoint_ids) - set(
-            current_viewpoint_ids
-        )
-        graph_viewpoint_node_ids = set()
-        graph_viewpoint_status_by_id = {}
-
-        agent_context = []
-        for observation in agent_observations:
-            agent_context.append(
-                {
-                    "agent_id": str(observation["agent_id"]),
-                    "current_viewpoint_index": int(
-                        observation["current_viewpoint_index"]
-                    ),
-                    "current_xy": observation.get("current_xy"),
-                    "visible_viewpoints": [
-                        {
-                            "viewpoint_index": int(item["viewpoint_index"]),
-                            "distance": float(item["distance"]),
-                            "xy": item.get("xy"),
-                        }
-                        for item in observation.get("visible_viewpoints", [])
-                    ],
-                }
-            )
-
-        graph_context = {
-            "viewpoint_to_region": {},
-            "region_nodes": [],
-        }
-
-        if isinstance(graph_summary, dict):
-            if isinstance(graph_summary.get("viewpoint_to_region"), dict):
-                graph_context["viewpoint_to_region"] = {
-                    str(viewpoint_id): int(region_id)
-                    for viewpoint_id, region_id in graph_summary[
-                        "viewpoint_to_region"
-                    ].items()
-                }
-
-            for node in graph_summary.get("nodes", []):
-                if not isinstance(node, dict):
-                    continue
-
-                if node.get("type") == "viewpoint":
-                    viewpoint_id = int(node["id"])
-                    graph_viewpoint_node_ids.add(viewpoint_id)
-                    graph_viewpoint_status_by_id[viewpoint_id] = {
-                        "prior_grounded": bool(node.get("grounded", 0)),
-                        "prior_visit_times": int(node.get("node_visit_times", 0)),
-                    }
-                    continue
-
-                if node.get("type") != "region":
-                    continue
-
-                graph_context["region_nodes"].append(
-                    {
-                        "id": int(node["id"]),
-                        "label": str(node.get("label", "")),
-                        "exist_prob": node.get("exist_prob"),
-                        "assigned_viewpoint_ids": node.get(
-                            "assigned_viewpoint_ids", []
-                        ),
-                    }
-                )
-
-        required_viewpoint_target_prob_ids = sorted(
-            visible_neighbor_viewpoint_ids - graph_viewpoint_node_ids
-        )
-        optional_viewpoint_target_prob_ids = sorted(
-            visible_neighbor_viewpoint_ids & graph_viewpoint_node_ids
-        )
-
-        new_visible_neighbor_assignment_viewpoint_ids = sorted(
-            visible_neighbor_viewpoint_ids - graph_viewpoint_node_ids
-        )
-
-        first_reached_current_viewpoint_ids = sorted(
-            viewpoint_id
-            for viewpoint_id in current_viewpoint_ids
-            if (
-                viewpoint_id not in graph_viewpoint_node_ids
-                or not bool(
-                    graph_viewpoint_status_by_id.get(viewpoint_id, {}).get(
-                        "prior_grounded", False
-                    )
-                )
-                or int(
-                    graph_viewpoint_status_by_id.get(viewpoint_id, {}).get(
-                        "prior_visit_times", 0
-                    )
-                )
-                <= 0
-            )
-        )
-
-        assignment_required_viewpoint_ids = sorted(
-            set(new_visible_neighbor_assignment_viewpoint_ids)
-            | set(first_reached_current_viewpoint_ids)
-        )
-
-        if not validation_errors:
-            error_text = "No validation error text was captured."
-        else:
-            error_text = "\n".join(
-                "%d. %s" % (index + 1, error)
-                for index, error in enumerate(validation_errors)
-            )
-
-        repair_context = {
-            "validation_errors": validation_errors,
-            "target_ids": target_ids,
-            "agent_context": agent_context,
-            "current_viewpoint_ids": current_viewpoint_ids,
-            "current_step_allowed_viewpoint_ids": current_step_allowed_viewpoint_ids,
-            "required_viewpoint_target_prob_ids": required_viewpoint_target_prob_ids,
-            "optional_viewpoint_target_prob_ids": optional_viewpoint_target_prob_ids,
-            "fixed_detections": fixed_detections,
-            "graph_context": graph_context,
-            "new_visible_neighbor_assignment_viewpoint_ids": new_visible_neighbor_assignment_viewpoint_ids,
-            "first_reached_current_viewpoint_ids": first_reached_current_viewpoint_ids,
-            "assignment_required_viewpoint_ids": assignment_required_viewpoint_ids,
-        }
-        required_top_level_keys = [
-            "agents",
-            "current_viewpoints_reassignment",
-            "visible_region_nodes",
-            "invisible_region_nodes",
-            "viewpoint_target_probs",
-            "viewpoint_node_assigns",
-            "new_edges",
-            "edge_distance_variances",
-        ]
-        forbidden_top_level_keys = sorted(
-            set(repair_context) | {"current_payload", "repair_context"}
-        )
-
-        return (
-            dedent("""
-            The semantic graph JSON payload below failed validation.
-
-            Validation error(s):
-            {error_text}
-
-            Your task is to repair only the specific validation error(s). Do not
-            regenerate the whole graph. Do not reinterpret the panorama images.
-            Make the smallest possible edit to the JSON payload and keep all
-            unchanged fields exactly as they are unless they are directly related
-            to the listed error(s).
-
-            Important repair rules:
-            - Return only the corrected current_payload JSON object.
-            - Do not return repair_context, current_payload as a wrapper key, or
-              any wrapper/context object.
-            - Do not return a patch, explanation, markdown, or code fences.
-            - The returned object must contain exactly these top-level keys:
-              {required_top_level_keys_json}
-            - The returned object must not contain these repair-only top-level
-              keys: {forbidden_top_level_keys_json}
-            - If a required key is missing from one object, add only that key
-              with a valid value.
-            - If an object has an extra key, remove only the extra key.
-            - If an id list is wrong, use the expected ids in the repair context.
-            - If new_edges[].exist_prob is missing, add a value in (0, 1]. For a
-              VZ edge connected to a visible or invisible region, a reasonable
-              default is that region's exist_prob. If no region probability is
-              available, use 0.5. For a VV edge, use 0.5 unless the current
-              payload already provides clearer evidence.
-            - Do not delete a new edge only because exist_prob is missing.
-            - Do not change fixed detections unless the validation error says
-              detections do not match the fixed detections.
-            - Do not add current viewpoint ids to viewpoint_target_probs.
-            - For graph MLLM output, viewpoint_node_assigns must include exactly assignment_required_viewpoint_ids.
-            - assignment_required_viewpoint_ids includes new visible neighboring viewpoints and first-reached current viewpoints.
-            - Do not add viewpoint ids outside assignment_required_viewpoint_ids to viewpoint_node_assigns.
-            - Previous viewpoint-region assignments remain unchanged unless current_viewpoints_reassignment changes a current viewpoint.
-
-            Repair context for reference only; do not return this object:
-            {repair_context_json}
-
-            Current payload to repair. Return this object after applying the
-            smallest valid edit:
-            {current_payload_json}
-            """)
-            .strip()
-            .format(
-                error_text=error_text,
-                required_top_level_keys_json=json.dumps(
-                    required_top_level_keys,
-                    indent=2,
-                    sort_keys=True,
-                ),
-                forbidden_top_level_keys_json=json.dumps(
-                    forbidden_top_level_keys,
-                    indent=2,
-                    sort_keys=True,
-                ),
-                repair_context_json=json.dumps(
-                    repair_context,
-                    indent=2,
-                    sort_keys=True,
-                ),
-                current_payload_json=json.dumps(
-                    payload,
-                    indent=2,
-                    sort_keys=True,
-                ),
-            )
-        )
-
-    def _request_semantic_payload_repair(
-        self,
-        payload: Dict[str, object],
-        validation_errors: List[str],
-        agent_observations: List[Dict[str, object]],
-        targets: List[Dict[str, object]],
-        graph_summary: Optional[Dict[str, object]] = None,
-        fixed_detections: Optional[List[Dict[str, object]]] = None,
-    ) -> Dict[str, object]:
-        """Ask the MLLM for a small text-only JSON repair.
-
-        This avoids re-running the full image-based graph generation call when
-        the output only needs a local schema or value correction.
-        """
-        if self.graph_client is None:
-            raise RuntimeError(
-                "No graph MLLM API client is available for semantic payload repair. "
-                "Environment variable %s is not set." % self.graph_api_key_env
-            )
-
-        system_message = dedent("""
-            You are a JSON repair module for semantic graph validation. Fix only
-            the listed validation errors in the supplied JSON payload. Return one
-            complete corrected JSON object and nothing else.
-            """).strip()
-
-        user_message = self._build_semantic_payload_repair_user_message(
-            payload=payload,
-            validation_errors=validation_errors,
-            agent_observations=agent_observations,
-            targets=targets,
-            graph_summary=graph_summary,
-            fixed_detections=fixed_detections,
-        )
-
-        messages = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message},
-        ]
-
-        decoded = self._request_completion(
-            messages=messages,
-            model_name=getattr(self, "graph_model_name", ""),
-            request_type="repair",
-        )
-        raw = self._strip_code_fences(decoded)
-        repaired_payload = self._extract_json_object(raw)
-        if repaired_payload is None:
-            raise ValueError("Failed to parse repaired semantic JSON output.")
-        if not isinstance(repaired_payload, dict):
-            raise TypeError("Repaired semantic payload must be a dictionary.")
-        return repaired_payload
-
-    def _validate_payload_with_text_repair(
-        self,
-        payload: Dict[str, object],
-        agent_observations: List[Dict[str, object]],
-        targets: List[Dict[str, object]],
-        graph_summary: Optional[Dict[str, object]] = None,
-        fixed_detections: Optional[List[Dict[str, object]]] = None,
-        scorer=None,
-        semantic_payload_contract: str = "graph_mllm",
-        max_repair_retries: int = 0,
-        step_index: Optional[int] = None,
-    ) -> Dict[str, object]:
-        """Validate a semantic payload and repair only local validation errors.
-
-        The first validation pass runs all deterministic corrections inside
-        _validate_payload. If validation still fails, this method sends a small
-        text-only repair request that includes the current JSON payload and the
-        validation error. It does not resend panorama images and does not ask for
-        a full graph-generation retry.
-        """
-        current_payload = json.loads(json.dumps(payload))
-        validation_errors: List[str] = []
-
-        for repair_attempt in range(int(max_repair_retries) + 1):
-            attempt_payload = json.loads(json.dumps(current_payload))
-            try:
-                return self._validate_payload(
-                    payload=attempt_payload,
-                    agent_observations=agent_observations,
-                    targets=targets,
-                    graph_summary=graph_summary,
-                    fixed_detections=fixed_detections,
-                    scorer=scorer,
-                    semantic_payload_contract=semantic_payload_contract,
-                )
-            except SigLIPRegionValidationError:
-                raise
-            except Exception as exc:
-                error_message = str(exc)
-                current_payload = attempt_payload
-                if error_message not in validation_errors:
-                    validation_errors.append(error_message)
-                debugpy.breakpoint()
-                if repair_attempt >= int(max_repair_retries):
-                    raise
-
-                if step_index is None:
-                    step_text = ""
-                else:
-                    step_text = " for step %s" % step_index
-
-                print(
-                    "Semantic payload validation failed%s: %s"
-                    % (
-                        step_text,
-                        error_message,
-                    )
-                )
-                print(
-                    "Requesting text-only semantic payload repair, attempt %s of %s."
-                    % (repair_attempt + 1, int(max_repair_retries))
-                )
-
-                request_start_time = time.time()
-                current_payload = self._request_semantic_payload_repair(
-                    payload=current_payload,
-                    validation_errors=validation_errors,
-                    agent_observations=agent_observations,
-                    targets=targets,
-                    graph_summary=graph_summary,
-                    fixed_detections=fixed_detections,
-                )
-                print(
-                    "Text-only semantic payload repair%s took %.2f seconds"
-                    % (step_text, time.time() - request_start_time)
-                )
-
-        raise RuntimeError("Unexpected semantic payload repair loop exit.")
 
     def _build_detection_instruction(
         self,
@@ -2091,6 +1711,7 @@ class MLLMClient:
         )
 
         max_validation_retries = getattr(self, "max_validation_retries", 0)
+        validation_errors: List[str] = []
 
         # read local raw output if enabled, otherwise request MLLM completion directly
         if getattr(self, "read_saved_raw_outputs", False):
@@ -2102,7 +1723,7 @@ class MLLMClient:
                     payload = self._extract_json_object(raw)
                     if payload is None:
                         raise ValueError("Failed to parse joint MLLM JSON output")
-                    payload = self._validate_payload_with_text_repair(
+                    payload = self._validate_payload(
                         payload=payload,
                         agent_observations=agent_observations,
                         targets=graph_targets,
@@ -2110,8 +1731,6 @@ class MLLMClient:
                         fixed_detections=fixed_detections,
                         scorer=scorer,
                         semantic_payload_contract="saved_materialized",
-                        max_repair_retries=max_validation_retries,
-                        step_index=step_index,
                     )
                     self._write_semantic_raw_output(
                         step_index,
@@ -2123,6 +1742,7 @@ class MLLMClient:
                 except SigLIPRegionValidationError:
                     raise
                 except Exception as exc:
+                    validation_errors.append(str(exc))
                     print(
                         "Saved semantic raw output for step %s is invalid. "
                         "Requesting MLLM instead. Error: %s" % (step_index, str(exc))
@@ -2133,69 +1753,110 @@ class MLLMClient:
                     "Requesting MLLM instead." % step_index
                 )
 
-        # Request one full image-based graph generation. If the returned JSON
-        # fails validation, use lightweight text-only repair calls instead of
-        # re-running the full image-based generation.
-        user_content = [{"type": "text", "text": user_message}]
-        user_content.extend(image_content)
+        last_error = None
+        had_saved_validation_errors = bool(validation_errors)
 
-        messages = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_content},
-        ]
+        for attempt_index in range(max_validation_retries + 1):
+            if attempt_index == 0 and not validation_errors:
+                attempt_user_message = user_message
+            else:
+                feedback_attempt_index = attempt_index
+                feedback_max_retries = max_validation_retries
+                if had_saved_validation_errors:
+                    feedback_attempt_index = attempt_index + 1
+                    feedback_max_retries = max_validation_retries + 1
 
-        print(f"Requesting completion for step {step_index}")
-        request_start_time = time.time()
-        decoded = self._request_completion(
-            messages=messages,
-            model_name=getattr(self, "graph_model_name", ""),
-            request_type="graph",
-        )
-        print(
-            "MLLM completion request for step %s took %.2f seconds"
-            % (step_index, time.time() - request_start_time)
-        )
+                attempt_user_message = self._build_validation_retry_user_message(
+                    user_message=user_message,
+                    validation_errors=validation_errors,
+                    attempt_index=feedback_attempt_index,
+                    max_validation_retries=feedback_max_retries,
+                )
 
-        # if step_index == 1:
-        #     debugpy.breakpoint()  # Debug the first step to check the raw MLLM output format before validation and repair.
-        try:
-            raw = self._strip_code_fences(decoded)
-            payload = self._extract_json_object(raw)
-            if payload is None:
-                raise ValueError("Failed to parse joint MLLM JSON output")
+            user_content = [{"type": "text", "text": attempt_user_message}]
+            user_content.extend(image_content)
 
-            payload = self._validate_payload_with_text_repair(
-                payload=payload,
-                agent_observations=agent_observations,
-                targets=graph_targets,
-                graph_summary=graph_summary,
-                fixed_detections=fixed_detections,
-                scorer=scorer,
-                semantic_payload_contract="graph_mllm",
-                max_repair_retries=max_validation_retries,
-                step_index=step_index,
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_content},
+            ]
+
+            print(
+                "Requesting graph MLLM completion for step %s, attempt %s of %s"
+                % (step_index, attempt_index + 1, max_validation_retries + 1)
             )
-
-            self._write_semantic_raw_output(
-                step_index,
-                json.dumps(payload, indent=2, sort_keys=True),
+            request_start_time = time.time()
+            decoded = self._request_completion(
+                messages=messages,
+                model_name=getattr(self, "graph_model_name", ""),
+                request_type="graph",
             )
-            self._write_user_message(step_index, user_message)
+            print(
+                "MLLM completion request for step %s attempt %s took %.2f seconds"
+                % (step_index, attempt_index + 1, time.time() - request_start_time)
+            )
+            debugpy.breakpoint()  # Debug if the MLLM completion is being requested and received correctly.
+            try:
+                raw = self._strip_code_fences(decoded)
+                payload = self._extract_json_object(raw)
+                if payload is None:
+                    raise ValueError("Failed to parse joint MLLM JSON output")
 
-            self.semantic_raw_output_index = step_index + 1
-            return payload
+                payload = self._validate_payload(
+                    payload=payload,
+                    agent_observations=agent_observations,
+                    targets=graph_targets,
+                    graph_summary=graph_summary,
+                    fixed_detections=fixed_detections,
+                    scorer=scorer,
+                    semantic_payload_contract="graph_mllm",
+                )
 
-        except SigLIPRegionValidationError:
-            self.semantic_raw_output_index = step_index + 1
-            raise
+                self._write_semantic_raw_output(
+                    step_index,
+                    json.dumps(payload, indent=2, sort_keys=True),
+                )
+                self._write_user_message(step_index, user_message)
 
-        except Exception as exc:
-            self.semantic_raw_output_index = step_index + 1
-            raise ValueError(
-                "MLLM output failed validation and could not be repaired after "
-                "%s text-only repair attempt(s). Last error: %s"
-                % (max_validation_retries, str(exc))
-            ) from exc
+                self.semantic_raw_output_index = step_index + 1
+                return payload
+
+            except SigLIPRegionValidationError:
+                self._write_semantic_attempt_error_raw_output(
+                    step_index=step_index,
+                    attempt_index=attempt_index,
+                    decoded=decoded,
+                )
+                self.semantic_raw_output_index = step_index + 1
+                raise
+
+            except Exception as exc:
+                last_error = exc
+                validation_errors.append(str(exc))
+                self._write_semantic_attempt_error_raw_output(
+                    step_index=step_index,
+                    attempt_index=attempt_index,
+                    decoded=decoded,
+                )
+
+                if attempt_index >= max_validation_retries:
+                    self.semantic_raw_output_index = step_index + 1
+                    raise ValueError(
+                        "MLLM output failed validation after %s full graph "
+                        "attempt(s). Last error: %s"
+                        % (max_validation_retries + 1, str(last_error))
+                    ) from exc
+
+                print(
+                    "Graph MLLM output validation failed on attempt %s of %s: %s"
+                    % (
+                        attempt_index + 1,
+                        max_validation_retries + 1,
+                        str(last_error),
+                    )
+                )
+
+        raise RuntimeError("Unexpected graph MLLM retry loop exit.")
 
     @staticmethod
     def _read_text_file_if_exists(path: str) -> Optional[str]:
@@ -2223,6 +1884,19 @@ class MLLMClient:
 
         with open(
             self._semantic_raw_output_path(step_index),
+            "w",
+            encoding="utf-8",
+        ) as file_handle:
+            file_handle.write(decoded)
+
+    def _write_semantic_attempt_error_raw_output(
+        self, step_index: int, attempt_index: int, decoded: str
+    ) -> None:
+        raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
+        os.makedirs(raw_output_dir, exist_ok=True)
+
+        with open(
+            self._semantic_attempt_error_raw_output_path(step_index, attempt_index),
             "w",
             encoding="utf-8",
         ) as file_handle:
