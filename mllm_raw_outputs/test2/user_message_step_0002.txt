@@ -14,7 +14,7 @@ Compact shared graph summary:
 {
   "agent_current_vp_ids": {
     "agent0": 32,
-    "agent1": 18
+    "agent1": 41
   },
   "edges": [
     {
@@ -25,6 +25,16 @@ Compact shared graph summary:
       "grounded": 1,
       "i": 0,
       "j": 16,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.3061,
+      "distance_var": 0.0968,
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "i": 0,
+      "j": 32,
       "type": "vv"
     },
     {
@@ -76,6 +86,36 @@ Compact shared graph summary:
       "i": 16,
       "j": 35,
       "type": "vv"
+    },
+    {
+      "cond_exist_prob": 0.9982,
+      "distance_mean": 1.3249,
+      "distance_var": 0.189,
+      "exist_prob": 0.9982,
+      "grounded": 0,
+      "i": 18,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 0.9965,
+      "distance_mean": 1.3343,
+      "distance_var": 0.189,
+      "exist_prob": 0.9965,
+      "grounded": 0,
+      "i": 32,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.294,
+      "distance_var": 0.0968,
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
     }
   ],
   "nodes": [
@@ -85,8 +125,8 @@ Compact shared graph summary:
       "id": 0,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.0204,
-        "1": 0.0204
+        "0": 0.0438,
+        "1": 0.0303
       },
       "type": "viewpoint"
     },
@@ -114,12 +154,12 @@ Compact shared graph summary:
     },
     {
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 18,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.1224,
-        "1": 0.102
+        "0": 0.0365,
+        "1": 0.0303
       },
       "type": "viewpoint"
     },
@@ -129,8 +169,8 @@ Compact shared graph summary:
       "id": 32,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.3469,
-        "1": 0.3673
+        "0": 0.0511,
+        "1": 0.0379
       },
       "type": "viewpoint"
     },
@@ -140,8 +180,8 @@ Compact shared graph summary:
       "id": 35,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.3469,
-        "1": 0.3673
+        "0": 0.0657,
+        "1": 0.053
       },
       "type": "viewpoint"
     },
@@ -151,83 +191,83 @@ Compact shared graph summary:
       "id": 40,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.0408,
-        "1": 0.0408
+        "0": 0.6204,
+        "1": 0.6818
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 41,
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.1224,
-        "1": 0.102
+        "0": 0.1825,
+        "1": 0.1667
       },
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
         0,
-        16
+        16,
+        32
       ],
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 44,
-      "label": "modern living room area with curved sofa and fireplace",
+      "label": "living room area with curved sofa and fireplace",
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.0385,
-        "1": 0.0385
+        "0": 0.0476,
+        "1": 0.0288
       },
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        32,
         35
       ],
       "exist_prob": 1.0,
       "grounded": 0,
       "id": 45,
-      "label": "bedroom area with blue patterned wall and bed",
+      "label": "bedroom area with bed and blue patterned wall",
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.6538,
-        "1": 0.6923
+        "0": 0.0762,
+        "1": 0.0577
       },
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         9,
-        18,
-        41
+        18
       ],
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 46,
-      "label": "dark padded lounge or media room area",
+      "label": "soundproofed entertainment room with padded walls",
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.2308,
-        "1": 0.1923
+        "0": 0.0381,
+        "1": 0.0288
       },
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        40
+        40,
+        41
       ],
-      "exist_prob": 0.85,
+      "exist_prob": 1.0,
       "grounded": 0,
       "id": 47,
-      "label": "bright hallway area visible through doorway",
+      "label": "bathroom area visible through doorway from entertainment room",
       "node_visit_times": 0,
       "target_probs": {
-        "0": 0.0769,
-        "1": 0.0769
+        "0": 0.8381,
+        "1": 0.8846
       },
       "type": "region"
     }
@@ -241,10 +281,10 @@ Compact shared graph summary:
     "0": 44,
     "16": 44,
     "18": 46,
-    "32": 45,
+    "32": 44,
     "35": 45,
     "40": 47,
-    "41": 46,
+    "41": 47,
     "9": 46
   }
 }
@@ -259,8 +299,8 @@ Per-agent observation context:
       1.40146005153656
     ],
     "image_index": 0,
-    "prior_assigned_region_id": 45,
-    "prior_assigned_region_label": "bedroom area with blue patterned wall and bed",
+    "prior_assigned_region_id": 44,
+    "prior_assigned_region_label": "living room area with curved sofa and fireplace",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
@@ -279,7 +319,7 @@ Per-agent observation context:
       {
         "distance": 0.565,
         "prior_assigned_region_id": 44,
-        "prior_assigned_region_label": "modern living room area with curved sofa and fireplace",
+        "prior_assigned_region_label": "living room area with curved sofa and fireplace",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 16,
@@ -315,7 +355,7 @@ Per-agent observation context:
       {
         "distance": 1.218,
         "prior_assigned_region_id": 45,
-        "prior_assigned_region_label": "bedroom area with blue patterned wall and bed",
+        "prior_assigned_region_label": "bedroom area with bed and blue patterned wall",
         "prior_grounded": false,
         "prior_visit_times": 0,
         "viewpoint_index": 35,
@@ -328,27 +368,63 @@ Per-agent observation context:
   },
   {
     "agent_id": "agent1",
-    "current_viewpoint_index": 18,
+    "current_viewpoint_index": 41,
     "current_xy": [
-      2.3672099113464355,
-      4.303619861602783
+      2.394059896469116,
+      1.3718299865722656
     ],
     "image_index": 1,
-    "prior_assigned_region_id": 46,
-    "prior_assigned_region_label": "dark padded lounge or media room area",
+    "prior_assigned_region_id": 47,
+    "prior_assigned_region_label": "bathroom area visible through doorway from entertainment room",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
       {
-        "distance": 1.266,
+        "distance": 1.705,
         "prior_assigned_region_id": 46,
-        "prior_assigned_region_label": "dark padded lounge or media room area",
+        "prior_assigned_region_label": "soundproofed entertainment room with padded walls",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 9,
         "xy": [
           2.146049976348877,
           3.058229923248291
+        ]
+      },
+      {
+        "distance": 2.007,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 19,
+        "xy": [
+          1.4411200284957886,
+          -0.3942109942436218
+        ]
+      },
+      {
+        "distance": 1.199,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 25,
+        "xy": [
+          1.593459963798523,
+          0.4807080030441284
+        ]
+      },
+      {
+        "distance": 0.666,
+        "prior_assigned_region_id": 47,
+        "prior_assigned_region_label": "bathroom area visible through doorway from entertainment room",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 40,
+        "xy": [
+          1.7444700002670288,
+          1.232740044593811
         ]
       }
     ]
@@ -392,19 +468,24 @@ Current-step allowed viewpoint ids:
   9,
   16,
   17,
-  18,
+  19,
   20,
+  25,
   32,
-  35
+  35,
+  40,
+  41
 ]
 
 Viewpoint ids requiring region assignment in this step:
 [
   2,
   17,
-  18,
+  19,
   20,
-  32
+  25,
+  32,
+  41
 ]
 
 These ids include:
@@ -415,7 +496,8 @@ Current-step viewpoint ids not requiring region assignment in this step:
 [
   9,
   16,
-  35
+  35,
+  40
 ]
 
 Required newly observed viewpoint_target_probs id skeleton:
@@ -427,7 +509,13 @@ Required newly observed viewpoint_target_probs id skeleton:
     "id": 17
   },
   {
+    "id": 19
+  },
+  {
     "id": 20
+  },
+  {
+    "id": 25
   }
 ]
 
@@ -435,7 +523,8 @@ Optional previously observed viewpoint_target_probs ids:
 [
   9,
   16,
-  35
+  35,
+  40
 ]
 
 Viewpoint target probability rule:
@@ -466,8 +555,11 @@ All non-current visible neighboring viewpoint ids:
   9,
   16,
   17,
+  19,
   20,
-  35
+  25,
+  35,
+  40
 ]
 
 Current-step interpretation note:

@@ -1489,7 +1489,8 @@ def render_viewer_html() -> str:
           node_visit_times: hyp.node_visit_times,
           current_agent: agentAtNode(step, layout.id) || "",
           assigned_viewpoint_ids: (layout.assigned_viewpoint_ids || []).join(", "),
-          target_probs: formatObject(hyp.target_probs)
+          target_probs: formatObject(hyp.target_probs),
+          raw_target_probs: formatObject(hyp.raw_target_probs)
         });
       } else {
         const hyp = step.hypothesis.edges.find(edge => edgeKey(edge.i, edge.j) === edgeKey(selected.i, selected.j));
@@ -1555,6 +1556,7 @@ def render_viewer_html() -> str:
               <td>${escapeHtml(shortLabel(node.label, 34))}</td>
               <td>${escapeHtml(formatNumber(hyp.exist_prob))}</td>
               <td>${escapeHtml(formatObject(hyp.target_probs))}</td>
+              <td>${escapeHtml(formatObject(hyp.raw_target_probs))}</td>
             </tr>
           `;
         });
@@ -1563,7 +1565,7 @@ def render_viewer_html() -> str:
         target.innerHTML = "<p style=\"margin:0;color:var(--muted);font-size:13px;\">No unassigned regions.</p>";
         return;
       }
-      target.innerHTML = `<table><thead><tr><th>id</th><th>label</th><th>exist</th><th>target probs</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+      target.innerHTML = `<table><thead><tr><th>id</th><th>label</th><th>exist</th><th>target probs</th><th>raw target probs</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
       for (const row of target.querySelectorAll("tr[data-node-id]")) {
         row.addEventListener("click", () => {
           selected = { kind: "node", id: row.dataset.nodeId };
@@ -1582,10 +1584,11 @@ def render_viewer_html() -> str:
           shortLabel(node.label, 30),
           node.grounded,
           formatNumber(node.exist_prob),
-          formatObject(node.target_probs)
+          formatObject(node.target_probs),
+          formatObject(node.raw_target_probs)
         ]);
       document.getElementById("nodeTable").innerHTML =
-        table(["id", "type", "label", "grounded", "exist", "target probs"], rows);
+        table(["id", "type", "label", "grounded", "exist", "target probs", "raw target probs"], rows);
     }
 
     function renderEdgeTable(step) {

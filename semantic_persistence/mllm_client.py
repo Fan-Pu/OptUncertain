@@ -804,7 +804,7 @@ class MLLMClient:
                 messages=messages,
                 model_name=getattr(self, "detection_model_name", ""),
                 request_type="detection",
-                thinking_mode=False,
+                thinking_mode=True,
             )
 
             try:

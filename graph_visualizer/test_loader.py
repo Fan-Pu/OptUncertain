@@ -51,6 +51,7 @@ def _write_step(
     *,
     target_found,
     targets=None,
+    hypothesis_nodes=None,
     detection=None,
     open_vocab_verification=None,
     semantic=True,
@@ -74,7 +75,7 @@ def _write_step(
         {
             "target_found": target_found,
             "targets": targets or [],
-            "nodes": [],
+            "nodes": hypothesis_nodes or [],
             "edges": [],
         },
     )
@@ -260,6 +261,32 @@ def test_load_terminal_detection_only_step_without_semantic_or_user_message(tmp_
     assert steps[0]["files"]["user_message"] == (
         "mllm_raw_outputs/case/user_message_step_0001.txt"
     )
+
+
+def test_load_visualization_step_preserves_raw_target_probs(tmp_path):
+    _write_step(
+        tmp_path,
+        "case",
+        1,
+        target_found={"0": False},
+        hypothesis_nodes=[
+            {
+                "id": 2,
+                "label": "vp2",
+                "type": "viewpoint",
+                "grounded": False,
+                "exist_prob": 1.0,
+                "target_probs": {"0": 1.0},
+                "raw_target_probs": {"0": 0.8},
+                "node_visit_times": 0,
+            }
+        ],
+    )
+
+    steps = load_visualization_steps("case", project_root=tmp_path)
+
+    assert steps[0]["hypothesis"]["nodes"][0]["raw_target_probs"] == {"0": 0.8}
+    assert steps[0]["hypothesis"]["nodes"][0]["target_probs"] == {"0": 1.0}
 
 
 def test_load_nonterminal_step_without_semantic_still_crashes(tmp_path):

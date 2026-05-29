@@ -5,6 +5,8 @@ import numpy as np
 import pytest
 from openai import APITimeoutError
 
+import Helper
+from semantic_persistence.hypothesis_graph import HypothesisGraph
 from semantic_persistence.mllm_client import MLLMClient
 
 
@@ -92,6 +94,86 @@ class _FakeGraph:
 
     def get_mllm_summary(self):
         return self.graph_summary
+
+
+def test_hypothesis_snapshot_saves_raw_mllm_target_probs_separately():
+    Helper.viewpoint_vp_label_by_index.clear()
+    Helper.viewpoint_vp_label_by_index.update({1: "vp1", 2: "vp2"})
+
+    graph = HypothesisGraph(
+        targets=[
+            {"target_id": "0", "description": "target zero"},
+            {"target_id": "1", "description": "target one"},
+        ]
+    )
+    graph.update_from_mllm(
+        mllm_output={
+            "current_viewpoints_reassignment": [],
+            "visible_region_nodes": [
+                {
+                    "id": 10,
+                    "label": "bright kitchen area near doorway",
+                    "exist_prob": 1.0,
+                    "target_probs": {"0": 0.1, "1": 0.9},
+                }
+            ],
+            "invisible_region_nodes": [],
+            "viewpoint_target_probs": [
+                {"id": 2, "target_probs": {"0": 0.8, "1": 0.2}},
+            ],
+            "viewpoint_node_assigns": [
+                {"region_node_id": 10, "assigned_viewpoint_node_indices": [1, 2]},
+            ],
+            "new_edges": [],
+            "edge_distance_variances": {
+                "viewpoint_viewpoint": 1.0,
+                "viewpoint_region": 4.0,
+            },
+        },
+        agent_observations=[
+            {
+                "agent_id": "agent0",
+                "current_viewpoint_index": 1,
+                "visible_viewpoints": [
+                    {"viewpoint_index": 2, "distance": 1.0},
+                ],
+                "raw_panorama": object(),
+            }
+        ],
+        scorer=None,
+    )
+
+    nodes = {
+        int(node["id"]): node for node in graph.get_hypothesis_snapshot()["nodes"]
+    }
+
+    assert nodes[2]["raw_target_probs"] == {"0": 0.8, "1": 0.2}
+    assert nodes[2]["target_probs"] == {"0": 1.0, "1": 1.0}
+    assert nodes[10]["raw_target_probs"] == {"0": 0.1, "1": 0.9}
+    assert nodes[10]["target_probs"] == {"0": 1.0, "1": 1.0}
+
+
+def test_raw_only_node_update_preserves_planner_target_probs():
+    graph = HypothesisGraph(
+        targets=[{"target_id": "0", "description": "target zero"}]
+    )
+    node = graph.add_or_update_node(
+        node_id=1,
+        label="vp1",
+        node_type=Helper.TYPE_VP,
+        target_probs={"0": 0.7},
+        raw_target_probs={"0": 0.2},
+    )
+
+    graph.add_or_update_node(
+        node_id=1,
+        label="vp1",
+        node_type=Helper.TYPE_VP,
+        raw_target_probs={"0": 0.9},
+    )
+
+    assert node.target_probs == {"0": 0.7}
+    assert node.raw_target_probs == {"0": 0.9}
 
 
 def _repair_and_validate(payload, agent_observations, graph_summary):

@@ -1,13 +1,19 @@
 {
   "agent_current_vp_ids": {
     "agent0": 32,
-    "agent1": 18
+    "agent1": 41
   },
   "edges": [
     {
       "grounded": true,
       "i": 0,
       "j": 16,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 0,
+      "j": 32,
       "type": "vv"
     },
     {
@@ -53,6 +59,18 @@
       "type": "vv"
     },
     {
+      "grounded": false,
+      "i": 18,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 19,
+      "j": 41,
+      "type": "vv"
+    },
+    {
       "grounded": true,
       "i": 20,
       "j": 32,
@@ -60,15 +78,28 @@
     },
     {
       "grounded": true,
+      "i": 25,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
       "i": 32,
       "j": 35,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 40,
+      "j": 41,
       "type": "vv"
     }
   ],
   "nodes": [
     {
       "connected_node_ids": [
-        16
+        16,
+        32
       ],
       "grounded": false,
       "id": 0,
@@ -122,12 +153,23 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        41
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        41
+      ],
+      "grounded": false,
+      "id": 19,
+      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -142,6 +184,17 @@
     },
     {
       "connected_node_ids": [
+        41
+      ],
+      "grounded": false,
+      "id": 25,
+      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        0,
         2,
         16,
         17,
@@ -167,7 +220,8 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        41
       ],
       "grounded": false,
       "id": 40,
@@ -177,71 +231,68 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        18,
+        19,
+        25,
+        40
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
         0,
-        16
+        16,
+        17,
+        20
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 44,
-      "label": "modern living room area with curved sofa and fireplace",
+      "label": "living room area with curved sofa and fireplace",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         2,
-        17,
-        20,
+        32,
         35
       ],
       "connected_node_ids": [],
-      "grounded": false,
+      "grounded": true,
       "id": 45,
-      "label": "bedroom area with blue patterned wall and bed",
+      "label": "bedroom area with bed and blue patterned wall",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         9,
-        18,
-        32,
-        41
+        18
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 46,
-      "label": "dark padded lounge or media room area",
+      "label": "soundproofed entertainment room with padded walls",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        40
+        19,
+        25,
+        40,
+        41
       ],
       "connected_node_ids": [],
-      "grounded": false,
+      "grounded": true,
       "id": 47,
-      "label": "bright hallway area visible through doorway",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 48,
-      "label": "bright living room area visible through doorway",
+      "label": "bathroom area visible through doorway from entertainment room",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -250,22 +301,24 @@
   "region_to_viewpoints": {
     "44": [
       0,
-      16
+      16,
+      17,
+      20
     ],
     "45": [
       2,
-      17,
-      20,
+      32,
       35
     ],
     "46": [
       9,
-      18,
-      32,
-      41
+      18
     ],
     "47": [
-      40
+      19,
+      25,
+      40,
+      41
     ]
   },
   "viewpoint_to_region": {
@@ -273,12 +326,14 @@
     "2": 45,
     "9": 46,
     "16": 44,
-    "17": 45,
+    "17": 44,
     "18": 46,
-    "20": 45,
-    "32": 46,
+    "19": 47,
+    "20": 44,
+    "25": 47,
+    "32": 45,
     "35": 45,
     "40": 47,
-    "41": 46
+    "41": 47
   }
 }

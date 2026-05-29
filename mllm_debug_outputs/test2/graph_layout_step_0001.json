@@ -11,6 +11,12 @@
       "type": "vv"
     },
     {
+      "grounded": false,
+      "i": 0,
+      "j": 32,
+      "type": "vv"
+    },
+    {
       "grounded": true,
       "i": 9,
       "j": 18,
@@ -39,12 +45,31 @@
       "i": 16,
       "j": 35,
       "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 18,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 32,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
     }
   ],
   "nodes": [
     {
       "connected_node_ids": [
-        16
+        16,
+        32
       ],
       "grounded": false,
       "id": 0,
@@ -78,7 +103,8 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        41
       ],
       "grounded": false,
       "id": 18,
@@ -88,7 +114,9 @@
     },
     {
       "connected_node_ids": [
-        16
+        0,
+        16,
+        35
       ],
       "grounded": false,
       "id": 32,
@@ -98,7 +126,8 @@
     },
     {
       "connected_node_ids": [
-        16
+        16,
+        32
       ],
       "grounded": false,
       "id": 35,
@@ -108,7 +137,8 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        41
       ],
       "grounded": false,
       "id": 40,
@@ -118,7 +148,9 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        18,
+        40
       ],
       "grounded": false,
       "id": 41,
@@ -129,48 +161,48 @@
     {
       "assigned_viewpoint_ids": [
         0,
-        16
+        16,
+        32
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 44,
-      "label": "modern living room area with curved sofa and fireplace",
+      "label": "living room area with curved sofa and fireplace",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        32,
         35
       ],
       "connected_node_ids": [],
       "grounded": false,
       "id": 45,
-      "label": "bedroom area with blue patterned wall and bed",
+      "label": "bedroom area with bed and blue patterned wall",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         9,
-        18,
-        41
+        18
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 46,
-      "label": "dark padded lounge or media room area",
+      "label": "soundproofed entertainment room with padded walls",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        40
+        40,
+        41
       ],
       "connected_node_ids": [],
       "grounded": false,
       "id": 47,
-      "label": "bright hallway area visible through doorway",
+      "label": "bathroom area visible through doorway from entertainment room",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -179,19 +211,19 @@
   "region_to_viewpoints": {
     "44": [
       0,
-      16
+      16,
+      32
     ],
     "45": [
-      32,
       35
     ],
     "46": [
       9,
-      18,
-      41
+      18
     ],
     "47": [
-      40
+      40,
+      41
     ]
   },
   "viewpoint_to_region": {
@@ -199,9 +231,9 @@
     "9": 46,
     "16": 44,
     "18": 46,
-    "32": 45,
+    "32": 44,
     "35": 45,
     "40": 47,
-    "41": 46
+    "41": 47
   }
 }

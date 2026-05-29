@@ -36,6 +36,7 @@ class GraphNode:
         exist_prob: float,
         grounded: bool,
         target_probs: Dict[str, float],
+        raw_target_probs: Dict[str, float],
         node_visit_times: int = 0,
     ):
         self.node_id = int(node_id)
@@ -45,6 +46,10 @@ class GraphNode:
         self.grounded = bool(grounded)
         self.target_probs = {
             str(target_id): float(value) for target_id, value in target_probs.items()
+        }
+        self.raw_target_probs = {
+            str(target_id): float(value)
+            for target_id, value in raw_target_probs.items()
         }
         self.node_visit_times = int(node_visit_times)
         self.connected_node_ids: Set[int] = set()
@@ -171,17 +176,21 @@ class HypothesisGraph:
         exist_prob: Optional[float] = None,
         grounded: Optional[bool] = None,
         target_probs: Optional[Dict[str, float]] = None,
+        raw_target_probs: Optional[Dict[str, float]] = None,
         node_visit_times: Optional[int] = None,
     ) -> GraphNode:
         node_id = int(node_id)
 
+        target_probs_provided = target_probs is not None
+        raw_target_probs_provided = raw_target_probs is not None
+
         if target_probs is None:
             target_probs = {}
 
-        normalized_target_probs = {
-            target_id: float(target_probs.get(target_id, 0.0))
-            for target_id in self.target_ids
-        }
+        materialized_target_probs = self._materialize_target_probs(target_probs)
+        materialized_raw_target_probs = self._materialize_target_probs(
+            {} if raw_target_probs is None else raw_target_probs
+        )
 
         if node_id not in self.nodes:
             self.nodes[node_id] = GraphNode(
@@ -190,7 +199,8 @@ class HypothesisGraph:
                 node_type=node_type,
                 exist_prob=1.0 if exist_prob is None else float(exist_prob),
                 grounded=False if grounded is None else bool(grounded),
-                target_probs=normalized_target_probs,
+                target_probs=materialized_target_probs,
+                raw_target_probs=materialized_raw_target_probs,
                 node_visit_times=(
                     0 if node_visit_times is None else int(node_visit_times)
                 ),
@@ -207,9 +217,15 @@ class HypothesisGraph:
         if grounded is not None:
             node.grounded = bool(grounded)
 
-        if target_probs is not None:
+        if target_probs_provided:
             for target_id in self.target_ids:
-                node.target_probs[target_id] = float(normalized_target_probs[target_id])
+                node.target_probs[target_id] = float(materialized_target_probs[target_id])
+
+        if raw_target_probs_provided:
+            for target_id in self.target_ids:
+                node.raw_target_probs[target_id] = float(
+                    materialized_raw_target_probs[target_id]
+                )
 
         if node_visit_times is not None:
             node.node_visit_times = int(node_visit_times)
@@ -332,7 +348,7 @@ class HypothesisGraph:
                 if region_key == "visible_region_nodes":
                     visible_region_ids.add(region_id)
 
-                region_initial_probs[region_id] = self._normalize_target_dict(
+                region_initial_probs[region_id] = self._materialize_target_probs(
                     region_info["target_probs"]
                 )
                 region_initial_exist_probs[region_id] = float(region_info["exist_prob"])
@@ -344,6 +360,7 @@ class HypothesisGraph:
                     exist_prob=region_initial_exist_probs[region_id],
                     grounded=False,
                     target_probs=self._zero_target_probs(),
+                    raw_target_probs=region_initial_probs[region_id],
                 )
 
         for observation in agent_observations:
@@ -406,8 +423,14 @@ class HypothesisGraph:
 
         for target_prob_info in payload["viewpoint_target_probs"]:
             vp_id = int(target_prob_info["id"])
-            viewpoint_initial_probs[vp_id] = self._normalize_target_dict(
+            viewpoint_initial_probs[vp_id] = self._materialize_target_probs(
                 target_prob_info["target_probs"]
+            )
+            self.add_or_update_node(
+                node_id=vp_id,
+                label=Helper.viewpoint_vp_label_by_index[vp_id],
+                node_type=TYPE_VP,
+                raw_target_probs=viewpoint_initial_probs[vp_id],
             )
 
         self._refresh_region_to_viewpoints()
@@ -712,6 +735,11 @@ class HypothesisGraph:
                 for target_id, prob in node.target_probs.items()
                 if str(target_id) not in found_target_ids
             }
+            node.raw_target_probs = {
+                str(target_id): prob
+                for target_id, prob in node.raw_target_probs.items()
+                if str(target_id) not in found_target_ids
+            }
 
     def get_mllm_summary(self) -> Dict[str, object]:
         nodes = []
@@ -820,6 +848,7 @@ class HypothesisGraph:
                     "grounded": bool(node.grounded),
                     "exist_prob": node.exist_prob,
                     "target_probs": dict(node.target_probs),
+                    "raw_target_probs": dict(node.raw_target_probs),
                     "node_visit_times": node.node_visit_times,
                 }
             )
@@ -888,7 +917,7 @@ class HypothesisGraph:
     def _zero_target_probs(self) -> Dict[str, float]:
         return {target_id: 0.0 for target_id in self.target_ids}
 
-    def _normalize_target_dict(
+    def _materialize_target_probs(
         self,
         target_probs: Dict[str, float],
     ) -> Dict[str, float]:
@@ -976,6 +1005,10 @@ class HypothesisGraph:
             canonical_node.target_probs[target_id] = max(
                 canonical_node.target_probs[target_id],
                 merged_node.target_probs[target_id],
+            )
+            canonical_node.raw_target_probs[target_id] = max(
+                canonical_node.raw_target_probs[target_id],
+                merged_node.raw_target_probs[target_id],
             )
         canonical_node.node_visit_times = max(
             canonical_node.node_visit_times, merged_node.node_visit_times
