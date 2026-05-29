@@ -1,7 +1,7 @@
 {
   "agent_current_vp_ids": {
-    "agent0": 32,
-    "agent1": 41
+    "agent0": 35,
+    "agent1": 40
   },
   "edges": [
     {
@@ -11,16 +11,16 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 0,
-      "j": 32,
+      "grounded": true,
+      "i": 2,
+      "j": 35,
       "type": "vv"
     },
     {
-      "grounded": true,
+      "grounded": false,
       "i": 2,
-      "j": 32,
-      "type": "vv"
+      "j": 50,
+      "type": "vz"
     },
     {
       "grounded": true,
@@ -54,33 +54,15 @@
     },
     {
       "grounded": true,
-      "i": 17,
-      "j": 32,
+      "i": 25,
+      "j": 40,
       "type": "vv"
     },
     {
       "grounded": false,
-      "i": 18,
-      "j": 41,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 19,
-      "j": 41,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 20,
-      "j": 32,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
       "i": 25,
-      "j": 41,
-      "type": "vv"
+      "j": 50,
+      "type": "vz"
     },
     {
       "grounded": true,
@@ -90,16 +72,39 @@
     },
     {
       "grounded": true,
+      "i": 34,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 34,
+      "j": 50,
+      "type": "vz"
+    },
+    {
+      "grounded": false,
+      "i": 35,
+      "j": 49,
+      "type": "vz"
+    },
+    {
+      "grounded": true,
       "i": 40,
       "j": 41,
       "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 40,
+      "j": 49,
+      "type": "vz"
     }
   ],
   "nodes": [
     {
       "connected_node_ids": [
-        16,
-        32
+        16
       ],
       "grounded": false,
       "id": 0,
@@ -109,7 +114,8 @@
     },
     {
       "connected_node_ids": [
-        32
+        35,
+        50
       ],
       "grounded": false,
       "id": 2,
@@ -143,18 +149,7 @@
     },
     {
       "connected_node_ids": [
-        32
-      ],
-      "grounded": false,
-      "id": 17,
-      "label": "df211c2c55f94b87a717ce1469577456",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        9,
-        41
+        9
       ],
       "grounded": false,
       "id": 18,
@@ -164,27 +159,8 @@
     },
     {
       "connected_node_ids": [
-        41
-      ],
-      "grounded": false,
-      "id": 19,
-      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        32
-      ],
-      "grounded": false,
-      "id": 20,
-      "label": "3a6d2322867f40d9a3d2758ab88df288",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        41
+        40,
+        50
       ],
       "grounded": false,
       "id": 25,
@@ -194,61 +170,67 @@
     },
     {
       "connected_node_ids": [
-        0,
-        2,
         16,
-        17,
-        20,
         35
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 32,
       "label": "e34dcf54d26a4a95869cc8a0c01cd2be",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
+        35,
+        50
+      ],
+      "grounded": false,
+      "id": 34,
+      "label": "8a0f2f1a8ea441658501561e5dc34a3e",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        2,
         16,
-        32
-      ],
-      "grounded": false,
-      "id": 35,
-      "label": "50c241453dfd45c1ba95b5d7191982ef",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        9,
-        41
-      ],
-      "grounded": false,
-      "id": 40,
-      "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        9,
-        18,
-        19,
-        25,
-        40
+        32,
+        34,
+        49
       ],
       "grounded": true,
+      "id": 35,
+      "label": "50c241453dfd45c1ba95b5d7191982ef",
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9,
+        25,
+        41,
+        49
+      ],
+      "grounded": true,
+      "id": 40,
+      "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9,
+        40
+      ],
+      "grounded": false,
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
-        0,
-        16,
-        17,
-        20
+        16
       ],
       "connected_node_ids": [],
       "grounded": true,
@@ -260,39 +242,75 @@
     {
       "assigned_viewpoint_ids": [
         2,
-        32,
+        34,
         35
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 45,
-      "label": "bedroom area with bed and blue patterned wall",
+      "label": "bedroom area with large bed and blue wall",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        32
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 46,
+      "label": "hallway area connecting living room and bedroom",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         9,
-        18
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 46,
-      "label": "soundproofed entertainment room with padded walls",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        19,
-        25,
-        40,
+        18,
         41
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 47,
-      "label": "bathroom area visible through doorway from entertainment room",
+      "label": "padded lounge area with tufted walls and seating",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25,
+        40
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 48,
+      "label": "small adjacent room visible through doorway from lounge",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [
+        35,
+        40
+      ],
+      "grounded": false,
+      "id": 49,
+      "label": "bathroom area not directly visible but inferred near bedroom",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [
+        2,
+        25,
+        34
+      ],
+      "grounded": false,
+      "id": 50,
+      "label": "bathroom area inferred behind closed door or wall",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -300,40 +318,38 @@
   "observation_step": 2,
   "region_to_viewpoints": {
     "44": [
-      0,
-      16,
-      17,
-      20
+      16
     ],
     "45": [
       2,
-      32,
+      34,
       35
     ],
     "46": [
-      9,
-      18
+      0,
+      32
     ],
     "47": [
-      19,
-      25,
-      40,
+      9,
+      18,
       41
+    ],
+    "48": [
+      25,
+      40
     ]
   },
   "viewpoint_to_region": {
-    "0": 44,
+    "0": 46,
     "2": 45,
-    "9": 46,
+    "9": 47,
     "16": 44,
-    "17": 44,
-    "18": 46,
-    "19": 47,
-    "20": 44,
-    "25": 47,
-    "32": 45,
+    "18": 47,
+    "25": 48,
+    "32": 46,
+    "34": 45,
     "35": 45,
-    "40": 47,
+    "40": 48,
     "41": 47
   }
 }
