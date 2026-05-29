@@ -11,6 +11,7 @@ import debugpy
 import numpy as np
 from openai import BadRequestError, OpenAI
 from PIL import Image
+import random
 
 import Helper
 
@@ -1099,10 +1100,13 @@ class MLLMClient:
             for viewpoint_id in required_viewpoint_target_prob_ids_for_prompt
         ]
 
-        target_prob_template = {
-            target_id: min(round(0.2 + 0.15 * index, 2), 0.9)
-            for index, target_id in enumerate(target_ids)
-        }
+        example_rng = random.Random(42)
+
+        def make_random_target_probs() -> Dict[str, float]:
+            return {
+                target_id: round(example_rng.uniform(0.01, 0.99), 2)
+                for target_id in target_ids
+            }
 
         example_agent_id = agent_context[0]["agent_id"] if agent_context else "agent0"
         example_current_viewpoint_id = (
@@ -1139,13 +1143,13 @@ class MLLMClient:
                     "id": example_current_region_id,
                     "label": "bright kitchen area near dining table",
                     "exist_prob": 1.0,
-                    "target_probs": target_prob_template,
+                    "target_probs": make_random_target_probs(),
                 },
                 {
                     "id": example_adjacent_region_id,
                     "label": "adjacent hallway visible through doorway",
                     "exist_prob": 0.7,
-                    "target_probs": target_prob_template,
+                    "target_probs": make_random_target_probs(),
                 },
             ],
             "invisible_region_nodes": [
@@ -1153,13 +1157,13 @@ class MLLMClient:
                     "id": example_invisible_region_id,
                     "label": "unseen hallway area beyond closed doorway",
                     "exist_prob": 0.6,
-                    "target_probs": target_prob_template,
+                    "target_probs": make_random_target_probs(),
                 }
             ],
             "viewpoint_target_probs": [
                 {
                     "id": example_visible_viewpoint_id,
-                    "target_probs": target_prob_template,
+                    "target_probs": make_random_target_probs(),
                 },
             ],
             "viewpoint_node_assigns": [
@@ -1499,18 +1503,25 @@ class MLLMClient:
 
                 Viewpoint target probability rule:
                 - You must output one viewpoint_target_probs item for every id in this skeleton.
-                - You may additionally output viewpoint_target_probs items for optional ids only when the current observation supports updating that viewpoint.
                 - These ids are non-current visible neighboring viewpoints only.
-                - Use positive but meaningful target-location scores in (0, 1]. Avoid uniform scores unless the visual evidence is truly the same.
+                - Score the target likelihood at the candidate viewpoint, not only at the current camera location.
+                - For each candidate viewpoint, use its red marker location in the panorama, nearby visible objects, assigned semantic region, xy distance, visible_viewpoints[].distance, and compact graph summary.
+                - Compare all required viewpoint ids against each other for each active target_id before assigning scores.
+                - If one viewpoint is closer to a dining table and another viewpoint is in a bedroom, hallway, or lounge area, their scores for "the green plant on the dining table" should usually be different.
+                - Use positive but meaningful scores in (0, 1].
+                - Avoid uniform scores unless the visual evidence and graph context are truly indistinguishable.
                 - Do not include current viewpoint ids.
                 - Do not delete any skeleton item.
                 
                 Target probability rule:
+                - target_probs are unnormalized relative target-location scores, not calibrated probabilities.
                 - Do not copy default values from the schema or examples.
-                - Assign target_probs based on room type, visible objects, and spatial context.
-                - Bathroom-related targets should be higher in bathroom regions/viewpoints than in bedroom, lounge, hallway, or kitchen areas.
+                - For each active target_id, compare all candidate regions and all required non-current neighboring viewpoints before assigning scores.
+                - Assign higher scores to locations whose visible objects, room type, furniture, spatial context, and graph history better match the target description.
+                - For example, if the target is a plant on a dining table, regions or viewpoints near a dining table should receive higher scores than bedrooms, bathrooms, hallways, or lounge areas without dining-table evidence.
+                - Use the full range (0, 1]. Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
                 - Use different scores when evidence differs.
-                - Use low values such as 0.01 only when the target is very unlikely there.
+                - Equal scores are allowed only when the visual evidence, assigned region, spatial context, and graph history are truly indistinguishable.
                 
                 All non-current visible neighboring viewpoint ids:
                 {visible_neighbor_viewpoint_ids_json}
