@@ -1,51 +1,8 @@
 {
-  "agents": [
-    {
-      "agent_id": "agent0",
-      "current_region_node_id": 47,
-      "observed_region_node_ids": [
-        47,
-        48
-      ]
-    },
-    {
-      "agent_id": "agent1",
-      "current_region_node_id": 46,
-      "observed_region_node_ids": [
-        46,
-        45,
-        49
-      ]
-    }
-  ],
   "current_viewpoints_reassignment": [
     {
-      "new_assigned_region_id": 47,
+      "new_assigned_region_id": 46,
       "viewpoint_id": 32
-    }
-  ],
-  "detections": [
-    {
-      "agent_id": "agent0",
-      "founds": [
-        false,
-        false
-      ],
-      "target_indices": [
-        "0",
-        "1"
-      ]
-    },
-    {
-      "agent_id": "agent1",
-      "founds": [
-        false,
-        false
-      ],
-      "target_indices": [
-        "0",
-        "1"
-      ]
     }
   ],
   "edge_distance_variances": {
@@ -53,51 +10,17 @@
     "viewpoint_viewpoint": 1.0
   },
   "invisible_region_nodes": [],
-  "new_edges": [
-    {
-      "dist": 1.5,
-      "edge_type": "VV",
-      "exist_prob": 0.6,
-      "i": 19,
-      "j": 25
-    }
-  ],
+  "new_edges": [],
   "viewpoint_node_assigns": [
-    {
-      "assigned_viewpoint_node_indices": [
-        9
-      ],
-      "region_node_id": 45
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        40,
-        41
-      ],
-      "region_node_id": 46
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        16,
-        32,
-        35
-      ],
-      "region_node_id": 47
-    },
     {
       "assigned_viewpoint_node_indices": [
         2,
         17,
-        20
+        18,
+        20,
+        32
       ],
-      "region_node_id": 48
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        19,
-        25
-      ],
-      "region_node_id": 49
+      "region_node_id": 46
     }
   ],
   "viewpoint_target_probs": [
@@ -109,17 +32,24 @@
       }
     },
     {
-      "id": 17,
+      "id": 9,
       "target_probs": {
-        "0": 0.05,
-        "1": 0.05
+        "0": 0.03,
+        "1": 0.03
       }
     },
     {
-      "id": 19,
+      "id": 16,
       "target_probs": {
-        "0": 0.1,
-        "1": 0.1
+        "0": 0.02,
+        "1": 0.02
+      }
+    },
+    {
+      "id": 17,
+      "target_probs": {
+        "0": 0.02,
+        "1": 0.02
       }
     },
     {
@@ -130,85 +60,39 @@
       }
     },
     {
-      "id": 25,
-      "target_probs": {
-        "0": 0.1,
-        "1": 0.1
-      }
-    },
-    {
-      "id": 9,
-      "target_probs": {
-        "0": 0.01,
-        "1": 0.01
-      }
-    },
-    {
-      "id": 16,
-      "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
       "id": 35,
       "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
-      "id": 40,
-      "target_probs": {
-        "0": 0.3,
-        "1": 0.3
+        "0": 0.02,
+        "1": 0.02
       }
     }
   ],
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 47,
-      "label": "modern bedroom area with white bedding",
+      "id": 45,
+      "label": "bedroom area with blue patterned wall and bed",
       "target_probs": {
-        "0": 0.05,
-        "1": 0.05
-      }
-    },
-    {
-      "exist_prob": 0.8,
-      "id": 48,
-      "label": "adjacent living area with curved sofa",
-      "target_probs": {
-        "0": 0.05,
-        "1": 0.05
+        "0": 0.02,
+        "1": 0.02
       }
     },
     {
       "exist_prob": 1.0,
       "id": 46,
-      "label": "bright room with white walls",
+      "label": "dark padded lounge or media room area",
       "target_probs": {
-        "0": 0.4,
-        "1": 0.4
+        "0": 0.03,
+        "1": 0.03
       }
     },
     {
-      "exist_prob": 0.8,
-      "id": 45,
-      "label": "dark blue quilted lounge area",
+      "exist_prob": 1.0,
+      "id": 48,
+      "label": "bright hallway area visible through doorway",
       "target_probs": {
-        "0": 0.01,
-        "1": 0.01
-      }
-    },
-    {
-      "exist_prob": 0.8,
-      "id": 49,
-      "label": "white hallway visible through doorway",
-      "target_probs": {
-        "0": 0.1,
-        "1": 0.1
+        "0": 0.15,
+        "1": 0.15
       }
     }
   ]

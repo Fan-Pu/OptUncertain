@@ -323,11 +323,14 @@ class HypothesisGraph:
         candidate_viewpoint_ids: Set[int] = set()
 
         region_info_by_id: Dict[int, Dict[str, object]] = {}
+        visible_region_ids: Set[int] = set()
 
         for region_key in ("visible_region_nodes", "invisible_region_nodes"):
             for region_info in payload[region_key]:
                 region_id = int(region_info["id"])
                 region_info_by_id[region_id] = region_info
+                if region_key == "visible_region_nodes":
+                    visible_region_ids.add(region_id)
 
                 region_initial_probs[region_id] = self._normalize_target_dict(
                     region_info["target_probs"]
@@ -343,23 +346,13 @@ class HypothesisGraph:
                     target_probs=self._zero_target_probs(),
                 )
 
-        for agent_payload in payload["agents"]:
-            agent_id = str(agent_payload["agent_id"])
+        for observation in agent_observations:
+            agent_id = str(observation["agent_id"])
             if agent_id not in observation_by_agent:
                 raise KeyError("Missing observation for agent %s" % agent_id)
 
-            observation = observation_by_agent[agent_id]
             current_vp_id = int(observation["current_viewpoint_index"])
-            current_region_id = int(agent_payload["current_region_node_id"])
 
-            if current_region_id not in region_info_by_id:
-                raise KeyError(
-                    "current_region_node_id %s is not included in "
-                    "visible_region_nodes or invisible_region_nodes."
-                    % current_region_id
-                )
-
-            current_region_for_agent[agent_id] = current_region_id
             self.agent_current_vp_ids[agent_id] = current_vp_id
 
             current_vp_label = Helper.viewpoint_vp_label_by_index[current_vp_id]
@@ -434,6 +427,52 @@ class HypothesisGraph:
                     )
 
                 proposed_assignments[viewpoint_id] = region_id
+
+        reassigned_current_viewpoint_to_region: Dict[int, int] = {}
+        for item in payload["current_viewpoints_reassignment"]:
+            viewpoint_id = int(item["viewpoint_id"])
+            new_region_id = int(item["new_assigned_region_id"])
+            if viewpoint_id in reassigned_current_viewpoint_to_region:
+                raise ValueError(
+                    "Duplicated current_viewpoints_reassignment item for viewpoint %s."
+                    % viewpoint_id
+                )
+            reassigned_current_viewpoint_to_region[viewpoint_id] = new_region_id
+
+        for agent_id, current_vp_id in self.agent_current_vp_ids.items():
+            if current_vp_id in proposed_assignments:
+                current_region_id = proposed_assignments[current_vp_id]
+            elif current_vp_id in reassigned_current_viewpoint_to_region:
+                current_region_id = reassigned_current_viewpoint_to_region[current_vp_id]
+            else:
+                if current_vp_id not in self.viewpoint_to_region:
+                    raise KeyError(
+                        "Current viewpoint %s has no region in viewpoint_node_assigns, "
+                        "current_viewpoints_reassignment, or graph viewpoint_to_region."
+                        % current_vp_id
+                    )
+                current_region_id = self.viewpoint_to_region[current_vp_id]
+
+            if (
+                current_vp_id in proposed_assignments
+                and current_vp_id in reassigned_current_viewpoint_to_region
+                and proposed_assignments[current_vp_id]
+                != reassigned_current_viewpoint_to_region[current_vp_id]
+            ):
+                raise ValueError(
+                    "Current viewpoint %s has conflicting regions in "
+                    "viewpoint_node_assigns and current_viewpoints_reassignment."
+                    % current_vp_id
+                )
+
+            if current_region_id not in visible_region_ids:
+                raise KeyError(
+                    "Derived current region %s for agent %s viewpoint %s is not "
+                    "included in visible_region_nodes."
+                    % (current_region_id, agent_id, current_vp_id)
+                )
+
+            current_region_for_agent[agent_id] = current_region_id
 
         for agent_id, current_vp_id in self.agent_current_vp_ids.items():
             self._set_viewpoint_region(
@@ -525,14 +564,6 @@ class HypothesisGraph:
                 exist_prob=float(edge_info["exist_prob"]),
                 grounded=False,
             )
-
-        for detection in payload["detections"]:
-            target_indices = detection["target_indices"]
-            founds = detection["founds"]
-
-            for target_id, found in zip(target_indices, founds):
-                if bool(found):
-                    self.mark_target_found(str(target_id))
 
         self._drop_invalid_vz_edges()
 
@@ -901,12 +932,6 @@ class HypothesisGraph:
         for region_list_key in ("visible_region_nodes", "invisible_region_nodes"):
             for region_info in updated.get(region_list_key, []):
                 region_info["id"] = self._resolve_alias(region_info["id"], alias_map)
-
-        for agent_info in updated.get("agents", []):
-            agent_info["current_region_node_id"] = self._resolve_alias(
-                agent_info["current_region_node_id"],
-                alias_map,
-            )
 
         for assign_info in updated.get("viewpoint_node_assigns", []):
             assign_info["region_node_id"] = self._resolve_alias(

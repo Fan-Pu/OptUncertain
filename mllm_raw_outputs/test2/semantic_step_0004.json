@@ -1,44 +1,8 @@
 {
-  "agents": [
+  "current_viewpoints_reassignment": [
     {
-      "agent_id": "agent0",
-      "current_region_node_id": 48,
-      "observed_region_node_ids": [
-        48,
-        44,
-        47,
-        50
-      ]
-    },
-    {
-      "agent_id": "agent1",
-      "current_region_node_id": 49,
-      "observed_region_node_ids": [
-        49,
-        46,
-        51
-      ]
-    }
-  ],
-  "current_viewpoints_reassignment": [],
-  "detections": [
-    {
-      "agent_id": "agent0",
-      "founds": [
-        false
-      ],
-      "target_indices": [
-        "0"
-      ]
-    },
-    {
-      "agent_id": "agent1",
-      "founds": [
-        false
-      ],
-      "target_indices": [
-        "0"
-      ]
+      "new_assigned_region_id": 45,
+      "viewpoint_id": 41
     }
   ],
   "edge_distance_variances": {
@@ -46,181 +10,117 @@
     "viewpoint_viewpoint": 1.0
   },
   "invisible_region_nodes": [],
-  "new_edges": [
-    {
-      "dist": 1.5,
-      "edge_type": "VV",
-      "exist_prob": 0.6,
-      "i": 11,
-      "j": 30
-    },
-    {
-      "dist": 1.2,
-      "edge_type": "VV",
-      "exist_prob": 0.7,
-      "i": 14,
-      "j": 26
-    }
-  ],
+  "new_edges": [],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        11,
-        30,
-        35,
-        39
-      ],
-      "region_node_id": 44
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        40,
+        19,
+        23,
+        25,
+        34,
         41
       ],
-      "region_node_id": 46
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        32
-      ],
-      "region_node_id": 47
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        2,
-        20,
-        26,
-        34
-      ],
-      "region_node_id": 48
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        5,
-        19,
-        25,
-        37
-      ],
-      "region_node_id": 49
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        14
-      ],
-      "region_node_id": 50
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        3
-      ],
-      "region_node_id": 51
+      "region_node_id": 45
     }
   ],
   "viewpoint_target_probs": [
     {
-      "id": 3,
+      "id": 2,
       "target_probs": {
-        "0": 0.8
+        "0": 0.05,
+        "1": 0.05
       }
     },
     {
-      "id": 5,
+      "id": 9,
       "target_probs": {
-        "0": 0.1
-      }
-    },
-    {
-      "id": 11,
-      "target_probs": {
-        "0": 0.05
+        "0": 0.05,
+        "1": 0.05
       }
     },
     {
       "id": 14,
       "target_probs": {
-        "0": 0.6
+        "0": 0.85,
+        "1": 0.85
+      }
+    },
+    {
+      "id": 19,
+      "target_probs": {
+        "0": 0.1,
+        "1": 0.1
+      }
+    },
+    {
+      "id": 20,
+      "target_probs": {
+        "0": 0.05,
+        "1": 0.05
+      }
+    },
+    {
+      "id": 23,
+      "target_probs": {
+        "0": 0.05,
+        "1": 0.05
+      }
+    },
+    {
+      "id": 25,
+      "target_probs": {
+        "0": 0.1,
+        "1": 0.1
       }
     },
     {
       "id": 26,
       "target_probs": {
-        "0": 0.05
+        "0": 0.05,
+        "1": 0.05
       }
     },
     {
-      "id": 30,
+      "id": 35,
       "target_probs": {
-        "0": 0.05
+        "0": 0.05,
+        "1": 0.05
       }
     },
     {
-      "id": 37,
+      "id": 40,
       "target_probs": {
-        "0": 0.1
-      }
-    },
-    {
-      "id": 39,
-      "target_probs": {
-        "0": 0.05
+        "0": 0.1,
+        "1": 0.1
       }
     }
   ],
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 48,
-      "label": "adjacent living area with curved sofa",
+      "id": 45,
+      "label": "bedroom area with blue patterned wall and bed",
       "target_probs": {
-        "0": 0.1
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 44,
-      "label": "modern living area with white bedding",
-      "target_probs": {
-        "0": 0.1
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 47,
-      "label": "modern bedroom area with white bedding",
-      "target_probs": {
-        "0": 0.1
-      }
-    },
-    {
-      "exist_prob": 0.8,
-      "id": 50,
-      "label": "small bathroom area visible through doorway",
-      "target_probs": {
-        "0": 0.7
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 49,
-      "label": "white hallway visible through doorway",
-      "target_probs": {
-        "0": 0.2
+        "0": 0.177,
+        "1": 0.177
       }
     },
     {
       "exist_prob": 1.0,
       "id": 46,
-      "label": "bright room with white walls",
+      "label": "dark padded lounge or media room area",
       "target_probs": {
-        "0": 0.3
+        "0": 0.059,
+        "1": 0.059
       }
     },
     {
-      "exist_prob": 0.8,
-      "id": 51,
-      "label": "bathroom area visible through open door",
+      "exist_prob": 1.0,
+      "id": 48,
+      "label": "bathroom area with white fixtures and vanity",
       "target_probs": {
-        "0": 0.8
+        "0": 0.8,
+        "1": 0.8
       }
     }
   ]

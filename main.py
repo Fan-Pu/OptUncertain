@@ -385,19 +385,25 @@ def run_scenario(config_path: str) -> Dict[str, object]:
 
     # for huggingface, use base_url="https://router.huggingface.co/v1" and api_key_env="HF_TOKEN"
     # for DeepInfra, use base_url="https://api.deepinfra.com/v1/openai" and api_key_env="DEEPINFRA_TOKEN"
+    # for DASHSCOPE, use base_url="https://dashscope-us.aliyuncs.com/compatible-mode/v1" and api_key_env="DASHSCOPE_API_KEY"
     mllm_client = MLLMClient(
         graph_model_name=str(scenario["mllm"]["graph_model_name"]),
+        # detection
         detection_model_name=str(scenario["mllm"]["detection_model_name"]),
-        detection_base_url="https://api.deepinfra.com/v1/openai",
-        detection_api_key_env="DEEPINFRA_TOKEN",
-        graph_base_url="https://api.deepinfra.com/v1/openai",
-        graph_api_key_env="DEEPINFRA_TOKEN",
+        detection_base_url="https://dashscope-us.aliyuncs.com/compatible-mode/v1",
+        detection_api_key_env="DASHSCOPE_API_KEY",
+        # graph generation
+        graph_base_url="https://dashscope-us.aliyuncs.com/compatible-mode/v1",
+        graph_api_key_env="DASHSCOPE_API_KEY",
         read_saved_raw_outputs=bool(
             scenario["mllm"].get("read_saved_raw_outputs", False)
         ),
         raw_output_dir=run_output_dir,
         raw_debug_dir=debug_output_dir,
         max_validation_retries=int(scenario["mllm"].get("max_validation_retries", 2)),
+        max_request_timeout_retries=int(
+            scenario["mllm"].get("max_request_timeout_retries", 1)
+        ),
         open_vocab_detector=open_vocab_detector,
     )
 

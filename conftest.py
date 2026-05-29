@@ -10,6 +10,10 @@ def _install_openai_stub():
         def __init__(self, *args, **kwargs):
             pass
 
+    class FakeAPITimeoutError(Exception):
+        pass
+
+    module.APITimeoutError = FakeAPITimeoutError
     module.BadRequestError = Exception
     module.OpenAI = FakeOpenAI
     sys.modules["openai"] = module
