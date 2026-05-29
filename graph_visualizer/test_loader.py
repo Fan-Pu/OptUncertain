@@ -611,6 +611,20 @@ def test_step_renderer_includes_target_detection_sidebar_and_verification_normal
     assert "targetDescriptionFromStep(step, targetId)" in html
 
 
+def test_step_renderer_opens_observation_images_in_child_window():
+    html = render_viewer_html()
+
+    assert "function openObservationImageWindow(image)" in html
+    assert 'class="observation-image-button"' in html
+    assert 'data-image-url="${escapeAttr(image.url)}"' in html
+    assert 'data-agent-id="${escapeAttr(image.agent_id)}"' in html
+    assert 'aria-label="Open ${escapeAttr(image.agent_id)} observation"' in html
+    assert 'window.open("", "_blank")' in html
+    assert "childWindow.document.write" in html
+    assert "<title>${escapeHtml(title)}</title>" in html
+    assert "<p>${escapeHtml(image.url)}</p>" in html
+
+
 def test_shutdown_endpoint_stops_visualization_server(tmp_path, monkeypatch):
     _write_step(
         tmp_path,

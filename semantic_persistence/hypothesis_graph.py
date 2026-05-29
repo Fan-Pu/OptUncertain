@@ -488,11 +488,24 @@ class HypothesisGraph:
                     % current_vp_id
                 )
 
-            if current_region_id not in visible_region_ids:
+            if (
+                current_region_id not in visible_region_ids
+                and current_region_id not in existing_node_ids
+            ):
                 raise KeyError(
                     "Derived current region %s for agent %s viewpoint %s is not "
-                    "included in visible_region_nodes."
+                    "included in visible_region_nodes or the existing graph."
                     % (current_region_id, agent_id, current_vp_id)
+                )
+            if current_region_id not in self.nodes:
+                raise KeyError(
+                    "Derived current region %s for agent %s viewpoint %s is not "
+                    "present in the graph." % (current_region_id, agent_id, current_vp_id)
+                )
+            if self.nodes[current_region_id].type != TYPE_REGION:
+                raise ValueError(
+                    "Derived current region %s for agent %s viewpoint %s is not a "
+                    "region node." % (current_region_id, agent_id, current_vp_id)
                 )
 
             current_region_for_agent[agent_id] = current_region_id
@@ -595,6 +608,7 @@ class HypothesisGraph:
             existing_node_ids=existing_node_ids,
             region_initial_probs=region_initial_probs,
             viewpoint_initial_probs=viewpoint_initial_probs,
+            current_viewpoint_ids=set(self.agent_current_vp_ids.values()),
             scorer=scorer,
         )
 
@@ -1133,8 +1147,10 @@ class HypothesisGraph:
         existing_node_ids: Set[int],
         region_initial_probs: Dict[int, Dict[str, float]],
         viewpoint_initial_probs: Dict[int, Dict[str, float]],
+        current_viewpoint_ids: Set[int],
         scorer,
     ) -> None:
+        eta_goal = float(self.bayes_config["eta_goal"])
         viewpoint_node_ids = [
             node_id for node_id, node in self.nodes.items() if node.type == TYPE_VP
         ]
@@ -1149,23 +1165,22 @@ class HypothesisGraph:
             viewpoint_scores = {}
 
             for node_id in viewpoint_node_ids:
-                if node_id in viewpoint_initial_probs:
-                    viewpoint_scores[node_id] = viewpoint_initial_probs[node_id].get(
-                        target_id, 0.0
-                    )
-                elif self.nodes[node_id].grounded:
-                    viewpoint_scores[node_id] = self.nodes[node_id].target_probs.get(
-                        target_id, 0.0
-                    )
+                if node_id in current_viewpoint_ids:
+                    viewpoint_scores[node_id] = 0.0
                 elif node_id in existing_node_ids:
                     prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
-                    viewpoint_scores[node_id] = prior_prob
                 else:
-                    viewpoint_scores[node_id] = viewpoint_initial_probs.get(
-                        node_id, {}
-                    ).get(
+                    prior_prob = viewpoint_initial_probs.get(node_id, {}).get(
                         target_id, 0.0
                     )
+
+                if node_id in current_viewpoint_ids:
+                    continue
+
+                likelihood = math.exp(
+                    eta_goal * self._target_visual_score(node_id, target_id, scorer)
+                )
+                viewpoint_scores[node_id] = prior_prob * likelihood
 
             viewpoint_norm = sum(viewpoint_scores.values())
 
@@ -1176,25 +1191,38 @@ class HypothesisGraph:
                             viewpoint_scores[node_id] / viewpoint_norm
                         )
                 else:
-                    uniform_prob = 1.0 / float(len(viewpoint_node_ids))
+                    non_current_viewpoint_node_ids = [
+                        node_id
+                        for node_id in viewpoint_node_ids
+                        if node_id not in current_viewpoint_ids
+                    ]
+                    uniform_prob = (
+                        1.0 / float(len(non_current_viewpoint_node_ids))
+                        if non_current_viewpoint_node_ids
+                        else 0.0
+                    )
                     for node_id in viewpoint_node_ids:
-                        self.nodes[node_id].target_probs[target_id] = uniform_prob
+                        if node_id in current_viewpoint_ids:
+                            self.nodes[node_id].target_probs[target_id] = 0.0
+                        else:
+                            self.nodes[node_id].target_probs[target_id] = uniform_prob
 
             region_scores = {}
 
             for node_id in region_node_ids:
                 if node_id in region_initial_probs:
-                    region_scores[node_id] = region_initial_probs[node_id].get(
-                        target_id, 0.0
-                    )
+                    prior_prob = region_initial_probs[node_id].get(target_id, 0.0)
                 elif node_id in existing_node_ids:
-                    region_scores[node_id] = previous_target_probs[node_id].get(
-                        target_id, 0.0
-                    )
+                    prior_prob = previous_target_probs[node_id].get(target_id, 0.0)
                 else:
-                    region_scores[node_id] = region_initial_probs.get(node_id, {}).get(
+                    prior_prob = region_initial_probs.get(node_id, {}).get(
                         target_id, 0.0
                     )
+
+                likelihood = math.exp(
+                    eta_goal * self._target_visual_score(node_id, target_id, scorer)
+                )
+                region_scores[node_id] = prior_prob * likelihood
 
             region_norm = sum(region_scores.values())
 

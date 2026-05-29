@@ -96,6 +96,14 @@ class _FakeGraph:
         return self.graph_summary
 
 
+class _FakeScorer:
+    def __init__(self, scores):
+        self.scores = dict(scores)
+
+    def score_images_text(self, images, text):
+        return max(self.scores.get(image, 0.0) for image in images)
+
+
 def test_hypothesis_snapshot_saves_raw_mllm_target_probs_separately():
     Helper.viewpoint_vp_label_by_index.clear()
     Helper.viewpoint_vp_label_by_index.update({1: "vp1", 2: "vp2"})
@@ -137,10 +145,10 @@ def test_hypothesis_snapshot_saves_raw_mllm_target_probs_separately():
                 "visible_viewpoints": [
                     {"viewpoint_index": 2, "distance": 1.0},
                 ],
-                "raw_panorama": object(),
+                "raw_panorama": "current",
             }
         ],
-        scorer=None,
+        scorer=_FakeScorer({"current": 0.0}),
     )
 
     nodes = {
@@ -151,6 +159,104 @@ def test_hypothesis_snapshot_saves_raw_mllm_target_probs_separately():
     assert nodes[2]["target_probs"] == {"0": 1.0, "1": 1.0}
     assert nodes[10]["raw_target_probs"] == {"0": 0.1, "1": 0.9}
     assert nodes[10]["target_probs"] == {"0": 1.0, "1": 1.0}
+
+
+def test_target_probabilities_use_bayesian_update_and_zero_current_viewpoint():
+    Helper.viewpoint_vp_label_by_index.clear()
+    Helper.viewpoint_vp_label_by_index.update(
+        {1: "vp1", 2: "vp2", 3: "vp3"}
+    )
+
+    graph = HypothesisGraph(
+        targets=[{"target_id": "0", "description": "target zero"}],
+        bayes_config={"eta_goal": 2.0},
+    )
+    graph.add_or_update_node(
+        node_id=1,
+        label="vp1",
+        node_type=Helper.TYPE_VP,
+        grounded=True,
+        target_probs={"0": 0.1},
+        node_visit_times=1,
+    )
+    graph.add_or_update_node(
+        node_id=2,
+        label="vp2",
+        node_type=Helper.TYPE_VP,
+        target_probs={"0": 0.7},
+    )
+    graph.add_or_update_node(
+        node_id=10,
+        label="old kitchen area",
+        node_type=Helper.TYPE_REGION,
+        target_probs={"0": 0.6},
+        exist_prob=1.0,
+    )
+    graph._set_viewpoint_region(1, 10)
+    graph._set_viewpoint_region(2, 10)
+    graph.viewpoint_rgb_evidence[2] = ["vp2"]
+
+    graph.update_from_mllm(
+        mllm_output={
+            "current_viewpoints_reassignment": [],
+            "visible_region_nodes": [
+                {
+                    "id": 11,
+                    "label": "new hallway area near kitchen",
+                    "exist_prob": 0.8,
+                    "target_probs": {"0": 0.4},
+                }
+            ],
+            "invisible_region_nodes": [],
+            "viewpoint_target_probs": [
+                {"id": 3, "target_probs": {"0": 0.3}},
+            ],
+            "viewpoint_node_assigns": [
+                {"region_node_id": 11, "assigned_viewpoint_node_indices": [3]},
+            ],
+            "new_edges": [],
+            "edge_distance_variances": {
+                "viewpoint_viewpoint": 1.0,
+                "viewpoint_region": 4.0,
+            },
+        },
+        agent_observations=[
+            {
+                "agent_id": "agent0",
+                "current_viewpoint_index": 1,
+                "visible_viewpoints": [
+                    {"viewpoint_index": 2, "distance": 1.0},
+                    {"viewpoint_index": 3, "distance": 1.5},
+                ],
+                "raw_panorama": "current",
+            }
+        ],
+        scorer=_FakeScorer({"current": 0.1, "vp2": 0.2}),
+    )
+
+    nodes = {
+        int(node["id"]): node for node in graph.get_hypothesis_snapshot()["nodes"]
+    }
+    vp2_score = 0.7 * np.exp(2.0 * 0.2)
+    vp3_score = 0.3
+    region10_score = 0.6 * np.exp(2.0 * 0.2)
+    region11_score = 0.4
+
+    assert nodes[1]["target_probs"]["0"] == 0.0
+    assert nodes[2]["target_probs"]["0"] == pytest.approx(
+        vp2_score / (vp2_score + vp3_score)
+    )
+    assert nodes[3]["target_probs"]["0"] == pytest.approx(
+        vp3_score / (vp2_score + vp3_score)
+    )
+    assert nodes[10]["target_probs"]["0"] == pytest.approx(
+        region10_score / (region10_score + region11_score)
+    )
+    assert nodes[11]["target_probs"]["0"] == pytest.approx(
+        region11_score / (region10_score + region11_score)
+    )
+    assert nodes[3]["raw_target_probs"] == {"0": 0.3}
+    assert nodes[11]["raw_target_probs"] == {"0": 0.4}
 
 
 def test_raw_only_node_update_preserves_planner_target_probs():
@@ -302,7 +408,7 @@ def test_graph_payload_rejects_conflicting_assignment_and_reassignment():
         )
 
 
-def test_graph_payload_repair_materializes_existing_graph_region():
+def test_graph_payload_accepts_existing_graph_region_without_reemit():
     graph_summary = _prior_graph_summary()
     graph_summary["nodes"].append(
         {
@@ -336,13 +442,9 @@ def test_graph_payload_repair_materializes_existing_graph_region():
         graph_summary=graph_summary,
     )
 
-    assert normalized["visible_region_nodes"] == [
-        {
-            "id": 11,
-            "label": "bright living area beside hallway",
-            "exist_prob": 1.0,
-            "target_probs": {"0": 0.7},
-        }
+    assert normalized["visible_region_nodes"] == []
+    assert normalized["current_viewpoints_reassignment"] == [
+        {"viewpoint_id": 1, "new_assigned_region_id": 11}
     ]
 
 
@@ -386,14 +488,7 @@ def test_graph_payload_repair_removes_noop_current_reassignment():
         "current_viewpoints_reassignment": [
             {"viewpoint_id": 1, "new_assigned_region_id": 10}
         ],
-        "visible_region_nodes": [
-            {
-                "id": 10,
-                "label": "old kitchen area",
-                "exist_prob": 1.0,
-                "target_probs": {"0": 0.5},
-            }
-        ],
+        "visible_region_nodes": [],
         "invisible_region_nodes": [],
         "viewpoint_target_probs": [],
         "viewpoint_node_assigns": [],
@@ -411,6 +506,68 @@ def test_graph_payload_repair_removes_noop_current_reassignment():
     )
 
     assert normalized["current_viewpoints_reassignment"] == []
+
+
+def test_graph_payload_rejects_existing_viewpoint_target_probs():
+    graph_summary = _prior_graph_summary()
+    graph_summary["nodes"].append(
+        {
+            "id": 2,
+            "type": "viewpoint",
+            "grounded": False,
+            "node_visit_times": 0,
+        }
+    )
+
+    payload = {
+        "current_viewpoints_reassignment": [],
+        "visible_region_nodes": [],
+        "invisible_region_nodes": [],
+        "viewpoint_target_probs": [
+            {"id": 2, "target_probs": {"0": 0.4}},
+        ],
+        "viewpoint_node_assigns": [],
+        "new_edges": [],
+        "edge_distance_variances": {
+            "viewpoint_viewpoint": 1.0,
+            "viewpoint_region": 4.0,
+        },
+    }
+
+    with pytest.raises(ValueError, match="already exists in graph_summary"):
+        _client()._validate_payload(
+            payload=payload,
+            agent_observations=_agent_observations(),
+            targets=_targets(),
+            graph_summary=graph_summary,
+        )
+
+
+def test_graph_prompt_omits_existing_target_probs_and_optional_viewpoint_updates():
+    graph_summary = _prior_graph_summary()
+    graph_summary["nodes"].append(
+        {
+            "id": 2,
+            "type": "viewpoint",
+            "grounded": False,
+            "node_visit_times": 0,
+            "target_probs": {"0": 0.25},
+        }
+    )
+
+    _, user_message = _client()._build_instruction(
+        agent_observations=_agent_observations(),
+        targets=_targets(),
+        graph_summary=graph_summary,
+    )
+
+    graph_summary_section = user_message.split(
+        "Per-agent observation context:", 1
+    )[0]
+    assert '"target_probs": {"0": 0.5}' not in graph_summary_section
+    assert '"target_probs": {"0": 0.25}' not in graph_summary_section
+    assert "Optional previously observed viewpoint_target_probs ids" not in user_message
+    assert "Existing graph node target probabilities are not included" in user_message
 
 
 def test_graph_payload_repair_drops_invalid_optional_vz_edge():
@@ -495,14 +652,7 @@ def test_saved_semantic_replay_uses_incremental_graph_contract(tmp_path):
 
     saved_payload = {
         "current_viewpoints_reassignment": [],
-        "visible_region_nodes": [
-            {
-                "id": 10,
-                "label": "old kitchen area",
-                "exist_prob": 1.0,
-                "target_probs": {"0": 0.5},
-            }
-        ],
+        "visible_region_nodes": [],
         "invisible_region_nodes": [],
         "viewpoint_target_probs": [
             {"id": 2, "target_probs": {"0": 0.4}},
@@ -611,6 +761,7 @@ def _tool_call(name="report_target_detections", arguments=None):
 
 def _valid_incremental_graph_payload():
     payload = _new_graph_payload()
+    payload["visible_region_nodes"] = []
     payload["viewpoint_node_assigns"] = [
         {"region_node_id": 10, "assigned_viewpoint_node_indices": [2]}
     ]
