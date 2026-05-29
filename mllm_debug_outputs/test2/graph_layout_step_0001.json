@@ -11,6 +11,12 @@
       "type": "vv"
     },
     {
+      "grounded": false,
+      "i": 0,
+      "j": 32,
+      "type": "vv"
+    },
+    {
       "grounded": true,
       "i": 9,
       "j": 18,
@@ -42,21 +48,28 @@
     },
     {
       "grounded": false,
-      "i": 35,
-      "j": 49,
-      "type": "vz"
+      "i": 18,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 32,
+      "j": 35,
+      "type": "vv"
     },
     {
       "grounded": false,
       "i": 40,
-      "j": 49,
-      "type": "vz"
+      "j": 41,
+      "type": "vv"
     }
   ],
   "nodes": [
     {
       "connected_node_ids": [
-        16
+        16,
+        32
       ],
       "grounded": false,
       "id": 0,
@@ -90,7 +103,8 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        41
       ],
       "grounded": false,
       "id": 18,
@@ -100,7 +114,9 @@
     },
     {
       "connected_node_ids": [
-        16
+        0,
+        16,
+        35
       ],
       "grounded": false,
       "id": 32,
@@ -111,7 +127,7 @@
     {
       "connected_node_ids": [
         16,
-        49
+        32
       ],
       "grounded": false,
       "id": 35,
@@ -122,7 +138,7 @@
     {
       "connected_node_ids": [
         9,
-        49
+        41
       ],
       "grounded": false,
       "id": 40,
@@ -132,7 +148,9 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        18,
+        40
       ],
       "grounded": false,
       "id": 41,
@@ -142,7 +160,9 @@
     },
     {
       "assigned_viewpoint_ids": [
-        16
+        0,
+        16,
+        32
       ],
       "connected_node_ids": [],
       "grounded": true,
@@ -158,55 +178,31 @@
       "connected_node_ids": [],
       "grounded": false,
       "id": 45,
-      "label": "bedroom area with large bed and blue wall",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        0,
-        32
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 46,
-      "label": "hallway area connecting living room and bedroom",
+      "label": "bedroom area with bed and blue patterned wall",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         9,
-        18,
-        41
+        18
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 47,
-      "label": "padded lounge area with tufted walls and seating",
+      "id": 46,
+      "label": "soundproofed entertainment room with padded walls",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        40
+        40,
+        41
       ],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 48,
-      "label": "small adjacent room visible through doorway from lounge",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [
-        35,
-        40
-      ],
-      "grounded": false,
-      "id": 49,
-      "label": "bathroom area not directly visible but inferred near bedroom",
+      "id": 47,
+      "label": "bathroom area visible through doorway from entertainment room",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -214,32 +210,30 @@
   "observation_step": 1,
   "region_to_viewpoints": {
     "44": [
-      16
+      0,
+      16,
+      32
     ],
     "45": [
       35
     ],
     "46": [
-      0,
-      32
+      9,
+      18
     ],
     "47": [
-      9,
-      18,
+      40,
       41
-    ],
-    "48": [
-      40
     ]
   },
   "viewpoint_to_region": {
-    "0": 46,
-    "9": 47,
+    "0": 44,
+    "9": 46,
     "16": 44,
-    "18": 47,
-    "32": 46,
+    "18": 46,
+    "32": 44,
     "35": 45,
-    "40": 48,
+    "40": 47,
     "41": 47
   }
 }
