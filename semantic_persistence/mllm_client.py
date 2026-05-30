@@ -223,16 +223,12 @@ class MLLMClient:
         }
 
         if request_type == "detection":
-            request_kwargs.update(
-                {
-                    "tools": [self._detection_tool_definition()],
-                    "tool_choice": {
-                        "type": "function",
-                        "function": {"name": "report_target_detections"},
-                    },
-                    "parallel_tool_calls": False,
-                }
-            )
+            request_kwargs["tools"] = [self._detection_tool_definition()]
+            request_kwargs["tool_choice"] = {
+                "type": "function",
+                "function": {"name": "report_target_detections"},
+            }
+            request_kwargs["parallel_tool_calls"] = False
         else:
             request_kwargs["response_format"] = {"type": "json_object"}
 
@@ -455,7 +451,8 @@ class MLLMClient:
 
         system_message = dedent("""
             You are doing strict direct visual target detection from indoor panorama images.
-            Call report_target_detections exactly once with the required JSON arguments.
+            Call report_target_detections exactly once with arguments matching the required detection schema.
+            Do not output markdown, code fences, comments, text outside the tool call, extra top-level keys, trailing commas, or non-JSON booleans.
 
             Match the exact target object identity, not a broad object category.
             The target description may contain object type, color, size, shape, material, location, or context. Use all visible parts of the description when deciding whether the target is present.
@@ -490,6 +487,7 @@ class MLLMClient:
 
                 Output rules:
                 - Call report_target_detections exactly once.
+                - The tool arguments must be exactly one JSON object with top-level key "detections".
                 - If no active target is visible in any image, pass:
                   {{"detections":[]}}
                 - Include only agents that detect at least one target.
@@ -498,7 +496,7 @@ class MLLMClient:
                 - Do not include completed, unlisted, or not-found targets.
                 - Do not include an agent-target pair if the detected object could reasonably be a different object type than the target description.
 
-                Required function arguments:
+                Required JSON object:
                 {{
                   "detections": [
                     {{
@@ -729,7 +727,7 @@ class MLLMClient:
             Detection output failed validation on retry {attempt_index} of {max_validation_retries}.
             Error: {validation_error}
 
-            Return a corrected complete JSON object only. Keep the same detection schema.
+            Call report_target_detections exactly once with corrected complete arguments. Keep the same detection schema.
             """).strip()
 
         return (
@@ -800,14 +798,13 @@ class MLLMClient:
                 {"role": "user", "content": user_content},
             ]
 
-            decoded = self._request_completion(
-                messages=messages,
-                model_name=getattr(self, "detection_model_name", ""),
-                request_type="detection",
-                thinking_mode=True,
-            )
-
             try:
+                decoded = self._request_completion(
+                    messages=messages,
+                    model_name=getattr(self, "detection_model_name", ""),
+                    request_type="detection",
+                    thinking_mode=False,
+                )
                 raw = self._strip_code_fences(decoded)
                 payload = self._parse_json_strict(raw)
                 detections = self._validate_detection_payload(
@@ -1631,7 +1628,7 @@ class MLLMClient:
                         messages=messages,
                         model_name=getattr(self, "graph_model_name", ""),
                         request_type="graph",
-                        thinking_mode=True,
+                        thinking_mode=False,
                     )
                 except APITimeoutError:
                     if timeout_attempt_index >= max_request_timeout_retries:
@@ -2779,7 +2776,10 @@ class MLLMClient:
                     "current viewpoint." % viewpoint_id
                 )
 
-            if new_region_id not in visible_region_ids and new_region_id not in graph_region_ids:
+            if (
+                new_region_id not in visible_region_ids
+                and new_region_id not in graph_region_ids
+            ):
                 raise ValueError(
                     "current_viewpoints_reassignment new_assigned_region_id %s must "
                     "appear in visible_region_nodes or graph_summary region nodes."
@@ -2840,7 +2840,10 @@ class MLLMClient:
                     )
                 current_region_id = graph_viewpoint_to_region[current_viewpoint_id]
 
-            if current_region_id not in visible_region_ids and current_region_id not in graph_region_ids:
+            if (
+                current_region_id not in visible_region_ids
+                and current_region_id not in graph_region_ids
+            ):
                 raise ValueError(
                     "Derived current region %s for agent %s viewpoint %s is not in "
                     "visible_region_nodes or graph_summary region nodes."

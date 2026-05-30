@@ -536,7 +536,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         for _ in range(2):
             print()
 
-        if debug_step_index >= 6:
+        if debug_step_index >= 10:
             debugpy.breakpoint()
 
 

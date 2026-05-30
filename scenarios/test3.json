@@ -49,13 +49,12 @@
     }
   ],
   "mllm": {
-    "graph_model_name": "google/gemma-4-26B-A4B-it:deepinfra",
-    "detection_model_name": "google/gemma-4-31B-it:deepinfra",
-    "max_new_tokens": 4096,
+    "graph_model_name": "qwen3.5-27b",
+    "detection_model_name": "qwen3.5-plus",
     "read_saved_raw_outputs": true,
     "raw_output_dir": "mllm_raw_outputs/test3",
     "debug_output_dir": "mllm_debug_outputs/test3",
-    "max_validation_retries": 3
+    "max_validation_retries": 4
   },
   "bayes": {
     "eta_goal": 5.0,

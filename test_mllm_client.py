@@ -733,6 +733,19 @@ def _graph_completion(payload):
     )
 
 
+def _text_completion(content):
+    return SimpleNamespace(
+        usage=None,
+        model="fake-model",
+        choices=[
+            SimpleNamespace(
+                finish_reason="stop",
+                message=SimpleNamespace(content=content),
+            )
+        ],
+    )
+
+
 def _timeout_error():
     try:
         return APITimeoutError(request=None)
@@ -824,9 +837,29 @@ def test_graph_request_timeout_propagates_after_retry_limit(tmp_path):
     assert len(client.graph_client.completions.calls) == 2
 
 
-def test_detection_request_uses_forced_strict_tool_call():
+def test_detection_request_uses_tool_call():
     client = _client()
-    client.detection_client = _FakeClient(_completion([_tool_call()]))
+    expected_arguments = json.dumps(
+        {
+            "detections": [
+                {
+                    "agent_id": "agent0",
+                    "found_target_indices": ["0"],
+                    "target_center_xs": [0.52],
+                }
+            ]
+        }
+    )
+    client.detection_client = _FakeClient(
+        _completion(
+            [
+                _tool_call(
+                    name="report_target_detections",
+                    arguments=expected_arguments,
+                )
+            ]
+        )
+    )
 
     arguments = client._request_completion(
         messages=[{"role": "user", "content": "detect"}],
@@ -842,12 +875,13 @@ def test_detection_request_uses_forced_strict_tool_call():
 
     call = client.detection_client.completions.calls[0]
     assert "response_format" not in call
-    assert call["parallel_tool_calls"] is False
+    assert call["tools"] == [MLLMClient._detection_tool_definition()]
     assert call["tool_choice"] == {
         "type": "function",
         "function": {"name": "report_target_detections"},
     }
-    assert call["tools"][0]["function"]["strict"] is True
+    assert call["parallel_tool_calls"] is False
+    assert arguments == expected_arguments
     assert detections == [
         {
             "agent_id": "agent0",
@@ -886,3 +920,39 @@ def test_detection_tool_call_malformed_arguments_fail_strict_json_parse():
 
     with pytest.raises(ValueError, match="not valid JSON"):
         client._parse_json_strict(arguments)
+
+
+def test_detection_retries_when_model_omits_tool_call(tmp_path, monkeypatch):
+    monkeypatch.setattr("debugpy.breakpoint", lambda: None)
+
+    client = MLLMClient(
+        read_saved_raw_outputs=True,
+        raw_output_dir=str(tmp_path / "raw"),
+        raw_debug_dir=str(tmp_path / "debug"),
+        max_validation_retries=1,
+    )
+    client.detection_client = _FakeClient(
+        [
+            _completion([]),
+            _completion([_tool_call()]),
+        ]
+    )
+
+    detections = client._detect_targets(
+        agent_observations=_agent_observations(visible=False),
+        targets=_targets(),
+        image_content=[],
+        step_index=1,
+    )
+
+    calls = client.detection_client.completions.calls
+    assert len(calls) == 2
+    retry_content = calls[1]["messages"][1]["content"][0]["text"]
+    assert "Detection model did not call report_target_detections" in retry_content
+    assert detections == [
+        {
+            "agent_id": "agent0",
+            "found_target_indices": ["0"],
+            "target_center_xs": [0.52],
+        }
+    ]
