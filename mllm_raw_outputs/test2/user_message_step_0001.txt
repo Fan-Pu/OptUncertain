@@ -154,8 +154,8 @@ Strict allowed-id rule:
 - Previously observed viewpoints keep their previous graph_summary viewpoint-to-region assignment by default.
 - If a previously observed current viewpoint should move to a different region, report that change only in current_viewpoints_reassignment.
 - viewpoint_target_probs must contain every required newly observed non-current visible neighboring viewpoint id below.
-- viewpoint_target_probs may also contain optional previously observed non-current visible neighboring viewpoint ids below when the current observation supports updating them.
 - Do not include current viewpoint ids in viewpoint_target_probs.
+- Do not include previously observed viewpoint ids in viewpoint_target_probs; their probabilities are updated by code with the paper's Bayesian rule.
 - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
 - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
 - Region ids must be >= 44.
@@ -216,9 +216,6 @@ Required newly observed viewpoint_target_probs id skeleton:
   }
 ]
 
-Optional previously observed viewpoint_target_probs ids:
-[]
-
 Viewpoint target probability rule:
 - You must output one viewpoint_target_probs item for every id in this skeleton.
 - These ids are non-current visible neighboring viewpoints only.
@@ -229,12 +226,14 @@ Viewpoint target probability rule:
 - Use positive but meaningful scores in (0, 1].
 - Avoid uniform scores unless the visual evidence and graph context are truly indistinguishable.
 - Do not include current viewpoint ids.
+- Do not include existing graph viewpoint ids.
 - Do not delete any skeleton item.
 
 Target probability rule:
-- target_probs are unnormalized relative target-location scores, not calibrated probabilities.
+- target_probs are unnormalized initial target-location scores for newly introduced nodes only, not calibrated probabilities.
+- Existing graph node target probabilities are not included in the prompt and are updated by code using the paper's Bayesian rule: previous posterior times the current visual-evidence likelihood, normalized separately on viewpoint and region layers.
 - Do not copy default values from the schema or examples.
-- For each active target_id, compare all candidate regions and all required non-current neighboring viewpoints before assigning scores.
+- For each active target_id, compare newly proposed regions and all required newly observed non-current neighboring viewpoints before assigning scores.
 - Assign higher scores to locations whose visible objects, room type, furniture, spatial context, and graph history better match the target description.
 - For example, if the target is a plant on a dining table, regions or viewpoints near a dining table should receive higher scores than bedrooms, bathrooms, hallways, or lounge areas without dining-table evidence.
 - Use the full range (0, 1]. Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
@@ -255,7 +254,7 @@ Current-step interpretation note:
 - The observation context is the source of truth for current agent locations.
 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
 - If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
-- If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label and still include it in visible_region_nodes.
+- If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label without re-emitting it in visible_region_nodes.
 
 Output schema example. Use keys and value types only. Do not copy example values unless supported:
 {

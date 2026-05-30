@@ -1,292 +1,61 @@
 {
-  "agents": [
+  "current_viewpoints_reassignment": [
     {
-      "agent_id": "agent0",
-      "current_region_node_id": 104
-    },
-    {
-      "agent_id": "agent1",
-      "current_region_node_id": 107
-    },
-    {
-      "agent_id": "agent2",
-      "current_region_node_id": 106
-    },
-    {
-      "agent_id": "agent3",
-      "current_region_node_id": 107
-    }
-  ],
-  "current_viewpoints_reassignment": [],
-  "detections": [
-    {
-      "agent_id": "agent0",
-      "founds": [
-        false
-      ],
-      "target_indices": [
-        "4"
-      ]
-    },
-    {
-      "agent_id": "agent1",
-      "founds": [
-        false
-      ],
-      "target_indices": [
-        "4"
-      ]
-    },
-    {
-      "agent_id": "agent2",
-      "founds": [
-        false
-      ],
-      "target_indices": [
-        "4"
-      ]
-    },
-    {
-      "agent_id": "agent3",
-      "founds": [
-        false
-      ],
-      "target_indices": [
-        "4"
-      ]
+      "new_assigned_region_id": 48,
+      "viewpoint_id": 30
     }
   ],
   "edge_distance_variances": {
     "viewpoint_region": 4.0,
     "viewpoint_viewpoint": 1.0
   },
-  "invisible_region_nodes": [
-    {
-      "exist_prob": 0.5,
-      "id": 111,
-      "label": "unseen bedroom area beyond the hallway",
-      "target_probs": {
-        "4": 0.05
-      }
-    }
-  ],
-  "new_edges": [
-    {
-      "dist": 2.5,
-      "edge_type": "VV",
-      "exist_prob": 0.4,
-      "i": 1,
-      "j": 5
-    },
-    {
-      "dist": 3.0,
-      "edge_type": "VZ",
-      "exist_prob": 0.5,
-      "i": 42,
-      "j": 111
-    }
-  ],
+  "invisible_region_nodes": [],
+  "new_edges": [],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        3,
-        4
-      ],
-      "region_node_id": 101
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        38
-      ],
-      "region_node_id": 102
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        37
-      ],
-      "region_node_id": 103
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        17,
-        32
-      ],
-      "region_node_id": 104
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        10,
-        24
-      ],
-      "region_node_id": 106
-    },
-    {
-      "assigned_viewpoint_node_indices": [
-        1,
         5,
+        28,
+        30
+      ],
+      "region_node_id": 48
+    },
+    {
+      "assigned_viewpoint_node_indices": [
         7,
         13,
-        19,
-        28,
-        36,
         42
       ],
-      "region_node_id": 107
+      "region_node_id": 55
     }
   ],
   "viewpoint_target_probs": [
     {
-      "id": 17,
-      "target_probs": {
-        "4": 0.0
-      }
-    },
-    {
-      "id": 24,
-      "target_probs": {
-        "4": 0.0
-      }
-    },
-    {
-      "id": 28,
-      "target_probs": {
-        "4": 0.0
-      }
-    },
-    {
-      "id": 36,
-      "target_probs": {
-        "4": 0.0
-      }
-    },
-    {
-      "id": 1,
-      "target_probs": {
-        "4": 0.05
-      }
-    },
-    {
-      "id": 3,
-      "target_probs": {
-        "4": 0.1
-      }
-    },
-    {
-      "id": 4,
-      "target_probs": {
-        "4": 0.05
-      }
-    },
-    {
-      "id": 5,
-      "target_probs": {
-        "4": 0.05
-      }
-    },
-    {
       "id": 7,
       "target_probs": {
-        "4": 0.05
-      }
-    },
-    {
-      "id": 10,
-      "target_probs": {
-        "4": 0.05
+        "3": 0.15
       }
     },
     {
       "id": 13,
       "target_probs": {
-        "4": 0.05
-      }
-    },
-    {
-      "id": 19,
-      "target_probs": {
-        "4": 0.05
-      }
-    },
-    {
-      "id": 32,
-      "target_probs": {
-        "4": 0.05
-      }
-    },
-    {
-      "id": 37,
-      "target_probs": {
-        "4": 0.05
-      }
-    },
-    {
-      "id": 38,
-      "target_probs": {
-        "4": 0.05
+        "3": 0.12
       }
     },
     {
       "id": 42,
       "target_probs": {
-        "4": 0.05
+        "3": 0.85
       }
     }
   ],
   "visible_region_nodes": [
     {
-      "exist_prob": 1.0,
-      "id": 104,
-      "label": "adjacent bedroom area seen through doorway",
+      "exist_prob": 0.9,
+      "id": 55,
+      "label": "kitchen area with counter and bar stools adjacent to dining",
       "target_probs": {
-        "4": 0.1174
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 107,
-      "label": "bright dining or kitchen area beyond hallway",
-      "target_probs": {
-        "4": 0.0598
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 106,
-      "label": "sunlit bedroom area with large windows",
-      "target_probs": {
-        "4": 0.0734
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 101,
-      "label": "dark textured lounge area",
-      "target_probs": {
-        "4": 0.0818
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 102,
-      "label": "bright bedroom area with large windows",
-      "target_probs": {
-        "4": 0.0503
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 103,
-      "label": "white hallway area with closed door",
-      "target_probs": {
-        "4": 0.0166
-      }
-    },
-    {
-      "exist_prob": 1.0,
-      "id": 105,
-      "label": "dark seating area near doorway",
-      "target_probs": {
-        "4": 0.0478
+        "3": 0.65
       }
     }
   ]

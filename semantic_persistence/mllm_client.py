@@ -223,16 +223,12 @@ class MLLMClient:
         }
 
         if request_type == "detection":
-            request_kwargs.update(
-                {
-                    "tools": [self._detection_tool_definition()],
-                    "tool_choice": {
-                        "type": "function",
-                        "function": {"name": "report_target_detections"},
-                    },
-                    "parallel_tool_calls": False,
-                }
-            )
+            request_kwargs["tools"] = [self._detection_tool_definition()]
+            request_kwargs["tool_choice"] = {
+                "type": "function",
+                "function": {"name": "report_target_detections"},
+            }
+            request_kwargs["parallel_tool_calls"] = False
         else:
             request_kwargs["response_format"] = {"type": "json_object"}
 
@@ -455,7 +451,8 @@ class MLLMClient:
 
         system_message = dedent("""
             You are doing strict direct visual target detection from indoor panorama images.
-            Call report_target_detections exactly once with the required JSON arguments.
+            Call report_target_detections exactly once with arguments matching the required detection schema.
+            Do not output markdown, code fences, comments, text outside the tool call, extra top-level keys, trailing commas, or non-JSON booleans.
 
             Match the exact target object identity, not a broad object category.
             The target description may contain object type, color, size, shape, material, location, or context. Use all visible parts of the description when deciding whether the target is present.
@@ -490,6 +487,7 @@ class MLLMClient:
 
                 Output rules:
                 - Call report_target_detections exactly once.
+                - The tool arguments must be exactly one JSON object with top-level key "detections".
                 - If no active target is visible in any image, pass:
                   {{"detections":[]}}
                 - Include only agents that detect at least one target.
@@ -498,7 +496,7 @@ class MLLMClient:
                 - Do not include completed, unlisted, or not-found targets.
                 - Do not include an agent-target pair if the detected object could reasonably be a different object type than the target description.
 
-                Required function arguments:
+                Required JSON object:
                 {{
                   "detections": [
                     {{
@@ -729,7 +727,7 @@ class MLLMClient:
             Detection output failed validation on retry {attempt_index} of {max_validation_retries}.
             Error: {validation_error}
 
-            Return a corrected complete JSON object only. Keep the same detection schema.
+            Call report_target_detections exactly once with corrected complete arguments. Keep the same detection schema.
             """).strip()
 
         return (
@@ -800,14 +798,13 @@ class MLLMClient:
                 {"role": "user", "content": user_content},
             ]
 
-            decoded = self._request_completion(
-                messages=messages,
-                model_name=getattr(self, "detection_model_name", ""),
-                request_type="detection",
-                thinking_mode=True,
-            )
-
             try:
+                decoded = self._request_completion(
+                    messages=messages,
+                    model_name=getattr(self, "detection_model_name", ""),
+                    request_type="detection",
+                    thinking_mode=False,
+                )
                 raw = self._strip_code_fences(decoded)
                 payload = self._parse_json_strict(raw)
                 detections = self._validate_detection_payload(
@@ -1122,10 +1119,6 @@ class MLLMClient:
             visible_neighbor_viewpoint_ids_for_prompt
             - graph_viewpoint_node_ids_for_prompt
         )
-        optional_viewpoint_target_prob_ids_for_prompt = sorted(
-            visible_neighbor_viewpoint_ids_for_prompt
-            & graph_viewpoint_node_ids_for_prompt
-        )
 
         required_viewpoint_target_probs_skeleton = [
             {"id": viewpoint_id}
@@ -1242,11 +1235,12 @@ class MLLMClient:
         for node in prompt_graph_summary.get("nodes", []):
             if node.get("type") == "viewpoint":
                 node.pop("label", None)
+            node.pop("target_probs", None)
 
         system_message = dedent("""
             You are an indoor hypothesis-graph proposal module for cooperative many-agent, many-target navigation. Analyze one annotated RGB panorama per agent and the compact shared graph summary. Propose an uncertain graph update for downstream optimization. Do not select robot actions or produce a final map.
 
-            The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, active target_ids, and viewpoint ids exactly. Reuse provided region ids exactly when a matching region already exists. For newly proposed regions, assign new integer region ids that do not conflict with existing ids. Use active target_id in target_probs. Use active target descriptions only to understand the remaining targets. Found targets are complete and must not appear in target_probs or existence hypotheses.
+            The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, active target_ids, and viewpoint ids exactly. Reuse provided region ids exactly when a matching region already exists. For newly proposed regions, assign new integer region ids that do not conflict with existing ids. Use active target_id in target_probs only for newly proposed regions and newly observed non-current visible neighboring viewpoints. Existing node target probabilities are maintained by the code with the paper's Bayesian target-update rule, so do not regenerate them. Found targets are complete and must not appear in target_probs or existence hypotheses.
 
             Return exactly one valid JSON object matching the user schema. Do not output markdown, code fences, comments, text outside JSON, extra top-level keys, trailing commas, or non-JSON booleans.
 
@@ -1264,16 +1258,16 @@ class MLLMClient:
             - current_viewpoints_reassignment must contain only true region changes for current viewpoints. Return [] when no current viewpoint requires reassignment.
             - For each current_viewpoints_reassignment item, new_assigned_region_id must equal the final region used for that current viewpoint. If the reassigned current viewpoint appears in viewpoint_node_assigns, it must also match there.
             - If new_assigned_region_id is a newly proposed region, include the complete region node record in visible_region_nodes.
-            - visible_region_nodes include current regions and any adjacent area that is visually observable in current panoramas, even if only partially visible through a doorway, opening, or corridor.
+            - visible_region_nodes include only newly proposed visible regions: current regions or adjacent areas that are visually observable in current panoramas and are absent from the compact shared graph summary. Existing graph regions should be referenced by id, not re-emitted.
             - Before creating a new visible_region_node, compare it with existing visible_region_nodes and graph-summary region nodes. If the same physical area is already represented, reuse that existing region id and label. Do not create two region nodes for the same hallway, corridor, bathroom, bedroom, or room only because the wording is slightly different across panoramas.
             - invisible_region_nodes include only completely unseen regions inferred from layout cues. If any part of a region is visible, it is not invisible.
             - Do not assign viewpoints to invisible_region_nodes. A region with assigned viewpoints must be in visible_region_nodes.
             - A region id must appear in only one of visible_region_nodes or invisible_region_nodes.
             - Region labels must be room or area labels, not object names. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names. Avoid generic labels unless they include both appearance and relative location cues.
             - Detections are handled by a separate detection step outside this graph MLLM call. Do not output detections.
-            - Region target_probs and returned non-current visible-neighbor viewpoint target_probs must contain every active target_id with values in (0, 1]. Do not generate target_probs for current viewpoints.
+            - Newly proposed region target_probs and returned newly observed non-current visible-neighbor viewpoint target_probs must contain every active target_id with values in (0, 1]. Do not generate target_probs for current viewpoints or existing graph nodes.
             - Use active target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak.
-            - viewpoint_target_probs must include every newly observed non-current visible neighboring viewpoint that is absent from compact shared graph summary nodes. Previously observed visible neighboring viewpoints may be omitted; include one only when the current observation supports updating its target existence probability. Exclude current agent viewpoints.
+            - viewpoint_target_probs must include every newly observed non-current visible neighboring viewpoint that is absent from compact shared graph summary nodes. Exclude current agent viewpoints and every viewpoint already present in the compact shared graph summary.
             - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. It is incremental and must include exactly the viewpoint ids requiring region assignment in this step. This set includes new visible neighboring viewpoints and first-reached current viewpoints. Do not include other current-step viewpoints. Other current-step viewpoints keep their previous graph_summary assignment unless a current viewpoint is explicitly listed in current_viewpoints_reassignment.
             - For non-current visible neighboring viewpoints, use prior_assigned_region_id only as historical context, not as a fixed assignment.
             - Assign each non-current visible neighboring viewpoint by jointly considering its marker location in the panorama, xy-based floor-plan distance from current_xy, visible_viewpoints[].distance, and whether a clear spatial boundary separates it from the current viewpoint.
@@ -1324,8 +1318,8 @@ class MLLMClient:
                 - Previously observed viewpoints keep their previous graph_summary viewpoint-to-region assignment by default.
                 - If a previously observed current viewpoint should move to a different region, report that change only in current_viewpoints_reassignment.
                 - viewpoint_target_probs must contain every required newly observed non-current visible neighboring viewpoint id below.
-                - viewpoint_target_probs may also contain optional previously observed non-current visible neighboring viewpoint ids below when the current observation supports updating them.
                 - Do not include current viewpoint ids in viewpoint_target_probs.
+                - Do not include previously observed viewpoint ids in viewpoint_target_probs; their probabilities are updated by code with the paper's Bayesian rule.
                 - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
                 - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
                 - Region ids must be >= {region_start_id}.
@@ -1349,9 +1343,6 @@ class MLLMClient:
                 Required newly observed viewpoint_target_probs id skeleton:
                 {required_viewpoint_target_probs_skeleton_json}
 
-                Optional previously observed viewpoint_target_probs ids:
-                {optional_viewpoint_target_prob_ids_json}
-
                 Viewpoint target probability rule:
                 - You must output one viewpoint_target_probs item for every id in this skeleton.
                 - These ids are non-current visible neighboring viewpoints only.
@@ -1362,12 +1353,14 @@ class MLLMClient:
                 - Use positive but meaningful scores in (0, 1].
                 - Avoid uniform scores unless the visual evidence and graph context are truly indistinguishable.
                 - Do not include current viewpoint ids.
+                - Do not include existing graph viewpoint ids.
                 - Do not delete any skeleton item.
                 
                 Target probability rule:
-                - target_probs are unnormalized relative target-location scores, not calibrated probabilities.
+                - target_probs are unnormalized initial target-location scores for newly introduced nodes only, not calibrated probabilities.
+                - Existing graph node target probabilities are not included in the prompt and are updated by code using the paper's Bayesian rule: previous posterior times the current visual-evidence likelihood, normalized separately on viewpoint and region layers.
                 - Do not copy default values from the schema or examples.
-                - For each active target_id, compare all candidate regions and all required non-current neighboring viewpoints before assigning scores.
+                - For each active target_id, compare newly proposed regions and all required newly observed non-current neighboring viewpoints before assigning scores.
                 - Assign higher scores to locations whose visible objects, room type, furniture, spatial context, and graph history better match the target description.
                 - For example, if the target is a plant on a dining table, regions or viewpoints near a dining table should receive higher scores than bedrooms, bathrooms, hallways, or lounge areas without dining-table evidence.
                 - Use the full range (0, 1]. Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
@@ -1381,7 +1374,7 @@ class MLLMClient:
                 - The observation context is the source of truth for current agent locations.
                 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
                 - If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
-                - If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label and still include it in visible_region_nodes.
+                - If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label without re-emitting it in visible_region_nodes.
                 
                 Output schema example. Use keys and value types only. Do not copy example values unless supported:
                 {schema_json}
@@ -1430,9 +1423,6 @@ class MLLMClient:
                 ),
                 required_viewpoint_target_probs_skeleton_json=json.dumps(
                     required_viewpoint_target_probs_skeleton, indent=2, sort_keys=True
-                ),
-                optional_viewpoint_target_prob_ids_json=json.dumps(
-                    optional_viewpoint_target_prob_ids_for_prompt, indent=2
                 ),
                 region_start_id=region_start_id,
                 next_new_region_id=next_new_region_id,
@@ -1638,7 +1628,7 @@ class MLLMClient:
                         messages=messages,
                         model_name=getattr(self, "graph_model_name", ""),
                         request_type="graph",
-                        thinking_mode=True,
+                        thinking_mode=False,
                     )
                 except APITimeoutError:
                     if timeout_attempt_index >= max_request_timeout_retries:
@@ -1964,7 +1954,6 @@ class MLLMClient:
             return []
 
         repairs = []
-        target_ids = [str(target["target_id"]) for target in targets]
         current_viewpoint_ids = {
             int(observation["current_viewpoint_index"])
             for observation in agent_observations
@@ -2056,6 +2045,9 @@ class MLLMClient:
             return region_ids
 
         def materialize_graph_region(region_id: int) -> None:
+            if region_id in graph_region_records:
+                return
+
             visible_region_ids = region_ids_from(visible_region_nodes)
             invisible_region_ids = region_ids_from(invisible_region_nodes)
 
@@ -2070,26 +2062,6 @@ class MLLMClient:
                             "moved region %s from invisible to visible" % region_id
                         )
                         return
-
-            if region_id not in graph_region_records:
-                return
-
-            graph_region = graph_region_records[region_id]
-            graph_target_probs = graph_region.get("target_probs", {})
-            materialized_target_probs = {
-                target_id: graph_target_probs[target_id] for target_id in target_ids
-            }
-            visible_region_nodes.append(
-                {
-                    "id": region_id,
-                    "label": graph_region["label"],
-                    "exist_prob": graph_region["exist_prob"],
-                    "target_probs": materialized_target_probs,
-                }
-            )
-            repairs.append(
-                "materialized existing graph region %s as visible" % region_id
-            )
 
         assignment_candidates_by_viewpoint = {}
         assignment_regions_with_model_viewpoints = set()
@@ -2555,6 +2527,12 @@ class MLLMClient:
                     raise ValueError(
                         "Duplicated region id %s in %s." % (region_id, region_key)
                     )
+                if region_id in graph_region_records:
+                    raise ValueError(
+                        "%s region %s already exists in graph_summary. Existing "
+                        "graph regions must be referenced by id, not re-emitted "
+                        "with regenerated target_probs." % (region_key, region_id)
+                    )
                 region_id_set.add(region_id)
 
                 if not isinstance(region["label"], str) or not region["label"].strip():
@@ -2584,7 +2562,8 @@ class MLLMClient:
                 % sorted(visible_region_ids & invisible_region_ids)
             )
 
-        all_region_ids = visible_region_ids | invisible_region_ids
+        graph_region_ids = set(graph_region_records)
+        all_region_ids = visible_region_ids | invisible_region_ids | graph_region_ids
 
         region_start_id = int(len(Helper.viewpoint_vp_label_by_index))
         all_region_ids_for_namespace_check = set(visible_region_ids) | set(
@@ -2614,9 +2593,8 @@ class MLLMClient:
                 "with viewpoint ids." % (region_start_id, invalid_graph_region_ids)
             )
 
-        expected_mllm_viewpoint_prob_ids = visible_viewpoint_ids - current_viewpoint_ids
         required_mllm_viewpoint_prob_ids = (
-            expected_mllm_viewpoint_prob_ids - graph_viewpoint_node_ids
+            visible_viewpoint_ids - current_viewpoint_ids - graph_viewpoint_node_ids
         )
         returned_viewpoint_prob_ids = set()
         normalized_visible_viewpoint_target_probs = []
@@ -2641,10 +2619,18 @@ class MLLMClient:
                     % viewpoint_id
                 )
 
-            if viewpoint_id not in expected_mllm_viewpoint_prob_ids:
+            if viewpoint_id in graph_viewpoint_node_ids:
                 raise ValueError(
-                    "viewpoint_target_probs id %s is not a non-current visible "
-                    "neighboring viewpoint." % viewpoint_id
+                    "viewpoint_target_probs id %s already exists in graph_summary. "
+                    "Existing viewpoint target probabilities are updated by the "
+                    "Bayesian graph update and must not be returned by the graph MLLM."
+                    % viewpoint_id
+                )
+
+            if viewpoint_id not in required_mllm_viewpoint_prob_ids:
+                raise ValueError(
+                    "viewpoint_target_probs id %s is not a newly observed "
+                    "non-current visible neighboring viewpoint." % viewpoint_id
                 )
 
             if viewpoint_id in returned_viewpoint_prob_ids:
@@ -2790,10 +2776,14 @@ class MLLMClient:
                     "current viewpoint." % viewpoint_id
                 )
 
-            if new_region_id not in visible_region_ids:
+            if (
+                new_region_id not in visible_region_ids
+                and new_region_id not in graph_region_ids
+            ):
                 raise ValueError(
                     "current_viewpoints_reassignment new_assigned_region_id %s must "
-                    "appear in visible_region_nodes." % new_region_id
+                    "appear in visible_region_nodes or graph_summary region nodes."
+                    % new_region_id
                 )
 
             if viewpoint_id in seen_reassignment_viewpoints:
@@ -2850,10 +2840,13 @@ class MLLMClient:
                     )
                 current_region_id = graph_viewpoint_to_region[current_viewpoint_id]
 
-            if current_region_id not in visible_region_ids:
+            if (
+                current_region_id not in visible_region_ids
+                and current_region_id not in graph_region_ids
+            ):
                 raise ValueError(
                     "Derived current region %s for agent %s viewpoint %s is not in "
-                    "visible_region_nodes."
+                    "visible_region_nodes or graph_summary region nodes."
                     % (current_region_id, agent_id, current_viewpoint_id)
                 )
 

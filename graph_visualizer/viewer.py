@@ -262,6 +262,24 @@ def render_viewer_html() -> str:
     figure {
       margin: 0;
     }
+    .observation-image-button {
+      width: 100%;
+      display: block;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      border-radius: 6px;
+      text-align: inherit;
+    }
+    .observation-image-button:hover img {
+      border-color: #7a5cfa;
+      box-shadow: 0 2px 8px rgba(16, 24, 40, 0.18);
+    }
+    .observation-image-button:focus-visible {
+      outline: 2px solid #7a5cfa;
+      outline-offset: 3px;
+    }
     img {
       width: 100%;
       display: block;
@@ -1700,12 +1718,93 @@ def render_viewer_html() -> str:
     }
 
     function renderImages(step) {
-      document.getElementById("images").innerHTML = step.observation_images.map(image => `
+      const target = document.getElementById("images");
+      target.innerHTML = step.observation_images.map(image => `
         <figure>
-          <img src="${escapeAttr(image.url)}" alt="${escapeAttr(image.agent_id)} observation">
+          <button
+            type="button"
+            class="observation-image-button"
+            data-image-url="${escapeAttr(image.url)}"
+            data-agent-id="${escapeAttr(image.agent_id)}"
+            title="Open ${escapeAttr(image.agent_id)} observation"
+            aria-label="Open ${escapeAttr(image.agent_id)} observation"
+          >
+            <img src="${escapeAttr(image.url)}" alt="${escapeAttr(image.agent_id)} observation">
+          </button>
           <figcaption>${escapeHtml(image.agent_id)} observation</figcaption>
         </figure>
       `).join("");
+      for (const button of target.querySelectorAll(".observation-image-button")) {
+        button.addEventListener("click", () => {
+          openObservationImageWindow({
+            agent_id: button.dataset.agentId,
+            url: button.dataset.imageUrl
+          });
+        });
+      }
+    }
+
+    function openObservationImageWindow(image) {
+      const title = `${image.agent_id} observation - ${image.url}`;
+      const childWindow = window.open("", "_blank");
+      childWindow.document.open();
+      childWindow.document.write(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: #111827;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 16px;
+    }
+    p {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+    main {
+      overflow: auto;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    img {
+      max-width: none;
+      height: auto;
+      display: block;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>${escapeHtml(image.agent_id)} observation</h1>
+    <p>${escapeHtml(image.url)}</p>
+  </header>
+  <main>
+    <img src="${escapeAttr(image.url)}" alt="${escapeAttr(image.agent_id)} observation">
+  </main>
+</body>
+</html>`);
+      childWindow.document.close();
+      childWindow.focus();
     }
 
     function routeProjection(environment, width, height) {
