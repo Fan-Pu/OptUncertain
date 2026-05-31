@@ -425,6 +425,48 @@ class RollingHorizonOptimizer:
                     name="mtz_%s_%s_%s" % (source_id, target_id, agent_id),
                 )
 
+        viewpoint_node_ids = [
+            node_id
+            for node_id in all_node_ids
+            if hypothesis_graph.nodes[node_id].type == TYPE_VP
+        ]
+        for agent_index, agent_id in enumerate(agent_ids):
+            for other_agent_id in agent_ids[agent_index + 1 :]:
+                for viewpoint_id in viewpoint_node_ids:
+                    action_at_viewpoint = self._action_at_viewpoint_expression(
+                        model_vars=x,
+                        directed_edges=directed_edges,
+                        agent_id=agent_id,
+                        start_node_id=int(agent_current_vp_ids[agent_id]),
+                        viewpoint_id=viewpoint_id,
+                        agent_active=(
+                            agent_active[agent_id]
+                            if self.allow_inactive_agents
+                            else None
+                        ),
+                    )
+                    other_action_at_viewpoint = (
+                        self._action_at_viewpoint_expression(
+                            model_vars=x,
+                            directed_edges=directed_edges,
+                            agent_id=other_agent_id,
+                            start_node_id=int(agent_current_vp_ids[other_agent_id]),
+                            viewpoint_id=viewpoint_id,
+                            agent_active=(
+                                agent_active[other_agent_id]
+                                if self.allow_inactive_agents
+                                else None
+                            ),
+                        )
+                    )
+                    model.addConstr(
+                        action_at_viewpoint + other_action_at_viewpoint <= 1,
+                        name=(
+                            "unique_action_%s_%s_%s"
+                            % (agent_id, other_agent_id, viewpoint_id)
+                        ),
+                    )
+
         if self.unique_target_reward and self.force_positive_target_assignment:
             for target_id in target_ids:
                 for agent_id in agent_ids:
@@ -566,6 +608,24 @@ class RollingHorizonOptimizer:
             directed_edges.append((target_id, source_id))
 
         return sorted(set(directed_edges))
+
+    def _action_at_viewpoint_expression(
+        self,
+        model_vars,
+        directed_edges: List[Tuple[int, int]],
+        agent_id: str,
+        start_node_id: int,
+        viewpoint_id: int,
+        agent_active=None,
+    ):
+        first_hop_to_viewpoint = quicksum(
+            model_vars[(source_id, target_id, agent_id)]
+            for source_id, target_id in directed_edges
+            if source_id == start_node_id and target_id == viewpoint_id
+        )
+        if agent_active is not None and viewpoint_id == start_node_id:
+            return first_hop_to_viewpoint + (1 - agent_active)
+        return first_hop_to_viewpoint
 
     def _is_grounded_vv_edge(
         self,

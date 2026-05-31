@@ -587,6 +587,26 @@ def test_step_renderer_filters_hidden_region_edges_from_graph():
     assert "for (const edge of graphEdges)" in html
 
 
+def test_step_renderer_toggles_selected_nodes_and_highlights_found_targets():
+    html = render_viewer_html()
+
+    assert "function toggleNodeSelection(nodeId)" in html
+    assert "if (isSelectedNode(nodeId))" in html
+    assert "selected = null;" in html
+    assert 'selected = { kind: "node", id: nodeId };' in html
+    assert html.count("toggleNodeSelection(node.id);") == 2
+
+    assert "function targetSummaryHtml(step)" in html
+    assert "Boolean(targetFound[targetId])" in html
+    assert "summary-target-found" in html
+    assert "background: #dcfce7;" in html
+    assert "color: #166534;" in html
+    assert 'definitionList(items, htmlKeys = new Set())' in html
+    assert 'definitionList({\n        step_index: step.step_index,' in html
+    assert "observation_step: step.layout.observation_step" not in html
+    assert '}, new Set(["targets"]));' in html
+
+
 def test_step_renderer_includes_target_detection_sidebar_and_verification_normalization():
     html = render_viewer_html()
 
@@ -611,18 +631,36 @@ def test_step_renderer_includes_target_detection_sidebar_and_verification_normal
     assert "targetDescriptionFromStep(step, targetId)" in html
 
 
-def test_step_renderer_opens_observation_images_in_child_window():
+def test_step_renderer_opens_observation_images_in_modal_with_overlays():
     html = render_viewer_html()
 
-    assert "function openObservationImageWindow(image)" in html
+    assert 'id="observationModal"' in html
+    assert 'id="observationModalViewport"' in html
+    assert 'id="observationModalResetButton"' in html
+    assert 'id="observationModalCloseButton"' in html
     assert 'class="observation-image-button"' in html
+    assert 'class="observation-image-frame"' in html
+    assert "function openObservationImageModal(image)" in html
+    assert "function renderObservationModalImage()" in html
+    assert "function closeObservationImageModal()" in html
+    assert "function resetObservationModalTransform()" in html
     assert 'data-image-url="${escapeAttr(image.url)}"' in html
     assert 'data-agent-id="${escapeAttr(image.agent_id)}"' in html
     assert 'aria-label="Open ${escapeAttr(image.agent_id)} observation"' in html
-    assert 'window.open("", "_blank")' in html
-    assert "childWindow.document.write" in html
-    assert "<title>${escapeHtml(title)}</title>" in html
-    assert "<p>${escapeHtml(image.url)}</p>" in html
+    assert 'window.open("", "_blank")' not in html
+    assert "childWindow.document.write" not in html
+    assert "function observationDetectionsByAgent(step)" in html
+    assert "normalizedDetectionRows(step).filter(row => row.found)" in html
+    assert "Number(row.target_center_x)" in html
+    assert "item.target_center_x * 100" in html
+    assert "observationDetectionOverlayHtml" in html
+    assert "observation-detection-marker" in html
+    assert "observation-detection-label" in html
+    assert "target: ${escapeHtml(item.target_id)}" in html
+    assert "function beginObservationModalPan(event)" in html
+    assert "function zoomObservationModalAtPoint(factor, point)" in html
+    assert "observationModalViewport.addEventListener(\"wheel\"" in html
+    assert "event.key === \"Escape\"" in html
 
 
 def test_shutdown_endpoint_stops_visualization_server(tmp_path, monkeypatch):

@@ -18,6 +18,13 @@ def _targets():
     return [{"target_id": "0", "description": "the target object"}]
 
 
+def _targets_two():
+    return [
+        {"target_id": "0", "description": "target zero"},
+        {"target_id": "1", "description": "target one"},
+    ]
+
+
 def _agent_observations(visible=True):
     visible_viewpoints = []
     if visible:
@@ -158,10 +165,15 @@ def test_hypothesis_snapshot_saves_raw_mllm_target_probs_separately():
     assert nodes[2]["raw_target_probs"] == {"0": 0.8, "1": 0.2}
     assert nodes[2]["target_probs"] == {"0": 1.0, "1": 1.0}
     assert nodes[10]["raw_target_probs"] == {"0": 0.1, "1": 0.9}
-    assert nodes[10]["target_probs"] == {"0": 1.0, "1": 1.0}
+    assert nodes[10]["target_probs"] == {"0": 0.1, "1": 0.9}
+
+    summary_nodes = {
+        int(node["id"]): node for node in graph.get_mllm_summary()["nodes"]
+    }
+    assert summary_nodes[2]["raw_target_probs"] == {"0": 0.8, "1": 0.2}
 
 
-def test_target_probabilities_use_bayesian_update_and_zero_current_viewpoint():
+def test_target_probabilities_use_mllm_normalization_and_zero_current_viewpoint():
     Helper.viewpoint_vp_label_by_index.clear()
     Helper.viewpoint_vp_label_by_index.update(
         {1: "vp1", 2: "vp2", 3: "vp3"}
@@ -209,6 +221,7 @@ def test_target_probabilities_use_bayesian_update_and_zero_current_viewpoint():
             ],
             "invisible_region_nodes": [],
             "viewpoint_target_probs": [
+                {"id": 2, "target_probs": {"0": 0.9}},
                 {"id": 3, "target_probs": {"0": 0.3}},
             ],
             "viewpoint_node_assigns": [
@@ -237,24 +250,13 @@ def test_target_probabilities_use_bayesian_update_and_zero_current_viewpoint():
     nodes = {
         int(node["id"]): node for node in graph.get_hypothesis_snapshot()["nodes"]
     }
-    vp2_score = 0.7 * np.exp(2.0 * 0.2)
-    vp3_score = 0.3
-    region10_score = 0.6 * np.exp(2.0 * 0.2)
-    region11_score = 0.4
 
     assert nodes[1]["target_probs"]["0"] == 0.0
-    assert nodes[2]["target_probs"]["0"] == pytest.approx(
-        vp2_score / (vp2_score + vp3_score)
-    )
-    assert nodes[3]["target_probs"]["0"] == pytest.approx(
-        vp3_score / (vp2_score + vp3_score)
-    )
-    assert nodes[10]["target_probs"]["0"] == pytest.approx(
-        region10_score / (region10_score + region11_score)
-    )
-    assert nodes[11]["target_probs"]["0"] == pytest.approx(
-        region11_score / (region10_score + region11_score)
-    )
+    assert nodes[2]["target_probs"]["0"] == pytest.approx(0.75)
+    assert nodes[3]["target_probs"]["0"] == pytest.approx(0.25)
+    assert nodes[10]["target_probs"]["0"] == pytest.approx(0.6)
+    assert nodes[11]["target_probs"]["0"] == pytest.approx(0.4)
+    assert nodes[2]["raw_target_probs"] == {"0": 0.9}
     assert nodes[3]["raw_target_probs"] == {"0": 0.3}
     assert nodes[11]["raw_target_probs"] == {"0": 0.4}
 
@@ -508,7 +510,7 @@ def test_graph_payload_repair_removes_noop_current_reassignment():
     assert normalized["current_viewpoints_reassignment"] == []
 
 
-def test_graph_payload_rejects_existing_viewpoint_target_probs():
+def test_graph_payload_accepts_existing_viewpoint_target_probs_and_normalizes():
     graph_summary = _prior_graph_summary()
     graph_summary["nodes"].append(
         {
@@ -534,7 +536,219 @@ def test_graph_payload_rejects_existing_viewpoint_target_probs():
         },
     }
 
-    with pytest.raises(ValueError, match="already exists in graph_summary"):
+    normalized = _client()._validate_payload(
+        payload=payload,
+        agent_observations=_agent_observations(),
+        targets=_targets(),
+        graph_summary=graph_summary,
+    )
+
+    assert normalized["viewpoint_target_probs"] == [
+        {
+            "id": 2,
+            "target_probs": {"0": 1.0},
+            "raw_target_probs": {"0": 0.4},
+        }
+    ]
+
+
+def test_graph_payload_omitted_existing_viewpoint_keeps_prior_raw_prob():
+    graph_summary = _prior_graph_summary()
+    graph_summary["nodes"].append(
+        {
+            "id": 2,
+            "type": "viewpoint",
+            "grounded": False,
+            "node_visit_times": 0,
+            "raw_target_probs": {"0": 0.4},
+        }
+    )
+
+    payload = {
+        "current_viewpoints_reassignment": [],
+        "visible_region_nodes": [],
+        "invisible_region_nodes": [],
+        "viewpoint_target_probs": [],
+        "viewpoint_node_assigns": [],
+        "new_edges": [],
+        "edge_distance_variances": {
+            "viewpoint_viewpoint": 1.0,
+            "viewpoint_region": 4.0,
+        },
+    }
+
+    normalized = _client()._validate_payload(
+        payload=payload,
+        agent_observations=_agent_observations(),
+        targets=_targets(),
+        graph_summary=graph_summary,
+    )
+
+    assert normalized["viewpoint_target_probs"] == [
+        {
+            "id": 2,
+            "target_probs": {"0": 1.0},
+            "raw_target_probs": {"0": 0.4},
+        }
+    ]
+
+
+def test_graph_payload_partial_value_update_keeps_other_prior_raw_values():
+    graph_summary = _prior_graph_summary()
+    graph_summary["nodes"].extend(
+        [
+            {
+                "id": 2,
+                "type": "viewpoint",
+                "grounded": False,
+                "node_visit_times": 0,
+                "raw_target_probs": {"0": 1.0, "1": 2.0},
+            },
+            {
+                "id": 3,
+                "type": "viewpoint",
+                "grounded": False,
+                "node_visit_times": 0,
+                "raw_target_probs": {"0": 1.0, "1": 6.0},
+            },
+        ]
+    )
+
+    payload = {
+        "current_viewpoints_reassignment": [],
+        "visible_region_nodes": [],
+        "invisible_region_nodes": [],
+        "viewpoint_target_probs": [
+            {"id": 2, "target_probs": {"0": 4.0}},
+        ],
+        "viewpoint_node_assigns": [],
+        "new_edges": [],
+        "edge_distance_variances": {
+            "viewpoint_viewpoint": 1.0,
+            "viewpoint_region": 4.0,
+        },
+    }
+
+    normalized = _client()._validate_payload(
+        payload=payload,
+        agent_observations=_agent_observations(),
+        targets=_targets_two(),
+        graph_summary=graph_summary,
+    )
+
+    by_id = {
+        item["id"]: item for item in normalized["viewpoint_target_probs"]
+    }
+    assert by_id[2]["raw_target_probs"] == {"0": 4.0, "1": 2.0}
+    assert by_id[3]["raw_target_probs"] == {"0": 1.0, "1": 6.0}
+    assert by_id[2]["target_probs"]["0"] == pytest.approx(4.0 / 5.0)
+    assert by_id[3]["target_probs"]["0"] == pytest.approx(1.0 / 5.0)
+    assert by_id[2]["target_probs"]["1"] == pytest.approx(2.0 / 8.0)
+    assert by_id[3]["target_probs"]["1"] == pytest.approx(6.0 / 8.0)
+
+
+def test_graph_payload_rejects_new_viewpoint_missing_target_raw_value():
+    payload = {
+        "current_viewpoints_reassignment": [],
+        "visible_region_nodes": [
+            {
+                "id": 10,
+                "label": "bright kitchen area near doorway",
+                "exist_prob": 1.0,
+                "target_probs": {"0": 0.8, "1": 0.2},
+            }
+        ],
+        "invisible_region_nodes": [],
+        "viewpoint_target_probs": [
+            {"id": 2, "target_probs": {"0": 0.4}},
+        ],
+        "viewpoint_node_assigns": [
+            {"region_node_id": 10, "assigned_viewpoint_node_indices": [1, 2]},
+        ],
+        "new_edges": [],
+        "edge_distance_variances": {
+            "viewpoint_viewpoint": 1.0,
+            "viewpoint_region": 4.0,
+        },
+    }
+
+    with pytest.raises(ValueError, match="Missing required MLLM-updatable"):
+        _client()._validate_payload(
+            payload=payload,
+            agent_observations=_agent_observations(),
+            targets=_targets_two(),
+            graph_summary=_empty_graph_summary(),
+        )
+
+
+def test_graph_payload_normalizes_multiple_mllm_viewpoint_target_probs():
+    graph_summary = _prior_graph_summary()
+    graph_summary["nodes"].append(
+        {
+            "id": 3,
+            "type": "viewpoint",
+            "grounded": False,
+            "node_visit_times": 0,
+        }
+    )
+
+    payload = _new_graph_payload()
+    payload["visible_region_nodes"] = []
+    payload["viewpoint_node_assigns"] = [
+        {"region_node_id": 10, "assigned_viewpoint_node_indices": [2]}
+    ]
+    payload["viewpoint_target_probs"] = [
+        {"id": 2, "target_probs": {"0": 2.0}},
+        {"id": 3, "target_probs": {"0": 1.0}},
+    ]
+
+    normalized = _client()._validate_payload(
+        payload=payload,
+        agent_observations=_agent_observations(),
+        targets=_targets(),
+        graph_summary=graph_summary,
+    )
+
+    by_id = {
+        item["id"]: item for item in normalized["viewpoint_target_probs"]
+    }
+    assert by_id[2]["raw_target_probs"] == {"0": 2.0}
+    assert by_id[3]["raw_target_probs"] == {"0": 1.0}
+    assert by_id[2]["target_probs"]["0"] == pytest.approx(2.0 / 3.0)
+    assert by_id[3]["target_probs"]["0"] == pytest.approx(1.0 / 3.0)
+
+
+def test_graph_payload_rejects_zero_sum_mllm_viewpoint_target_probs():
+    payload = _new_graph_payload()
+    payload["viewpoint_target_probs"] = [
+        {"id": 2, "target_probs": {"0": 0.0}},
+    ]
+
+    with pytest.raises(ValueError, match="sum to 0.0"):
+        _client()._validate_payload(
+            payload=payload,
+            agent_observations=_agent_observations(),
+            targets=_targets(),
+            graph_summary=_empty_graph_summary(),
+        )
+
+
+def test_graph_payload_rejects_detection_fixed_viewpoint_target_probs():
+    graph_summary = _prior_graph_summary()
+    graph_summary["nodes"].append(
+        {
+            "id": 2,
+            "type": "viewpoint",
+            "grounded": True,
+            "node_visit_times": 1,
+        }
+    )
+
+    payload = _new_graph_payload()
+    payload["visible_region_nodes"] = []
+    payload["viewpoint_node_assigns"] = []
+
+    with pytest.raises(ValueError, match="detection-fixed"):
         _client()._validate_payload(
             payload=payload,
             agent_observations=_agent_observations(),
@@ -543,7 +757,7 @@ def test_graph_payload_rejects_existing_viewpoint_target_probs():
         )
 
 
-def test_graph_prompt_omits_existing_target_probs_and_optional_viewpoint_updates():
+def test_graph_prompt_includes_existing_viewpoint_target_context():
     graph_summary = _prior_graph_summary()
     graph_summary["nodes"].append(
         {
@@ -552,6 +766,7 @@ def test_graph_prompt_omits_existing_target_probs_and_optional_viewpoint_updates
             "grounded": False,
             "node_visit_times": 0,
             "target_probs": {"0": 0.25},
+            "raw_target_probs": {"0": 0.75},
         }
     )
 
@@ -565,9 +780,14 @@ def test_graph_prompt_omits_existing_target_probs_and_optional_viewpoint_updates
         "Per-agent observation context:", 1
     )[0]
     assert '"target_probs": {"0": 0.5}' not in graph_summary_section
-    assert '"target_probs": {"0": 0.25}' not in graph_summary_section
+    assert '"target_probs": {' not in graph_summary_section
+    assert '"raw_target_probs": {' in graph_summary_section
+    assert '"0": 0.75' in graph_summary_section
+    assert '"prior_raw_target_probs": {' in user_message
+    assert "You must output one viewpoint_target_probs item" not in user_message
     assert "Optional previously observed viewpoint_target_probs ids" not in user_message
-    assert "Existing graph node target probabilities are not included" in user_message
+    assert "Bayesian target-update" not in user_message
+    assert "MLLM-updatable viewpoint target-probability context" in user_message
 
 
 def test_graph_payload_repair_drops_invalid_optional_vz_edge():
@@ -627,7 +847,7 @@ def test_graph_payload_repair_preserves_missing_target_probs_failure():
         graph_summary=_empty_graph_summary(),
     )
 
-    with pytest.raises(ValueError, match="Missing required newly observed"):
+    with pytest.raises(ValueError, match="Missing required MLLM-updatable"):
         client._validate_payload(
             payload=payload,
             agent_observations=_agent_observations(),

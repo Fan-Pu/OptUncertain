@@ -247,10 +247,68 @@ class _SharedTargetGraph:
             1: _FakeNode(1, True, 1.0, {"target": 0.0}),
             2: _FakeNode(1, True, 1.0, {"target": 0.0}),
             3: _FakeNode(1, True, 1.0, {"target": 1.0}),
+            4: _FakeNode(1, True, 1.0, {"target": 0.0}),
         }
         self.edges = {
             (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
             (2, 3): _FakeEdge(2, 3, 0.1, 1.0),
+            (2, 4): _FakeEdge(2, 4, 0.2, 1.0),
+        }
+
+
+class _SharedFirstHopChoiceGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            3: _FakeNode(1, True, 1.0, {"target": 1.0}),
+            4: _FakeNode(1, True, 1.0, {"target": 0.1}),
+            5: _FakeNode(1, True, 1.0, {"target": 0.1}),
+        }
+        self.edges = {
+            (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
+            (1, 4): _FakeEdge(1, 4, 0.2, 1.0),
+            (2, 3): _FakeEdge(2, 3, 0.1, 1.0),
+            (2, 5): _FakeEdge(2, 5, 0.2, 1.0),
+        }
+
+
+class _LaterOverlapAllowedGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            3: _FakeNode(1, True, 1.0, {"target": 0.1}),
+            4: _FakeNode(1, True, 1.0, {"target": 0.1}),
+            5: _FakeNode(1, True, 1.0, {"target": 1.0}),
+        }
+        self.edges = {
+            (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
+            (2, 4): _FakeEdge(2, 4, 0.1, 1.0),
+            (3, 5): _FakeEdge(3, 5, 0.1, 1.0),
+            (4, 5): _FakeEdge(4, 5, 0.1, 1.0),
+        }
+
+
+class _InactiveCurrentBlocksFirstHopGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 1.0}),
+            3: _FakeNode(1, True, 1.0, {"target": 0.5}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 0.1, 1.0),
+            (1, 3): _FakeEdge(1, 3, 0.2, 1.0),
         }
 
 
@@ -551,6 +609,47 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertEqual(len(result["target_assignments"]), 1)
         self.assertEqual(result["target_assignments"][0]["target_id"], "target")
         self.assertEqual(result["target_assignments"][0]["node_id"], 3)
+
+    def test_agents_choose_distinct_first_viewpoints(self):
+        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_SharedFirstHopChoiceGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target": False},
+        )
+
+        next_viewpoints = {
+            result["agent_paths"]["agent0"]["next_vp_node_id"],
+            result["agent_paths"]["agent1"]["next_vp_node_id"],
+        }
+        self.assertEqual(len(next_viewpoints), 2)
+        self.assertIn(3, next_viewpoints)
+
+    def test_later_route_overlap_is_allowed_when_first_viewpoints_differ(self):
+        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_LaterOverlapAllowedGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
+        self.assertEqual(result["agent_paths"]["agent1"]["next_vp_node_id"], 4)
+        self.assertIn(5, result["agent_paths"]["agent0"]["planned_path_node_ids"])
+        self.assertIn(5, result["agent_paths"]["agent1"]["planned_path_node_ids"])
+
+    def test_inactive_agent_current_viewpoint_blocks_active_first_hop(self):
+        optimizer = RollingHorizonOptimizer(
+            dict(OPTIMIZER_CONFIG, allow_inactive_agents=True)
+        )
+        result = optimizer.solve(
+            hypothesis_graph=_InactiveCurrentBlocksFirstHopGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
+        self.assertEqual(result["agent_paths"]["agent1"]["route_node_ids"], [2])
 
     def test_oracle_mode_allows_unassigned_agent_to_wait_at_start(self):
         optimizer = RollingHorizonOptimizer(ORACLE_INACTIVE_AGENT_CONFIG)

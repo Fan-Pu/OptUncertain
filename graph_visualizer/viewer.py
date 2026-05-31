@@ -225,6 +225,23 @@ def render_viewer_html() -> str:
       overflow-wrap: anywhere;
       white-space: pre-wrap;
     }
+    .summary-target-list {
+      display: grid;
+      gap: 4px;
+    }
+    .summary-target {
+      display: block;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    .summary-target-found {
+      background: #dcfce7;
+      color: #166534;
+      font-weight: 600;
+    }
+    .summary-target-id {
+      font-weight: 700;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -279,6 +296,41 @@ def render_viewer_html() -> str:
     .observation-image-button:focus-visible {
       outline: 2px solid #7a5cfa;
       outline-offset: 3px;
+    }
+    .observation-image-frame {
+      position: relative;
+      display: block;
+      overflow: hidden;
+      border-radius: 6px;
+    }
+    .observation-detection-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .observation-detection-marker {
+      position: absolute;
+      top: 8%;
+      height: 70%;
+      width: 18px;
+      transform: translateX(-50%);
+      border: 2px solid #16a34a;
+      border-radius: 4px;
+      background: rgba(22, 163, 74, 0.08);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.84);
+    }
+    .observation-detection-label {
+      position: absolute;
+      top: calc(78% + 4px);
+      transform: translateX(-50%);
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      box-shadow: 0 1px 4px rgba(16, 24, 40, 0.22);
     }
     img {
       width: 100%;
@@ -392,6 +444,87 @@ def render_viewer_html() -> str:
       stroke: #111827;
       stroke-width: 4;
     }
+    .observation-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .observation-modal[hidden] {
+      display: none;
+    }
+    .observation-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.72);
+    }
+    .observation-modal-dialog {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, 96vw);
+      height: min(760px, 92vh);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: #111827;
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.45);
+      overflow: hidden;
+    }
+    .observation-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+    .observation-modal-title {
+      min-width: 0;
+    }
+    .observation-modal-title h2 {
+      margin: 0 0 3px 0;
+      color: white;
+    }
+    .observation-modal-title p {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+    .observation-modal-controls {
+      display: flex;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+    .observation-modal-controls button {
+      border-color: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+    }
+    .observation-modal-viewport {
+      overflow: hidden;
+      cursor: grab;
+      background: #020617;
+      touch-action: none;
+    }
+    .observation-modal-viewport.panning {
+      cursor: grabbing;
+    }
+    .observation-modal-content {
+      position: relative;
+      transform-origin: 0 0;
+      width: fit-content;
+    }
+    .observation-modal-image {
+      width: min(1100px, 90vw);
+      max-width: none;
+      border: 0;
+      border-radius: 0;
+      background: #000;
+    }
     @media (max-width: 980px) {
       main {
         grid-template-columns: 1fr;
@@ -473,12 +606,33 @@ def render_viewer_html() -> str:
       </section>
     </aside>
   </main>
+  <div id="observationModal" class="observation-modal" hidden>
+    <div id="observationModalBackdrop" class="observation-modal-backdrop"></div>
+    <section class="observation-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="observationModalTitle">
+      <header class="observation-modal-header">
+        <div class="observation-modal-title">
+          <h2 id="observationModalTitle">Observation</h2>
+          <p id="observationModalPath"></p>
+        </div>
+        <div class="observation-modal-controls">
+          <button id="observationModalResetButton" type="button">Reset</button>
+          <button id="observationModalCloseButton" type="button">Close</button>
+        </div>
+      </header>
+      <div id="observationModalViewport" class="observation-modal-viewport">
+        <div id="observationModalContent" class="observation-modal-content"></div>
+      </div>
+    </section>
+  </div>
   <script>
     let payload = null;
     let stepPosition = 0;
     let selected = null;
     let activeSolutionId = null;
     let panState = null;
+    let observationModalImage = null;
+    let observationModalPanState = null;
+    let observationModalTransform = { scale: 1, translateX: 0, translateY: 0 };
     let showHouseTexture = true;
     const viewportStates = new Map();
     const GRAPH_MIN_SCALE = 0.2;
@@ -521,6 +675,14 @@ def render_viewer_html() -> str:
     const detectionsSection = document.getElementById("detectionsSection");
     const semanticSection = document.getElementById("semanticSection");
     const userMessageSection = document.getElementById("userMessageSection");
+    const observationModal = document.getElementById("observationModal");
+    const observationModalBackdrop = document.getElementById("observationModalBackdrop");
+    const observationModalTitle = document.getElementById("observationModalTitle");
+    const observationModalPath = document.getElementById("observationModalPath");
+    const observationModalResetButton = document.getElementById("observationModalResetButton");
+    const observationModalCloseButton = document.getElementById("observationModalCloseButton");
+    const observationModalViewport = document.getElementById("observationModalViewport");
+    const observationModalContent = document.getElementById("observationModalContent");
     graphZoomInButton.addEventListener("click", () => {
       graph.focus();
       zoomGraphAtCenter(GRAPH_ZOOM_FACTOR);
@@ -589,6 +751,23 @@ def render_viewer_html() -> str:
       const factor = event.deltaY < 0 ? GRAPH_ZOOM_FACTOR : 1 / GRAPH_ZOOM_FACTOR;
       zoomGraphAtPoint(factor, graphScreenPoint(event));
     }, { passive: false });
+    observationModalBackdrop.addEventListener("click", closeObservationImageModal);
+    observationModalCloseButton.addEventListener("click", closeObservationImageModal);
+    observationModalResetButton.addEventListener("click", resetObservationModalTransform);
+    observationModalViewport.addEventListener("pointerdown", beginObservationModalPan);
+    observationModalViewport.addEventListener("pointermove", updateObservationModalPan);
+    observationModalViewport.addEventListener("pointerup", endObservationModalPan);
+    observationModalViewport.addEventListener("pointercancel", cancelObservationModalPan);
+    observationModalViewport.addEventListener("wheel", event => {
+      event.preventDefault();
+      const factor = event.deltaY < 0 ? GRAPH_ZOOM_FACTOR : 1 / GRAPH_ZOOM_FACTOR;
+      zoomObservationModalAtPoint(factor, observationModalPoint(event));
+    }, { passive: false });
+    window.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !observationModal.hidden) {
+        closeObservationImageModal();
+      }
+    });
 
     fetch("/api/steps")
       .then(response => response.json())
@@ -1075,7 +1254,7 @@ def render_viewer_html() -> str:
         });
         group.addEventListener("click", event => {
           event.stopPropagation();
-          selected = { kind: "node", id: node.id };
+          toggleNodeSelection(node.id);
           render();
         });
         const title = svgEl("title", {});
@@ -1154,7 +1333,7 @@ def render_viewer_html() -> str:
         });
         group.addEventListener("click", event => {
           event.stopPropagation();
-          selected = { kind: "node", id: node.id };
+          toggleNodeSelection(node.id);
           render();
         });
         group.appendChild(svgEl("circle", {
@@ -1527,18 +1706,26 @@ def render_viewer_html() -> str:
     function renderSummary(step) {
       const targetFound = formatObject(step.hypothesis.target_found);
       const agents = formatObject(step.layout.agent_current_vp_ids);
-      const targets = step.hypothesis.targets
-        .map(target => `${target.target_id}: ${target.description}`)
-        .join("\n");
+      const targets = targetSummaryHtml(step);
       document.getElementById("summary").innerHTML = definitionList({
         step_index: step.step_index,
-        observation_step: step.layout.observation_step,
         nodes: step.layout.nodes.length,
         edges: step.layout.edges.length,
         current_agents: agents,
         target_found: targetFound,
         targets: targets
+      }, new Set(["targets"]));
+    }
+
+    function targetSummaryHtml(step) {
+      const targetFound = step.hypothesis.target_found || {};
+      const rows = (step.hypothesis.targets || []).map(target => {
+        const targetId = String(target.target_id);
+        const found = Boolean(targetFound[targetId]);
+        const className = found ? "summary-target summary-target-found" : "summary-target";
+        return `<span class="${className}"><span class="summary-target-id">${escapeHtml(targetId)}:</span> ${escapeHtml(target.description || "")}</span>`;
       });
+      return `<div class="summary-target-list">${rows.join("")}</div>`;
     }
 
     function renderTargetDetections(step) {
@@ -1719,6 +1906,7 @@ def render_viewer_html() -> str:
 
     function renderImages(step) {
       const target = document.getElementById("images");
+      const detectionsByAgent = observationDetectionsByAgent(step);
       target.innerHTML = step.observation_images.map(image => `
         <figure>
           <button
@@ -1729,82 +1917,150 @@ def render_viewer_html() -> str:
             title="Open ${escapeAttr(image.agent_id)} observation"
             aria-label="Open ${escapeAttr(image.agent_id)} observation"
           >
-            <img src="${escapeAttr(image.url)}" alt="${escapeAttr(image.agent_id)} observation">
+            <span class="observation-image-frame">
+              <img src="${escapeAttr(image.url)}" alt="${escapeAttr(image.agent_id)} observation">
+              ${observationDetectionOverlayHtml(detectionsByAgent.get(String(image.agent_id)) || [])}
+            </span>
           </button>
           <figcaption>${escapeHtml(image.agent_id)} observation</figcaption>
         </figure>
       `).join("");
       for (const button of target.querySelectorAll(".observation-image-button")) {
         button.addEventListener("click", () => {
-          openObservationImageWindow({
+          const agentId = button.dataset.agentId;
+          openObservationImageModal({
             agent_id: button.dataset.agentId,
-            url: button.dataset.imageUrl
+            url: button.dataset.imageUrl,
+            detections: detectionsByAgent.get(String(agentId)) || []
           });
         });
       }
     }
 
-    function openObservationImageWindow(image) {
-      const title = `${image.agent_id} observation - ${image.url}`;
-      const childWindow = window.open("", "_blank");
-      childWindow.document.open();
-      childWindow.document.write(`<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${escapeHtml(title)}</title>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      background: #111827;
-      color: white;
-      font-family: Arial, Helvetica, sans-serif;
+    function observationDetectionsByAgent(step) {
+      const byAgent = new Map();
+      for (const row of normalizedDetectionRows(step).filter(row => row.found)) {
+        const centerX = Number(row.target_center_x);
+        if (!Number.isFinite(centerX)) continue;
+        const item = {
+          agent_id: String(row.agent_id),
+          target_id: String(row.target_id),
+          target_center_x: clamp(centerX, 0, 1)
+        };
+        if (!byAgent.has(item.agent_id)) byAgent.set(item.agent_id, []);
+        byAgent.get(item.agent_id).push(item);
+      }
+      return byAgent;
     }
-    header {
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+
+    function observationDetectionOverlayHtml(detections) {
+      if (!detections.length) return "";
+      const markers = detections.map(item => {
+        const left = `${item.target_center_x * 100}%`;
+        return `
+          <span class="observation-detection-marker" style="left:${escapeAttr(left)}"></span>
+          <span class="observation-detection-label" style="left:${escapeAttr(left)}">target: ${escapeHtml(item.target_id)}</span>
+        `;
+      }).join("");
+      return `<span class="observation-detection-layer">${markers}</span>`;
     }
-    h1 {
-      margin: 0 0 4px 0;
-      font-size: 16px;
+
+    function openObservationImageModal(image) {
+      observationModalImage = image;
+      observationModalTitle.textContent = `${image.agent_id} observation`;
+      observationModalPath.textContent = image.url;
+      observationModal.hidden = false;
+      resetObservationModalTransform();
+      observationModalCloseButton.focus();
     }
-    p {
-      margin: 0;
-      color: #cbd5e1;
-      font-size: 12px;
-      overflow-wrap: anywhere;
+
+    function closeObservationImageModal() {
+      observationModal.hidden = true;
+      observationModalImage = null;
+      observationModalPanState = null;
+      observationModalViewport.classList.remove("panning");
     }
-    main {
-      overflow: auto;
-      padding: 16px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
+
+    function resetObservationModalTransform() {
+      observationModalTransform = { scale: 1, translateX: 0, translateY: 0 };
+      renderObservationModalImage();
     }
-    img {
-      max-width: none;
-      height: auto;
-      display: block;
-      background: #000;
+
+    function renderObservationModalImage() {
+      if (!observationModalImage) {
+        observationModalContent.innerHTML = "";
+        return;
+      }
+      observationModalContent.style.transform = (
+        `translate(${observationModalTransform.translateX}px, ${observationModalTransform.translateY}px) scale(${observationModalTransform.scale})`
+      );
+      observationModalContent.innerHTML = `
+        <img class="observation-modal-image" src="${escapeAttr(observationModalImage.url)}" alt="${escapeAttr(observationModalImage.agent_id)} observation">
+        ${observationDetectionOverlayHtml(observationModalImage.detections || [])}
+      `;
     }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>${escapeHtml(image.agent_id)} observation</h1>
-    <p>${escapeHtml(image.url)}</p>
-  </header>
-  <main>
-    <img src="${escapeAttr(image.url)}" alt="${escapeAttr(image.agent_id)} observation">
-  </main>
-</body>
-</html>`);
-      childWindow.document.close();
-      childWindow.focus();
+
+    function beginObservationModalPan(event) {
+      if (event.button !== 0) return;
+      const point = observationModalPoint(event);
+      observationModalPanState = {
+        pointerId: event.pointerId,
+        startX: point.x,
+        startY: point.y,
+        translateX: observationModalTransform.translateX,
+        translateY: observationModalTransform.translateY
+      };
+      observationModalViewport.setPointerCapture(event.pointerId);
+      observationModalViewport.classList.add("panning");
+      event.preventDefault();
+    }
+
+    function updateObservationModalPan(event) {
+      if (!observationModalPanState) return;
+      const point = observationModalPoint(event);
+      observationModalTransform = {
+        scale: observationModalTransform.scale,
+        translateX: observationModalPanState.translateX + point.x - observationModalPanState.startX,
+        translateY: observationModalPanState.translateY + point.y - observationModalPanState.startY
+      };
+      renderObservationModalImage();
+    }
+
+    function endObservationModalPan(event) {
+      if (!observationModalPanState) return;
+      updateObservationModalPan(event);
+      observationModalViewport.releasePointerCapture(observationModalPanState.pointerId);
+      observationModalPanState = null;
+      observationModalViewport.classList.remove("panning");
+    }
+
+    function cancelObservationModalPan() {
+      observationModalPanState = null;
+      observationModalViewport.classList.remove("panning");
+    }
+
+    function zoomObservationModalAtPoint(factor, point) {
+      const nextScale = clamp(
+        observationModalTransform.scale * factor,
+        GRAPH_MIN_SCALE,
+        GRAPH_MAX_SCALE
+      );
+      const imageX = (point.x - observationModalTransform.translateX) / observationModalTransform.scale;
+      const imageY = (point.y - observationModalTransform.translateY) / observationModalTransform.scale;
+      observationModalTransform = {
+        scale: nextScale,
+        translateX: point.x - imageX * nextScale,
+        translateY: point.y - imageY * nextScale
+      };
+      renderObservationModalImage();
+    }
+
+    function observationModalPoint(event) {
+      const rect = observationModalViewport.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
     }
 
     function routeProjection(environment, width, height) {
@@ -1882,9 +2138,9 @@ def render_viewer_html() -> str:
       return points.join(" ");
     }
 
-    function definitionList(items) {
+    function definitionList(items, htmlKeys = new Set()) {
       return `<dl class="kv">${Object.entries(items).map(([key, value]) => `
-        <dt>${escapeHtml(key)}</dt><dd>${escapeHtml(String(value))}</dd>
+        <dt>${escapeHtml(key)}</dt><dd>${htmlKeys.has(key) ? String(value) : escapeHtml(String(value))}</dd>
       `).join("")}</dl>`;
     }
 
@@ -1911,6 +2167,14 @@ def render_viewer_html() -> str:
     function isSelectedNode(nodeId) {
       if (!selected) return false;
       return selected.kind === "node" && String(selected.id) === String(nodeId);
+    }
+
+    function toggleNodeSelection(nodeId) {
+      if (isSelectedNode(nodeId)) {
+        selected = null;
+        return;
+      }
+      selected = { kind: "node", id: nodeId };
     }
 
     function isSelectedEdge(edge) {

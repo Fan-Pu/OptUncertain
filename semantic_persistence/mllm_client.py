@@ -21,7 +21,7 @@ DETECTION_TOP_P = 0.9
 DETECTION_TOP_K = 40
 DETECTION_PRESENCE_PENALTY = 0.0
 OPEN_VOCAB_SCORE_THRESHOLD = (
-    0.3  # the threshold for considering an open-vocab detection valid.
+    0.1  # the threshold for considering an open-vocab detection valid.
 )
 
 # for graph generation: still stable, but allows non-uniform probabilities
@@ -408,7 +408,7 @@ class MLLMClient:
             Keep the same schema and all original rules.
             Fix all listed validation errors at the same time.
 
-            If an error mentions missing required newly observed visible neighboring viewpoint ids, add exactly those ids to viewpoint_target_probs.
+            If an error mentions a new MLLM-updatable viewpoint is missing target scores, add exactly those target scores to viewpoint_target_probs.
             If an error mentions expected assigned viewpoint ids, use exactly that expected id list for viewpoint_node_assigns.
             Do not include viewpoint ids outside the expected assigned viewpoint id list.
             """).strip()
@@ -705,14 +705,20 @@ class MLLMClient:
                 continue
 
             target_probs = node.get("target_probs")
-            if not isinstance(target_probs, dict):
-                continue
+            if isinstance(target_probs, dict):
+                node["target_probs"] = {
+                    str(target_id): value
+                    for target_id, value in target_probs.items()
+                    if str(target_id) in target_id_set
+                }
 
-            node["target_probs"] = {
-                str(target_id): value
-                for target_id, value in target_probs.items()
-                if str(target_id) in target_id_set
-            }
+            raw_target_probs = node.get("raw_target_probs")
+            if isinstance(raw_target_probs, dict):
+                node["raw_target_probs"] = {
+                    str(target_id): value
+                    for target_id, value in raw_target_probs.items()
+                    if str(target_id) in target_id_set
+                }
 
         return sanitized
 
@@ -996,6 +1002,9 @@ class MLLMClient:
                 graph_viewpoint_status_by_id_for_prompt[viewpoint_id] = {
                     "prior_grounded": bool(node.get("grounded", 0)),
                     "prior_visit_times": int(node.get("node_visit_times", 0)),
+                    "prior_raw_target_probs": dict(
+                        node.get("raw_target_probs", {}) or {}
+                    ),
                 }
 
         agent_context = []
@@ -1115,14 +1124,44 @@ class MLLMClient:
             visible_viewpoint_ids_for_prompt - current_viewpoint_ids_for_prompt
         )
 
-        required_viewpoint_target_prob_ids_for_prompt = sorted(
-            visible_neighbor_viewpoint_ids_for_prompt
-            - graph_viewpoint_node_ids_for_prompt
+        detection_fixed_viewpoint_ids_for_prompt = set(current_viewpoint_ids_for_prompt)
+        for viewpoint_id, status in graph_viewpoint_status_by_id_for_prompt.items():
+            if (
+                bool(status.get("prior_grounded", False))
+                or int(status.get("prior_visit_times", 0)) > 0
+            ):
+                detection_fixed_viewpoint_ids_for_prompt.add(viewpoint_id)
+
+        mllm_updatable_viewpoint_ids_for_prompt = sorted(
+            (graph_viewpoint_node_ids_for_prompt | visible_viewpoint_ids_for_prompt)
+            - detection_fixed_viewpoint_ids_for_prompt
         )
+
+        mllm_updatable_viewpoint_context_for_prompt = []
+        for viewpoint_id in mllm_updatable_viewpoint_ids_for_prompt:
+            status = graph_viewpoint_status_by_id_for_prompt.get(viewpoint_id, {})
+            prior_raw_target_probs = status.get("prior_raw_target_probs") or {}
+            mllm_updatable_viewpoint_context_for_prompt.append(
+                {
+                    "id": viewpoint_id,
+                    "has_prior_raw_target_probs": all(
+                        target_id in prior_raw_target_probs for target_id in target_ids
+                    ),
+                    "prior_raw_target_probs": {
+                        target_id: float(
+                            prior_raw_target_probs.get(
+                                target_id,
+                                0.0,
+                            )
+                        )
+                        for target_id in target_ids
+                    },
+                }
+            )
 
         required_viewpoint_target_probs_skeleton = [
             {"id": viewpoint_id}
-            for viewpoint_id in required_viewpoint_target_prob_ids_for_prompt
+            for viewpoint_id in mllm_updatable_viewpoint_ids_for_prompt
         ]
 
         example_rng = random.Random(42)
@@ -1235,12 +1274,17 @@ class MLLMClient:
         for node in prompt_graph_summary.get("nodes", []):
             if node.get("type") == "viewpoint":
                 node.pop("label", None)
-            node.pop("target_probs", None)
+                node.pop("target_probs", None)
+                if int(node["id"]) in current_viewpoint_ids_for_prompt:
+                    node.pop("raw_target_probs", None)
+            else:
+                node.pop("target_probs", None)
+                node.pop("raw_target_probs", None)
 
         system_message = dedent("""
             You are an indoor hypothesis-graph proposal module for cooperative many-agent, many-target navigation. Analyze one annotated RGB panorama per agent and the compact shared graph summary. Propose an uncertain graph update for downstream optimization. Do not select robot actions or produce a final map.
 
-            The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, active target_ids, and viewpoint ids exactly. Reuse provided region ids exactly when a matching region already exists. For newly proposed regions, assign new integer region ids that do not conflict with existing ids. Use active target_id in target_probs only for newly proposed regions and newly observed non-current visible neighboring viewpoints. Existing node target probabilities are maintained by the code with the paper's Bayesian target-update rule, so do not regenerate them. Found targets are complete and must not appear in target_probs or existence hypotheses.
+            The graph has viewpoint nodes for executable robot poses and region nodes for semantic zones. Use the provided agent ids, active target_ids, and viewpoint ids exactly. Reuse provided region ids exactly when a matching region already exists. For newly proposed regions, assign new integer region ids that do not conflict with existing ids. Use active target_id in target_probs for newly proposed regions and every MLLM-updatable viewpoint id listed in the user message. Current viewpoint target probabilities are fixed from the previous detection step and must not be inferred. Found targets are complete and must not appear in target_probs or existence hypotheses.
 
             Return exactly one valid JSON object matching the user schema. Do not output markdown, code fences, comments, text outside JSON, extra top-level keys, trailing commas, or non-JSON booleans.
 
@@ -1265,9 +1309,11 @@ class MLLMClient:
             - A region id must appear in only one of visible_region_nodes or invisible_region_nodes.
             - Region labels must be room or area labels, not object names. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names. Avoid generic labels unless they include both appearance and relative location cues.
             - Detections are handled by a separate detection step outside this graph MLLM call. Do not output detections.
-            - Newly proposed region target_probs and returned newly observed non-current visible-neighbor viewpoint target_probs must contain every active target_id with values in (0, 1]. Do not generate target_probs for current viewpoints or existing graph nodes.
+            - Newly proposed region target_probs must contain every active target_id with values in (0, 1].
+            - viewpoint_target_probs is incremental. Include only MLLM-updatable viewpoint-target values whose raw hypothesis score should change because of the current observations.
+            - Returned viewpoint_target_probs values are raw nonnegative scores; they do not need to sum to 1 because the validator materializes unchanged prior raw scores and then normalizes per target.
             - Use active target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when evidence is equally weak.
-            - viewpoint_target_probs must include every newly observed non-current visible neighboring viewpoint that is absent from compact shared graph summary nodes. Exclude current agent viewpoints and every viewpoint already present in the compact shared graph summary.
+            - viewpoint_target_probs must exclude current agent viewpoints and any viewpoint that has already been grounded or visited as a current viewpoint. These viewpoints are fixed by direct detection: if an unfound target was not detected there, its target probability at that viewpoint is 0 forever.
             - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. It is incremental and must include exactly the viewpoint ids requiring region assignment in this step. This set includes new visible neighboring viewpoints and first-reached current viewpoints. Do not include other current-step viewpoints. Other current-step viewpoints keep their previous graph_summary assignment unless a current viewpoint is explicitly listed in current_viewpoints_reassignment.
             - For non-current visible neighboring viewpoints, use prior_assigned_region_id only as historical context, not as a fixed assignment.
             - Assign each non-current visible neighboring viewpoint by jointly considering its marker location in the panorama, xy-based floor-plan distance from current_xy, visible_viewpoints[].distance, and whether a clear spatial boundary separates it from the current viewpoint.
@@ -1317,10 +1363,10 @@ class MLLMClient:
                 - Do not include viewpoint ids listed under Current-step viewpoint ids not requiring region assignment in this step.
                 - Previously observed viewpoints keep their previous graph_summary viewpoint-to-region assignment by default.
                 - If a previously observed current viewpoint should move to a different region, report that change only in current_viewpoints_reassignment.
-                - viewpoint_target_probs must contain every required newly observed non-current visible neighboring viewpoint id below.
-                - Do not include current viewpoint ids in viewpoint_target_probs.
-                - Do not include previously observed viewpoint ids in viewpoint_target_probs; their probabilities are updated by code with the paper's Bayesian rule.
-                - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
+                - viewpoint_target_probs is optional and incremental for the MLLM-updatable viewpoint ids below.
+                - Do not include current, grounded, or previously visited viewpoint ids in viewpoint_target_probs. Their target probabilities are detection-fixed at 0 for unfound targets.
+                - Existing non-current graph viewpoint ids keep prior_raw_target_probs unless current observations justify changing a specific viewpoint-target value.
+                - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, region assigned_viewpoint_ids, or viewpoint_to_region.
                 - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
                 - Region ids must be >= {region_start_id}.
                 - New region ids must start from {next_new_region_id}.
@@ -1340,32 +1386,35 @@ class MLLMClient:
                 Current-step viewpoint ids not requiring region assignment in this step:
                 {assignment_not_required_current_step_viewpoint_ids_json}
                 
-                Required newly observed viewpoint_target_probs id skeleton:
+                MLLM-updatable viewpoint target-probability context:
+                {mllm_updatable_viewpoint_context_json}
+
+                Eligible viewpoint_target_probs update ids:
                 {required_viewpoint_target_probs_skeleton_json}
 
                 Viewpoint target probability rule:
-                - You must output one viewpoint_target_probs item for every id in this skeleton.
-                - These ids are non-current visible neighboring viewpoints only.
+                - You may output viewpoint_target_probs items only for ids in this list.
+                - Omit an id or target_id when its prior_raw_target_probs value should remain unchanged.
+                - For an eligible viewpoint where has_prior_raw_target_probs is false, output all active target_ids for that viewpoint.
                 - Score the target likelihood at the candidate viewpoint, not only at the current camera location.
-                - For each candidate viewpoint, use its red marker location in the panorama, nearby visible objects, assigned semantic region, xy distance, visible_viewpoints[].distance, and compact graph summary.
-                - Compare all required viewpoint ids against each other for each active target_id before assigning scores.
+                - For each candidate viewpoint, use its red marker location when visible, nearby visible objects, assigned semantic region, xy distance, visible_viewpoints[].distance, prior_raw_target_probs, and compact graph summary.
+                - Compare eligible viewpoint ids against each other for each active target_id before assigning changed scores.
                 - If one viewpoint is closer to a dining table and another viewpoint is in a bedroom, hallway, or lounge area, their scores for "the green plant on the dining table" should usually be different.
-                - Use positive but meaningful scores in (0, 1].
+                - Use meaningful nonnegative raw scores.
                 - Avoid uniform scores unless the visual evidence and graph context are truly indistinguishable.
-                - Do not include current viewpoint ids.
-                - Do not include existing graph viewpoint ids.
-                - Do not delete any skeleton item.
+                - Do not include current, grounded, or previously visited viewpoint ids.
                 
                 Target probability rule:
-                - target_probs are unnormalized initial target-location scores for newly introduced nodes only, not calibrated probabilities.
-                - Existing graph node target probabilities are not included in the prompt and are updated by code using the paper's Bayesian rule: previous posterior times the current visual-evidence likelihood, normalized separately on viewpoint and region layers.
+                - viewpoint_target_probs target_probs are raw target-location scores, not calibrated probabilities. The validator stores the materialized values as raw_target_probs and normalizes target_probs per target across eligible viewpoint ids.
+                - Region node target_probs are kept unchanged after graph update: existing regions keep prior values and newly proposed regions keep the values you provide.
                 - Do not copy default values from the schema or examples.
-                - For each active target_id, compare newly proposed regions and all required newly observed non-current neighboring viewpoints before assigning scores.
+                - For each active target_id, compare newly proposed regions and all eligible non-current viewpoint ids before assigning changed scores.
                 - Assign higher scores to locations whose visible objects, room type, furniture, spatial context, and graph history better match the target description.
                 - For example, if the target is a plant on a dining table, regions or viewpoints near a dining table should receive higher scores than bedrooms, bathrooms, hallways, or lounge areas without dining-table evidence.
-                - Use the full range (0, 1]. Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
+                - Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
                 - Use different scores when evidence differs.
                 - Equal scores are allowed only when the visual evidence, assigned region, spatial context, and graph history are truly indistinguishable.
+                - For each active target_id, the sum of materialized raw scores across eligible viewpoint ids must be positive.
                 
                 All non-current visible neighboring viewpoint ids:
                 {visible_neighbor_viewpoint_ids_json}
@@ -1420,6 +1469,11 @@ class MLLMClient:
                 ),
                 visible_neighbor_viewpoint_ids_json=json.dumps(
                     sorted(visible_neighbor_viewpoint_ids_for_prompt), indent=2
+                ),
+                mllm_updatable_viewpoint_context_json=json.dumps(
+                    mllm_updatable_viewpoint_context_for_prompt,
+                    indent=2,
+                    sort_keys=True,
                 ),
                 required_viewpoint_target_probs_skeleton_json=json.dumps(
                     required_viewpoint_target_probs_skeleton, indent=2, sort_keys=True
@@ -2354,6 +2408,12 @@ class MLLMClient:
             if float(value) <= 0.0:
                 raise ValueError("%s=%s must be positive." % (context, value))
 
+        def validate_nonnegative_number(value, context: str) -> None:
+            if not is_number(value):
+                raise TypeError("%s must be numeric." % context)
+            if float(value) < 0.0:
+                raise ValueError("%s=%s must be nonnegative." % (context, value))
+
         observation_by_agent = {
             str(observation["agent_id"]): observation
             for observation in agent_observations
@@ -2444,6 +2504,9 @@ class MLLMClient:
                     graph_viewpoint_status_by_id[viewpoint_id] = {
                         "prior_grounded": bool(node.get("grounded", 0)),
                         "prior_visit_times": int(node.get("node_visit_times", 0)),
+                        "prior_raw_target_probs": dict(
+                            node.get("raw_target_probs", {}) or {}
+                        ),
                     }
 
         new_visible_neighbor_assignment_viewpoint_ids = (
@@ -2473,6 +2536,14 @@ class MLLMClient:
         else:
             expected_assignment_viewpoint_ids = all_current_step_viewpoint_ids
 
+        detection_fixed_viewpoint_ids = set(current_viewpoint_ids)
+        for viewpoint_id, status in graph_viewpoint_status_by_id.items():
+            if (
+                bool(status.get("prior_grounded", False))
+                or int(status.get("prior_visit_times", 0)) > 0
+            ):
+                detection_fixed_viewpoint_ids.add(viewpoint_id)
+
         def validate_target_probs_positive(
             target_probs: Dict[str, object],
             context: str,
@@ -2491,6 +2562,29 @@ class MLLMClient:
                     value,
                     "%s.target_probs[%s]" % (context, target_id),
                 )
+
+        def validate_partial_target_probs_nonnegative(
+            target_probs: Dict[str, object],
+            context: str,
+        ) -> Dict[str, float]:
+            target_probs = require_dict(target_probs, context + ".target_probs")
+
+            returned_target_ids = {str(key) for key in target_probs}
+            if not returned_target_ids.issubset(target_ids):
+                raise ValueError(
+                    "%s target_probs keys %s must be a subset of expected target ids %s."
+                    % (context, sorted(returned_target_ids), sorted(target_ids))
+                )
+
+            for target_id, value in target_probs.items():
+                validate_nonnegative_number(
+                    value,
+                    "%s.target_probs[%s]" % (context, target_id),
+                )
+            return {
+                str(target_id): float(value)
+                for target_id, value in target_probs.items()
+            }
 
         def validate_region_label(label: str, context: str) -> None:
             normalized_label = " ".join(label.lower().split())
@@ -2594,43 +2688,46 @@ class MLLMClient:
             )
 
         required_mllm_viewpoint_prob_ids = (
-            visible_viewpoint_ids - current_viewpoint_ids - graph_viewpoint_node_ids
-        )
+            graph_viewpoint_node_ids | visible_viewpoint_ids
+        ) - detection_fixed_viewpoint_ids
         returned_viewpoint_prob_ids = set()
-        normalized_visible_viewpoint_target_probs = []
+        raw_viewpoint_target_probs_by_id = {}
+        for viewpoint_id in required_mllm_viewpoint_prob_ids:
+            status = graph_viewpoint_status_by_id.get(viewpoint_id, {})
+            prior_raw_target_probs = status.get("prior_raw_target_probs", {}) or {}
+            raw_viewpoint_target_probs_by_id[viewpoint_id] = {
+                target_id: float(prior_raw_target_probs[target_id])
+                for target_id in ordered_target_ids
+                if target_id in prior_raw_target_probs
+            }
 
         for item in viewpoint_target_probs:
             item = require_dict(item, "viewpoint_target_probs[] item")
 
-            expected_keys = {"id", "target_probs"}
-            if set(item) != expected_keys:
+            expected_key_sets = [
+                {"id", "target_probs"},
+                {"id", "target_probs", "raw_target_probs"},
+            ]
+            if set(item) not in expected_key_sets:
                 raise KeyError(
-                    "Each viewpoint_target_probs item must contain exactly %s, got %s."
-                    % (sorted(expected_keys), sorted(item))
+                    "Each viewpoint_target_probs item must contain one of %s, got %s."
+                    % ([sorted(keys) for keys in expected_key_sets], sorted(item))
                 )
 
             viewpoint_id = int(item["id"])
 
-            if viewpoint_id in current_viewpoint_ids:
+            if viewpoint_id in detection_fixed_viewpoint_ids:
                 raise ValueError(
-                    "viewpoint_target_probs id %s is a current viewpoint. "
-                    "Current viewpoint target probabilities are fixed from direct "
-                    "detections and must not be returned by the graph MLLM."
-                    % viewpoint_id
-                )
-
-            if viewpoint_id in graph_viewpoint_node_ids:
-                raise ValueError(
-                    "viewpoint_target_probs id %s already exists in graph_summary. "
-                    "Existing viewpoint target probabilities are updated by the "
-                    "Bayesian graph update and must not be returned by the graph MLLM."
+                    "viewpoint_target_probs id %s is detection-fixed. "
+                    "Current, grounded, and visited viewpoint target probabilities "
+                    "are detection-fixed and must not be returned by the graph MLLM."
                     % viewpoint_id
                 )
 
             if viewpoint_id not in required_mllm_viewpoint_prob_ids:
                 raise ValueError(
-                    "viewpoint_target_probs id %s is not a newly observed "
-                    "non-current visible neighboring viewpoint." % viewpoint_id
+                    "viewpoint_target_probs id %s is not an MLLM-updatable "
+                    "non-current viewpoint." % viewpoint_id
                 )
 
             if viewpoint_id in returned_viewpoint_prob_ids:
@@ -2640,35 +2737,85 @@ class MLLMClient:
 
             returned_viewpoint_prob_ids.add(viewpoint_id)
 
-            validate_target_probs_positive(
-                item["target_probs"],
-                "visible neighboring viewpoint %s" % viewpoint_id,
+            raw_source_key = (
+                "raw_target_probs" if "raw_target_probs" in item else "target_probs"
+            )
+            partial_target_probs = validate_partial_target_probs_nonnegative(
+                item[raw_source_key],
+                "MLLM-updatable viewpoint %s" % viewpoint_id,
             )
 
-            normalized_visible_viewpoint_target_probs.append(
-                {
-                    "id": viewpoint_id,
-                    "target_probs": {
-                        target_id: float(item["target_probs"][target_id])
-                        for target_id in ordered_target_ids
-                    },
-                }
-            )
+            raw_viewpoint_target_probs_by_id[viewpoint_id].update(partial_target_probs)
 
-        missing_required_viewpoint_prob_ids = (
-            required_mllm_viewpoint_prob_ids - returned_viewpoint_prob_ids
+        extra_viewpoint_prob_ids = (
+            returned_viewpoint_prob_ids - required_mllm_viewpoint_prob_ids
         )
-        if missing_required_viewpoint_prob_ids:
+        if extra_viewpoint_prob_ids:
             raise ValueError(
-                "Missing required newly observed visible neighboring "
-                "viewpoint_target_probs ids %s. Returned ids were %s."
+                "Unexpected MLLM-updatable viewpoint_target_probs ids %s. "
+                "Expected ids were %s."
                 % (
-                    sorted(missing_required_viewpoint_prob_ids),
+                    sorted(extra_viewpoint_prob_ids),
+                    sorted(required_mllm_viewpoint_prob_ids),
+                )
+            )
+
+        missing_required_viewpoint_prob_values = {}
+        for viewpoint_id in sorted(required_mllm_viewpoint_prob_ids):
+            missing_target_ids = [
+                target_id
+                for target_id in ordered_target_ids
+                if target_id not in raw_viewpoint_target_probs_by_id[viewpoint_id]
+            ]
+            if missing_target_ids:
+                missing_required_viewpoint_prob_values[viewpoint_id] = (
+                    missing_target_ids
+                )
+
+        if missing_required_viewpoint_prob_values:
+            raise ValueError(
+                "Missing required MLLM-updatable "
+                "viewpoint_target_probs values %s. Returned ids were %s."
+                % (
+                    missing_required_viewpoint_prob_values,
                     sorted(returned_viewpoint_prob_ids),
                 )
             )
 
-        payload["viewpoint_target_probs"] = normalized_visible_viewpoint_target_probs
+        normalized_viewpoint_target_probs = []
+        for target_id in ordered_target_ids:
+            raw_sum = sum(
+                raw_viewpoint_target_probs_by_id[viewpoint_id][target_id]
+                for viewpoint_id in required_mllm_viewpoint_prob_ids
+            )
+            if required_mllm_viewpoint_prob_ids and raw_sum <= 0.0:
+                raise ValueError(
+                    "MLLM-updatable viewpoint_target_probs for target %s sum to %s."
+                    % (target_id, raw_sum)
+                )
+
+        for viewpoint_id in sorted(required_mllm_viewpoint_prob_ids):
+            normalized_target_probs = {}
+            for target_id in ordered_target_ids:
+                raw_sum = sum(
+                    raw_viewpoint_target_probs_by_id[other_viewpoint_id][target_id]
+                    for other_viewpoint_id in required_mllm_viewpoint_prob_ids
+                )
+                normalized_target_probs[target_id] = (
+                    raw_viewpoint_target_probs_by_id[viewpoint_id][target_id] / raw_sum
+                )
+
+            normalized_viewpoint_target_probs.append(
+                {
+                    "id": viewpoint_id,
+                    "target_probs": normalized_target_probs,
+                    "raw_target_probs": dict(
+                        raw_viewpoint_target_probs_by_id[viewpoint_id]
+                    ),
+                }
+            )
+
+        payload["viewpoint_target_probs"] = normalized_viewpoint_target_probs
         viewpoint_target_probs = payload["viewpoint_target_probs"]
 
         # Build a one-to-one viewpoint-to-region map.

@@ -1,10 +1,6 @@
 Active target set:
 [
   {
-    "description": "the throw pillow on a blue armchair",
-    "target_id": "1"
-  },
-  {
     "description": "the bottled water on the shelf",
     "target_id": "3"
   }
@@ -13,10 +9,10 @@ Active target set:
 Compact shared graph summary:
 {
   "agent_current_vp_ids": {
-    "agent0": 35,
+    "agent0": 32,
     "agent1": 9,
-    "agent2": 32,
-    "agent3": 3
+    "agent2": 2,
+    "agent3": 5
   },
   "edges": [
     {
@@ -41,12 +37,12 @@ Compact shared graph summary:
     },
     {
       "cond_exist_prob": 1.0,
-      "distance_mean": 1.19,
+      "distance_mean": 1.139,
       "distance_var": 0.0,
       "exist_prob": 1.0,
       "grounded": 1,
       "i": 2,
-      "j": 20,
+      "j": 26,
       "type": "vv"
     },
     {
@@ -117,6 +113,16 @@ Compact shared graph summary:
       "grounded": 1,
       "i": 14,
       "j": 23,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.106,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 14,
+      "j": 26,
       "type": "vv"
     },
     {
@@ -221,26 +227,6 @@ Compact shared graph summary:
     },
     {
       "cond_exist_prob": 1.0,
-      "distance_mean": 2.676,
-      "distance_var": 0.0,
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "i": 20,
-      "j": 32,
-      "type": "vv"
-    },
-    {
-      "cond_exist_prob": 1.0,
-      "distance_mean": 0.674,
-      "distance_var": 0.0,
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "i": 20,
-      "j": 34,
-      "type": "vv"
-    },
-    {
-      "cond_exist_prob": 1.0,
       "distance_mean": 3.514,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -271,6 +257,26 @@ Compact shared graph summary:
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 1.417,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 26,
+      "j": 30,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.755,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 26,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 2.15,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -296,25 +302,31 @@ Compact shared graph summary:
       "grounded": 1,
       "id": 0,
       "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.0
+      },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 2,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 3,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.02
+      },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 5,
       "node_visit_times": 0,
       "type": "viewpoint"
@@ -331,6 +343,9 @@ Compact shared graph summary:
       "grounded": 0,
       "id": 14,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
@@ -338,6 +353,9 @@ Compact shared graph summary:
       "grounded": 0,
       "id": 15,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
@@ -345,6 +363,9 @@ Compact shared graph summary:
       "grounded": 1,
       "id": 16,
       "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
@@ -352,6 +373,9 @@ Compact shared graph summary:
       "grounded": 1,
       "id": 18,
       "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
@@ -359,13 +383,19 @@ Compact shared graph summary:
       "grounded": 1,
       "id": 19,
       "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 20,
-      "node_visit_times": 1,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
@@ -373,6 +403,9 @@ Compact shared graph summary:
       "grounded": 0,
       "id": 21,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.4
+      },
       "type": "viewpoint"
     },
     {
@@ -380,6 +413,9 @@ Compact shared graph summary:
       "grounded": 1,
       "id": 23,
       "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.0
+      },
       "type": "viewpoint"
     },
     {
@@ -387,13 +423,19 @@ Compact shared graph summary:
       "grounded": 0,
       "id": 25,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 26,
-      "node_visit_times": 0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
@@ -401,6 +443,19 @@ Compact shared graph summary:
       "grounded": 0,
       "id": 28,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.5
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 30,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.1
+      },
       "type": "viewpoint"
     },
     {
@@ -415,13 +470,19 @@ Compact shared graph summary:
       "grounded": 0,
       "id": 34,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 35,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.1
+      },
       "type": "viewpoint"
     },
     {
@@ -429,6 +490,9 @@ Compact shared graph summary:
       "grounded": 0,
       "id": 36,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.5
+      },
       "type": "viewpoint"
     },
     {
@@ -436,6 +500,9 @@ Compact shared graph summary:
       "grounded": 1,
       "id": 37,
       "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.0
+      },
       "type": "viewpoint"
     },
     {
@@ -443,6 +510,9 @@ Compact shared graph summary:
       "grounded": 0,
       "id": 40,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
@@ -450,26 +520,35 @@ Compact shared graph summary:
       "grounded": 0,
       "id": 41,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.05
+      },
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
         0,
-        21
+        20,
+        21,
+        23,
+        34,
+        37
       ],
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 44,
-      "label": "living room area with blue sectional sofa and fireplace",
+      "label": "living room area with gray sofa and fireplace",
       "node_visit_times": 0,
       "type": "region"
     },
     {
-      "assigned_viewpoint_ids": [],
+      "assigned_viewpoint_ids": [
+        14
+      ],
       "exist_prob": 1.0,
       "grounded": 0,
       "id": 45,
-      "label": "bedroom area visible through doorway with large bed",
+      "label": "bedroom area visible through doorway with white bed",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -477,119 +556,103 @@ Compact shared graph summary:
       "assigned_viewpoint_ids": [
         9,
         18,
+        25,
         40,
         41
       ],
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 46,
-      "label": "sauna room with dark quilted leather walls",
+      "label": "leather-walled entertainment lounge area",
       "node_visit_times": 0,
       "type": "region"
     },
     {
-      "assigned_viewpoint_ids": [
-        14,
-        23,
-        26,
-        34
-      ],
+      "assigned_viewpoint_ids": [],
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 47,
-      "label": "hallway or transition area near bathroom entrance",
+      "label": "bathroom area with vanity and mirror",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        3,
         5,
-        15,
-        28
+        28,
+        36
       ],
       "exist_prob": 1.0,
       "grounded": 0,
       "id": 48,
-      "label": "dining area with white chairs and table near kitchen counter",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        19
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 49,
-      "label": "bathroom area with vanity mirror and sink",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        25,
-        36,
-        37
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 50,
-      "label": "entryway or closet area with sliding doors",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        16,
-        32,
-        35
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 51,
-      "label": "bedroom area with large bed and blue headboard",
+      "label": "dining area with round table and chairs",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         2,
-        20
+        16,
+        26,
+        30,
+        32,
+        35
       ],
       "exist_prob": 1.0,
       "grounded": 1,
-      "id": 52,
-      "label": "hallway or transition area near bathroom entrance",
+      "id": 49,
+      "label": "bedroom area with white bed and blue tufted accent wall",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "exist_prob": 0.8,
+      "grounded": 0,
+      "id": 50,
+      "label": "hallway area connecting bedroom to living room",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3,
+        15,
+        19
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 51,
+      "label": "entry hallway area near front door with decorative mirror",
       "node_visit_times": 0,
       "type": "region"
     }
   ],
   "observation_step": 2,
   "target_found": {
-    "1": false,
     "3": false
   },
   "viewpoint_to_region": {
     "0": 44,
-    "14": 47,
-    "15": 48,
-    "16": 51,
+    "14": 45,
+    "15": 51,
+    "16": 49,
     "18": 46,
-    "19": 49,
-    "2": 52,
-    "20": 52,
+    "19": 51,
+    "2": 49,
+    "20": 44,
     "21": 44,
-    "23": 47,
-    "25": 50,
-    "26": 47,
+    "23": 44,
+    "25": 46,
+    "26": 49,
     "28": 48,
-    "3": 48,
-    "32": 51,
-    "34": 47,
-    "35": 51,
-    "36": 50,
-    "37": 50,
+    "3": 51,
+    "30": 49,
+    "32": 49,
+    "34": 44,
+    "35": 49,
+    "36": 48,
+    "37": 44,
     "40": 46,
     "41": 46,
     "5": 48,
@@ -601,136 +664,22 @@ Per-agent observation context:
 [
   {
     "agent_id": "agent0",
-    "current_viewpoint_index": 35,
-    "current_xy": [
-      -7.2459797859191895,
-      2.591140031814575
-    ],
-    "image_index": 0,
-    "prior_assigned_region_id": 51,
-    "prior_assigned_region_label": "bedroom area with large bed and blue headboard",
-    "prior_grounded": true,
-    "prior_visit_times": 0,
-    "visible_viewpoints": [
-      {
-        "distance": 2.109,
-        "prior_assigned_region_id": 52,
-        "prior_assigned_region_label": "hallway or transition area near bathroom entrance",
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 2,
-        "xy": [
-          -8.742389678955078,
-          1.1051599979400635
-        ]
-      },
-      {
-        "distance": 1.466,
-        "prior_assigned_region_id": 51,
-        "prior_assigned_region_label": "bedroom area with large bed and blue headboard",
-        "prior_grounded": true,
-        "prior_visit_times": 1,
-        "viewpoint_index": 16,
-        "xy": [
-          -6.421979904174805,
-          1.3795599937438965
-        ]
-      },
-      {
-        "distance": 1.218,
-        "prior_assigned_region_id": 51,
-        "prior_assigned_region_label": "bedroom area with large bed and blue headboard",
-        "prior_grounded": true,
-        "prior_visit_times": 0,
-        "viewpoint_index": 32,
-        "xy": [
-          -6.9864501953125,
-          1.40146005153656
-        ]
-      },
-      {
-        "distance": 2.911,
-        "prior_assigned_region_id": 47,
-        "prior_assigned_region_label": "hallway or transition area near bathroom entrance",
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 34,
-        "xy": [
-          -8.623740196228027,
-          0.026871200650930405
-        ]
-      }
-    ]
-  },
-  {
-    "agent_id": "agent1",
-    "current_viewpoint_index": 9,
-    "current_xy": [
-      2.146049976348877,
-      3.058229923248291
-    ],
-    "image_index": 1,
-    "prior_assigned_region_id": 46,
-    "prior_assigned_region_label": "sauna room with dark quilted leather walls",
-    "prior_grounded": true,
-    "prior_visit_times": 1,
-    "visible_viewpoints": [
-      {
-        "distance": 1.266,
-        "prior_assigned_region_id": 46,
-        "prior_assigned_region_label": "sauna room with dark quilted leather walls",
-        "prior_grounded": true,
-        "prior_visit_times": 1,
-        "viewpoint_index": 18,
-        "xy": [
-          2.3672099113464355,
-          4.303619861602783
-        ]
-      },
-      {
-        "distance": 1.87,
-        "prior_assigned_region_id": 46,
-        "prior_assigned_region_label": "sauna room with dark quilted leather walls",
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 40,
-        "xy": [
-          1.7444700002670288,
-          1.232740044593811
-        ]
-      },
-      {
-        "distance": 1.705,
-        "prior_assigned_region_id": 46,
-        "prior_assigned_region_label": "sauna room with dark quilted leather walls",
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 41,
-        "xy": [
-          2.394059896469116,
-          1.3718299865722656
-        ]
-      }
-    ]
-  },
-  {
-    "agent_id": "agent2",
     "current_viewpoint_index": 32,
     "current_xy": [
       -6.9864501953125,
       1.40146005153656
     ],
-    "image_index": 2,
-    "prior_assigned_region_id": 51,
-    "prior_assigned_region_label": "bedroom area with large bed and blue headboard",
+    "image_index": 0,
+    "prior_assigned_region_id": 49,
+    "prior_assigned_region_label": "bedroom area with white bed and blue tufted accent wall",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
       {
         "distance": 1.781,
-        "prior_assigned_region_id": 52,
-        "prior_assigned_region_label": "hallway or transition area near bathroom entrance",
-        "prior_grounded": false,
+        "prior_assigned_region_id": 49,
+        "prior_assigned_region_label": "bedroom area with white bed and blue tufted accent wall",
+        "prior_grounded": true,
         "prior_visit_times": 0,
         "viewpoint_index": 2,
         "xy": [
@@ -740,8 +689,8 @@ Per-agent observation context:
       },
       {
         "distance": 0.565,
-        "prior_assigned_region_id": 51,
-        "prior_assigned_region_label": "bedroom area with large bed and blue headboard",
+        "prior_assigned_region_id": 49,
+        "prior_assigned_region_label": "bedroom area with white bed and blue tufted accent wall",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 16,
@@ -764,10 +713,10 @@ Per-agent observation context:
       },
       {
         "distance": 2.676,
-        "prior_assigned_region_id": 52,
-        "prior_assigned_region_label": "hallway or transition area near bathroom entrance",
-        "prior_grounded": true,
-        "prior_visit_times": 1,
+        "prior_assigned_region_id": 44,
+        "prior_assigned_region_label": "living room area with gray sofa and fireplace",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
         "viewpoint_index": 20,
         "xy": [
           -9.297439575195312,
@@ -776,9 +725,9 @@ Per-agent observation context:
       },
       {
         "distance": 1.218,
-        "prior_assigned_region_id": 51,
-        "prior_assigned_region_label": "bedroom area with large bed and blue headboard",
-        "prior_grounded": true,
+        "prior_assigned_region_id": 49,
+        "prior_assigned_region_label": "bedroom area with white bed and blue tufted accent wall",
+        "prior_grounded": false,
         "prior_visit_times": 0,
         "viewpoint_index": 35,
         "xy": [
@@ -789,34 +738,220 @@ Per-agent observation context:
     ]
   },
   {
-    "agent_id": "agent3",
-    "current_viewpoint_index": 3,
+    "agent_id": "agent1",
+    "current_viewpoint_index": 9,
     "current_xy": [
-      2.4140501022338867,
-      -0.39765799045562744
+      2.146049976348877,
+      3.058229923248291
     ],
-    "image_index": 3,
-    "prior_assigned_region_id": 48,
-    "prior_assigned_region_label": "dining area with white chairs and table near kitchen counter",
+    "image_index": 1,
+    "prior_assigned_region_id": 46,
+    "prior_assigned_region_label": "leather-walled entertainment lounge area",
+    "prior_grounded": true,
+    "prior_visit_times": 1,
+    "visible_viewpoints": [
+      {
+        "distance": 1.266,
+        "prior_assigned_region_id": 46,
+        "prior_assigned_region_label": "leather-walled entertainment lounge area",
+        "prior_grounded": true,
+        "prior_visit_times": 1,
+        "viewpoint_index": 18,
+        "xy": [
+          2.3672099113464355,
+          4.303619861602783
+        ]
+      },
+      {
+        "distance": 1.87,
+        "prior_assigned_region_id": 46,
+        "prior_assigned_region_label": "leather-walled entertainment lounge area",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 40,
+        "xy": [
+          1.7444700002670288,
+          1.232740044593811
+        ]
+      },
+      {
+        "distance": 1.705,
+        "prior_assigned_region_id": 46,
+        "prior_assigned_region_label": "leather-walled entertainment lounge area",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 41,
+        "xy": [
+          2.394059896469116,
+          1.3718299865722656
+        ]
+      }
+    ]
+  },
+  {
+    "agent_id": "agent2",
+    "current_viewpoint_index": 2,
+    "current_xy": [
+      -8.742389678955078,
+      1.1051599979400635
+    ],
+    "image_index": 2,
+    "prior_assigned_region_id": 49,
+    "prior_assigned_region_label": "bedroom area with white bed and blue tufted accent wall",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
       {
-        "distance": 1.097,
+        "distance": 2.69,
         "prior_assigned_region_id": null,
         "prior_assigned_region_label": null,
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 6,
+        "viewpoint_index": 11,
         "xy": [
-          3.5074400901794434,
-          -0.49201500415802
+          -6.384980201721191,
+          2.094789981842041
         ]
       },
       {
-        "distance": 0.974,
+        "distance": 1.262,
+        "prior_assigned_region_id": 45,
+        "prior_assigned_region_label": "bedroom area visible through doorway with white bed",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 14,
+        "xy": [
+          -8.216710090637207,
+          -0.04253029823303223
+        ]
+      },
+      {
+        "distance": 1.19,
+        "prior_assigned_region_id": 44,
+        "prior_assigned_region_label": "living room area with gray sofa and fireplace",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 20,
+        "xy": [
+          -9.297439575195312,
+          0.052132200449705124
+        ]
+      },
+      {
+        "distance": 1.139,
         "prior_assigned_region_id": 49,
-        "prior_assigned_region_label": "bathroom area with vanity mirror and sink",
+        "prior_assigned_region_label": "bedroom area with white bed and blue tufted accent wall",
+        "prior_grounded": true,
+        "prior_visit_times": 1,
+        "viewpoint_index": 26,
+        "xy": [
+          -9.87024974822998,
+          1.2619800567626953
+        ]
+      },
+      {
+        "distance": 2.23,
+        "prior_assigned_region_id": 49,
+        "prior_assigned_region_label": "bedroom area with white bed and blue tufted accent wall",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 30,
+        "xy": [
+          -10.428600311279297,
+          2.5641000270843506
+        ]
+      },
+      {
+        "distance": 1.781,
+        "prior_assigned_region_id": 49,
+        "prior_assigned_region_label": "bedroom area with white bed and blue tufted accent wall",
+        "prior_grounded": true,
+        "prior_visit_times": 0,
+        "viewpoint_index": 32,
+        "xy": [
+          -6.9864501953125,
+          1.40146005153656
+        ]
+      },
+      {
+        "distance": 1.085,
+        "prior_assigned_region_id": 44,
+        "prior_assigned_region_label": "living room area with gray sofa and fireplace",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 34,
+        "xy": [
+          -8.623740196228027,
+          0.026871200650930405
+        ]
+      },
+      {
+        "distance": 2.109,
+        "prior_assigned_region_id": 49,
+        "prior_assigned_region_label": "bedroom area with white bed and blue tufted accent wall",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 35,
+        "xy": [
+          -7.2459797859191895,
+          2.591140031814575
+        ]
+      },
+      {
+        "distance": 3.013,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 39,
+        "xy": [
+          -10.396100044250488,
+          3.624069929122925
+        ]
+      }
+    ]
+  },
+  {
+    "agent_id": "agent3",
+    "current_viewpoint_index": 5,
+    "current_xy": [
+      0.07482189685106277,
+      -0.00036012398777529597
+    ],
+    "image_index": 3,
+    "prior_assigned_region_id": 48,
+    "prior_assigned_region_label": "dining area with round table and chairs",
+    "prior_grounded": true,
+    "prior_visit_times": 0,
+    "visible_viewpoints": [
+      {
+        "distance": 2.218,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 7,
+        "xy": [
+          -1.6541099548339844,
+          1.3889000415802002
+        ]
+      },
+      {
+        "distance": 1.35,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 13,
+        "xy": [
+          0.25068199634552,
+          1.3370699882507324
+        ]
+      },
+      {
+        "distance": 1.422,
+        "prior_assigned_region_id": 51,
+        "prior_assigned_region_label": "entry hallway area near front door with decorative mirror",
         "prior_grounded": true,
         "prior_visit_times": 1,
         "viewpoint_index": 19,
@@ -826,21 +961,9 @@ Per-agent observation context:
         ]
       },
       {
-        "distance": 1.475,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 22,
-        "xy": [
-          3.67576003074646,
-          -1.1610499620437622
-        ]
-      },
-      {
-        "distance": 1.203,
-        "prior_assigned_region_id": 50,
-        "prior_assigned_region_label": "entryway or closet area with sliding doors",
+        "distance": 1.593,
+        "prior_assigned_region_id": 46,
+        "prior_assigned_region_label": "leather-walled entertainment lounge area",
         "prior_grounded": false,
         "prior_visit_times": 0,
         "viewpoint_index": 25,
@@ -850,15 +973,39 @@ Per-agent observation context:
         ]
       },
       {
-        "distance": 3.452,
+        "distance": 1.368,
         "prior_assigned_region_id": 48,
-        "prior_assigned_region_label": "dining area with white chairs and table near kitchen counter",
+        "prior_assigned_region_label": "dining area with round table and chairs",
         "prior_grounded": false,
         "prior_visit_times": 0,
         "viewpoint_index": 28,
         "xy": [
           -0.6740189790725708,
           1.1441400051116943
+        ]
+      },
+      {
+        "distance": 1.073,
+        "prior_assigned_region_id": 48,
+        "prior_assigned_region_label": "dining area with round table and chairs",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 36,
+        "xy": [
+          -0.915956974029541,
+          -0.41221100091934204
+        ]
+      },
+      {
+        "distance": 0.844,
+        "prior_assigned_region_id": 44,
+        "prior_assigned_region_label": "living room area with gray sofa and fireplace",
+        "prior_grounded": true,
+        "prior_visit_times": 1,
+        "viewpoint_index": 37,
+        "xy": [
+          0.15111400187015533,
+          -0.841035008430481
         ]
       }
     ]
@@ -886,45 +1033,54 @@ Strict allowed-id rule:
 - Do not include viewpoint ids listed under Current-step viewpoint ids not requiring region assignment in this step.
 - Previously observed viewpoints keep their previous graph_summary viewpoint-to-region assignment by default.
 - If a previously observed current viewpoint should move to a different region, report that change only in current_viewpoints_reassignment.
-- viewpoint_target_probs must contain every required newly observed non-current visible neighboring viewpoint id below.
-- Do not include current viewpoint ids in viewpoint_target_probs.
-- Do not include previously observed viewpoint ids in viewpoint_target_probs; their probabilities are updated by code with the paper's Bayesian rule.
-- Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
+- viewpoint_target_probs is optional and incremental for the MLLM-updatable viewpoint ids below.
+- Do not include current, grounded, or previously visited viewpoint ids in viewpoint_target_probs. Their target probabilities are detection-fixed at 0 for unfound targets.
+- Existing non-current graph viewpoint ids keep prior_raw_target_probs unless current observations justify changing a specific viewpoint-target value.
+- Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, region assigned_viewpoint_ids, or viewpoint_to_region.
 - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
 - Region ids must be >= 44.
-- New region ids must start from 53.
+- New region ids must start from 52.
 - Existing region ids in the graph summary may be reused.
 - Never use a viewpoint id as a region id.
 
 Current-step allowed viewpoint ids:
 [
   2,
-  3,
-  6,
+  5,
+  7,
   9,
+  11,
+  13,
+  14,
   16,
   17,
   18,
   19,
   20,
-  22,
   25,
+  26,
   28,
+  30,
   32,
   34,
   35,
+  36,
+  37,
+  39,
   40,
   41
 ]
 
 Viewpoint ids requiring region assignment in this step:
 [
-  3,
-  6,
+  2,
+  5,
+  7,
+  11,
+  13,
   17,
-  22,
   32,
-  35
+  39
 ]
 
 These ids include:
@@ -933,69 +1089,256 @@ These ids include:
 
 Current-step viewpoint ids not requiring region assignment in this step:
 [
-  2,
   9,
+  14,
   16,
   18,
   19,
   20,
   25,
+  26,
   28,
+  30,
   34,
+  35,
+  36,
+  37,
   40,
   41
 ]
 
-Required newly observed viewpoint_target_probs id skeleton:
+MLLM-updatable viewpoint target-probability context:
 [
   {
-    "id": 6
+    "has_prior_raw_target_probs": true,
+    "id": 3,
+    "prior_raw_target_probs": {
+      "3": 0.02
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 7,
+    "prior_raw_target_probs": {
+      "3": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 11,
+    "prior_raw_target_probs": {
+      "3": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 13,
+    "prior_raw_target_probs": {
+      "3": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 14,
+    "prior_raw_target_probs": {
+      "3": 0.05
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 15,
+    "prior_raw_target_probs": {
+      "3": 0.05
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 17,
+    "prior_raw_target_probs": {
+      "3": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 20,
+    "prior_raw_target_probs": {
+      "3": 0.05
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 21,
+    "prior_raw_target_probs": {
+      "3": 0.4
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 25,
+    "prior_raw_target_probs": {
+      "3": 0.05
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 28,
+    "prior_raw_target_probs": {
+      "3": 0.5
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 30,
+    "prior_raw_target_probs": {
+      "3": 0.1
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 34,
+    "prior_raw_target_probs": {
+      "3": 0.05
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 35,
+    "prior_raw_target_probs": {
+      "3": 0.1
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 36,
+    "prior_raw_target_probs": {
+      "3": 0.5
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 39,
+    "prior_raw_target_probs": {
+      "3": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 40,
+    "prior_raw_target_probs": {
+      "3": 0.05
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 41,
+    "prior_raw_target_probs": {
+      "3": 0.05
+    }
+  }
+]
+
+Eligible viewpoint_target_probs update ids:
+[
+  {
+    "id": 3
+  },
+  {
+    "id": 7
+  },
+  {
+    "id": 11
+  },
+  {
+    "id": 13
+  },
+  {
+    "id": 14
+  },
+  {
+    "id": 15
   },
   {
     "id": 17
   },
   {
-    "id": 22
+    "id": 20
+  },
+  {
+    "id": 21
+  },
+  {
+    "id": 25
+  },
+  {
+    "id": 28
+  },
+  {
+    "id": 30
+  },
+  {
+    "id": 34
+  },
+  {
+    "id": 35
+  },
+  {
+    "id": 36
+  },
+  {
+    "id": 39
+  },
+  {
+    "id": 40
+  },
+  {
+    "id": 41
   }
 ]
 
 Viewpoint target probability rule:
-- You must output one viewpoint_target_probs item for every id in this skeleton.
-- These ids are non-current visible neighboring viewpoints only.
+- You may output viewpoint_target_probs items only for ids in this list.
+- Omit an id or target_id when its prior_raw_target_probs value should remain unchanged.
+- For an eligible viewpoint where has_prior_raw_target_probs is false, output all active target_ids for that viewpoint.
 - Score the target likelihood at the candidate viewpoint, not only at the current camera location.
-- For each candidate viewpoint, use its red marker location in the panorama, nearby visible objects, assigned semantic region, xy distance, visible_viewpoints[].distance, and compact graph summary.
-- Compare all required viewpoint ids against each other for each active target_id before assigning scores.
+- For each candidate viewpoint, use its red marker location when visible, nearby visible objects, assigned semantic region, xy distance, visible_viewpoints[].distance, prior_raw_target_probs, and compact graph summary.
+- Compare eligible viewpoint ids against each other for each active target_id before assigning changed scores.
 - If one viewpoint is closer to a dining table and another viewpoint is in a bedroom, hallway, or lounge area, their scores for "the green plant on the dining table" should usually be different.
-- Use positive but meaningful scores in (0, 1].
+- Use meaningful nonnegative raw scores.
 - Avoid uniform scores unless the visual evidence and graph context are truly indistinguishable.
-- Do not include current viewpoint ids.
-- Do not include existing graph viewpoint ids.
-- Do not delete any skeleton item.
+- Do not include current, grounded, or previously visited viewpoint ids.
 
 Target probability rule:
-- target_probs are unnormalized initial target-location scores for newly introduced nodes only, not calibrated probabilities.
-- Existing graph node target probabilities are not included in the prompt and are updated by code using the paper's Bayesian rule: previous posterior times the current visual-evidence likelihood, normalized separately on viewpoint and region layers.
+- viewpoint_target_probs target_probs are raw target-location scores, not calibrated probabilities. The validator stores the materialized values as raw_target_probs and normalizes target_probs per target across eligible viewpoint ids.
+- Region node target_probs are kept unchanged after graph update: existing regions keep prior values and newly proposed regions keep the values you provide.
 - Do not copy default values from the schema or examples.
-- For each active target_id, compare newly proposed regions and all required newly observed non-current neighboring viewpoints before assigning scores.
+- For each active target_id, compare newly proposed regions and all eligible non-current viewpoint ids before assigning changed scores.
 - Assign higher scores to locations whose visible objects, room type, furniture, spatial context, and graph history better match the target description.
 - For example, if the target is a plant on a dining table, regions or viewpoints near a dining table should receive higher scores than bedrooms, bathrooms, hallways, or lounge areas without dining-table evidence.
-- Use the full range (0, 1]. Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
+- Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
 - Use different scores when evidence differs.
 - Equal scores are allowed only when the visual evidence, assigned region, spatial context, and graph history are truly indistinguishable.
+- For each active target_id, the sum of materialized raw scores across eligible viewpoint ids must be positive.
 
 All non-current visible neighboring viewpoint ids:
 [
-  2,
-  6,
+  7,
+  11,
+  13,
+  14,
   16,
   17,
   18,
   19,
   20,
-  22,
   25,
+  26,
   28,
+  30,
   34,
+  35,
+  36,
+  37,
+  39,
   40,
   41
 ]
@@ -1010,8 +1353,8 @@ Output schema example. Use keys and value types only. Do not copy example values
 {
   "current_viewpoints_reassignment": [
     {
-      "new_assigned_region_id": 54,
-      "viewpoint_id": 35
+      "new_assigned_region_id": 53,
+      "viewpoint_id": 32
     }
   ],
   "edge_distance_variances": {
@@ -1021,11 +1364,10 @@ Output schema example. Use keys and value types only. Do not copy example values
   "invisible_region_nodes": [
     {
       "exist_prob": 0.6,
-      "id": 55,
+      "id": 54,
       "label": "unseen hallway area beyond closed doorway",
       "target_probs": {
-        "1": 0.73,
-        "3": 0.67
+        "3": 0.28
       }
     }
   ],
@@ -1035,44 +1377,41 @@ Output schema example. Use keys and value types only. Do not copy example values
       "edge_type": "VZ",
       "exist_prob": 0.6,
       "i": 2,
-      "j": 55
+      "j": 54
     }
   ],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        35,
+        32,
         2
       ],
-      "region_node_id": 53
+      "region_node_id": 52
     }
   ],
   "viewpoint_target_probs": [
     {
       "id": 2,
       "target_probs": {
-        "1": 0.88,
-        "3": 0.1
+        "3": 0.23
       }
     }
   ],
   "visible_region_nodes": [
     {
       "exist_prob": 1.0,
-      "id": 53,
+      "id": 52,
       "label": "bright kitchen area near dining table",
       "target_probs": {
-        "1": 0.64,
-        "3": 0.03
+        "3": 0.64
       }
     },
     {
       "exist_prob": 0.7,
-      "id": 54,
+      "id": 53,
       "label": "adjacent hallway visible through doorway",
       "target_probs": {
-        "1": 0.28,
-        "3": 0.23
+        "3": 0.03
       }
     }
   ]
