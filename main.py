@@ -9,7 +9,6 @@ from optimization_model import RollingHorizonOptimizer
 from semantic_persistence.hypothesis_graph import HypothesisGraph
 from semantic_persistence.mllm_client import MLLMClient
 
-
 Explore_mode = True  # True: manual keyboard control
 LAST_IMAGE_RIGHT_SHIFT_STEPS = 6
 
@@ -43,8 +42,8 @@ if __name__ == "__main__":
     sim.initialize()
 
     # -------------------- Episode --------------------
-    scan_id = "17DRP5sb8fy"
-    start_vp_id = "10c252c90fa24ef3b698c6f54d984c5c"
+    scan_id = "1pXnuDYAj8r"
+    start_vp_id = "0d3a3b42009441e2a02200423049d804"
     Helper.build_viewpoint_index(scan_id)
     sim.newEpisode([scan_id], [start_vp_id], [0.0], [0.0])
 
