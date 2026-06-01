@@ -1,5 +1,6 @@
 __all__ = [
     "HypothesisGraph",
+    "GroundingDinoDetector",
     "MLLMClient",
     "OpenVocabularyDetector",
     "SigLIPScorer",
@@ -18,6 +19,10 @@ def __getattr__(name):
         from .mllm_client import MLLMClient
 
         return MLLMClient
+    if name == "GroundingDinoDetector":
+        from .grounding_dino_detector import GroundingDinoDetector
+
+        return GroundingDinoDetector
     if name == "OpenVocabularyDetector":
         from .open_vocab_detector import OpenVocabularyDetector
 

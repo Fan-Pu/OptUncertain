@@ -552,7 +552,27 @@ def test_step_renderer_uses_tight_region_boundaries_and_arrival_edges():
     assert "function convexHull" not in html
     assert "marchingSquaresRegionBoundary" in html
     assert "regionBoundaryPrimitives" in html
-    assert "REGION_BOUNDARY_NODE_RADIUS" in html
+    assert "function graphMarkerMetrics(projection)" in html
+    assert "projection.scale * 0.28" in html
+    assert "projection.scale * 0.36" in html
+    assert "projection.scale * 0.75" in html
+    assert "projection.scale * 0.35" in html
+    assert "metrics.regionBoundaryNodeRadius" in html
+    assert "metrics.regionBoundaryCorridorRadius" in html
+    assert ".node text {\n      fill: #111827;" in html
+    assert ".node text {\n      font-size: 11px;" not in html
+    assert "metrics.nodeLabelFontSize" in html
+    assert "metrics.nodeLabelStrokeWidth" in html
+    assert "metrics.currentAgentLabelFontSize" in html
+    assert "metrics.currentAgentLabelStrokeWidth" in html
+    assert "metrics.regionLabelFontSize" in html
+    assert "metrics.regionLabelStrokeWidth" in html
+    assert "metrics.edgeLabelFontSize" in html
+    assert "metrics.edgeLabelStrokeWidth" in html
+    assert '"font-size": 10' not in html
+    assert "r: currentAgent ? 20 : 16" not in html
+    assert "currentAgent ? 42 : 22" not in html
+    assert "REGION_BOUNDARY_NODE_RADIUS =" not in html
     assert "function regionColor" in html
     assert "REGION_COLORS" in html
     assert "function agentArrivalEdgeKeys" in html

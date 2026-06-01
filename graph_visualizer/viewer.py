@@ -346,11 +346,9 @@ def render_viewer_html() -> str:
       cursor: pointer;
     }
     .node text {
-      font-size: 11px;
       fill: #111827;
       paint-order: stroke;
       stroke: white;
-      stroke-width: 4px;
       stroke-linejoin: round;
       pointer-events: none;
     }
@@ -638,8 +636,10 @@ def render_viewer_html() -> str:
     const GRAPH_MAX_SCALE = 5;
     const GRAPH_ZOOM_FACTOR = 1.2;
     const GRAPH_FIT_PADDING = 56;
-    const REGION_BOUNDARY_NODE_RADIUS = 38;
-    const REGION_BOUNDARY_CORRIDOR_RADIUS = 18;
+    const GRAPH_VIEWPOINT_RADIUS_CAP = 16;
+    const GRAPH_CURRENT_VIEWPOINT_RADIUS_CAP = 20;
+    const REGION_BOUNDARY_NODE_RADIUS_CAP = 38;
+    const REGION_BOUNDARY_CORRIDOR_RADIUS_CAP = 18;
     const REGION_BOUNDARY_CELL_SIZE = 4;
     const ROUTE_COLORS = ["#d62728", "#1f77b4", "#2ca02c", "#ff7f0e", "#9467bd", "#17becf"];
     const REGION_COLORS = [
@@ -1236,6 +1236,7 @@ def render_viewer_html() -> str:
       const projection = graphState.projection;
       const positions = graphState.positions;
       const contentBounds = graphState.contentBounds;
+      const metrics = graphState.metrics;
       const viewportLayer = svgEl("g", {});
       graph.appendChild(viewportLayer);
 
@@ -1270,9 +1271,10 @@ def render_viewer_html() -> str:
         }
         const idText = svgEl("text", {
           x: center.x,
-          y: center.y + 4,
+          y: center.y + metrics.regionLabelFontSize * 0.36,
           "text-anchor": "middle",
-          "font-weight": 700
+          "font-weight": 700,
+          style: `font-size: ${metrics.regionLabelFontSize}px; stroke-width: ${metrics.regionLabelStrokeWidth}px;`
         });
         idText.textContent = String(node.id);
         group.appendChild(idText);
@@ -1305,16 +1307,15 @@ def render_viewer_html() -> str:
           y2: target.y
         }));
         const midpoint = { x: (source.x + target.x) / 2, y: (source.y + target.y) / 2 };
-        includeGraphPoint(contentBounds, midpoint.x, midpoint.y, 18);
+        includeGraphPoint(contentBounds, midpoint.x, midpoint.y, metrics.edgeLabelBoundsPadding);
         const label = svgEl("text", {
           x: midpoint.x,
-          y: midpoint.y - 5,
+          y: midpoint.y - metrics.edgeLabelOffset,
           "text-anchor": "middle",
-          "font-size": 10,
           fill: "#475467",
           "paint-order": "stroke",
           stroke: "white",
-          "stroke-width": 3
+          style: `font-size: ${metrics.edgeLabelFontSize}px; stroke-width: ${metrics.edgeLabelStrokeWidth}px;`
         });
         label.textContent = edgeLabel(hyp);
         edgeGroup.appendChild(label);
@@ -1326,7 +1327,13 @@ def render_viewer_html() -> str:
       for (const node of layoutNodes.filter(item => item.type === "viewpoint").sort(byId)) {
         const pos = positions.get(String(node.id));
         const currentAgent = agentAtNode(step, node.id);
-        includeGraphPoint(contentBounds, pos.x, pos.y, currentAgent ? 42 : 22);
+        const radius = currentAgent ? metrics.currentViewpointRadius : metrics.viewpointRadius;
+        includeGraphPoint(
+          contentBounds,
+          pos.x,
+          pos.y,
+          currentAgent ? metrics.currentViewpointBoundsPadding : metrics.viewpointBoundsPadding
+        );
         const group = svgEl("g", {
           class: `node viewpoint ${isSelectedNode(node.id) ? "selected" : ""}`
         });
@@ -1338,29 +1345,33 @@ def render_viewer_html() -> str:
         group.appendChild(svgEl("circle", {
           cx: pos.x,
           cy: pos.y,
-          r: currentAgent ? 20 : 16,
+          r: radius,
           fill: node.grounded ? "var(--grounded)" : "var(--viewpoint)",
           stroke: currentAgent ? "var(--current)" : "#ffffff",
-          "stroke-width": currentAgent ? 5 : 2
+          "stroke-width": currentAgent
+            ? metrics.currentViewpointStrokeWidth
+            : metrics.viewpointStrokeWidth
         }));
         const title = svgEl("title", {});
         title.textContent = `${node.type} ${node.id}: ${node.label}`;
         group.appendChild(title);
         const idText = svgEl("text", {
           x: pos.x,
-          y: pos.y + 4,
+          y: pos.y + metrics.nodeLabelFontSize * 0.36,
           "text-anchor": "middle",
-          "font-weight": 700
+          "font-weight": 700,
+          style: `font-size: ${metrics.nodeLabelFontSize}px; stroke-width: ${metrics.nodeLabelStrokeWidth}px;`
         });
         idText.textContent = String(node.id);
         group.appendChild(idText);
         if (currentAgent) {
           const agentText = svgEl("text", {
             x: pos.x,
-            y: pos.y - 25,
+            y: pos.y - metrics.currentAgentLabelOffset,
             "text-anchor": "middle",
             "font-weight": 700,
-            fill: "var(--current)"
+            fill: "var(--current)",
+            style: `font-size: ${metrics.currentAgentLabelFontSize}px; stroke-width: ${metrics.currentAgentLabelStrokeWidth}px;`
           });
           agentText.textContent = currentAgent;
           group.appendChild(agentText);
@@ -1374,6 +1385,7 @@ def render_viewer_html() -> str:
       const environment = payload.environment_graph;
       const projection = routeProjection(environment, width, height);
       const positions = routePositions(environment.nodes, projection);
+      const metrics = graphMarkerMetrics(projection);
       const regionGeometries = new Map();
       const contentBounds = emptyBounds();
       const graphEdges = graphVisibleEdges(step);
@@ -1389,10 +1401,10 @@ def render_viewer_html() -> str:
         .filter(item => item.type === "region" && isAssignedRegion(item))
         .sort(byId);
       for (const region of regionNodes) {
-        const geometry = regionGeometry(region, positions, environment);
+        const geometry = regionGeometry(region, positions, environment, metrics);
         regionGeometries.set(String(region.id), geometry);
         positions.set(String(region.id), geometry.center);
-        includeRegionGeometryBounds(contentBounds, geometry);
+        includeRegionGeometryBounds(contentBounds, geometry, metrics);
       }
 
       for (const edge of graphEdges) {
@@ -1400,11 +1412,23 @@ def render_viewer_html() -> str:
         const target = positions.get(String(edge.j));
         includeGraphPoint(contentBounds, source.x, source.y, 8);
         includeGraphPoint(contentBounds, target.x, target.y, 8);
-        includeGraphPoint(contentBounds, (source.x + target.x) / 2, (source.y + target.y) / 2, 18);
+        includeGraphPoint(
+          contentBounds,
+          (source.x + target.x) / 2,
+          (source.y + target.y) / 2,
+          metrics.edgeLabelBoundsPadding
+        );
       }
       for (const node of step.layout.nodes.filter(item => item.type === "viewpoint").sort(byId)) {
         const pos = positions.get(String(node.id));
-        includeGraphPoint(contentBounds, pos.x, pos.y, agentAtNode(step, node.id) ? 42 : 22);
+        includeGraphPoint(
+          contentBounds,
+          pos.x,
+          pos.y,
+          agentAtNode(step, node.id)
+            ? metrics.currentViewpointBoundsPadding
+            : metrics.viewpointBoundsPadding
+        );
       }
 
       return {
@@ -1412,15 +1436,48 @@ def render_viewer_html() -> str:
         projection: projection,
         positions: positions,
         regionGeometries: regionGeometries,
+        metrics: metrics,
         contentBounds: contentBounds
       };
     }
 
-    function includeRegionGeometryBounds(bounds, geometry) {
+    function graphMarkerMetrics(projection) {
+      const viewpointRadius = Math.min(GRAPH_VIEWPOINT_RADIUS_CAP, projection.scale * 0.28);
+      const currentViewpointRadius = Math.min(GRAPH_CURRENT_VIEWPOINT_RADIUS_CAP, projection.scale * 0.36);
+      const regionBoundaryNodeRadius = Math.min(REGION_BOUNDARY_NODE_RADIUS_CAP, projection.scale * 0.75);
+      const regionBoundaryCorridorRadius = Math.min(REGION_BOUNDARY_CORRIDOR_RADIUS_CAP, projection.scale * 0.35);
+      const nodeLabelFontSize = Math.min(11, viewpointRadius * 0.9);
+      const currentAgentLabelFontSize = Math.min(11, currentViewpointRadius * 0.8);
+      const regionLabelFontSize = Math.min(11, regionBoundaryNodeRadius * 0.35);
+      const edgeLabelFontSize = Math.min(10, viewpointRadius * 0.75);
+      return {
+        viewpointRadius: viewpointRadius,
+        currentViewpointRadius: currentViewpointRadius,
+        viewpointStrokeWidth: viewpointRadius * 0.125,
+        currentViewpointStrokeWidth: currentViewpointRadius * 0.25,
+        viewpointBoundsPadding: viewpointRadius * 1.375,
+        currentViewpointBoundsPadding: currentViewpointRadius * 2.1,
+        nodeLabelFontSize: nodeLabelFontSize,
+        nodeLabelStrokeWidth: nodeLabelFontSize * 0.35,
+        currentAgentLabelFontSize: currentAgentLabelFontSize,
+        currentAgentLabelStrokeWidth: currentAgentLabelFontSize * 0.35,
+        currentAgentLabelOffset: currentViewpointRadius * 1.25,
+        regionBoundaryNodeRadius: regionBoundaryNodeRadius,
+        regionBoundaryCorridorRadius: regionBoundaryCorridorRadius,
+        regionLabelFontSize: regionLabelFontSize,
+        regionLabelStrokeWidth: regionLabelFontSize * 0.35,
+        edgeLabelFontSize: edgeLabelFontSize,
+        edgeLabelStrokeWidth: edgeLabelFontSize * 0.3,
+        edgeLabelOffset: edgeLabelFontSize * 0.5,
+        edgeLabelBoundsPadding: edgeLabelFontSize * 1.8
+      };
+    }
+
+    function includeRegionGeometryBounds(bounds, geometry, metrics) {
       for (const point of geometry.points) {
         includeGraphPoint(bounds, point.x, point.y, 8);
       }
-      includeGraphPoint(bounds, geometry.center.x, geometry.center.y, 18);
+      includeGraphPoint(bounds, geometry.center.x, geometry.center.y, metrics.regionBoundaryNodeRadius * 0.5);
     }
 
     function regionColor(regionId) {
@@ -1442,13 +1499,13 @@ def render_viewer_html() -> str:
       return result;
     }
 
-    function regionTightBoundary(region, positions, environment) {
+    function regionTightBoundary(region, positions, environment, metrics) {
       const assignedIds = assignedRegionViewpointIds(region);
-      const primitives = regionBoundaryPrimitives(assignedIds, positions, environment);
+      const primitives = regionBoundaryPrimitives(assignedIds, positions, environment, metrics);
       const bounds = emptyBounds();
       for (const id of assignedIds) {
         const center = positions.get(id);
-        includeGraphPoint(bounds, center.x, center.y, REGION_BOUNDARY_NODE_RADIUS + REGION_BOUNDARY_CELL_SIZE * 2);
+        includeGraphPoint(bounds, center.x, center.y, metrics.regionBoundaryNodeRadius + REGION_BOUNDARY_CELL_SIZE * 2);
       }
       const components = marchingSquaresRegionBoundary(
         primitives,
@@ -1464,12 +1521,12 @@ def render_viewer_html() -> str:
       };
     }
 
-    function regionBoundaryPrimitives(assignedIds, positions, environment) {
+    function regionBoundaryPrimitives(assignedIds, positions, environment, metrics) {
       const assigned = new Set(assignedIds);
       const primitives = assignedIds.map(id => ({
         kind: "disk",
         center: positions.get(id),
-        radius: REGION_BOUNDARY_NODE_RADIUS
+        radius: metrics.regionBoundaryNodeRadius
       }));
       for (const edge of environment.edges) {
         if (!assigned.has(String(edge.i)) || !assigned.has(String(edge.j))) continue;
@@ -1477,7 +1534,7 @@ def render_viewer_html() -> str:
           kind: "capsule",
           source: positions.get(String(edge.i)),
           target: positions.get(String(edge.j)),
-          radius: REGION_BOUNDARY_CORRIDOR_RADIUS
+          radius: metrics.regionBoundaryCorridorRadius
         });
       }
       return primitives;
@@ -1545,8 +1602,8 @@ def render_viewer_html() -> str:
       ));
     }
 
-    function regionGeometry(region, positions, environment) {
-      return regionTightBoundary(region, positions, environment);
+    function regionGeometry(region, positions, environment, metrics) {
+      return regionTightBoundary(region, positions, environment, metrics);
     }
 
     function assignedRegionCenter(assignedIds, positions) {

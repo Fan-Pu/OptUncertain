@@ -327,24 +327,42 @@ def _build_open_vocab_detector(mllm_config: Dict[str, object]):
     if not bool(open_vocab_config.get("enabled", True)):
         return None
 
-    from semantic_persistence import OpenVocabularyDetector
     from semantic_persistence.mllm_client import OPEN_VOCAB_SCORE_THRESHOLD
 
-    return OpenVocabularyDetector(
-        model_name=str(
-            open_vocab_config.get(
-                "model_name",
-                "google/owlv2-base-patch16-ensemble",
-            )
-        ),
-        score_threshold=float(
-            open_vocab_config.get(
-                "score_threshold",
-                OPEN_VOCAB_SCORE_THRESHOLD,
-            )
-        ),
-        device=open_vocab_config.get("device"),
-    )
+    backend = str(open_vocab_config.get("backend", "owlv2"))
+    if backend == "grounding_dino":
+        from semantic_persistence import GroundingDinoDetector
+
+        return GroundingDinoDetector(
+            model_name=str(
+                open_vocab_config.get(
+                    "model_name",
+                    "IDEA-Research/grounding-dino-tiny",
+                )
+            ),
+            score_threshold=float(open_vocab_config.get("box_threshold", 0.35)),
+            text_threshold=float(open_vocab_config.get("text_threshold", 0.25)),
+            device=open_vocab_config.get("device"),
+        )
+    if backend == "owlv2":
+        from semantic_persistence import OpenVocabularyDetector
+
+        return OpenVocabularyDetector(
+            model_name=str(
+                open_vocab_config.get(
+                    "model_name",
+                    "google/owlv2-base-patch16-ensemble",
+                )
+            ),
+            score_threshold=float(
+                open_vocab_config.get(
+                    "score_threshold",
+                    OPEN_VOCAB_SCORE_THRESHOLD,
+                )
+            ),
+            device=open_vocab_config.get("device"),
+        )
+    raise ValueError("Unsupported open_vocab_verification backend: %s" % backend)
 
 
 def run_scenario(config_path: str) -> Dict[str, object]:

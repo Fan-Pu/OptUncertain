@@ -8,6 +8,9 @@ import tempfile
 from urllib.request import urlopen, Request
 import certifi
 
+# use the following command to download mesh data
+# py download_mp.py -o "D:\MatterSimData" --id 1pXnuDYAj8r --type matterport_mesh
+
 # Use the working host + https
 BASE_URL = "https://kaldir.vc.in.tum.de/matterport/"
 RELEASE = "v1/scans"
@@ -152,18 +155,30 @@ def main():
             "  py download_mp.py -o base_dir --id 17DRP5sb8fy --type matterport_skybox_images\n"
         ),
     )
-    parser.add_argument("-o", "--out_dir", required=True, help="directory in which to download")
+    parser.add_argument(
+        "-o", "--out_dir", required=True, help="directory in which to download"
+    )
     parser.add_argument(
         "--task_data",
         default=[],
         nargs="+",
         help="task data files to download. Any of: " + ",".join(TASK_FILES.keys()),
     )
-    parser.add_argument("--id", default="ALL", help="specific scan id to download or ALL to download entire dataset")
-    parser.add_argument("--type", nargs="+", help="specific file types to download. Any of: " + ",".join(FILETYPES))
+    parser.add_argument(
+        "--id",
+        default="ALL",
+        help="specific scan id to download or ALL to download entire dataset",
+    )
+    parser.add_argument(
+        "--type",
+        nargs="+",
+        help="specific file types to download. Any of: " + ",".join(FILETYPES),
+    )
     args = parser.parse_args()
 
-    print("By pressing Enter you confirm that you have agreed to the MP terms of use as described at:")
+    print(
+        "By pressing Enter you confirm that you have agreed to the MP terms of use as described at:"
+    )
     print(TOS_URL)
     print("***")
     print("Press Enter to continue, or CTRL-C to exit.")
@@ -203,10 +218,18 @@ def main():
 
     if "minos" not in args.task_data and args.id.upper() == "ALL":
         if len(file_types) == len(FILETYPES):
-            print("WARNING: You are downloading the entire MP release which requires " + RELEASE_SIZE + " of space.")
+            print(
+                "WARNING: You are downloading the entire MP release which requires "
+                + RELEASE_SIZE
+                + " of space."
+            )
         else:
-            print("WARNING: You are downloading all MP scans of type " + str(file_types))
-        print("Note that existing scan directories will be skipped. Delete partially downloaded directories to re-download.")
+            print(
+                "WARNING: You are downloading all MP scans of type " + str(file_types)
+            )
+        print(
+            "Note that existing scan directories will be skipped. Delete partially downloaded directories to re-download."
+        )
         print("***")
         print("Press Enter to continue, or CTRL-C to exit.")
         input("")

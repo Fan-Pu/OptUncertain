@@ -3,25 +3,25 @@
   "agents": [
     {
       "id": "agent0",
-      "start_viewpoint_id": "10c252c90fa24ef3b698c6f54d984c5c",
+      "start_viewpoint_id": "76ba074e4b7a46feb3d829302db3bd2e",
       "heading": 0.0,
       "elevation": 0.0
     },
     {
       "id": "agent1",
-      "start_viewpoint_id": "85c23efeaecd4d43a7dcd5b90137179e",
+      "start_viewpoint_id": "f7ef3082a05c40659421f0a21731ae1b",
       "heading": 0.0,
       "elevation": 0.0
     },
     {
       "id": "agent2",
-      "start_viewpoint_id": "30c97842da204e6290ac32904c924e17",
+      "start_viewpoint_id": "ee260af3263a4eccb2922c2dcf1b4606",
       "heading": 0.0,
       "elevation": 0.0
     },
     {
       "id": "agent3",
-      "start_viewpoint_id": "c8112f69d34d476fbb29e6b3909deba2",
+      "start_viewpoint_id": "159bf39081724055a73e686a6577096b",
       "heading": 0.0,
       "elevation": 0.0
     }
@@ -29,27 +29,37 @@
   "targets": [
     {
       "target_id": "0",
-      "description": "the small beige accent pillow near the headboard"
+      "description": "the folded leopard-print towels on top of the white dryer in the downstairs laundry room"
     },
     {
       "target_id": "1",
-      "description": "the green patterned throw pillow on the brown armchair"
+      "description": "the black laptop on the wooden desk in the downstairs room"
     },
     {
       "target_id": "2",
-      "description": "the long bathrobe in the bathroom"
+      "description": "the red apples on the two-tier stand by the downstairs kitchen window"
     },
     {
       "target_id": "3",
-      "description": "the bottled water on the kitchen shelf"
+      "description": "the iPad on the small desk counter in the downstairs kitchen"
+    },
+    {
+      "target_id": "4",
+      "description": "the black helmet in the bedroom at the end of the upstairs hallway"
     }
   ],
   "mllm": {
     "detection_model_name": "google/gemma-4-31B-it:deepinfra",
     "graph_model_name": "qwen3.5-plus",
     "read_saved_raw_outputs": true,
-    "raw_output_dir": "mllm_raw_outputs/test3",
-    "debug_output_dir": "mllm_debug_outputs/test3",
+    "raw_output_dir": "mllm_raw_outputs/test4",
+    "debug_output_dir": "mllm_debug_outputs/test4",
+    "open_vocab_verification": {
+      "backend": "grounding_dino",
+      "model_name": "IDEA-Research/grounding-dino-tiny",
+      "box_threshold": 0.35,
+      "text_threshold": 0.25
+    },
     "max_validation_retries": 4
   },
   "bayes": {
