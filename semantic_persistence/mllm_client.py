@@ -35,6 +35,10 @@ REPETITION_PENALTY = 1.0
 
 DETECTION_MAX_NEW_TOKENS = 512
 GRAPH_MAX_NEW_TOKENS = 32768
+panorama_max_width_for_prompt = 1280
+
+detect_thinking = False
+graph_thinking = True
 
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
@@ -809,7 +813,7 @@ class MLLMClient:
                     messages=messages,
                     model_name=getattr(self, "detection_model_name", ""),
                     request_type="detection",
-                    thinking_mode=False,
+                    thinking_mode=detect_thinking,
                 )
                 raw = self._strip_code_fences(decoded)
                 payload = self._parse_json_strict(raw)
@@ -835,7 +839,7 @@ class MLLMClient:
                         str(last_error),
                     )
                 )
-                debugpy.breakpoint()
+                # debugpy.breakpoint()
 
         raise RuntimeError("Unexpected detection retry loop exit.")
 
@@ -1508,8 +1512,8 @@ class MLLMClient:
         for observation in agent_observations:
             observation["annotated_panorama"] = self._resize_panorama_array(
                 observation["annotated_panorama"],
-                max_width=1280,
-                quality=85,
+                max_width=panorama_max_width_for_prompt,
+                quality=100,
             )
             self._write_observation_image(
                 step_index=step_index,
@@ -1556,6 +1560,8 @@ class MLLMClient:
             image_content=image_content,
             step_index=step_index,
         )
+        # print the detect model name
+        print("Detection model used: %s" % self.detection_model_name)
         if self.open_vocab_detector is not None:
             localized_detections = self._verify_detections_with_open_vocab(
                 detections=localized_detections,
@@ -1682,7 +1688,7 @@ class MLLMClient:
                         messages=messages,
                         model_name=getattr(self, "graph_model_name", ""),
                         request_type="graph",
-                        thinking_mode=False,
+                        thinking_mode=graph_thinking,
                     )
                 except APITimeoutError:
                     if timeout_attempt_index >= max_request_timeout_retries:

@@ -1,15 +1,19 @@
 Active target set:
 [
   {
-    "description": "the gray pillow on the bed",
+    "description": "the small beige accent pillow near the headboard",
     "target_id": "0"
   },
   {
-    "description": "the folded hand towel on the bathroom counter",
+    "description": "the green patterned throw pillow on the brown armchair",
+    "target_id": "1"
+  },
+  {
+    "description": "the long bathrobe in the bathroom",
     "target_id": "2"
   },
   {
-    "description": "the bottled water on the shelf",
+    "description": "the bottled water on the kitchen shelf",
     "target_id": "3"
   }
 ]
@@ -27,6 +31,7 @@ Compact shared graph summary:
   "observation_step": 0,
   "target_found": {
     "0": false,
+    "1": false,
     "2": false,
     "3": false
   },
@@ -354,6 +359,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 5,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -363,6 +369,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 14,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -372,6 +379,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 16,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -381,6 +389,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 18,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -390,6 +399,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 19,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -399,6 +409,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 20,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -408,6 +419,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 21,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -417,6 +429,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 25,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -426,6 +439,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 26,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -435,6 +449,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 28,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -444,6 +459,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 34,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -453,6 +469,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 36,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -462,6 +479,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 40,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -471,6 +489,7 @@ MLLM-updatable viewpoint target-probability context:
     "id": 41,
     "prior_raw_target_probs": {
       "0": 0.0,
+      "1": 0.0,
       "2": 0.0,
       "3": 0.0
     }
@@ -589,9 +608,10 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 46,
       "label": "unseen hallway area beyond closed doorway",
       "target_probs": {
-        "0": 0.88,
-        "2": 0.1,
-        "3": 0.42
+        "0": 0.42,
+        "1": 0.04,
+        "2": 0.22,
+        "3": 0.51
       }
     }
   ],
@@ -618,8 +638,9 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 16,
       "target_probs": {
         "0": 0.04,
-        "2": 0.22,
-        "3": 0.51
+        "1": 0.2,
+        "2": 0.65,
+        "3": 0.54
       }
     }
   ],
@@ -630,8 +651,9 @@ Output schema example. Use keys and value types only. Do not copy example values
       "label": "bright kitchen area near dining table",
       "target_probs": {
         "0": 0.64,
-        "2": 0.03,
-        "3": 0.28
+        "1": 0.03,
+        "2": 0.28,
+        "3": 0.23
       }
     },
     {
@@ -639,9 +661,10 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 45,
       "label": "adjacent hallway visible through doorway",
       "target_probs": {
-        "0": 0.23,
-        "2": 0.73,
-        "3": 0.67
+        "0": 0.73,
+        "1": 0.67,
+        "2": 0.88,
+        "3": 0.1
       }
     }
   ]

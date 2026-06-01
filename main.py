@@ -390,8 +390,8 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         graph_model_name=str(scenario["mllm"]["graph_model_name"]),
         # detection
         detection_model_name=str(scenario["mllm"]["detection_model_name"]),
-        detection_base_url="https://dashscope-us.aliyuncs.com/compatible-mode/v1",
-        detection_api_key_env="DASHSCOPE_API_KEY",
+        detection_base_url="https://router.huggingface.co/v1",
+        detection_api_key_env="HF_TOKEN",
         # graph generation
         graph_base_url="https://dashscope-us.aliyuncs.com/compatible-mode/v1",
         graph_api_key_env="DASHSCOPE_API_KEY",

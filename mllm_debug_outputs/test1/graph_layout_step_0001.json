@@ -11,6 +11,18 @@
       "type": "vv"
     },
     {
+      "grounded": false,
+      "i": 0,
+      "j": 32,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 0,
+      "j": 46,
+      "type": "vz"
+    },
+    {
       "grounded": true,
       "i": 9,
       "j": 18,
@@ -39,12 +51,20 @@
       "i": 16,
       "j": 35,
       "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 18,
+      "j": 41,
+      "type": "vv"
     }
   ],
   "nodes": [
     {
       "connected_node_ids": [
-        16
+        16,
+        32,
+        46
       ],
       "grounded": false,
       "id": 0,
@@ -78,7 +98,8 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        41
       ],
       "grounded": false,
       "id": 18,
@@ -88,6 +109,7 @@
     },
     {
       "connected_node_ids": [
+        0,
         16
       ],
       "grounded": false,
@@ -118,7 +140,8 @@
     },
     {
       "connected_node_ids": [
-        9
+        9,
+        18
       ],
       "grounded": false,
       "id": 41,
@@ -134,7 +157,7 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 44,
-      "label": "open plan living and dining area with curved sofa and dark flooring",
+      "label": "living room area with curved sofa and fireplace",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -146,31 +169,42 @@
       "connected_node_ids": [],
       "grounded": false,
       "id": 45,
-      "label": "bedroom area with large bed visible through opening",
+      "label": "bedroom area with large bed and blue wall",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [
+        0
+      ],
+      "grounded": false,
+      "id": 46,
+      "label": "dining area visible through doorway with table and chairs",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         9,
-        18,
-        41
+        18
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 46,
-      "label": "dark lounge room with tufted leather walls and blue lighting",
+      "id": 47,
+      "label": "lounge area with tufted seating and dim lighting",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        40
+        40,
+        41
       ],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 47,
-      "label": "hallway or transition area visible beyond lounge doorway",
+      "id": 48,
+      "label": "hallway area connecting lounge to other rooms",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -185,23 +219,23 @@
       32,
       35
     ],
-    "46": [
-      9,
-      18,
-      41
-    ],
     "47": [
-      40
+      9,
+      18
+    ],
+    "48": [
+      40,
+      41
     ]
   },
   "viewpoint_to_region": {
     "0": 44,
-    "9": 46,
+    "9": 47,
     "16": 44,
-    "18": 46,
+    "18": 47,
     "32": 45,
     "35": 45,
-    "40": 47,
-    "41": 46
+    "40": 48,
+    "41": 48
   }
 }

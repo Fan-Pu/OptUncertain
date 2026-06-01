@@ -148,10 +148,10 @@ Strict allowed-id rule:
 - Do not include viewpoint ids listed under Current-step viewpoint ids not requiring region assignment in this step.
 - Previously observed viewpoints keep their previous graph_summary viewpoint-to-region assignment by default.
 - If a previously observed current viewpoint should move to a different region, report that change only in current_viewpoints_reassignment.
-- viewpoint_target_probs must contain every required newly observed non-current visible neighboring viewpoint id below.
-- viewpoint_target_probs may also contain optional previously observed non-current visible neighboring viewpoint ids below when the current observation supports updating them.
-- Do not include current viewpoint ids in viewpoint_target_probs.
-- Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, nodes, edges, region assigned_viewpoint_ids, or viewpoint_to_region.
+- viewpoint_target_probs is optional and incremental for the MLLM-updatable viewpoint ids below.
+- Do not include current, grounded, or previously visited viewpoint ids in viewpoint_target_probs. Their target probabilities are detection-fixed at 0 for unfound targets.
+- Existing non-current graph viewpoint ids keep prior_raw_target_probs unless current observations justify changing a specific viewpoint-target value.
+- Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_probs, even if that id appears in compact shared graph summary, region assigned_viewpoint_ids, or viewpoint_to_region.
 - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
 - Region ids must be >= 44.
 - New region ids must start from 44.
@@ -189,7 +189,53 @@ These ids include:
 Current-step viewpoint ids not requiring region assignment in this step:
 []
 
-Required newly observed viewpoint_target_probs id skeleton:
+MLLM-updatable viewpoint target-probability context:
+[
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 0,
+    "prior_raw_target_probs": {
+      "1": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 18,
+    "prior_raw_target_probs": {
+      "1": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 32,
+    "prior_raw_target_probs": {
+      "1": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 35,
+    "prior_raw_target_probs": {
+      "1": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 40,
+    "prior_raw_target_probs": {
+      "1": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 41,
+    "prior_raw_target_probs": {
+      "1": 0.0
+    }
+  }
+]
+
+Eligible viewpoint_target_probs update ids:
 [
   {
     "id": 0
@@ -211,30 +257,29 @@ Required newly observed viewpoint_target_probs id skeleton:
   }
 ]
 
-Optional previously observed viewpoint_target_probs ids:
-[]
-
 Viewpoint target probability rule:
-- You must output one viewpoint_target_probs item for every id in this skeleton.
-- These ids are non-current visible neighboring viewpoints only.
+- You may output viewpoint_target_probs items only for ids in this list.
+- Omit an id or target_id when its prior_raw_target_probs value should remain unchanged.
+- For an eligible viewpoint where has_prior_raw_target_probs is false, output all active target_ids for that viewpoint.
 - Score the target likelihood at the candidate viewpoint, not only at the current camera location.
-- For each candidate viewpoint, use its red marker location in the panorama, nearby visible objects, assigned semantic region, xy distance, visible_viewpoints[].distance, and compact graph summary.
-- Compare all required viewpoint ids against each other for each active target_id before assigning scores.
+- For each candidate viewpoint, use its red marker location when visible, nearby visible objects, assigned semantic region, xy distance, visible_viewpoints[].distance, prior_raw_target_probs, and compact graph summary.
+- Compare eligible viewpoint ids against each other for each active target_id before assigning changed scores.
 - If one viewpoint is closer to a dining table and another viewpoint is in a bedroom, hallway, or lounge area, their scores for "the green plant on the dining table" should usually be different.
-- Use positive but meaningful scores in (0, 1].
+- Use meaningful nonnegative raw scores.
 - Avoid uniform scores unless the visual evidence and graph context are truly indistinguishable.
-- Do not include current viewpoint ids.
-- Do not delete any skeleton item.
+- Do not include current, grounded, or previously visited viewpoint ids.
 
 Target probability rule:
-- target_probs are unnormalized relative target-location scores, not calibrated probabilities.
+- viewpoint_target_probs target_probs are raw target-location scores, not calibrated probabilities. The validator stores the materialized values as raw_target_probs and normalizes target_probs per target across eligible viewpoint ids.
+- Region node target_probs are kept unchanged after graph update: existing regions keep prior values and newly proposed regions keep the values you provide.
 - Do not copy default values from the schema or examples.
-- For each active target_id, compare all candidate regions and all required non-current neighboring viewpoints before assigning scores.
+- For each active target_id, compare newly proposed regions and all eligible non-current viewpoint ids before assigning changed scores.
 - Assign higher scores to locations whose visible objects, room type, furniture, spatial context, and graph history better match the target description.
 - For example, if the target is a plant on a dining table, regions or viewpoints near a dining table should receive higher scores than bedrooms, bathrooms, hallways, or lounge areas without dining-table evidence.
-- Use the full range (0, 1]. Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
+- Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
 - Use different scores when evidence differs.
 - Equal scores are allowed only when the visual evidence, assigned region, spatial context, and graph history are truly indistinguishable.
+- For each active target_id, the sum of materialized raw scores across eligible viewpoint ids must be positive.
 
 All non-current visible neighboring viewpoint ids:
 [
@@ -250,7 +295,7 @@ Current-step interpretation note:
 - The observation context is the source of truth for current agent locations.
 - If a current viewpoint already appears in the graph summary, still treat it as current and grounded for this step.
 - If a current viewpoint has prior_assigned_region_id and prior_assigned_region_label in the observation context, treat them as earlier semantic hypotheses that must be checked against the current panorama.
-- If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label and still include it in visible_region_nodes.
+- If the selected physical region for the current viewpoint already appears in the graph summary, reuse that region id and label without re-emitting it in visible_region_nodes.
 
 Output schema example. Use keys and value types only. Do not copy example values unless supported:
 {

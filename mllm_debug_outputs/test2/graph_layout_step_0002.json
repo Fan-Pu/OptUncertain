@@ -1,19 +1,13 @@
 {
   "agent_current_vp_ids": {
     "agent0": 32,
-    "agent1": 41
+    "agent1": 18
   },
   "edges": [
     {
       "grounded": true,
       "i": 0,
       "j": 16,
-      "type": "vv"
-    },
-    {
-      "grounded": false,
-      "i": 0,
-      "j": 32,
       "type": "vv"
     },
     {
@@ -59,27 +53,9 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 18,
-      "j": 41,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 19,
-      "j": 41,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 20,
       "j": 32,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 25,
-      "j": 41,
       "type": "vv"
     },
     {
@@ -89,7 +65,7 @@
       "type": "vv"
     },
     {
-      "grounded": true,
+      "grounded": false,
       "i": 40,
       "j": 41,
       "type": "vv"
@@ -98,8 +74,7 @@
   "nodes": [
     {
       "connected_node_ids": [
-        16,
-        32
+        16
       ],
       "grounded": false,
       "id": 0,
@@ -153,23 +128,12 @@
     },
     {
       "connected_node_ids": [
-        9,
-        41
+        9
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 18,
       "label": "f4d03f729dfc49068db327584455e975",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        41
-      ],
-      "grounded": false,
-      "id": 19,
-      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -184,17 +148,6 @@
     },
     {
       "connected_node_ids": [
-        41
-      ],
-      "grounded": false,
-      "id": 25,
-      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        0,
         2,
         16,
         17,
@@ -232,23 +185,18 @@
     {
       "connected_node_ids": [
         9,
-        18,
-        19,
-        25,
         40
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 41,
       "label": "194bef4cbba641dc9860ba7f43a0c16a",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
         0,
-        16,
-        17,
-        20
+        16
       ],
       "connected_node_ids": [],
       "grounded": true,
@@ -259,14 +207,13 @@
     },
     {
       "assigned_viewpoint_ids": [
-        2,
         32,
         35
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 45,
-      "label": "bedroom area with bed and blue patterned wall",
+      "label": "bedroom area with large bed and blue wall",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -278,21 +225,32 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 46,
-      "label": "soundproofed entertainment room with padded walls",
+      "label": "padded lounge area with tufted walls and seating",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        19,
-        25,
         40,
         41
       ],
       "connected_node_ids": [],
-      "grounded": true,
+      "grounded": false,
       "id": 47,
-      "label": "bathroom area visible through doorway from entertainment room",
+      "label": "bright hallway area visible through doorway",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        17,
+        20
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 48,
+      "label": "bedroom area with blue decorative screen and bed",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -301,12 +259,9 @@
   "region_to_viewpoints": {
     "44": [
       0,
-      16,
-      17,
-      20
+      16
     ],
     "45": [
-      2,
       32,
       35
     ],
@@ -315,22 +270,23 @@
       18
     ],
     "47": [
-      19,
-      25,
       40,
       41
+    ],
+    "48": [
+      2,
+      17,
+      20
     ]
   },
   "viewpoint_to_region": {
     "0": 44,
-    "2": 45,
+    "2": 48,
     "9": 46,
     "16": 44,
-    "17": 44,
+    "17": 48,
     "18": 46,
-    "19": 47,
-    "20": 44,
-    "25": 47,
+    "20": 48,
     "32": 45,
     "35": 45,
     "40": 47,

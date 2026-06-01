@@ -1,16 +1,34 @@
 {
-  "current_viewpoints_reassignment": [],
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 48,
+      "viewpoint_id": 27
+    },
+    {
+      "new_assigned_region_id": 47,
+      "viewpoint_id": 41
+    }
+  ],
   "edge_distance_variances": {
     "viewpoint_region": 4.0,
     "viewpoint_viewpoint": 1.0
   },
   "invisible_region_nodes": [],
-  "new_edges": [],
+  "new_edges": [
+    {
+      "dist": 1.0,
+      "edge_type": "VV",
+      "exist_prob": 0.75,
+      "i": 19,
+      "j": 25
+    }
+  ],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
+        19,
         25,
-        40
+        41
       ],
       "region_node_id": 47
     },
@@ -24,34 +42,68 @@
   ],
   "viewpoint_target_probs": [
     {
-      "id": 15,
+      "id": 11,
+      "raw_target_probs": {
+        "1": 0.35
+      },
       "target_probs": {
-        "1": 0.72
+        "1": 0.5223880597014925
+      }
+    },
+    {
+      "id": 15,
+      "raw_target_probs": {
+        "1": 0.15
+      },
+      "target_probs": {
+        "1": 0.22388059701492535
+      }
+    },
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "1": 0.05
+      },
+      "target_probs": {
+        "1": 0.07462686567164178
       }
     },
     {
       "id": 25,
-      "target_probs": {
+      "raw_target_probs": {
         "1": 0.05
-      }
-    }
-  ],
-  "visible_region_nodes": [
-    {
-      "exist_prob": 1.0,
-      "id": 48,
-      "label": "dining area with high-top table and stools adjacent to living room",
+      },
       "target_probs": {
-        "1": 0.5114
+        "1": 0.07462686567164178
       }
     },
     {
-      "exist_prob": 1.0,
-      "id": 47,
-      "label": "hallway or transition area visible beyond lounge doorway",
+      "id": 32,
+      "raw_target_probs": {
+        "1": 0.02
+      },
       "target_probs": {
-        "1": 0.0638
+        "1": 0.029850746268656716
+      }
+    },
+    {
+      "id": 35,
+      "raw_target_probs": {
+        "1": 0.01
+      },
+      "target_probs": {
+        "1": 0.014925373134328358
+      }
+    },
+    {
+      "id": 40,
+      "raw_target_probs": {
+        "1": 0.04
+      },
+      "target_probs": {
+        "1": 0.05970149253731343
       }
     }
-  ]
+  ],
+  "visible_region_nodes": []
 }

@@ -308,29 +308,28 @@ def render_viewer_html() -> str:
       inset: 0;
       pointer-events: none;
     }
-    .observation-detection-marker {
+    .observation-detection-line {
       position: absolute;
-      top: 8%;
-      height: 70%;
-      width: 18px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
       transform: translateX(-50%);
-      border: 2px solid #16a34a;
-      border-radius: 4px;
-      background: rgba(22, 163, 74, 0.08);
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.84);
+      background: rgba(22, 163, 74, 0.42);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.42);
     }
     .observation-detection-label {
       position: absolute;
-      top: calc(78% + 4px);
+      top: 8px;
       transform: translateX(-50%);
-      padding: 2px 5px;
-      border-radius: 4px;
-      background: #dcfce7;
       color: #166534;
       font-size: 11px;
       font-weight: 700;
       white-space: nowrap;
-      box-shadow: 0 1px 4px rgba(16, 24, 40, 0.22);
+      text-shadow:
+        -1px -1px 0 rgba(255, 255, 255, 0.78),
+        1px -1px 0 rgba(255, 255, 255, 0.78),
+        -1px 1px 0 rgba(255, 255, 255, 0.78),
+        1px 1px 0 rgba(255, 255, 255, 0.78);
     }
     img {
       width: 100%;
@@ -1958,7 +1957,7 @@ def render_viewer_html() -> str:
       const markers = detections.map(item => {
         const left = `${item.target_center_x * 100}%`;
         return `
-          <span class="observation-detection-marker" style="left:${escapeAttr(left)}"></span>
+          <span class="observation-detection-line" style="left:${escapeAttr(left)}"></span>
           <span class="observation-detection-label" style="left:${escapeAttr(left)}">target: ${escapeHtml(item.target_id)}</span>
         `;
       }).join("");

@@ -1,7 +1,7 @@
 {
   "current_viewpoints_reassignment": [],
   "edge_distance_variances": {
-    "viewpoint_region": 3.0,
+    "viewpoint_region": 4.0,
     "viewpoint_viewpoint": 1.0
   },
   "invisible_region_nodes": [],
@@ -9,43 +9,29 @@
     {
       "dist": 1.5,
       "edge_type": "VV",
-      "exist_prob": 0.75,
-      "i": 0,
-      "j": 32
-    },
-    {
-      "dist": 2.0,
-      "edge_type": "VV",
-      "exist_prob": 0.7,
+      "exist_prob": 0.9,
       "i": 32,
       "j": 35
     },
     {
-      "dist": 1.8,
+      "dist": 1.2,
       "edge_type": "VV",
-      "exist_prob": 0.7,
-      "i": 18,
+      "exist_prob": 0.9,
+      "i": 40,
       "j": 41
-    },
-    {
-      "dist": 1.0,
-      "edge_type": "VV",
-      "exist_prob": 0.85,
-      "i": 41,
-      "j": 40
     }
   ],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
         0,
-        16,
-        32
+        16
       ],
       "region_node_id": 44
     },
     {
       "assigned_viewpoint_node_indices": [
+        32,
         35
       ],
       "region_node_id": 45
@@ -68,44 +54,68 @@
   "viewpoint_target_probs": [
     {
       "id": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.05
+      },
       "target_probs": {
-        "0": 0.06,
-        "1": 0.04
+        "0": 0.023255813953488375,
+        "1": 0.023255813953488375
       }
     },
     {
       "id": 18,
+      "raw_target_probs": {
+        "0": 0.15,
+        "1": 0.15
+      },
       "target_probs": {
-        "0": 0.05,
-        "1": 0.04
+        "0": 0.06976744186046512,
+        "1": 0.06976744186046512
       }
     },
     {
       "id": 32,
+      "raw_target_probs": {
+        "0": 0.85,
+        "1": 0.85
+      },
       "target_probs": {
-        "0": 0.07,
-        "1": 0.05
+        "0": 0.3953488372093023,
+        "1": 0.3953488372093023
       }
     },
     {
       "id": 35,
+      "raw_target_probs": {
+        "0": 0.85,
+        "1": 0.85
+      },
       "target_probs": {
-        "0": 0.09,
-        "1": 0.07
+        "0": 0.3953488372093023,
+        "1": 0.3953488372093023
       }
     },
     {
       "id": 40,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1
+      },
       "target_probs": {
-        "0": 0.85,
-        "1": 0.9
+        "0": 0.04651162790697675,
+        "1": 0.04651162790697675
       }
     },
     {
       "id": 41,
+      "raw_target_probs": {
+        "0": 0.15,
+        "1": 0.15
+      },
       "target_probs": {
-        "0": 0.25,
-        "1": 0.22
+        "0": 0.06976744186046512,
+        "1": 0.06976744186046512
       }
     }
   ],
@@ -116,34 +126,34 @@
       "label": "living room area with curved sofa and fireplace",
       "target_probs": {
         "0": 0.05,
-        "1": 0.03
+        "1": 0.05
       }
     },
     {
       "exist_prob": 1.0,
       "id": 45,
-      "label": "bedroom area with bed and blue patterned wall",
+      "label": "bedroom area with large bed and blue wall",
       "target_probs": {
-        "0": 0.08,
-        "1": 0.06
+        "0": 0.85,
+        "1": 0.85
       }
     },
     {
       "exist_prob": 1.0,
       "id": 46,
-      "label": "soundproofed entertainment room with padded walls",
+      "label": "padded lounge area with tufted walls and seating",
       "target_probs": {
-        "0": 0.04,
-        "1": 0.03
+        "0": 0.15,
+        "1": 0.15
       }
     },
     {
       "exist_prob": 1.0,
       "id": 47,
-      "label": "bathroom area visible through doorway from entertainment room",
+      "label": "bright hallway area visible through doorway",
       "target_probs": {
-        "0": 0.88,
-        "1": 0.92
+        "0": 0.1,
+        "1": 0.1
       }
     }
   ]

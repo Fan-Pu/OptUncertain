@@ -654,7 +654,8 @@ def test_step_renderer_opens_observation_images_in_modal_with_overlays():
     assert "Number(row.target_center_x)" in html
     assert "item.target_center_x * 100" in html
     assert "observationDetectionOverlayHtml" in html
-    assert "observation-detection-marker" in html
+    assert "observation-detection-line" in html
+    assert "observation-detection-marker" not in html
     assert "observation-detection-label" in html
     assert "target: ${escapeHtml(item.target_id)}" in html
     assert "function beginObservationModalPan(event)" in html

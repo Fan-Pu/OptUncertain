@@ -285,29 +285,37 @@
     {
       "assigned_viewpoint_ids": [
         0,
-        20,
-        21,
-        23,
-        34,
-        37
+        16,
+        21
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 44,
-      "label": "living room area with gray sofa and fireplace",
+      "label": "living room area with sofa and fireplace",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        26
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 45,
+      "label": "bedroom area visible through doorway",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         14,
-        16,
-        26
+        20,
+        34
       ],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 45,
-      "label": "bedroom area visible through doorway with white bed",
+      "id": 46,
+      "label": "dining area with bar stools",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -321,8 +329,19 @@
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 46,
-      "label": "leather-walled entertainment lounge area",
+      "id": 47,
+      "label": "lounge area with tufted seating",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        23
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 48,
+      "label": "hallway area near bedroom entrance",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -332,8 +351,8 @@
       ],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 47,
-      "label": "bathroom area with vanity and mirror",
+      "id": 49,
+      "label": "bathroom area visible through doorway",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -341,12 +360,13 @@
       "assigned_viewpoint_ids": [
         5,
         28,
-        36
+        36,
+        37
       ],
       "connected_node_ids": [],
-      "grounded": false,
-      "id": 48,
-      "label": "dining area with round table and chairs",
+      "grounded": true,
+      "id": 50,
+      "label": "kitchen area with counter",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -355,51 +375,55 @@
   "region_to_viewpoints": {
     "44": [
       0,
-      20,
-      21,
-      23,
-      34,
-      37
+      16,
+      21
     ],
     "45": [
-      14,
-      16,
       26
     ],
     "46": [
+      14,
+      20,
+      34
+    ],
+    "47": [
       9,
       18,
       25,
       40,
       41
     ],
-    "47": [
+    "48": [
+      23
+    ],
+    "49": [
       19
     ],
-    "48": [
+    "50": [
       5,
       28,
-      36
+      36,
+      37
     ]
   },
   "viewpoint_to_region": {
     "0": 44,
-    "5": 48,
-    "9": 46,
-    "14": 45,
-    "16": 45,
-    "18": 46,
-    "19": 47,
-    "20": 44,
+    "5": 50,
+    "9": 47,
+    "14": 46,
+    "16": 44,
+    "18": 47,
+    "19": 49,
+    "20": 46,
     "21": 44,
-    "23": 44,
-    "25": 46,
+    "23": 48,
+    "25": 47,
     "26": 45,
-    "28": 48,
-    "34": 44,
-    "36": 48,
-    "37": 44,
-    "40": 46,
-    "41": 46
+    "28": 50,
+    "34": 46,
+    "36": 50,
+    "37": 50,
+    "40": 47,
+    "41": 47
   }
 }
