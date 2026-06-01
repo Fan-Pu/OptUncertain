@@ -612,6 +612,8 @@ def render_viewer_html() -> str:
           <p id="observationModalPath"></p>
         </div>
         <div class="observation-modal-controls">
+          <button id="observationModalPreviousButton" type="button">Previous</button>
+          <button id="observationModalNextButton" type="button">Next</button>
           <button id="observationModalResetButton" type="button">Reset</button>
           <button id="observationModalCloseButton" type="button">Close</button>
         </div>
@@ -627,6 +629,8 @@ def render_viewer_html() -> str:
     let selected = null;
     let activeSolutionId = null;
     let panState = null;
+    let observationModalImages = [];
+    let observationModalImageIndex = 0;
     let observationModalImage = null;
     let observationModalPanState = null;
     let observationModalTransform = { scale: 1, translateX: 0, translateY: 0 };
@@ -678,6 +682,8 @@ def render_viewer_html() -> str:
     const observationModalBackdrop = document.getElementById("observationModalBackdrop");
     const observationModalTitle = document.getElementById("observationModalTitle");
     const observationModalPath = document.getElementById("observationModalPath");
+    const observationModalPreviousButton = document.getElementById("observationModalPreviousButton");
+    const observationModalNextButton = document.getElementById("observationModalNextButton");
     const observationModalResetButton = document.getElementById("observationModalResetButton");
     const observationModalCloseButton = document.getElementById("observationModalCloseButton");
     const observationModalViewport = document.getElementById("observationModalViewport");
@@ -752,6 +758,12 @@ def render_viewer_html() -> str:
     }, { passive: false });
     observationModalBackdrop.addEventListener("click", closeObservationImageModal);
     observationModalCloseButton.addEventListener("click", closeObservationImageModal);
+    observationModalPreviousButton.addEventListener("click", () => {
+      showObservationModalImage(observationModalImageIndex - 1);
+    });
+    observationModalNextButton.addEventListener("click", () => {
+      showObservationModalImage(observationModalImageIndex + 1);
+    });
     observationModalResetButton.addEventListener("click", resetObservationModalTransform);
     observationModalViewport.addEventListener("pointerdown", beginObservationModalPan);
     observationModalViewport.addEventListener("pointermove", updateObservationModalPan);
@@ -1963,19 +1975,25 @@ def render_viewer_html() -> str:
     function renderImages(step) {
       const target = document.getElementById("images");
       const detectionsByAgent = observationDetectionsByAgent(step);
-      target.innerHTML = step.observation_images.map(image => `
+      const observationImages = step.observation_images.map(image => ({
+        agent_id: image.agent_id,
+        url: image.url,
+        detections: detectionsByAgent.get(String(image.agent_id)) || []
+      }));
+      target.innerHTML = observationImages.map((image, imageIndex) => `
         <figure>
           <button
             type="button"
             class="observation-image-button"
             data-image-url="${escapeAttr(image.url)}"
             data-agent-id="${escapeAttr(image.agent_id)}"
+            data-image-index="${escapeAttr(imageIndex)}"
             title="Open ${escapeAttr(image.agent_id)} observation"
             aria-label="Open ${escapeAttr(image.agent_id)} observation"
           >
             <span class="observation-image-frame">
               <img src="${escapeAttr(image.url)}" alt="${escapeAttr(image.agent_id)} observation">
-              ${observationDetectionOverlayHtml(detectionsByAgent.get(String(image.agent_id)) || [])}
+              ${observationDetectionOverlayHtml(image.detections)}
             </span>
           </button>
           <figcaption>${escapeHtml(image.agent_id)} observation</figcaption>
@@ -1983,12 +2001,7 @@ def render_viewer_html() -> str:
       `).join("");
       for (const button of target.querySelectorAll(".observation-image-button")) {
         button.addEventListener("click", () => {
-          const agentId = button.dataset.agentId;
-          openObservationImageModal({
-            agent_id: button.dataset.agentId,
-            url: button.dataset.imageUrl,
-            detections: detectionsByAgent.get(String(agentId)) || []
-          });
+          openObservationImageModal(observationImages, Number(button.dataset.imageIndex));
         });
       }
     }
@@ -2021,17 +2034,27 @@ def render_viewer_html() -> str:
       return `<span class="observation-detection-layer">${markers}</span>`;
     }
 
-    function openObservationImageModal(image) {
-      observationModalImage = image;
-      observationModalTitle.textContent = `${image.agent_id} observation`;
-      observationModalPath.textContent = image.url;
+    function openObservationImageModal(images, imageIndex) {
+      observationModalImages = images;
       observationModal.hidden = false;
-      resetObservationModalTransform();
+      showObservationModalImage(imageIndex);
       observationModalCloseButton.focus();
+    }
+
+    function showObservationModalImage(imageIndex) {
+      observationModalImageIndex = imageIndex;
+      observationModalImage = observationModalImages[observationModalImageIndex];
+      observationModalTitle.textContent = `${observationModalImage.agent_id} observation`;
+      observationModalPath.textContent = observationModalImage.url;
+      observationModalPreviousButton.disabled = observationModalImageIndex === 0;
+      observationModalNextButton.disabled = observationModalImageIndex === observationModalImages.length - 1;
+      resetObservationModalTransform();
     }
 
     function closeObservationImageModal() {
       observationModal.hidden = true;
+      observationModalImages = [];
+      observationModalImageIndex = 0;
       observationModalImage = null;
       observationModalPanState = null;
       observationModalViewport.classList.remove("panning");

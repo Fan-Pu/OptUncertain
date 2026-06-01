@@ -656,17 +656,30 @@ def test_step_renderer_opens_observation_images_in_modal_with_overlays():
 
     assert 'id="observationModal"' in html
     assert 'id="observationModalViewport"' in html
+    assert 'id="observationModalPreviousButton"' in html
+    assert 'id="observationModalNextButton"' in html
     assert 'id="observationModalResetButton"' in html
     assert 'id="observationModalCloseButton"' in html
     assert 'class="observation-image-button"' in html
     assert 'class="observation-image-frame"' in html
-    assert "function openObservationImageModal(image)" in html
+    assert "let observationModalImages = [];" in html
+    assert "let observationModalImageIndex = 0;" in html
+    assert "function openObservationImageModal(images, imageIndex)" in html
+    assert "function showObservationModalImage(imageIndex)" in html
     assert "function renderObservationModalImage()" in html
     assert "function closeObservationImageModal()" in html
     assert "function resetObservationModalTransform()" in html
+    assert "observationModalPreviousButton.addEventListener(\"click\"" in html
+    assert "showObservationModalImage(observationModalImageIndex - 1);" in html
+    assert "observationModalNextButton.addEventListener(\"click\"" in html
+    assert "showObservationModalImage(observationModalImageIndex + 1);" in html
+    assert "observationModalPreviousButton.disabled = observationModalImageIndex === 0;" in html
+    assert "observationModalNextButton.disabled = observationModalImageIndex === observationModalImages.length - 1;" in html
     assert 'data-image-url="${escapeAttr(image.url)}"' in html
     assert 'data-agent-id="${escapeAttr(image.agent_id)}"' in html
+    assert 'data-image-index="${escapeAttr(imageIndex)}"' in html
     assert 'aria-label="Open ${escapeAttr(image.agent_id)} observation"' in html
+    assert "openObservationImageModal(observationImages, Number(button.dataset.imageIndex));" in html
     assert 'window.open("", "_blank")' not in html
     assert "childWindow.document.write" not in html
     assert "function observationDetectionsByAgent(step)" in html
