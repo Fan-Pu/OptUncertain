@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # -------------------- Episode --------------------
     scan_id = "1pXnuDYAj8r"
-    start_vp_id = "0d3a3b42009441e2a02200423049d804"
+    start_vp_id = "159bf39081724055a73e686a6577096b"
     Helper.build_viewpoint_index(scan_id)
     sim.newEpisode([scan_id], [start_vp_id], [0.0], [0.0])
 
