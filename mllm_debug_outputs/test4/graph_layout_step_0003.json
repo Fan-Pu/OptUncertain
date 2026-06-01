@@ -1,21 +1,15 @@
 {
   "agent_current_vp_ids": {
     "agent0": 21,
-    "agent1": 48,
-    "agent2": 2,
-    "agent3": 50
+    "agent1": 11,
+    "agent2": 19,
+    "agent3": 58
   },
   "edges": [
     {
       "grounded": true,
       "i": 0,
       "j": 11,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 0,
-      "j": 48,
       "type": "vv"
     },
     {
@@ -73,12 +67,6 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 11,
-      "j": 48,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 11,
       "j": 68,
@@ -103,6 +91,12 @@
       "type": "vv"
     },
     {
+      "grounded": false,
+      "i": 12,
+      "j": 76,
+      "type": "vv"
+    },
+    {
       "grounded": true,
       "i": 17,
       "j": 21,
@@ -124,6 +118,12 @@
       "grounded": true,
       "i": 17,
       "j": 82,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 19,
+      "j": 74,
       "type": "vv"
     },
     {
@@ -152,8 +152,44 @@
     },
     {
       "grounded": true,
-      "i": 48,
-      "j": 53,
+      "i": 22,
+      "j": 68,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 22,
+      "j": 72,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 22,
+      "j": 80,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 27,
+      "j": 75,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 33,
+      "j": 80,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 36,
+      "j": 68,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 36,
+      "j": 80,
       "type": "vv"
     },
     {
@@ -167,18 +203,53 @@
       "i": 50,
       "j": 76,
       "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 58,
+      "j": 76,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 68,
+      "j": 72,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 68,
+      "j": 80,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 69,
+      "j": 74,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 72,
+      "j": 80,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 75,
+      "j": 82,
+      "type": "vv"
     }
   ],
   "nodes": [
     {
       "connected_node_ids": [
-        11,
-        48
+        11
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 0,
       "label": "163d61ac7edb43fb958c5d9e69ae11ad",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -230,7 +301,6 @@
     {
       "connected_node_ids": [
         0,
-        48,
         68,
         80
       ],
@@ -243,7 +313,8 @@
     {
       "connected_node_ids": [
         50,
-        58
+        58,
+        76
       ],
       "grounded": true,
       "id": 12,
@@ -268,7 +339,8 @@
     {
       "connected_node_ids": [
         2,
-        8
+        8,
+        74
       ],
       "grounded": true,
       "id": 19,
@@ -294,9 +366,22 @@
     },
     {
       "connected_node_ids": [
+        68,
+        72,
+        80
+      ],
+      "grounded": false,
+      "id": 22,
+      "label": "64fdd371adc042558d30fa9bd00a00f5",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
         9,
         17,
-        21
+        21,
+        75
       ],
       "grounded": true,
       "id": 27,
@@ -306,14 +391,23 @@
     },
     {
       "connected_node_ids": [
-        0,
-        11,
-        53
+        80
       ],
-      "grounded": true,
-      "id": 48,
-      "label": "817aaa8a1f7b4d93b4e3c4f765cf46aa",
-      "node_visit_times": 1,
+      "grounded": false,
+      "id": 33,
+      "label": "7d1e000e54d942168b24155d12cd265b",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        68,
+        80
+      ],
+      "grounded": false,
+      "id": 36,
+      "label": "cc896d0984cc4661bff9087a0df6967c",
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -330,18 +424,9 @@
     },
     {
       "connected_node_ids": [
-        48
-      ],
-      "grounded": false,
-      "id": 53,
-      "label": "5e08b4f21d6342538a9a6361d4cbd1d6",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
         12,
-        50
+        50,
+        76
       ],
       "grounded": true,
       "id": 58,
@@ -361,17 +446,22 @@
     },
     {
       "connected_node_ids": [
-        11
+        11,
+        22,
+        36,
+        72,
+        80
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 68,
       "label": "67dd134230034fc18ab8c30abd9af183",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        2
+        2,
+        74
       ],
       "grounded": false,
       "id": 69,
@@ -381,7 +471,21 @@
     },
     {
       "connected_node_ids": [
-        2
+        22,
+        68,
+        80
+      ],
+      "grounded": false,
+      "id": 72,
+      "label": "c3c0a1a738a749a7a986d64c872b7671",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        2,
+        19,
+        69
       ],
       "grounded": false,
       "id": 74,
@@ -392,7 +496,9 @@
     {
       "connected_node_ids": [
         17,
-        21
+        21,
+        27,
+        82
       ],
       "grounded": false,
       "id": 75,
@@ -402,7 +508,9 @@
     },
     {
       "connected_node_ids": [
-        50
+        12,
+        50,
+        58
       ],
       "grounded": false,
       "id": 76,
@@ -412,17 +520,23 @@
     },
     {
       "connected_node_ids": [
-        11
+        11,
+        22,
+        33,
+        36,
+        68,
+        72
       ],
-      "grounded": false,
+      "grounded": true,
       "id": 80,
       "label": "20f6b7fcb5254024aacdd907da2eb315",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        17
+        17,
+        75
       ],
       "grounded": false,
       "id": 82,
@@ -442,27 +556,23 @@
     },
     {
       "assigned_viewpoint_ids": [
-        5,
         9,
-        17,
-        21,
-        66,
-        92
+        17
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 95,
-      "label": "downstairs bedroom with bed and large windows",
+      "label": "downstairs bedroom with bed and window",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        75,
-        82
+        27,
+        75
       ],
       "connected_node_ids": [],
-      "grounded": false,
+      "grounded": true,
       "id": 96,
       "label": "downstairs hallway connecting rooms",
       "node_visit_times": 0,
@@ -470,57 +580,103 @@
     },
     {
       "assigned_viewpoint_ids": [
-        27
+        82
       ],
       "connected_node_ids": [],
-      "grounded": true,
+      "grounded": false,
       "id": 97,
-      "label": "downstairs kitchen area with cabinets and appliances",
+      "label": "downstairs laundry room with dryer",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        11,
+        22,
+        36,
         68,
+        69,
+        72,
+        74,
         80
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 98,
-      "label": "downstairs living room with piano and large windows",
+      "label": "downstairs living room with fireplace and piano",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        0,
-        2,
-        8,
-        19,
-        48,
-        50,
-        53,
-        69,
-        74
+        11
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 99,
-      "label": "outdoor patio area with stone columns and seating",
+      "label": "downstairs kitchen with dining area",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        8
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 100,
+      "label": "outdoor patio area with seating",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         12,
+        50,
         58,
         76
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 100,
-      "label": "upstairs hallway near staircase with railing",
+      "id": 101,
+      "label": "upstairs hallway near staircase",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        33
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 102,
+      "label": "downstairs dining room with large table and chandelier",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        5,
+        21,
+        66,
+        92
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 103,
+      "label": "downstairs bedroom with blue walls and bed",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 104,
+      "label": "outdoor patio area with stone fireplace",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -528,66 +684,78 @@
   "observation_step": 3,
   "region_to_viewpoints": {
     "95": [
-      5,
       9,
-      17,
+      17
+    ],
+    "96": [
+      27,
+      75
+    ],
+    "97": [
+      82
+    ],
+    "98": [
+      22,
+      36,
+      68,
+      69,
+      72,
+      74,
+      80
+    ],
+    "99": [
+      11
+    ],
+    "100": [
+      2,
+      8
+    ],
+    "101": [
+      12,
+      50,
+      58,
+      76
+    ],
+    "102": [
+      33
+    ],
+    "103": [
+      0,
+      5,
       21,
       66,
       92
     ],
-    "96": [
-      75,
-      82
-    ],
-    "97": [
-      27
-    ],
-    "98": [
-      11,
-      68,
-      80
-    ],
-    "99": [
-      0,
-      2,
-      8,
-      19,
-      48,
-      50,
-      53,
-      69,
-      74
-    ],
-    "100": [
-      12,
-      58,
-      76
+    "104": [
+      19
     ]
   },
   "viewpoint_to_region": {
-    "0": 99,
-    "2": 99,
-    "5": 95,
-    "8": 99,
+    "0": 103,
+    "2": 100,
+    "5": 103,
+    "8": 100,
     "9": 95,
-    "11": 98,
-    "12": 100,
+    "11": 99,
+    "12": 101,
     "17": 95,
-    "19": 99,
-    "21": 95,
-    "27": 97,
-    "48": 99,
-    "50": 99,
-    "53": 99,
-    "58": 100,
-    "66": 95,
+    "19": 104,
+    "21": 103,
+    "22": 98,
+    "27": 96,
+    "33": 102,
+    "36": 98,
+    "50": 101,
+    "58": 101,
+    "66": 103,
     "68": 98,
-    "69": 99,
-    "74": 99,
+    "69": 98,
+    "72": 98,
+    "74": 98,
     "75": 96,
-    "76": 100,
+    "76": 101,
     "80": 98,
-    "82": 96,
-    "92": 95
+    "82": 97,
+    "92": 103
   }
 }
