@@ -1,11 +1,11 @@
 Active target set:
 [
   {
-    "description": "the folded leopard-print towels on top of the white dryer in the downstairs laundry room",
+    "description": "the leopard-print towels on top of the white dryer in the downstairs laundry room",
     "target_id": "0"
   },
   {
-    "description": "the black laptop on the wooden desk in the downstairs room",
+    "description": "the black laptop on the wooden desk in the downstairs office room",
     "target_id": "1"
   },
   {
@@ -17,7 +17,7 @@ Active target set:
     "target_id": "3"
   },
   {
-    "description": "the black helmet in the bedroom at the end of the upstairs hallway",
+    "description": "the black helmet in the bedroom near the upstairs recreation room",
     "target_id": "4"
   }
 ]
@@ -28,7 +28,8 @@ Compact shared graph summary:
     "agent0": 17,
     "agent1": 68,
     "agent2": 2,
-    "agent3": 50
+    "agent3": 50,
+    "agent4": 62
   },
   "edges": [],
   "nodes": [],
@@ -308,6 +309,57 @@ Per-agent observation context:
         ]
       }
     ]
+  },
+  {
+    "agent_id": "agent4",
+    "current_viewpoint_index": 62,
+    "current_xy": [
+      12.213600158691406,
+      -12.350500106811523
+    ],
+    "image_index": 4,
+    "prior_assigned_region_id": null,
+    "prior_assigned_region_label": null,
+    "prior_grounded": false,
+    "prior_visit_times": 0,
+    "visible_viewpoints": [
+      {
+        "distance": 4.401,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 28,
+        "xy": [
+          11.972599983215332,
+          -7.956029891967773
+        ]
+      },
+      {
+        "distance": 2.929,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 57,
+        "xy": [
+          15.075300216674805,
+          -11.725500106811523
+        ]
+      },
+      {
+        "distance": 2.83,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 67,
+        "xy": [
+          9.38346004486084,
+          -12.356100082397461
+        ]
+      }
+    ]
   }
 ]
 
@@ -354,9 +406,13 @@ Current-step allowed viewpoint ids:
   21,
   22,
   27,
+  28,
   36,
   50,
+  57,
   58,
+  62,
+  67,
   68,
   69,
   72,
@@ -379,9 +435,13 @@ Viewpoint ids requiring region assignment in this step:
   21,
   22,
   27,
+  28,
   36,
   50,
+  57,
   58,
+  62,
+  67,
   68,
   69,
   72,
@@ -491,6 +551,17 @@ MLLM-updatable viewpoint target-probability context:
   },
   {
     "has_prior_raw_target_probs": false,
+    "id": 28,
+    "prior_raw_target_probs": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0,
+      "4": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
     "id": 36,
     "prior_raw_target_probs": {
       "0": 0.0,
@@ -502,7 +573,29 @@ MLLM-updatable viewpoint target-probability context:
   },
   {
     "has_prior_raw_target_probs": false,
+    "id": 57,
+    "prior_raw_target_probs": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0,
+      "4": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
     "id": 58,
+    "prior_raw_target_probs": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0,
+      "4": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 67,
     "prior_raw_target_probs": {
       "0": 0.0,
       "1": 0.0,
@@ -617,10 +710,19 @@ Eligible viewpoint_target_probs update ids:
     "id": 27
   },
   {
+    "id": 28
+  },
+  {
     "id": 36
   },
   {
+    "id": 57
+  },
+  {
     "id": 58
+  },
+  {
+    "id": 67
   },
   {
     "id": 69
@@ -679,8 +781,11 @@ All non-current visible neighboring viewpoint ids:
   21,
   22,
   27,
+  28,
   36,
+  57,
   58,
+  67,
   69,
   72,
   74,

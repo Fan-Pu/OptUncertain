@@ -3,7 +3,8 @@
     "agent0": 27,
     "agent1": 80,
     "agent2": 8,
-    "agent3": 12
+    "agent3": 58,
+    "agent4": 67
   },
   "edges": [
     {
@@ -43,12 +44,6 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 9,
-      "j": 21,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 9,
       "j": 27,
@@ -79,12 +74,6 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 12,
-      "j": 76,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 17,
       "j": 21,
@@ -109,12 +98,6 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 19,
-      "j": 74,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 21,
       "j": 27,
@@ -127,21 +110,15 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 22,
-      "j": 72,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 22,
       "j": 80,
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 27,
-      "j": 75,
+      "grounded": true,
+      "i": 28,
+      "j": 62,
       "type": "vv"
     },
     {
@@ -157,12 +134,6 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 36,
-      "j": 80,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 50,
       "j": 58,
@@ -175,9 +146,21 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 58,
-      "j": 76,
+      "grounded": true,
+      "i": 57,
+      "j": 62,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 62,
+      "j": 67,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 67,
+      "j": 93,
       "type": "vv"
     },
     {
@@ -193,21 +176,9 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 69,
-      "j": 74,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 72,
       "j": 80,
-      "type": "vv"
-    },
-    {
-      "grounded": false,
-      "i": 75,
-      "j": 82,
       "type": "vv"
     }
   ],
@@ -239,7 +210,6 @@
     {
       "connected_node_ids": [
         17,
-        21,
         27
       ],
       "grounded": false,
@@ -262,13 +232,12 @@
     {
       "connected_node_ids": [
         50,
-        58,
-        76
+        58
       ],
-      "grounded": true,
+      "grounded": false,
       "id": 12,
       "label": "6c34dde402304953a9416e2781de607f",
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -288,8 +257,7 @@
     {
       "connected_node_ids": [
         2,
-        8,
-        74
+        8
       ],
       "grounded": false,
       "id": 19,
@@ -299,7 +267,6 @@
     },
     {
       "connected_node_ids": [
-        9,
         17,
         27
       ],
@@ -312,7 +279,6 @@
     {
       "connected_node_ids": [
         68,
-        72,
         80
       ],
       "grounded": false,
@@ -325,13 +291,22 @@
       "connected_node_ids": [
         9,
         17,
-        21,
-        75
+        21
       ],
       "grounded": true,
       "id": 27,
       "label": "7cdc2565c773401289b95360da22e017",
       "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        62
+      ],
+      "grounded": false,
+      "id": 28,
+      "label": "a8ae1f18502e4a6aa301af029f976f5f",
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -346,8 +321,7 @@
     },
     {
       "connected_node_ids": [
-        68,
-        80
+        68
       ],
       "grounded": false,
       "id": 36,
@@ -369,14 +343,46 @@
     },
     {
       "connected_node_ids": [
-        12,
-        50,
-        76
+        62
       ],
       "grounded": false,
+      "id": 57,
+      "label": "54e13e385fac4638b050f5c73095ecdb",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        12,
+        50
+      ],
+      "grounded": true,
       "id": 58,
       "label": "159bf39081724055a73e686a6577096b",
-      "node_visit_times": 0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        28,
+        57,
+        67
+      ],
+      "grounded": true,
+      "id": 62,
+      "label": "f6cbc0517fc14f129f5456e59dc66c76",
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        62,
+        93
+      ],
+      "grounded": true,
+      "id": 67,
+      "label": "8f183f5d34d544e5a4d04bc8f28f10e8",
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -395,8 +401,7 @@
     },
     {
       "connected_node_ids": [
-        2,
-        74
+        2
       ],
       "grounded": false,
       "id": 69,
@@ -406,7 +411,6 @@
     },
     {
       "connected_node_ids": [
-        22,
         68,
         80
       ],
@@ -418,9 +422,7 @@
     },
     {
       "connected_node_ids": [
-        2,
-        19,
-        69
+        2
       ],
       "grounded": false,
       "id": 74,
@@ -430,9 +432,7 @@
     },
     {
       "connected_node_ids": [
-        17,
-        27,
-        82
+        17
       ],
       "grounded": false,
       "id": 75,
@@ -442,9 +442,7 @@
     },
     {
       "connected_node_ids": [
-        12,
-        50,
-        58
+        50
       ],
       "grounded": false,
       "id": 76,
@@ -457,7 +455,6 @@
         11,
         22,
         33,
-        36,
         68,
         72
       ],
@@ -469,12 +466,21 @@
     },
     {
       "connected_node_ids": [
-        17,
-        75
+        17
       ],
       "grounded": false,
       "id": 82,
       "label": "73f8049b6198422aa5f2edfc71fe423b",
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        67
+      ],
+      "grounded": false,
+      "id": 93,
+      "label": "416df61743e24e828609f0698df3f51b",
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -487,47 +493,58 @@
       "connected_node_ids": [],
       "grounded": true,
       "id": 95,
-      "label": "downstairs bedroom with bed and window",
+      "label": "bedroom area with large bed and windows",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        27,
-        75
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 96,
-      "label": "downstairs hallway connecting rooms",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
+        75,
         82
       ],
       "connected_node_ids": [],
       "grounded": false,
+      "id": 96,
+      "label": "hallway area with wooden walls and doors",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        27
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
       "id": 97,
-      "label": "downstairs laundry room with dryer",
+      "label": "kitchen area with cabinets and appliances",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
         22,
-        36,
         68,
         69,
         72,
-        74,
-        80
+        74
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 98,
-      "label": "downstairs living room with fireplace and piano",
+      "label": "living room area with fireplace and large windows",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        33,
+        36,
+        80
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 99,
+      "label": "dining area with table and chairs near kitchen",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -537,8 +554,8 @@
       ],
       "connected_node_ids": [],
       "grounded": false,
-      "id": 99,
-      "label": "downstairs kitchen with dining area",
+      "id": 100,
+      "label": "entryway area with front door and console table",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -550,8 +567,23 @@
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 100,
-      "label": "outdoor patio area with seating",
+      "id": 101,
+      "label": "covered patio area with outdoor furniture",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        28,
+        57,
+        62,
+        67,
+        93
+      ],
+      "connected_node_ids": [],
+      "grounded": true,
+      "id": 102,
+      "label": "recreation room area with pool table and bar",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -564,19 +596,8 @@
       ],
       "connected_node_ids": [],
       "grounded": true,
-      "id": 101,
-      "label": "upstairs hallway near staircase",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        33
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 102,
-      "label": "downstairs dining room with large table and chandelier",
+      "id": 103,
+      "label": "staircase landing area with framed artwork",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -589,61 +610,73 @@
       21
     ],
     "96": [
-      27,
-      75
+      75,
+      82
     ],
     "97": [
-      82
+      27
     ],
     "98": [
       22,
-      36,
       68,
       69,
       72,
-      74,
-      80
+      74
     ],
     "99": [
-      11
+      33,
+      36,
+      80
     ],
     "100": [
+      11
+    ],
+    "101": [
       2,
       8,
       19
     ],
-    "101": [
+    "102": [
+      28,
+      57,
+      62,
+      67,
+      93
+    ],
+    "103": [
       12,
       50,
       58,
       76
-    ],
-    "102": [
-      33
     ]
   },
   "viewpoint_to_region": {
-    "2": 100,
-    "8": 100,
+    "2": 101,
+    "8": 101,
     "9": 95,
-    "11": 99,
-    "12": 101,
+    "11": 100,
+    "12": 103,
     "17": 95,
-    "19": 100,
+    "19": 101,
     "21": 95,
     "22": 98,
-    "27": 96,
-    "33": 102,
-    "36": 98,
-    "50": 101,
-    "58": 101,
+    "27": 97,
+    "28": 102,
+    "33": 99,
+    "36": 99,
+    "50": 103,
+    "57": 102,
+    "58": 103,
+    "62": 102,
+    "67": 102,
     "68": 98,
     "69": 98,
     "72": 98,
     "74": 98,
     "75": 96,
-    "76": 101,
-    "80": 98,
-    "82": 97
+    "76": 103,
+    "80": 99,
+    "82": 96,
+    "93": 102
   }
 }

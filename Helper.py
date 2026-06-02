@@ -64,6 +64,10 @@ def build_viewpoint_index(scan_id):
         viewpoint_vp_label_by_index[index] = viewpoint_id
 
 
+def simulator_frame_to_rgb(frame):
+    return cv2.cvtColor(np.array(frame, copy=True), cv2.COLOR_BGR2RGB)
+
+
 def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
     annotated_rgb = np.array(rgb, copy=True)
     image_height, image_width = annotated_rgb.shape[:2]
@@ -161,14 +165,18 @@ def render_sim_state(
         notifications = [None for _ in state_list]
 
     for batch_index, state in enumerate(state_list):
+        rgb_frame = simulator_frame_to_rgb(state.rgb)
         rgb_image, _ = annotate_rgb_with_viewpoints(
-            state.rgb,
+            rgb_frame,
             state.navigableLocations,
             viewpoint_index_by_vp=viewpoint_index_by_vp,
         )
         if notifications[batch_index]:
             _draw_notification(rgb_image, notifications[batch_index])
-        cv2.imshow(window_names[batch_index], rgb_image)
+        cv2.imshow(
+            window_names[batch_index],
+            cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR),
+        )
     cv2.waitKey(1)
 
 
@@ -273,7 +281,7 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
 
     for horizon_index in range(HORIZON_LEN):
         state = sim.getState()[0]
-        raw_rgb = np.array(state.rgb, copy=True)
+        raw_rgb = simulator_frame_to_rgb(state.rgb)
         annotated_rgb, visible_viewpoints = annotate_rgb_with_viewpoints(
             raw_rgb,
             state.navigableLocations,

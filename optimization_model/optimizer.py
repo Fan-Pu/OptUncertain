@@ -504,6 +504,8 @@ class RollingHorizonOptimizer:
         # model.addConstr(x[9, 41, agent_ids[1]] == 1)
 
         model.update()
+        self._write_model(model)
+        self._print_model_size(model)
         model.optimize()
 
         if model.Status != GRB.OPTIMAL:
@@ -583,6 +585,30 @@ class RollingHorizonOptimizer:
             "objective_value": model.ObjVal,
             "selected_edges": selected_edges,
         }
+
+    def _write_model(self, model: Model) -> None:
+        model.write("optimization_model.lp")
+        print("Wrote Gurobi model to optimization_model.lp.")
+
+    def _print_model_size(self, model: Model) -> None:
+        binary_count = 0
+        continuous_count = 0
+        integer_count = 0
+
+        for variable in model.getVars():
+            if variable.VType == GRB.BINARY:
+                binary_count += 1
+            elif variable.VType == GRB.CONTINUOUS:
+                continuous_count += 1
+            elif variable.VType == GRB.INTEGER:
+                integer_count += 1
+
+        print("Gurobi model size:")
+        print("  rows: %s" % model.NumConstrs)
+        print("  columns: %s" % model.NumVars)
+        print("  binary variables: %s" % binary_count)
+        print("  continuous variables: %s" % continuous_count)
+        print("  integer variables: %s" % integer_count)
 
     def _normalized_expression(
         self, expression, lower_bound: float, upper_bound: float

@@ -1,0 +1,91 @@
+{
+  "scan_id": "1pXnuDYAj8r",
+  "agents": [
+    {
+      "id": "agent0",
+      "start_viewpoint_id": "fcbd96fa9e054e8298ab129371fa5c00",
+      "heading": 0.0,
+      "elevation": 0.0
+    },
+    {
+      "id": "agent1",
+      "start_viewpoint_id": "73f8049b6198422aa5f2edfc71fe423b",
+      "heading": 0.0,
+      "elevation": 0.0
+    },
+    {
+      "id": "agent2",
+      "start_viewpoint_id": "eb8781b9756346c9b97ae6d5e43b6d13",
+      "heading": 0.0,
+      "elevation": 0.0
+    },
+    {
+      "id": "agent3",
+      "start_viewpoint_id": "42524ad2f3f44645a1dc3bd8486560cf",
+      "heading": 0.0,
+      "elevation": 0.0
+    },
+    {
+      "id": "agent4",
+      "start_viewpoint_id": "2f3e7d98347047829630f0114694a532",
+      "heading": 0.0,
+      "elevation": 0.0
+    }
+  ],
+  "targets": [
+    {
+      "target_id": "0",
+      "description": "the leopard-print towels on top of the white dryer in the downstairs laundry room"
+    },
+    {
+      "target_id": "1",
+      "description": "the black laptop on the wooden desk in the downstairs office room"
+    },
+    {
+      "target_id": "2",
+      "description": "the red apples on the two-tier stand by the downstairs kitchen window"
+    },
+    {
+      "target_id": "3",
+      "description": "the iPad on the small desk counter in the downstairs kitchen"
+    },
+    {
+      "target_id": "4",
+      "description": "the black helmet in the bedroom near the upstairs recreation room"
+    }
+  ],
+  "mllm": {
+    "detection_model_name": "google/gemma-4-31B-it:deepinfra",
+    "graph_model_name": "qwen3.5-plus",
+    "read_saved_raw_outputs": true,
+    "raw_output_dir": "mllm_raw_outputs/test5",
+    "debug_output_dir": "mllm_debug_outputs/test5",
+    "open_vocab_verification": {
+      "backend": "grounding_dino",
+      "model_name": "IDEA-Research/grounding-dino-tiny",
+      "box_threshold": 0.35,
+      "text_threshold": 0.25
+    },
+    "max_validation_retries": 4
+  },
+  "bayes": {
+    "eta_goal": 5.0,
+    "eta_exist": 5.0,
+    "sigma_vv2": 4.0,
+    "sigma_vz2": 9.0,
+    "kappa_vv": 1.0,
+    "kappa_vz": 1.0,
+    "varrho": 0.75,
+    "omega_vz": 0.7,
+    "eta_vz": 5.0,
+    "epsilon": 1e-6
+  },
+  "optimizer": {
+    "goal_weight": 0.2,
+    "dist_weight": 0.2,
+    "arc_weight": 0.2,
+    "node_weight": 0.2,
+    "visit_weight": 0.2,
+    "ungrounded_reward_weight": 0.8
+  }
+}
