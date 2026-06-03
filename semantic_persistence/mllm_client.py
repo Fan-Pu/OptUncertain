@@ -21,7 +21,7 @@ DETECTION_TOP_P = 0.9
 DETECTION_TOP_K = 40
 DETECTION_PRESENCE_PENALTY = 0.0
 OPEN_VOCAB_SCORE_THRESHOLD = (
-    0.1  # the threshold for considering an open-vocab detection valid.
+    0.05  # the threshold for considering an open-vocab detection valid.
 )
 
 # for graph generation: still stable, but allows non-uniform probabilities
@@ -35,7 +35,7 @@ REPETITION_PENALTY = 1.0
 
 DETECTION_MAX_NEW_TOKENS = 512
 GRAPH_MAX_NEW_TOKENS = 32768
-panorama_max_width_for_prompt = 1280
+panorama_max_width_for_prompt = 1660
 
 detect_thinking = False
 graph_thinking = True
@@ -1512,8 +1512,6 @@ class MLLMClient:
         for observation in agent_observations:
             observation["annotated_panorama"] = self._resize_panorama_array(
                 observation["annotated_panorama"],
-                max_width=panorama_max_width_for_prompt,
-                quality=100,
             )
             self._write_observation_image(
                 step_index=step_index,
@@ -1574,6 +1572,21 @@ class MLLMClient:
             localized_detections,
             agent_observations,
         )
+
+        if len(newly_found_targets_by_id) > 0:
+            print()
+            print("Target finding status:")
+            for target in active_detection_targets:
+                target_id = str(target["target_id"])
+                if target_id in newly_found_targets_by_id:
+                    print(
+                        "Target %s found at step %s with detections: %s"
+                        % (target_id, step_index, newly_found_targets_by_id[target_id])
+                    )
+            print()
+
+        if step_index >= 9:
+            debugpy.breakpoint()
 
         # Append newly found targets to the found_target_trace. This trace keeps a chronological record of when each target was first detected as found, along with the associated agent and localization information at that step.
         for target_id, detections in newly_found_targets_by_id.items():
@@ -1888,8 +1901,6 @@ class MLLMClient:
     @staticmethod
     def _resize_panorama_array(
         image: np.ndarray,
-        max_width: int = 1280,
-        quality: int = 75,
     ) -> bytes:
         """Resize and JPEG-compress a panorama image.
 
@@ -1900,10 +1911,12 @@ class MLLMClient:
 
         pil_image = Image.fromarray(image).convert("RGB")
 
-        if pil_image.width > max_width:
-            new_height = int(pil_image.height * max_width / pil_image.width)
+        if pil_image.width > panorama_max_width_for_prompt:
+            new_height = int(
+                pil_image.height * panorama_max_width_for_prompt / pil_image.width
+            )
             pil_image = pil_image.resize(
-                (max_width, new_height),
+                (panorama_max_width_for_prompt, new_height),
                 Image.Resampling.LANCZOS,
             )
 
@@ -1911,7 +1924,7 @@ class MLLMClient:
         pil_image.save(
             buffer,
             format="JPEG",
-            quality=quality,
+            quality=100,
             optimize=True,
         )
 

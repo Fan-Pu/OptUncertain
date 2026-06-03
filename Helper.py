@@ -68,6 +68,58 @@ def simulator_frame_to_rgb(frame):
     return cv2.cvtColor(np.array(frame, copy=True), cv2.COLOR_BGR2RGB)
 
 
+def execute_individual_rotations(
+    sims,
+    target_headings,
+    window_names=None,
+    notifications=None,
+):
+    if len(sims) != len(target_headings):
+        raise ValueError("sims and target_headings must have the same length.")
+
+    states = [sim.getState()[0] for sim in sims]
+    step_plans = []
+    for state, target_heading in zip(states, target_headings):
+        direction, step_count = compute_rotation(
+            math.degrees(state.heading),
+            math.degrees(float(target_heading)),
+            DELTA_HEADING_DEG,
+        )
+        step_plans.append(
+            {
+                "direction": direction,
+                "step_count": step_count,
+            }
+        )
+
+    max_step_count = max(plan["step_count"] for plan in step_plans)
+    for step_index in range(max_step_count):
+        for sim, plan in zip(sims, step_plans):
+            heading = (
+                plan["direction"] * DELTA_HEADING_RAD
+                if step_index < plan["step_count"]
+                else 0.0
+            )
+            sim.makeAction([0], [heading], [0.0])
+        if PAUSE_TIME > 0.0:
+            time.sleep(PAUSE_TIME)
+        render_sim_state(
+            [sim.getState()[0] for sim in sims],
+            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+            window_names=window_names,
+        )
+
+    if notifications is not None:
+        render_sim_state(
+            [sim.getState()[0] for sim in sims],
+            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+            window_names=window_names,
+            notifications=notifications,
+        )
+        if PAUSE_TIME > 0.0:
+            time.sleep(2)
+
+
 def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
     annotated_rgb = np.array(rgb, copy=True)
     image_height, image_width = annotated_rgb.shape[:2]
@@ -389,60 +441,7 @@ def panorama_center_x_to_heading(target_center_x, horizon_headings):
     return target_heading % (2.0 * math.pi)
 
 
-def execute_individual_rotations(
-    sims,
-    target_headings,
-    PAUSE_TIME=0.05,
-    window_names=None,
-    notifications=None,
-):
-    if len(sims) != len(target_headings):
-        raise ValueError("sims and target_headings must have the same length.")
-
-    states = [sim.getState()[0] for sim in sims]
-    step_plans = []
-    for state, target_heading in zip(states, target_headings):
-        direction, step_count = compute_rotation(
-            math.degrees(state.heading),
-            math.degrees(float(target_heading)),
-            DELTA_HEADING_DEG,
-        )
-        step_plans.append(
-            {
-                "direction": direction,
-                "step_count": step_count,
-            }
-        )
-
-    max_step_count = max(plan["step_count"] for plan in step_plans)
-    for step_index in range(max_step_count):
-        for sim, plan in zip(sims, step_plans):
-            heading = (
-                plan["direction"] * DELTA_HEADING_RAD
-                if step_index < plan["step_count"]
-                else 0.0
-            )
-            sim.makeAction([0], [heading], [0.0])
-        if PAUSE_TIME > 0.0:
-            time.sleep(PAUSE_TIME)
-        render_sim_state(
-            [sim.getState()[0] for sim in sims],
-            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
-            window_names=window_names,
-        )
-
-    if notifications is not None:
-        render_sim_state(
-            [sim.getState()[0] for sim in sims],
-            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
-            window_names=window_names,
-            notifications=notifications,
-        )
-        if PAUSE_TIME > 0.0:
-            time.sleep(2)
-
-
-def execute_individual_first_hops(sims, move_specs, PAUSE_TIME=0.05):
+def execute_individual_first_hops(sims, move_specs):
     if len(sims) != len(move_specs):
         raise ValueError("sims and move_specs must have the same length.")
 

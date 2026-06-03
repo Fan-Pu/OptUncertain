@@ -1,11 +1,7 @@
 Active target set:
 [
   {
-    "description": "the black laptop on the wooden desk in the downstairs office room",
-    "target_id": "1"
-  },
-  {
-    "description": "the black helmet in the bedroom near the upstairs recreation room",
+    "description": "the black helmet in the bedroom near the recreation room",
     "target_id": "4"
   }
 ]
@@ -14,10 +10,10 @@ Compact shared graph summary:
 {
   "agent_current_vp_ids": {
     "agent0": 5,
-    "agent1": 3,
-    "agent2": 30,
-    "agent3": 31,
-    "agent4": 71
+    "agent1": 44,
+    "agent2": 86,
+    "agent3": 47,
+    "agent4": 16
   },
   "edges": [
     {
@@ -342,6 +338,16 @@ Compact shared graph summary:
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 1.086,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 16,
+      "j": 55,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 1.542,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -542,6 +548,16 @@ Compact shared graph summary:
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 1.673,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 31,
+      "j": 78,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 2.554,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -732,6 +748,16 @@ Compact shared graph summary:
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 0.971,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 47,
+      "j": 78,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 4.403,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -798,6 +824,16 @@ Compact shared graph summary:
       "grounded": 1,
       "i": 54,
       "j": 87,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.513,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 55,
+      "j": 90,
       "type": "vv"
     },
     {
@@ -922,16 +958,6 @@ Compact shared graph summary:
     },
     {
       "cond_exist_prob": 1.0,
-      "distance_mean": 1.02,
-      "distance_var": 0.0,
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "i": 71,
-      "j": 84,
-      "type": "vv"
-    },
-    {
-      "cond_exist_prob": 1.0,
       "distance_mean": 4.082,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -978,7 +1004,6 @@ Compact shared graph summary:
       "id": 2,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
@@ -987,7 +1012,10 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 3,
-      "node_visit_times": 2,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "4": 0.05
+      },
       "type": "viewpoint"
     },
     {
@@ -996,8 +1024,7 @@ Compact shared graph summary:
       "id": 4,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.2
+        "4": 0.1
       },
       "type": "viewpoint"
     },
@@ -1010,12 +1037,11 @@ Compact shared graph summary:
     },
     {
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 6,
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.05
+        "4": 0.1
       },
       "type": "viewpoint"
     },
@@ -1025,8 +1051,7 @@ Compact shared graph summary:
       "id": 7,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.02,
-        "4": 0.65
+        "4": 0.8
       },
       "type": "viewpoint"
     },
@@ -1036,7 +1061,6 @@ Compact shared graph summary:
       "id": 8,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1047,7 +1071,6 @@ Compact shared graph summary:
       "id": 9,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
         "4": 0.8
       },
       "type": "viewpoint"
@@ -1058,7 +1081,6 @@ Compact shared graph summary:
       "id": 10,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
@@ -1069,7 +1091,6 @@ Compact shared graph summary:
       "id": 11,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1080,7 +1101,6 @@ Compact shared graph summary:
       "id": 12,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1091,9 +1111,15 @@ Compact shared graph summary:
       "id": 14,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 16,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -1102,7 +1128,6 @@ Compact shared graph summary:
       "id": 17,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
@@ -1113,7 +1138,6 @@ Compact shared graph summary:
       "id": 19,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1124,8 +1148,7 @@ Compact shared graph summary:
       "id": 20,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.05
+        "4": 0.1
       },
       "type": "viewpoint"
     },
@@ -1135,7 +1158,6 @@ Compact shared graph summary:
       "id": 21,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.05,
         "4": 0.8
       },
       "type": "viewpoint"
@@ -1146,7 +1168,6 @@ Compact shared graph summary:
       "id": 22,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1157,8 +1178,7 @@ Compact shared graph summary:
       "id": 26,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.3
+        "4": 0.8
       },
       "type": "viewpoint"
     },
@@ -1168,7 +1188,6 @@ Compact shared graph summary:
       "id": 27,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
         "4": 0.05
       },
       "type": "viewpoint"
@@ -1179,32 +1198,36 @@ Compact shared graph summary:
       "id": 28,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 30,
       "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.0
+      },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 31,
-      "node_visit_times": 0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "4": 0.1
+      },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 33,
-      "node_visit_times": 2,
+      "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1215,8 +1238,7 @@ Compact shared graph summary:
       "id": 34,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
-        "4": 0.6
+        "4": 0.05
       },
       "type": "viewpoint"
     },
@@ -1224,10 +1246,9 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 35,
-      "node_visit_times": 1,
+      "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.8
+        "4": 0.05
       },
       "type": "viewpoint"
     },
@@ -1237,7 +1258,6 @@ Compact shared graph summary:
       "id": 36,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1248,8 +1268,7 @@ Compact shared graph summary:
       "id": 38,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
-        "4": 0.1
+        "4": 0.5
       },
       "type": "viewpoint"
     },
@@ -1257,10 +1276,9 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 39,
-      "node_visit_times": 1,
+      "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.1,
-        "4": 0.1
+        "4": 0.5
       },
       "type": "viewpoint"
     },
@@ -1270,7 +1288,6 @@ Compact shared graph summary:
       "id": 40,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
@@ -1281,8 +1298,7 @@ Compact shared graph summary:
       "id": 41,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.8
+        "4": 0.4
       },
       "type": "viewpoint"
     },
@@ -1292,8 +1308,7 @@ Compact shared graph summary:
       "id": 42,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
-        "4": 0.3
+        "4": 0.5
       },
       "type": "viewpoint"
     },
@@ -1301,11 +1316,7 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 44,
-      "node_visit_times": 2,
-      "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.1
-      },
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -1314,7 +1325,6 @@ Compact shared graph summary:
       "id": 45,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.1
       },
       "type": "viewpoint"
@@ -1325,9 +1335,15 @@ Compact shared graph summary:
       "id": 46,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.3
+        "4": 0.8
       },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 47,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -1336,7 +1352,6 @@ Compact shared graph summary:
       "id": 49,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.2,
         "4": 0.6
       },
       "type": "viewpoint"
@@ -1347,7 +1362,6 @@ Compact shared graph summary:
       "id": 50,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
@@ -1358,19 +1372,17 @@ Compact shared graph summary:
       "id": 54,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.8
+        "4": 0.2
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 55,
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.15,
-        "4": 0.45
+        "4": 0.2
       },
       "type": "viewpoint"
     },
@@ -1380,8 +1392,7 @@ Compact shared graph summary:
       "id": 56,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.1,
-        "4": 0.1
+        "4": 0.05
       },
       "type": "viewpoint"
     },
@@ -1391,7 +1402,6 @@ Compact shared graph summary:
       "id": 57,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1402,7 +1412,6 @@ Compact shared graph summary:
       "id": 58,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1413,8 +1422,7 @@ Compact shared graph summary:
       "id": 61,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.8
+        "4": 0.4
       },
       "type": "viewpoint"
     },
@@ -1424,7 +1432,6 @@ Compact shared graph summary:
       "id": 62,
       "node_visit_times": 3,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
@@ -1435,8 +1442,7 @@ Compact shared graph summary:
       "id": 63,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.1
+        "4": 0.0
       },
       "type": "viewpoint"
     },
@@ -1446,7 +1452,6 @@ Compact shared graph summary:
       "id": 65,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.1
       },
       "type": "viewpoint"
@@ -1457,7 +1462,6 @@ Compact shared graph summary:
       "id": 66,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
@@ -1468,7 +1472,6 @@ Compact shared graph summary:
       "id": 67,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.7
       },
       "type": "viewpoint"
@@ -1479,7 +1482,6 @@ Compact shared graph summary:
       "id": 68,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
@@ -1490,7 +1492,6 @@ Compact shared graph summary:
       "id": 69,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1501,16 +1502,8 @@ Compact shared graph summary:
       "id": 70,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.1
+        "4": 0.0
       },
-      "type": "viewpoint"
-    },
-    {
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 71,
-      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -1519,7 +1512,6 @@ Compact shared graph summary:
       "id": 72,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1528,10 +1520,9 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 73,
-      "node_visit_times": 1,
+      "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.15,
-        "4": 0.25
+        "4": 0.2
       },
       "type": "viewpoint"
     },
@@ -1541,7 +1532,6 @@ Compact shared graph summary:
       "id": 74,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1552,7 +1542,6 @@ Compact shared graph summary:
       "id": 75,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
         "4": 0.8
       },
       "type": "viewpoint"
@@ -1561,21 +1550,19 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 76,
-      "node_visit_times": 2,
+      "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 78,
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.7
+        "4": 0.1
       },
       "type": "viewpoint"
     },
@@ -1585,7 +1572,6 @@ Compact shared graph summary:
       "id": 79,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.02,
         "4": 0.7
       },
       "type": "viewpoint"
@@ -1596,7 +1582,6 @@ Compact shared graph summary:
       "id": 80,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1607,8 +1592,7 @@ Compact shared graph summary:
       "id": 81,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.1,
-        "4": 0.8
+        "4": 0.6
       },
       "type": "viewpoint"
     },
@@ -1618,7 +1602,6 @@ Compact shared graph summary:
       "id": 82,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.1,
         "4": 0.5
       },
       "type": "viewpoint"
@@ -1629,19 +1612,17 @@ Compact shared graph summary:
       "id": 83,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.3
+        "4": 0.5
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 1,
+      "grounded": 0,
       "id": 84,
-      "node_visit_times": 1,
+      "node_visit_times": 0,
       "raw_target_probs": {
-        "1": 0.2,
-        "4": 0.5
+        "4": 0.2
       },
       "type": "viewpoint"
     },
@@ -1649,22 +1630,17 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 85,
-      "node_visit_times": 1,
+      "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
     },
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 86,
       "node_visit_times": 0,
-      "raw_target_probs": {
-        "1": 0.0,
-        "4": 0.0
-      },
       "type": "viewpoint"
     },
     {
@@ -1673,8 +1649,7 @@ Compact shared graph summary:
       "id": 87,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.1
+        "4": 0.05
       },
       "type": "viewpoint"
     },
@@ -1684,8 +1659,17 @@ Compact shared graph summary:
       "id": 89,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.05,
-        "4": 0.8
+        "4": 0.3
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 90,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.1
       },
       "type": "viewpoint"
     },
@@ -1695,7 +1679,6 @@ Compact shared graph summary:
       "id": 92,
       "node_visit_times": 1,
       "raw_target_probs": {
-        "1": 0.0,
         "4": 0.0
       },
       "type": "viewpoint"
@@ -1706,7 +1689,6 @@ Compact shared graph summary:
       "id": 93,
       "node_visit_times": 2,
       "raw_target_probs": {
-        "1": 0.05,
         "4": 0.8
       },
       "type": "viewpoint"
@@ -1718,11 +1700,11 @@ Compact shared graph summary:
         17,
         21,
         26,
-        31,
         46,
-        54,
+        49,
         66,
-        78,
+        79,
+        83,
         92
       ],
       "exist_prob": 1.0,
@@ -1747,7 +1729,6 @@ Compact shared graph summary:
     },
     {
       "assigned_viewpoint_ids": [
-        3,
         20,
         27,
         63,
@@ -1765,7 +1746,6 @@ Compact shared graph summary:
       "assigned_viewpoint_ids": [
         22,
         30,
-        35,
         39,
         68,
         69,
@@ -1784,6 +1764,7 @@ Compact shared graph summary:
       "assigned_viewpoint_ids": [
         14,
         33,
+        35,
         36,
         38,
         40,
@@ -1844,14 +1825,10 @@ Compact shared graph summary:
     {
       "assigned_viewpoint_ids": [
         12,
-        41,
-        49,
         50,
+        56,
         58,
-        61,
-        76,
-        81,
-        83
+        76
       ],
       "exist_prob": 1.0,
       "grounded": 1,
@@ -1862,7 +1839,9 @@ Compact shared graph summary:
     },
     {
       "assigned_viewpoint_ids": [
+        4,
         6,
+        54,
         87
       ],
       "exist_prob": 1.0,
@@ -1874,57 +1853,28 @@ Compact shared graph summary:
     },
     {
       "assigned_viewpoint_ids": [
-        4
+        41,
+        61,
+        81
       ],
       "exist_prob": 1.0,
       "grounded": 1,
       "id": 105,
-      "label": "bathroom area with vanity and laundry appliances",
+      "label": "staircase hallway area with framed pictures",
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        56
+        31,
+        34,
+        47,
+        78
       ],
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 106,
-      "label": "staircase hallway area with framed artwork",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        44,
-        71
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 107,
-      "label": "bathroom area with toilet and shower visible through doorway",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        79
-      ],
-      "exist_prob": 1.0,
-      "grounded": 0,
-      "id": 108,
-      "label": "bedroom area with large bed and windows near staircase landing",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        34
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 109,
-      "label": "bedroom hallway area with bathroom access near bedroom",
+      "label": "bathroom area with bathtub and vanity near bedroom",
       "node_visit_times": 0,
       "type": "region"
     },
@@ -1935,15 +1885,48 @@ Compact shared graph summary:
       ],
       "exist_prob": 1.0,
       "grounded": 1,
+      "id": 107,
+      "label": "hallway area with bathroom vanity and framed artwork",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 108,
+      "label": "kitchen entryway area with dark wood door",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 109,
+      "label": "small bathroom area with toilet and framed artwork",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        16,
+        90
+      ],
+      "exist_prob": 1.0,
+      "grounded": 0,
       "id": 110,
-      "label": "recreation room hallway area with artwork and doors",
+      "label": "hallway area with colorful geometric wall patterns",
       "node_visit_times": 0,
       "type": "region"
     }
   ],
   "observation_step": 14,
   "target_found": {
-    "1": false,
     "4": false
   },
   "viewpoint_to_region": {
@@ -1951,6 +1934,7 @@ Compact shared graph summary:
     "11": 100,
     "12": 103,
     "14": 99,
+    "16": 110,
     "17": 95,
     "19": 101,
     "2": 101,
@@ -1960,32 +1944,33 @@ Compact shared graph summary:
     "26": 95,
     "27": 97,
     "28": 102,
-    "3": 97,
+    "3": 108,
     "30": 98,
-    "31": 95,
+    "31": 106,
     "33": 99,
-    "34": 109,
-    "35": 98,
+    "34": 106,
+    "35": 99,
     "36": 99,
     "38": 99,
     "39": 98,
-    "4": 105,
+    "4": 104,
     "40": 99,
-    "41": 103,
+    "41": 105,
     "42": 102,
-    "44": 107,
+    "44": 109,
     "45": 102,
     "46": 95,
-    "49": 103,
+    "47": 106,
+    "49": 95,
     "5": 96,
     "50": 103,
-    "54": 95,
-    "55": 110,
-    "56": 106,
+    "54": 104,
+    "55": 107,
+    "56": 103,
     "57": 102,
     "58": 103,
     "6": 104,
-    "61": 103,
+    "61": 105,
     "62": 102,
     "63": 97,
     "65": 102,
@@ -1995,25 +1980,25 @@ Compact shared graph summary:
     "69": 98,
     "7": 95,
     "70": 97,
-    "71": 107,
     "72": 98,
     "73": 97,
     "74": 98,
     "75": 96,
     "76": 103,
-    "78": 95,
-    "79": 108,
+    "78": 106,
+    "79": 95,
     "8": 101,
     "80": 99,
-    "81": 103,
+    "81": 105,
     "82": 96,
-    "83": 103,
-    "84": 110,
+    "83": 95,
+    "84": 107,
     "85": 99,
     "86": 99,
     "87": 104,
     "89": 98,
     "9": 95,
+    "90": 110,
     "92": 95,
     "93": 102
   }
@@ -2074,35 +2059,62 @@ Per-agent observation context:
   },
   {
     "agent_id": "agent1",
-    "current_viewpoint_index": 3,
+    "current_viewpoint_index": 44,
     "current_xy": [
-      2.1001100540161133,
-      -7.621799945831299
+      2.005460023880005,
+      -8.939550399780273
     ],
     "image_index": 1,
-    "prior_assigned_region_id": 97,
-    "prior_assigned_region_label": "kitchen area with cabinets and appliances",
+    "prior_assigned_region_id": 109,
+    "prior_assigned_region_label": "small bathroom area with toilet and framed artwork",
     "prior_grounded": true,
-    "prior_visit_times": 2,
+    "prior_visit_times": 0,
     "visible_viewpoints": [
       {
         "distance": 1.321,
-        "prior_assigned_region_id": 107,
-        "prior_assigned_region_label": "bathroom area with toilet and shower visible through doorway",
+        "prior_assigned_region_id": 108,
+        "prior_assigned_region_label": "kitchen entryway area with dark wood door",
         "prior_grounded": true,
-        "prior_visit_times": 2,
-        "viewpoint_index": 44,
+        "prior_visit_times": 1,
+        "viewpoint_index": 3,
         "xy": [
-          2.005460023880005,
-          -8.939550399780273
+          2.1001100540161133,
+          -7.621799945831299
+        ]
+      }
+    ]
+  },
+  {
+    "agent_id": "agent2",
+    "current_viewpoint_index": 86,
+    "current_xy": [
+      3.489180088043213,
+      -5.633920192718506
+    ],
+    "image_index": 2,
+    "prior_assigned_region_id": 99,
+    "prior_assigned_region_label": "dining area with table and chairs near kitchen",
+    "prior_grounded": true,
+    "prior_visit_times": 0,
+    "visible_viewpoints": [
+      {
+        "distance": 4.133,
+        "prior_assigned_region_id": 99,
+        "prior_assigned_region_label": "dining area with table and chairs near kitchen",
+        "prior_grounded": true,
+        "prior_visit_times": 1,
+        "viewpoint_index": 33,
+        "xy": [
+          7.619349956512451,
+          -5.494649887084961
         ]
       },
       {
-        "distance": 1.621,
+        "distance": 2.054,
         "prior_assigned_region_id": 97,
         "prior_assigned_region_label": "kitchen area with cabinets and appliances",
         "prior_grounded": true,
-        "prior_visit_times": 1,
+        "prior_visit_times": 2,
         "viewpoint_index": 73,
         "xy": [
           3.72012996673584,
@@ -2112,118 +2124,103 @@ Per-agent observation context:
     ]
   },
   {
-    "agent_id": "agent2",
-    "current_viewpoint_index": 30,
-    "current_xy": [
-      11.296299934387207,
-      -5.31141996383667
-    ],
-    "image_index": 2,
-    "prior_assigned_region_id": 98,
-    "prior_assigned_region_label": "living room area with fireplace and large windows",
-    "prior_grounded": true,
-    "prior_visit_times": 0,
-    "visible_viewpoints": [
-      {
-        "distance": 2.132,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 1,
-        "xy": [
-          13.412699699401855,
-          -5.053060054779053
-        ]
-      },
-      {
-        "distance": 3.692,
-        "prior_assigned_region_id": null,
-        "prior_assigned_region_label": null,
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 13,
-        "xy": [
-          13.48799991607666,
-          -2.3408501148223877
-        ]
-      },
-      {
-        "distance": 3.682,
-        "prior_assigned_region_id": 99,
-        "prior_assigned_region_label": "dining area with table and chairs near kitchen",
-        "prior_grounded": true,
-        "prior_visit_times": 2,
-        "viewpoint_index": 33,
-        "xy": [
-          7.619349956512451,
-          -5.494649887084961
-        ]
-      }
-    ]
-  },
-  {
     "agent_id": "agent3",
-    "current_viewpoint_index": 31,
+    "current_viewpoint_index": 47,
     "current_xy": [
-      6.53400993347168,
-      8.157110214233398
+      6.255710124969482,
+      5.551060199737549
     ],
     "image_index": 3,
-    "prior_assigned_region_id": 95,
-    "prior_assigned_region_label": "bedroom area with large bed and windows",
+    "prior_assigned_region_id": 106,
+    "prior_assigned_region_label": "bathroom area with bathtub and vanity near bedroom",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
       {
-        "distance": 1.646,
-        "prior_assigned_region_id": 109,
-        "prior_assigned_region_label": "bedroom hallway area with bathroom access near bedroom",
-        "prior_grounded": true,
-        "prior_visit_times": 1,
-        "viewpoint_index": 34,
+        "distance": 1.235,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 32,
         "xy": [
-          8.06624984741211,
-          8.757630348205566
+          5.023620128631592,
+          5.4679999351501465
         ]
       },
       {
-        "distance": 1.673,
-        "prior_assigned_region_id": 95,
-        "prior_assigned_region_label": "bedroom area with large bed and windows",
-        "prior_grounded": false,
-        "prior_visit_times": 0,
+        "distance": 0.971,
+        "prior_assigned_region_id": 106,
+        "prior_assigned_region_label": "bathroom area with bathtub and vanity near bedroom",
+        "prior_grounded": true,
+        "prior_visit_times": 1,
         "viewpoint_index": 78,
         "xy": [
           6.190380096435547,
           6.519720077514648
+        ]
+      },
+      {
+        "distance": 1.141,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 91,
+        "xy": [
+          6.385940074920654,
+          4.4178900718688965
         ]
       }
     ]
   },
   {
     "agent_id": "agent4",
-    "current_viewpoint_index": 71,
+    "current_viewpoint_index": 16,
     "current_xy": [
-      5.295440196990967,
-      -6.081679821014404
+      4.260159969329834,
+      -8.045940399169922
     ],
     "image_index": 4,
-    "prior_assigned_region_id": 107,
-    "prior_assigned_region_label": "bathroom area with toilet and shower visible through doorway",
+    "prior_assigned_region_id": 110,
+    "prior_assigned_region_label": "hallway area with colorful geometric wall patterns",
     "prior_grounded": true,
     "prior_visit_times": 0,
     "visible_viewpoints": [
       {
-        "distance": 1.02,
-        "prior_assigned_region_id": 110,
-        "prior_assigned_region_label": "recreation room hallway area with artwork and doors",
+        "distance": 3.818,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 24,
+        "xy": [
+          2.8464999198913574,
+          -11.59220027923584
+        ]
+      },
+      {
+        "distance": 1.512,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 43,
+        "xy": [
+          4.170619964599609,
+          -9.554770469665527
+        ]
+      },
+      {
+        "distance": 1.086,
+        "prior_assigned_region_id": 107,
+        "prior_assigned_region_label": "hallway area with bathroom vanity and framed artwork",
         "prior_grounded": true,
         "prior_visit_times": 1,
-        "viewpoint_index": 84,
+        "viewpoint_index": 55,
         "xy": [
-          6.315340042114258,
-          -6.110680103302002
+          5.345600128173828,
+          -8.048270225524902
         ]
       }
     ]
@@ -2263,33 +2260,37 @@ Strict allowed-id rule:
 
 Current-step allowed viewpoint ids:
 [
-  1,
   3,
   5,
-  13,
+  16,
   18,
   21,
-  30,
-  31,
+  24,
+  32,
   33,
-  34,
+  43,
   44,
-  71,
+  47,
+  55,
   73,
   75,
   78,
-  84
+  86,
+  91
 ]
 
 Viewpoint ids requiring region assignment in this step:
 [
-  1,
   5,
-  13,
+  16,
   18,
-  30,
-  31,
-  71
+  24,
+  32,
+  43,
+  44,
+  47,
+  86,
+  91
 ]
 
 These ids include:
@@ -2301,45 +2302,32 @@ Current-step viewpoint ids not requiring region assignment in this step:
   3,
   21,
   33,
-  34,
-  44,
+  55,
   73,
   75,
-  78,
-  84
+  78
 ]
 
 MLLM-updatable viewpoint target-probability context:
 [
   {
-    "has_prior_raw_target_probs": false,
-    "id": 1,
+    "has_prior_raw_target_probs": true,
+    "id": 6,
     "prior_raw_target_probs": {
-      "1": 0.0,
-      "4": 0.0
+      "4": 0.1
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 11,
     "prior_raw_target_probs": {
-      "1": 0.1,
       "4": 0.5
-    }
-  },
-  {
-    "has_prior_raw_target_probs": false,
-    "id": 13,
-    "prior_raw_target_probs": {
-      "1": 0.0,
-      "4": 0.0
     }
   },
   {
     "has_prior_raw_target_probs": false,
     "id": 18,
     "prior_raw_target_probs": {
-      "1": 0.0,
       "4": 0.0
     }
   },
@@ -2347,47 +2335,62 @@ MLLM-updatable viewpoint target-probability context:
     "has_prior_raw_target_probs": true,
     "id": 22,
     "prior_raw_target_probs": {
-      "1": 0.1,
       "4": 0.5
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 24,
+    "prior_raw_target_probs": {
+      "4": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 30,
+    "prior_raw_target_probs": {
+      "4": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 32,
+    "prior_raw_target_probs": {
+      "4": 0.0
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 36,
     "prior_raw_target_probs": {
-      "1": 0.1,
       "4": 0.5
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 43,
+    "prior_raw_target_probs": {
+      "4": 0.0
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 46,
     "prior_raw_target_probs": {
-      "1": 0.05,
-      "4": 0.3
-    }
-  },
-  {
-    "has_prior_raw_target_probs": true,
-    "id": 55,
-    "prior_raw_target_probs": {
-      "1": 0.15,
-      "4": 0.45
+      "4": 0.8
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 56,
     "prior_raw_target_probs": {
-      "1": 0.1,
-      "4": 0.1
+      "4": 0.05
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 65,
     "prior_raw_target_probs": {
-      "1": 0.1,
       "4": 0.1
     }
   },
@@ -2395,23 +2398,13 @@ MLLM-updatable viewpoint target-probability context:
     "has_prior_raw_target_probs": true,
     "id": 72,
     "prior_raw_target_probs": {
-      "1": 0.1,
       "4": 0.5
-    }
-  },
-  {
-    "has_prior_raw_target_probs": true,
-    "id": 78,
-    "prior_raw_target_probs": {
-      "1": 0.05,
-      "4": 0.7
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 79,
     "prior_raw_target_probs": {
-      "1": 0.02,
       "4": 0.7
     }
   },
@@ -2419,7 +2412,6 @@ MLLM-updatable viewpoint target-probability context:
     "has_prior_raw_target_probs": true,
     "id": 82,
     "prior_raw_target_probs": {
-      "1": 0.1,
       "4": 0.5
     }
   },
@@ -2427,15 +2419,27 @@ MLLM-updatable viewpoint target-probability context:
     "has_prior_raw_target_probs": true,
     "id": 83,
     "prior_raw_target_probs": {
-      "1": 0.05,
-      "4": 0.3
+      "4": 0.5
     }
   },
   {
     "has_prior_raw_target_probs": true,
-    "id": 86,
+    "id": 84,
     "prior_raw_target_probs": {
-      "1": 0.0,
+      "4": 0.2
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 90,
+    "prior_raw_target_probs": {
+      "4": 0.1
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 91,
+    "prior_raw_target_probs": {
       "4": 0.0
     }
   }
@@ -2444,13 +2448,10 @@ MLLM-updatable viewpoint target-probability context:
 Eligible viewpoint_target_probs update ids:
 [
   {
-    "id": 1
+    "id": 6
   },
   {
     "id": 11
-  },
-  {
-    "id": 13
   },
   {
     "id": 18
@@ -2459,13 +2460,22 @@ Eligible viewpoint_target_probs update ids:
     "id": 22
   },
   {
+    "id": 24
+  },
+  {
+    "id": 30
+  },
+  {
+    "id": 32
+  },
+  {
     "id": 36
   },
   {
-    "id": 46
+    "id": 43
   },
   {
-    "id": 55
+    "id": 46
   },
   {
     "id": 56
@@ -2477,9 +2487,6 @@ Eligible viewpoint_target_probs update ids:
     "id": 72
   },
   {
-    "id": 78
-  },
-  {
     "id": 79
   },
   {
@@ -2489,7 +2496,13 @@ Eligible viewpoint_target_probs update ids:
     "id": 83
   },
   {
-    "id": 86
+    "id": 84
+  },
+  {
+    "id": 90
+  },
+  {
+    "id": 91
   }
 ]
 
@@ -2519,17 +2532,18 @@ Target probability rule:
 
 All non-current visible neighboring viewpoint ids:
 [
-  1,
-  13,
+  3,
   18,
   21,
+  24,
+  32,
   33,
-  34,
-  44,
+  43,
+  55,
   73,
   75,
   78,
-  84
+  91
 ]
 
 Current-step interpretation note:
@@ -2556,8 +2570,7 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 113,
       "label": "unseen hallway area beyond closed doorway",
       "target_probs": {
-        "1": 0.73,
-        "4": 0.67
+        "4": 0.28
       }
     }
   ],
@@ -2583,8 +2596,7 @@ Output schema example. Use keys and value types only. Do not copy example values
     {
       "id": 18,
       "target_probs": {
-        "1": 0.88,
-        "4": 0.1
+        "4": 0.23
       }
     }
   ],
@@ -2594,8 +2606,7 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 111,
       "label": "bright kitchen area near dining table",
       "target_probs": {
-        "1": 0.64,
-        "4": 0.03
+        "4": 0.64
       }
     },
     {
@@ -2603,8 +2614,7 @@ Output schema example. Use keys and value types only. Do not copy example values
       "id": 112,
       "label": "adjacent hallway visible through doorway",
       "target_probs": {
-        "1": 0.28,
-        "4": 0.23
+        "4": 0.03
       }
     }
   ]

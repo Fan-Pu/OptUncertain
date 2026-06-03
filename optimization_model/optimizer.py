@@ -408,9 +408,7 @@ class RollingHorizonOptimizer:
                         )
                         if self.allow_inactive_agents:
                             model.addConstr(
-                                target_reward_assignment[
-                                    (target_id, node_id, agent_id)
-                                ]
+                                target_reward_assignment[(target_id, node_id, agent_id)]
                                 <= agent_active[agent_id],
                                 name="target_reward_active_%s_%s_%s"
                                 % (target_id, node_id, agent_id),
@@ -445,19 +443,17 @@ class RollingHorizonOptimizer:
                             else None
                         ),
                     )
-                    other_action_at_viewpoint = (
-                        self._action_at_viewpoint_expression(
-                            model_vars=x,
-                            directed_edges=directed_edges,
-                            agent_id=other_agent_id,
-                            start_node_id=int(agent_current_vp_ids[other_agent_id]),
-                            viewpoint_id=viewpoint_id,
-                            agent_active=(
-                                agent_active[other_agent_id]
-                                if self.allow_inactive_agents
-                                else None
-                            ),
-                        )
+                    other_action_at_viewpoint = self._action_at_viewpoint_expression(
+                        model_vars=x,
+                        directed_edges=directed_edges,
+                        agent_id=other_agent_id,
+                        start_node_id=int(agent_current_vp_ids[other_agent_id]),
+                        viewpoint_id=viewpoint_id,
+                        agent_active=(
+                            agent_active[other_agent_id]
+                            if self.allow_inactive_agents
+                            else None
+                        ),
                     )
                     model.addConstr(
                         action_at_viewpoint + other_action_at_viewpoint <= 1,
@@ -473,9 +469,7 @@ class RollingHorizonOptimizer:
                     for node_id in reward_node_ids_by_agent[agent_id]:
                         if node_reward[node_id][target_id] == 0.0:
                             model.addConstr(
-                                target_reward_assignment[
-                                    (target_id, node_id, agent_id)
-                                ]
+                                target_reward_assignment[(target_id, node_id, agent_id)]
                                 == 0,
                                 name="target_reward_positive_%s_%s_%s"
                                 % (target_id, node_id, agent_id),
@@ -506,7 +500,9 @@ class RollingHorizonOptimizer:
         model.update()
         self._write_model(model)
         self._print_model_size(model)
+        print("Optimizing model...")
         model.optimize()
+        print("Total time for optimization: %s seconds" % model.Runtime)
 
         if model.Status != GRB.OPTIMAL:
             raise RuntimeError("Optimizer did not find an optimal solution.")
@@ -529,10 +525,7 @@ class RollingHorizonOptimizer:
             )
 
             if not planned_path_node_ids:
-                if (
-                    self.allow_inactive_agents
-                    and agent_active[agent_id].X < 0.5
-                ):
+                if self.allow_inactive_agents and agent_active[agent_id].X < 0.5:
                     agent_paths[agent_id] = {
                         "planned_path_node_ids": [],
                         "next_vp_node_id": int(agent_current_vp_ids[agent_id]),
@@ -755,8 +748,7 @@ class RollingHorizonOptimizer:
             non_start_edges = [
                 (source_id, target_id)
                 for source_id, target_id in directed_edges
-                if source_id != int(start_node_id)
-                and target_id != int(start_node_id)
+                if source_id != int(start_node_id) and target_id != int(start_node_id)
             ]
             upper_bound_edges = (
                 directed_edges

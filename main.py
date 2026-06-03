@@ -232,7 +232,6 @@ def _center_completed_targets(agent_sims, agent_ids, completed_targets) -> None:
         Helper.execute_individual_rotations(
             sims=sims_to_rotate,
             target_headings=target_headings,
-            PAUSE_TIME=Helper.PAUSE_TIME,
             window_names=window_names,
             notifications=notifications,
         )
@@ -494,11 +493,6 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             step_index=debug_step_index,
         )
 
-        # print target finding status
-        print("Target finding status:")
-        for target_id, found in hypothesis_graph.target_found.items():
-            print(f"  {target_id}: {'Found' if found else 'Not found'}")
-
         if all_targets_found:
             route_summary = _write_mllm_completion_route_summary(
                 test_case=test_case,
@@ -554,7 +548,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         for _ in range(2):
             print()
 
-        if debug_step_index >= 10:
+        if debug_step_index >= 9:
             debugpy.breakpoint()
 
 

@@ -1,7 +1,7 @@
 {
   "agent_current_vp_ids": {
     "agent0": 66,
-    "agent1": 38,
+    "agent1": 39,
     "agent2": 69,
     "agent3": 76,
     "agent4": 42
@@ -165,12 +165,6 @@
     },
     {
       "grounded": true,
-      "i": 20,
-      "j": 38,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
       "i": 21,
       "j": 27,
       "type": "vv"
@@ -255,26 +249,26 @@
     },
     {
       "grounded": true,
-      "i": 35,
-      "j": 38,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
       "i": 36,
       "j": 68,
       "type": "vv"
     },
     {
       "grounded": true,
-      "i": 38,
-      "j": 40,
+      "i": 39,
+      "j": 69,
       "type": "vv"
     },
     {
       "grounded": true,
       "i": 39,
-      "j": 69,
+      "j": 74,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 39,
+      "j": 85,
       "type": "vv"
     },
     {
@@ -500,16 +494,6 @@
     },
     {
       "connected_node_ids": [
-        38
-      ],
-      "grounded": false,
-      "id": 20,
-      "label": "176424bc97d94b12a52aefbdfb8c00d9",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
         5,
         9,
         17,
@@ -586,16 +570,6 @@
     },
     {
       "connected_node_ids": [
-        38
-      ],
-      "grounded": false,
-      "id": 35,
-      "label": "4e796cd1c4594f9fb07bf8b48edf2dc2",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
         68
       ],
       "grounded": false,
@@ -606,33 +580,31 @@
     },
     {
       "connected_node_ids": [
-        14,
-        20,
-        35,
-        40
-      ],
-      "grounded": true,
-      "id": 38,
-      "label": "eb8781b9756346c9b97ae6d5e43b6d13",
-      "node_visit_times": 1,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        14,
-        69
+        14
       ],
       "grounded": false,
-      "id": 39,
-      "label": "1407cf2da95e4f73951798295db82ab6",
+      "id": 38,
+      "label": "eb8781b9756346c9b97ae6d5e43b6d13",
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
         14,
-        33,
-        38
+        69,
+        74,
+        85
+      ],
+      "grounded": true,
+      "id": 39,
+      "label": "1407cf2da95e4f73951798295db82ab6",
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        14,
+        33
       ],
       "grounded": false,
       "id": 40,
@@ -791,6 +763,7 @@
     {
       "connected_node_ids": [
         2,
+        39,
         69
       ],
       "grounded": false,
@@ -851,6 +824,7 @@
       "connected_node_ids": [
         14,
         33,
+        39,
         69
       ],
       "grounded": false,
@@ -908,7 +882,6 @@
         9,
         17,
         21,
-        54,
         66,
         92
       ],
@@ -934,7 +907,6 @@
     },
     {
       "assigned_viewpoint_ids": [
-        20,
         27
       ],
       "connected_node_ids": [],
@@ -948,7 +920,6 @@
       "assigned_viewpoint_ids": [
         22,
         30,
-        35,
         39,
         68,
         69,
@@ -1024,18 +995,39 @@
     },
     {
       "assigned_viewpoint_ids": [
-        6,
         12,
-        41,
         50,
         58,
-        61,
         76
       ],
       "connected_node_ids": [],
       "grounded": true,
       "id": 103,
       "label": "staircase landing area with framed artwork",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        54
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 104,
+      "label": "laundry room area with washer and dryer",
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        41,
+        61
+      ],
+      "connected_node_ids": [],
+      "grounded": false,
+      "id": 105,
+      "label": "staircase hallway area with framed pictures",
       "node_visit_times": 0,
       "type": "region"
     }
@@ -1046,7 +1038,6 @@
       9,
       17,
       21,
-      54,
       66,
       92
     ],
@@ -1056,13 +1047,11 @@
       82
     ],
     "97": [
-      20,
       27
     ],
     "98": [
       22,
       30,
-      35,
       39,
       68,
       69,
@@ -1098,19 +1087,24 @@
       93
     ],
     "103": [
-      6,
       12,
-      41,
       50,
       58,
-      61,
       76
+    ],
+    "104": [
+      6,
+      54
+    ],
+    "105": [
+      41,
+      61
     ]
   },
   "viewpoint_to_region": {
     "2": 101,
     "5": 96,
-    "6": 103,
+    "6": 104,
     "8": 101,
     "9": 95,
     "10": 102,
@@ -1119,25 +1113,23 @@
     "14": 99,
     "17": 95,
     "19": 101,
-    "20": 97,
     "21": 95,
     "22": 98,
     "27": 97,
     "28": 102,
     "30": 98,
     "33": 99,
-    "35": 98,
     "36": 99,
     "38": 99,
     "39": 98,
     "40": 99,
-    "41": 103,
+    "41": 105,
     "42": 102,
     "50": 103,
-    "54": 95,
+    "54": 104,
     "57": 102,
     "58": 103,
-    "61": 103,
+    "61": 105,
     "62": 102,
     "66": 95,
     "67": 102,
