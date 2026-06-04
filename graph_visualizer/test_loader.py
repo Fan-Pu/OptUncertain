@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import time
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import pytest
 
 from graph_visualizer.loader import load_solution_payload, load_visualization_steps
 from graph_visualizer.server import start_visualizer_server
+from graph_visualizer.topdown_texture import missing_topdown_texture_payload
 from graph_visualizer.viewer import render_viewer_html
 
 
@@ -24,23 +26,28 @@ def _pose(x, y, z):
     return pose
 
 
-def _write_connectivity(connectivity_dir, *, second_viewpoint_id="vp1"):
+def _write_connectivity(
+    connectivity_dir,
+    *,
+    second_viewpoint_id="vp1",
+    z_values=(0.0, 0.0),
+):
+    records = []
+    for index, z in enumerate(z_values):
+        records.append(
+            {
+                "image_id": "vp%s" % index if index != 1 else second_viewpoint_id,
+                "included": True,
+                "pose": _pose(float(index), 0.0, z),
+                "unobstructed": [
+                    other_index != index and abs(other_index - index) == 1
+                    for other_index in range(len(z_values))
+                ],
+            }
+        )
     _write_json(
         connectivity_dir / "scan_connectivity.json",
-        [
-            {
-                "image_id": "vp0",
-                "included": True,
-                "pose": _pose(0.0, 0.0, 0.0),
-                "unobstructed": [False, True],
-            },
-            {
-                "image_id": second_viewpoint_id,
-                "included": True,
-                "pose": _pose(1.0, 0.0, 0.0),
-                "unobstructed": [True, False],
-            },
-        ],
+        records,
     )
 
 
@@ -114,6 +121,18 @@ def _write_environment_case(root, instance_name):
     _write_connectivity(root / "connectivity")
 
 
+def _write_two_floor_environment_case(root, instance_name):
+    _write_json(
+        root / "scenarios" / ("%s.json" % instance_name),
+        {
+            "scan_id": "scan",
+            "agents": [],
+            "targets": [],
+        },
+    )
+    _write_connectivity(root / "connectivity", z_values=(0.0, 0.1, 3.0, 3.1))
+
+
 def _write_route_case(root, instance_name):
     _write_environment_case(root, instance_name)
     _write_json(
@@ -138,14 +157,14 @@ def _write_route_case(root, instance_name):
 def _patch_house_texture(monkeypatch):
     calls = []
 
-    def fake_generate_cached_topdown_texture(
+    def fake_load_cached_topdown_texture(
         *,
         scan_id,
         project_root,
-        instance_name,
         connectivity_dir,
-        output_size=1800,
-        cut_z_offset=0.15,
+        floors=None,
+        output_size=1080,
+        cut_z_offset=0.1,
         render_mode="multi_slice_composite",
         composite_max_z_offset=1.6,
         composite_slices=5,
@@ -153,7 +172,7 @@ def _patch_house_texture(monkeypatch):
         calls.append(
             {
                 "scan_id": scan_id,
-                "instance_name": instance_name,
+                "floors": floors,
                 "output_size": output_size,
                 "cut_z_offset": cut_z_offset,
                 "render_mode": render_mode,
@@ -169,6 +188,28 @@ def _patch_house_texture(monkeypatch):
         )
         texture_path.parent.mkdir(parents=True, exist_ok=True)
         texture_path.write_bytes(b"texture")
+        floor_payloads = [
+            {
+                **floor,
+                "url": "/assets/topdown_texture_cache/%s/%s_fake_topdown_texture.png"
+                % (str(scan_id), str(scan_id)),
+                "render_mode": "interior_cutaway_v1",
+                "cut_z": float(floor["reference_z"]) + float(cut_z_offset),
+                "cut_z_offset": float(cut_z_offset),
+                "composite_max_z": float(floor["reference_z"]) + float(composite_max_z_offset),
+                "composite_max_z_offset": float(composite_max_z_offset),
+                "composite_slices": int(composite_slices),
+                "requested_render_mode": render_mode,
+                "output_size": int(output_size),
+                "min_x": 0.0,
+                "max_x": 1.0,
+                "min_y": 0.0,
+                "max_y": 1.0,
+                "width": 16,
+                "height": 16,
+            }
+            for floor in floors
+        ]
         return {
             "url": "/assets/topdown_texture_cache/%s/%s_fake_topdown_texture.png"
             % (str(scan_id), str(scan_id)),
@@ -186,11 +227,12 @@ def _patch_house_texture(monkeypatch):
             "max_y": 1.0,
             "width": 16,
             "height": 16,
+            "floors": floor_payloads,
         }
 
     monkeypatch.setattr(
-        "graph_visualizer.loader.generate_cached_topdown_texture",
-        fake_generate_cached_topdown_texture,
+        "graph_visualizer.loader.load_cached_topdown_texture",
+        fake_load_cached_topdown_texture,
     )
     return calls
 
@@ -316,24 +358,48 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
     assert payload["solutions"][0]["summary"]["total_distance"] == 1.0
     assert payload["environment_graph"]["scan_id"] == "scan"
     assert payload["environment_graph"]["nodes"][0]["viewpoint_id"] == "vp0"
+    assert payload["environment_graph"]["nodes"][0]["z"] == pytest.approx(0.0)
+    assert payload["environment_graph"]["nodes"][0]["floor_index"] == 0
+    assert payload["environment_graph"]["floors"] == [
+        {
+            "floor_index": 0,
+            "reference_z": 0.0,
+            "z_min": 0.0,
+            "z_max": 0.0,
+            "node_ids": [0, 1],
+        }
+    ]
     assert payload["environment_graph"]["edges"][0]["distance"] == pytest.approx(1.0)
-    assert payload["environment_graph"]["house_texture"] == {
-        "url": "/assets/topdown_texture_cache/scan/scan_fake_topdown_texture.png",
-        "render_mode": "interior_cutaway_v1",
-        "cut_z": 1.35,
-        "cut_z_offset": 0.15,
-        "composite_max_z": 2.8,
-        "composite_max_z_offset": 1.6,
-        "composite_slices": 5,
-        "requested_render_mode": "multi_slice_composite",
-        "output_size": 1800,
-        "min_x": 0.0,
-        "max_x": 1.0,
-        "min_y": 0.0,
-        "max_y": 1.0,
-        "width": 16,
-        "height": 16,
-    }
+    assert payload["environment_graph"]["edges"][0]["type"] == "vv"
+    assert "house_texture" not in payload["environment_graph"]
+
+
+def test_load_solution_payload_infers_multiple_floors(tmp_path, monkeypatch):
+    _write_two_floor_environment_case(tmp_path, "case")
+    _patch_house_texture(monkeypatch)
+    monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
+
+    payload = load_solution_payload("case", project_root=tmp_path, include_house_texture=False)
+
+    assert payload["environment_graph"]["floors"] == [
+        {
+            "floor_index": 0,
+            "reference_z": 0.05,
+            "z_min": 0.0,
+            "z_max": 0.1,
+            "node_ids": [0, 1],
+        },
+        {
+            "floor_index": 1,
+            "reference_z": 3.05,
+            "z_min": 3.0,
+            "z_max": 3.1,
+            "node_ids": [2, 3],
+        },
+    ]
+    assert [node["floor_index"] for node in payload["environment_graph"]["nodes"]] == [0, 0, 1, 1]
+    assert [node["z"] for node in payload["environment_graph"]["nodes"]] == [0.0, 0.1, 3.0, 3.1]
+    assert [edge["type"] for edge in payload["environment_graph"]["edges"]] == ["vv", "vz", "vv"]
 
 
 def test_load_solution_payload_includes_environment_without_route_summaries(
@@ -344,16 +410,20 @@ def test_load_solution_payload_includes_environment_without_route_summaries(
     _patch_house_texture(monkeypatch)
     monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
 
-    payload = load_solution_payload("case", project_root=tmp_path)
+    payload = load_solution_payload("case", project_root=tmp_path, include_house_texture=True)
 
     assert payload["solutions"] == []
     assert payload["environment_graph"]["scan_id"] == "scan"
     assert payload["environment_graph"]["nodes"][1]["x"] == pytest.approx(1.0)
+    assert payload["environment_graph"]["nodes"][1]["z"] == pytest.approx(0.0)
+    assert payload["environment_graph"]["nodes"][1]["floor_index"] == 0
+    assert payload["environment_graph"]["floors"][0]["node_ids"] == [0, 1]
     assert payload["environment_graph"]["house_texture"]["url"] == (
         "/assets/topdown_texture_cache/scan/scan_fake_topdown_texture.png"
     )
-    assert payload["environment_graph"]["house_texture"]["output_size"] == 1800
-    assert payload["environment_graph"]["house_texture"]["cut_z_offset"] == 0.15
+    assert payload["environment_graph"]["house_texture"]["floors"][0]["node_ids"] == [0, 1]
+    assert payload["environment_graph"]["house_texture"]["output_size"] == 1080
+    assert payload["environment_graph"]["house_texture"]["cut_z_offset"] == 0.1
 
 
 def test_load_solution_payload_forwards_texture_settings(
@@ -367,6 +437,7 @@ def test_load_solution_payload_forwards_texture_settings(
     payload = load_solution_payload(
         "case",
         project_root=tmp_path,
+        include_house_texture=True,
         texture_output_size=4096,
         texture_cut_z_offset=0.9,
         texture_render_mode="single_cutaway",
@@ -435,6 +506,7 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
         assert house_texture["url"] == (
             "/assets/topdown_texture_cache/scan/scan_fake_topdown_texture.png"
         )
+        assert house_texture["floors"][0]["node_ids"] == [0, 1]
         assert house_texture["output_size"] == 4096
         assert house_texture["cut_z_offset"] == 0.9
         assert house_texture["requested_render_mode"] == "single_cutaway"
@@ -443,7 +515,15 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
         assert texture_calls == [
             {
                 "scan_id": "scan",
-                "instance_name": "case",
+                "floors": [
+                    {
+                        "floor_index": 0,
+                        "reference_z": 0.0,
+                        "z_min": 0.0,
+                        "z_max": 0.0,
+                        "node_ids": [0, 1],
+                    }
+                ],
                 "output_size": 4096,
                 "cut_z_offset": 0.9,
                 "render_mode": "single_cutaway",
@@ -490,6 +570,112 @@ def test_steps_api_includes_environment_without_solution_summaries(tmp_path, mon
         server.shutdown()
 
 
+def test_house_texture_api_returns_instruction_when_cache_is_missing(tmp_path, monkeypatch):
+    _write_step(
+        tmp_path,
+        "case",
+        1,
+        target_found={"0": False},
+    )
+    _write_environment_case(tmp_path, "case")
+    monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
+    monkeypatch.setattr("graph_visualizer.loader.load_cached_topdown_texture", lambda **kwargs: None)
+    server = start_visualizer_server(
+        "case",
+        project_root=tmp_path,
+        open_browser=False,
+    )
+
+    try:
+        with pytest.raises(HTTPError) as exc_info:
+            urlopen(server.url + "api/house-texture", timeout=5)
+        assert exc_info.value.code == 404
+        missing_payload = json.loads(exc_info.value.read().decode("utf-8"))
+        assert missing_payload == missing_topdown_texture_payload(scan_id="scan")
+    finally:
+        server.shutdown()
+
+
+def test_house_texture_api_returns_strict_json_for_nonfinite_floor_bounds(
+    tmp_path,
+    monkeypatch,
+):
+    _write_step(
+        tmp_path,
+        "case",
+        1,
+        target_found={"0": False},
+    )
+    _write_environment_case(tmp_path, "case")
+    monkeypatch.setattr("graph_visualizer.loader.platform.system", lambda: "Windows")
+    texture_path = tmp_path / "topdown_texture_cache" / "scan" / "scan_texture.png"
+    texture_path.parent.mkdir(parents=True)
+    texture_path.write_bytes(b"texture")
+
+    def fake_load_cached_topdown_texture(**kwargs):
+        return {
+            "url": "/assets/topdown_texture_cache/scan/scan_texture.png",
+            "render_mode": "multi_slice_hole_fill_v1",
+            "cut_z": 0.1,
+            "cut_z_offset": 0.1,
+            "composite_max_z": 1.6,
+            "composite_max_z_offset": 1.6,
+            "composite_slices": 5,
+            "output_size": 1080,
+            "min_x": 0.0,
+            "max_x": 1.0,
+            "min_y": 0.0,
+            "max_y": 1.0,
+            "width": 16,
+            "height": 16,
+            "floors": [
+                {
+                    "floor_index": 0,
+                    "reference_z": 0.0,
+                    "z_min": 0.0,
+                    "z_max": 0.1,
+                    "node_ids": [0],
+                    "floor_lower_z": float("-inf"),
+                    "floor_upper_z": 1.0,
+                    "url": "/assets/topdown_texture_cache/scan/scan_texture.png",
+                },
+                {
+                    "floor_index": 1,
+                    "reference_z": 3.0,
+                    "z_min": 3.0,
+                    "z_max": 3.1,
+                    "node_ids": [1],
+                    "floor_lower_z": 1.0,
+                    "floor_upper_z": float("inf"),
+                    "url": "/assets/topdown_texture_cache/scan/scan_texture.png",
+                },
+            ],
+        }
+
+    monkeypatch.setattr(
+        "graph_visualizer.loader.load_cached_topdown_texture",
+        fake_load_cached_topdown_texture,
+    )
+    server = start_visualizer_server(
+        "case",
+        project_root=tmp_path,
+        open_browser=False,
+    )
+
+    try:
+        with urlopen(server.url + "api/house-texture", timeout=5) as response:
+            raw_text = response.read().decode("utf-8")
+        assert "Infinity" not in raw_text
+        assert "-Infinity" not in raw_text
+        assert "NaN" not in raw_text
+        house_texture = json.loads(raw_text)
+        json.dumps(house_texture, allow_nan=False)
+        assert house_texture["floors"][0]["floor_lower_z"] is None
+        assert house_texture["floors"][1]["floor_upper_z"] is None
+    finally:
+        server.shutdown()
+
+
 def test_route_renderer_skips_wait_step_edges():
     html = render_viewer_html()
 
@@ -499,7 +685,7 @@ def test_route_renderer_skips_wait_step_edges():
     assert '"pointer-events": "none"' in html
     assert html.count("        appendHouseTexture(viewportLayer, environment, projection);") == 2
     assert html.count("if (showHouseTexture && environment.house_texture)") == 2
-    assert "houseTextureButton.disabled = false;" in html
+    assert "function updateHouseTextureButton()" in html
     assert 'id="graphZoomInButton"' in html
     assert 'id="graphZoomOutButton"' in html
     assert 'id="graphResetViewButton"' in html
@@ -507,14 +693,25 @@ def test_route_renderer_skips_wait_step_edges():
     assert "function fetchHouseTexture()" in html
     assert 'id="textureStatus"' in html
     assert 'role="status"' in html
-    assert 'showTextureStatus("Preparing house texture...");' in html
-    assert 'showTextureStatus("House texture ready", 1800);' in html
-    assert "function setTextureLoading(isLoading)" in html
-    assert "setTextureLoading(true);" in html
-    assert "setTextureLoading(false);" in html
-    assert 'houseTextureButton.setAttribute("aria-busy", String(Boolean(isLoading)));' in html
+    assert "Preparing house texture" not in html
+    assert "House texture ready" not in html
+    assert "function setTextureLoading(isLoading)" not in html
+    assert "setTextureLoading(true);" not in html
+    assert "setTextureLoading(false);" not in html
+    assert "aria-busy" not in html
+    assert "python generate_house_texture.py" in html
+    assert ".catch(error =>" in html
+    assert "House texture could not be loaded" in html
     assert "payload.environment_graph.house_texture = houseTexture;" in html
     assert "function clearDefaultViewportStates()" in html
+    assert "const textureFloors = texture.floors || [texture];" in html
+    assert "projection.floors.get(Number(textureFloor.floor_index || 0))" in html
+    assert "function environmentFloors(environment)" in html
+    assert "const floorProjections = new Map();" in html
+    assert "floor.screenX(node.x)" in html
+    assert "floor.screenY(node.y)" in html
+    assert "route-environment-edge ${edge.type === \"vz\" ? \"vz\" : \"vv\"}" in html
+    assert "route-line ${sourceNode.floor_index !== targetNode.floor_index ? \"vz\" : \"vv\"}" in html
 
 
 def test_route_renderer_includes_target_descriptions_and_agent_legend():

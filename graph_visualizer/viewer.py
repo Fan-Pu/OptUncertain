@@ -140,10 +140,6 @@ def render_viewer_html() -> str:
       padding: 0 10px;
       font-size: 13px;
     }
-    .graph-toolbar .house-texture-button.loading {
-      color: #475467;
-      background: #f2f4f7;
-    }
     .texture-status {
       display: inline-flex;
       align-items: center;
@@ -375,6 +371,10 @@ def render_viewer_html() -> str:
       stroke: #c7ced8;
       stroke-width: 1;
     }
+    .route-environment-edge.vz {
+      stroke: var(--edge-vz);
+      stroke-dasharray: 6 4;
+    }
     .route-node {
       fill: #475467;
       stroke: white;
@@ -386,6 +386,9 @@ def render_viewer_html() -> str:
       stroke-width: 4;
       stroke-linecap: round;
       stroke-linejoin: round;
+    }
+    .route-line.vz {
+      stroke-dasharray: 8 5;
     }
     .route-selected {
       stroke: #111827;
@@ -635,6 +638,7 @@ def render_viewer_html() -> str:
     let observationModalPanState = null;
     let observationModalTransform = { scale: 1, translateX: 0, translateY: 0 };
     let showHouseTexture = true;
+    let houseTextureMissingCommand = "";
     const viewportStates = new Map();
     const GRAPH_MIN_SCALE = 0.2;
     const GRAPH_MAX_SCALE = 5;
@@ -792,23 +796,47 @@ def render_viewer_html() -> str:
       });
 
     function fetchHouseTexture() {
-      setTextureLoading(true);
-      showTextureStatus("Preparing house texture...");
       fetch("/api/house-texture")
-        .then(response => response.json())
-        .then(houseTexture => {
+        .then(response => response.json().then(body => ({ ok: response.ok, body })))
+        .then(result => {
+          if (!result.ok) {
+            houseTextureMissingCommand = result.body.command || "";
+            showHouseTexture = false;
+            updateHouseTextureButton();
+            showTextureStatus(result.body.message || textureMissingMessage());
+            renderCurrentGraph();
+            return;
+          }
+          const houseTexture = result.body;
+          houseTextureMissingCommand = "";
           payload.environment_graph.house_texture = houseTexture;
           clearDefaultViewportStates();
           if (showHouseTexture) renderCurrentGraph();
-          setTextureLoading(false);
-          showTextureStatus("House texture ready", 1800);
+          updateHouseTextureButton();
+          showTextureStatus("House texture loaded", 1800);
+        })
+        .catch(error => {
+          showHouseTexture = false;
+          updateHouseTextureButton();
+          showTextureStatus(`House texture could not be loaded: ${error.message}`);
+          renderCurrentGraph();
         });
     }
 
-    function setTextureLoading(isLoading) {
-      houseTextureButton.disabled = Boolean(isLoading);
-      houseTextureButton.classList.toggle("loading", Boolean(isLoading));
-      houseTextureButton.setAttribute("aria-busy", String(Boolean(isLoading)));
+    function textureMissingMessage() {
+      const scanId = payload && payload.environment_graph ? payload.environment_graph.scan_id : "<scan_id>";
+      return `House texture not found. Run: ${houseTextureMissingCommand || `python generate_house_texture.py ${scanId}`}`;
+    }
+
+    function hasHouseTexture() {
+      return Boolean(payload && payload.environment_graph && payload.environment_graph.house_texture);
+    }
+
+    function updateHouseTextureButton() {
+      const available = hasHouseTexture();
+      houseTextureButton.disabled = !available;
+      houseTextureButton.setAttribute("aria-pressed", String(Boolean(available && showHouseTexture)));
+      houseTextureButton.title = available ? "Toggle house texture" : textureMissingMessage();
     }
 
     function showTextureStatus(message, hideAfterMs) {
@@ -838,8 +866,7 @@ def render_viewer_html() -> str:
         graphZoomInButton.disabled = false;
         graphZoomOutButton.disabled = false;
         graphResetViewButton.disabled = false;
-        houseTextureButton.disabled = false;
-        houseTextureButton.setAttribute("aria-pressed", String(showHouseTexture));
+        updateHouseTextureButton();
         stepLabel.textContent = activeSolution.label;
         renderRouteGraph(activeSolution);
         renderSolutionDetails(activeSolution);
@@ -850,8 +877,7 @@ def render_viewer_html() -> str:
       graphZoomInButton.disabled = false;
       graphZoomOutButton.disabled = false;
       graphResetViewButton.disabled = false;
-      houseTextureButton.disabled = false;
-      houseTextureButton.setAttribute("aria-pressed", String(showHouseTexture));
+      updateHouseTextureButton();
       prevButton.disabled = stepPosition === 0;
       nextButton.disabled = stepPosition === payload.steps.length - 1;
       showStepSections();
@@ -975,6 +1001,10 @@ def render_viewer_html() -> str:
         .map(agent => agent.agent_id);
     }
 
+    function environmentNodeById(nodeId) {
+      return payload.environment_graph.nodes.find(item => Number(item.node_id) === Number(nodeId));
+    }
+
     function routeAgentLegendRows(summary) {
       return (summary.agents || []).map((agent, agentIndex) => ({
         agent_id: agent.agent_id,
@@ -1021,6 +1051,8 @@ def render_viewer_html() -> str:
         node_id: nodeId,
         map_x: formatNumber(node.x),
         map_y: formatNumber(node.y),
+        map_z: formatNumber(node.z),
+        floor_index: node.floor_index,
         target_ids: targetIds.join(", "),
         target_descriptions: targetDescriptions,
         route_visits: visits.join(", ")
@@ -1060,7 +1092,7 @@ def render_viewer_html() -> str:
         const source = positions.get(String(edge.i));
         const target = positions.get(String(edge.j));
         edgeLayer.appendChild(svgEl("line", {
-          class: "route-environment-edge",
+          class: `route-environment-edge ${edge.type === "vz" ? "vz" : "vv"}`,
           x1: source.x,
           y1: source.y,
           x2: target.x,
@@ -1102,8 +1134,10 @@ def render_viewer_html() -> str:
             routeIndex === 0 ? 8 : 6,
             10
           );
+          const sourceNode = environmentNodeById(routeNodeIds[routeIndex]);
+          const targetNode = environmentNodeById(nextNodeId);
           const line = svgEl("line", {
-            class: "route-line",
+            class: `route-line ${sourceNode.floor_index !== targetNode.floor_index ? "vz" : "vv"}`,
             x1: segment.x1,
             y1: segment.y1,
             x2: segment.x2,
@@ -1170,16 +1204,20 @@ def render_viewer_html() -> str:
 
     function appendHouseTexture(viewportLayer, environment, projection) {
       const texture = environment.house_texture;
-      const image = svgEl("image", {
-        href: texture.url,
-        x: projection.offsetX,
-        y: projection.offsetY,
-        width: projection.usedWidth,
-        height: projection.usedHeight,
-        preserveAspectRatio: "none",
-        "pointer-events": "none"
-      });
-      viewportLayer.appendChild(image);
+      const textureFloors = texture.floors || [texture];
+      for (const textureFloor of textureFloors) {
+        const floor = projection.floors.get(Number(textureFloor.floor_index || 0));
+        const image = svgEl("image", {
+          href: textureFloor.url,
+          x: floor.offsetX,
+          y: floor.offsetY,
+          width: floor.usedWidth,
+          height: floor.usedHeight,
+          preserveAspectRatio: "none",
+          "pointer-events": "none"
+        });
+        viewportLayer.appendChild(image);
+      }
     }
 
     function appendRouteArrowMarker(defs, markerId, color) {
@@ -2149,14 +2187,34 @@ def render_viewer_html() -> str:
       const maxX = bounds.maxX;
       const minY = bounds.minY;
       const maxY = bounds.maxY;
+      const floors = environmentFloors(environment);
+      const floorGap = Math.max(2, (maxX - minX) * 0.2);
+      const worldWidth = (maxX - minX) * floors.length + floorGap * Math.max(0, floors.length - 1);
+      const worldHeight = maxY - minY;
       const scale = Math.min(
-        (width - padding * 2) / (maxX - minX),
-        (height - padding * 2) / (maxY - minY)
+        (width - padding * 2) / worldWidth,
+        (height - padding * 2) / worldHeight
       );
-      const usedWidth = (maxX - minX) * scale;
-      const usedHeight = (maxY - minY) * scale;
-      const offsetX = (width - usedWidth) / 2;
+      const panelWidth = (maxX - minX) * scale;
+      const panelHeight = (maxY - minY) * scale;
+      const panelGap = floorGap * scale;
+      const usedWidth = panelWidth * floors.length + panelGap * Math.max(0, floors.length - 1);
+      const usedHeight = panelHeight;
+      const firstOffsetX = (width - usedWidth) / 2;
       const offsetY = (height - usedHeight) / 2;
+      const floorProjections = new Map();
+      floors.forEach((floor, floorOrder) => {
+        const offsetX = firstOffsetX + floorOrder * (panelWidth + panelGap);
+        floorProjections.set(Number(floor.floor_index), {
+          floorIndex: Number(floor.floor_index),
+          offsetX: offsetX,
+          offsetY: offsetY,
+          usedWidth: panelWidth,
+          usedHeight: panelHeight,
+          screenX: worldX => offsetX + (worldX - minX) * scale,
+          screenY: worldY => height - offsetY - (worldY - minY) * scale
+        });
+      });
       return {
         minX: minX,
         maxX: maxX,
@@ -2165,9 +2223,10 @@ def render_viewer_html() -> str:
         scale: scale,
         usedWidth: usedWidth,
         usedHeight: usedHeight,
-        offsetX: offsetX,
+        offsetX: firstOffsetX,
         offsetY: offsetY,
-        screenX: worldX => offsetX + (worldX - minX) * scale,
+        floors: floorProjections,
+        screenX: worldX => firstOffsetX + (worldX - minX) * scale,
         screenY: worldY => height - offsetY - (worldY - minY) * scale
       };
     }
@@ -2192,12 +2251,17 @@ def render_viewer_html() -> str:
       };
     }
 
+    function environmentFloors(environment) {
+      return environment.floors.slice().sort((a, b) => Number(a.floor_index) - Number(b.floor_index));
+    }
+
     function routePositions(nodes, projection) {
       const positions = new Map();
       for (const node of nodes) {
+        const floor = projection.floors.get(Number(node.floor_index));
         positions.set(String(node.node_id), {
-          x: projection.screenX(node.x),
-          y: projection.screenY(node.y)
+          x: floor.screenX(node.x),
+          y: floor.screenY(node.y)
         });
       }
       return positions;

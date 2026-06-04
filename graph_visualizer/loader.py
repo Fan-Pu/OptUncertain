@@ -8,7 +8,8 @@ from urllib.parse import quote
 
 from route_plotter import load_environment_graph
 
-from .topdown_texture import generate_cached_topdown_texture
+from .floors import floor_index_by_node_id, infer_floors, load_connectivity_viewpoints
+from .topdown_texture import load_cached_topdown_texture
 
 
 STEP_RE = re.compile(r"graph_layout_step_(\d{4})\.json$")
@@ -45,12 +46,12 @@ def load_visualization_steps(
 def load_solution_payload(
     instance_name: str,
     project_root: str | Path | None = None,
-    texture_output_size: int = 1800,
-    texture_cut_z_offset: float = 0.15,
+    texture_output_size: int = 1080,
+    texture_cut_z_offset: float = 0.1,
     texture_render_mode: str = "multi_slice_composite",
     texture_composite_max_z_offset: float = 1.6,
     texture_composite_slices: int = 5,
-    include_house_texture: bool = True,
+    include_house_texture: bool = False,
 ) -> dict[str, object]:
     root = resolve_project_root(project_root)
     debug_dir = root / "mllm_debug_outputs" / str(instance_name)
@@ -67,7 +68,7 @@ def load_solution_payload(
         ),
     }
     if include_house_texture:
-        payload["environment_graph"]["house_texture"] = load_house_texture_payload(
+        house_texture = load_house_texture_payload(
             instance_name=instance_name,
             project_root=root,
             texture_output_size=texture_output_size,
@@ -76,32 +77,44 @@ def load_solution_payload(
             texture_composite_max_z_offset=texture_composite_max_z_offset,
             texture_composite_slices=texture_composite_slices,
         )
+        if house_texture is not None:
+            payload["environment_graph"]["house_texture"] = house_texture
     return payload
 
 
 def load_house_texture_payload(
     instance_name: str,
     project_root: str | Path | None = None,
-    texture_output_size: int = 1800,
-    texture_cut_z_offset: float = 0.15,
+    texture_output_size: int = 1080,
+    texture_cut_z_offset: float = 0.1,
     texture_render_mode: str = "multi_slice_composite",
     texture_composite_max_z_offset: float = 1.6,
     texture_composite_slices: int = 5,
-) -> dict[str, object]:
+) -> dict[str, object] | None:
     root = resolve_project_root(project_root)
-    scenario = _read_json(root / "scenarios" / ("%s.json" % str(instance_name)))
-    scan_id = str(scenario["scan_id"])
-    return generate_cached_topdown_texture(
+    scan_id = load_instance_scan_id(instance_name=instance_name, project_root=root)
+    connectivity_path = root / "connectivity" / ("%s_connectivity.json" % scan_id)
+    floors = infer_floors(load_connectivity_viewpoints(connectivity_path))
+    return load_cached_topdown_texture(
         scan_id=scan_id,
         project_root=root,
-        instance_name=str(instance_name),
         connectivity_dir=root / "connectivity",
+        floors=floors,
         output_size=texture_output_size,
         cut_z_offset=texture_cut_z_offset,
         render_mode=texture_render_mode,
         composite_max_z_offset=texture_composite_max_z_offset,
         composite_slices=texture_composite_slices,
     )
+
+
+def load_instance_scan_id(
+    instance_name: str,
+    project_root: str | Path | None = None,
+) -> str:
+    root = resolve_project_root(project_root)
+    scenario = _read_json(root / "scenarios" / ("%s.json" % str(instance_name)))
+    return str(scenario["scan_id"])
 
 
 def _load_solution_summaries(
@@ -140,21 +153,30 @@ def _load_route_environment_graph(
     project_root: Path,
 ) -> dict[str, object]:
     scenario = _read_json(project_root / "scenarios" / ("%s.json" % instance_name))
+    scan_id = str(scenario["scan_id"])
+    connectivity_path = project_root / "connectivity" / ("%s_connectivity.json" % scan_id)
+    viewpoints = load_connectivity_viewpoints(connectivity_path)
+    viewpoint_by_node_id = {item.node_id: item for item in viewpoints}
+    floors = infer_floors(viewpoints)
+    floor_by_node_id = floor_index_by_node_id(floors)
     if platform.system() == "Windows":
         environment_graph = load_environment_graph(
-            scan_id=str(scenario["scan_id"]),
+            scan_id=scan_id,
             connectivity_dir=project_root / "connectivity",
         )
     else:
-        environment_graph = load_environment_graph(scan_id=str(scenario["scan_id"]))
+        environment_graph = load_environment_graph(scan_id=scan_id)
     return {
         "scan_id": environment_graph.scan_id,
+        "floors": floors,
         "nodes": [
             {
                 "node_id": int(node_id),
                 "viewpoint_id": environment_graph.viewpoint_id_by_index[node_id],
                 "x": float(environment_graph.coords_by_node_id[node_id][0]),
                 "y": float(environment_graph.coords_by_node_id[node_id][1]),
+                "z": float(viewpoint_by_node_id[node_id].z),
+                "floor_index": int(floor_by_node_id[node_id]),
             }
             for node_id in sorted(environment_graph.viewpoint_id_by_index)
         ],
@@ -163,6 +185,11 @@ def _load_route_environment_graph(
                 "i": int(edge_id[0]),
                 "j": int(edge_id[1]),
                 "distance": float(distance),
+                "type": (
+                    "vz"
+                    if floor_by_node_id[int(edge_id[0])] != floor_by_node_id[int(edge_id[1])]
+                    else "vv"
+                ),
             }
             for edge_id, distance in sorted(environment_graph.edge_distances.items())
         ],
