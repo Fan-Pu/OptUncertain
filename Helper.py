@@ -73,6 +73,7 @@ def execute_individual_rotations(
     target_headings,
     window_names=None,
     notifications=None,
+    render=True,
 ):
     if len(sims) != len(target_headings):
         raise ValueError("sims and target_headings must have the same length.")
@@ -101,15 +102,16 @@ def execute_individual_rotations(
                 else 0.0
             )
             sim.makeAction([0], [heading], [0.0])
-        if PAUSE_TIME > 0.0:
+        if render and PAUSE_TIME > 0.0:
             time.sleep(PAUSE_TIME)
-        render_sim_state(
-            [sim.getState()[0] for sim in sims],
-            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
-            window_names=window_names,
-        )
+        if render:
+            render_sim_state(
+                [sim.getState()[0] for sim in sims],
+                viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+                window_names=window_names,
+            )
 
-    if notifications is not None:
+    if render and notifications is not None:
         render_sim_state(
             [sim.getState()[0] for sim in sims],
             viewpoint_index_by_vp=viewpoint_index_by_vp_label,
@@ -441,7 +443,7 @@ def panorama_center_x_to_heading(target_center_x, horizon_headings):
     return target_heading % (2.0 * math.pi)
 
 
-def execute_individual_first_hops(sims, move_specs):
+def execute_individual_first_hops(sims, move_specs, render=True):
     if len(sims) != len(move_specs):
         raise ValueError("sims and move_specs must have the same length.")
 
@@ -471,16 +473,17 @@ def execute_individual_first_hops(sims, move_specs):
                 else 0.0
             )
             sim.makeAction([0], [heading], [0.0])
-        if PAUSE_TIME > 0.0:
+        if render and PAUSE_TIME > 0.0:
             time.sleep(0.3 * PAUSE_TIME)
-        render_sim_state(
-            [sim.getState()[0] for sim in sims],
-            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
-        )
+        if render:
+            render_sim_state(
+                [sim.getState()[0] for sim in sims],
+                viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+            )
 
     # Update the states after rotation
     rotated_states = [sim.getState()[0] for sim in sims]
-    if PAUSE_TIME > 0.0:
+    if render and PAUSE_TIME > 0.0:
         time.sleep(10 * PAUSE_TIME)
     for sim, state, plan in zip(sims, rotated_states, step_plans):
         target_viewpoint_id = plan["target_viewpoint_id"]
@@ -490,7 +493,8 @@ def execute_individual_first_hops(sims, move_specs):
             if str(location.viewpointId) == target_viewpoint_id
         ][0]
         sim.makeAction([location_index], [0.0], [0.0])
-    render_sim_state(
-        [sim.getState()[0] for sim in sims],
-        viewpoint_index_by_vp=viewpoint_index_by_vp_label,
-    )
+    if render:
+        render_sim_state(
+            [sim.getState()[0] for sim in sims],
+            viewpoint_index_by_vp=viewpoint_index_by_vp_label,
+        )

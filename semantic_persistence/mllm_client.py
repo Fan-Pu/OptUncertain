@@ -727,6 +727,35 @@ class MLLMClient:
         return sanitized
 
     @staticmethod
+    def _project_saved_payload_to_target_ids(
+        payload: Dict[str, object],
+        target_ids: List[str],
+    ) -> Dict[str, object]:
+        target_id_set = {str(target_id) for target_id in target_ids}
+        projected = json.loads(json.dumps(payload))
+
+        def project_target_probs(record: Dict[str, object]) -> None:
+            for key in ("target_probs", "raw_target_probs"):
+                target_probs = record.get(key)
+                if isinstance(target_probs, dict):
+                    record[key] = {
+                        str(target_id): value
+                        for target_id, value in target_probs.items()
+                        if str(target_id) in target_id_set
+                    }
+
+        for item in projected.get("viewpoint_target_probs", []):
+            if isinstance(item, dict):
+                project_target_probs(item)
+
+        for key in ("visible_region_nodes", "invisible_region_nodes"):
+            for region in projected.get(key, []):
+                if isinstance(region, dict):
+                    project_target_probs(region)
+
+        return projected
+
+    @staticmethod
     def _build_detection_retry_user_message(
         user_message: str,
         validation_error: str,
@@ -839,7 +868,6 @@ class MLLMClient:
                         str(last_error),
                     )
                 )
-                # debugpy.breakpoint()
 
         raise RuntimeError("Unexpected detection retry loop exit.")
 
@@ -1585,7 +1613,7 @@ class MLLMClient:
                     )
             print()
 
-        if step_index >= 9:
+        if step_index >= 15:
             debugpy.breakpoint()
 
         # Append newly found targets to the found_target_trace. This trace keeps a chronological record of when each target was first detected as found, along with the associated agent and localization information at that step.
@@ -1629,6 +1657,12 @@ class MLLMClient:
                 try:
                     raw = self._strip_code_fences(decoded)
                     payload = self._parse_json_strict(raw)
+                    payload = self._project_saved_payload_to_target_ids(
+                        payload=payload,
+                        target_ids=[
+                            str(target["target_id"]) for target in graph_targets
+                        ],
+                    )
                     payload = self._validate_payload(
                         payload=payload,
                         agent_observations=agent_observations,

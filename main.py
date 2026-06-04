@@ -191,7 +191,12 @@ def _collect_completed_targets(
     return completed_targets
 
 
-def _center_completed_targets(agent_sims, agent_ids, completed_targets) -> None:
+def _center_completed_targets(
+    agent_sims,
+    agent_ids,
+    completed_targets,
+    show_agent_views: bool = True,
+) -> None:
     """Rotate agents in-place to center the found targets in their view."""
 
     completed_targets_by_agent = {}
@@ -234,6 +239,7 @@ def _center_completed_targets(agent_sims, agent_ids, completed_targets) -> None:
             target_headings=target_headings,
             window_names=window_names,
             notifications=notifications,
+            render=show_agent_views,
         )
 
 
@@ -364,7 +370,10 @@ def _build_open_vocab_detector(mllm_config: Dict[str, object]):
     raise ValueError("Unsupported open_vocab_verification backend: %s" % backend)
 
 
-def run_scenario(config_path: str) -> Dict[str, object]:
+def run_scenario(
+    config_path: str,
+    show_agent_views: bool = True,
+) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
     from semantic_persistence import HypothesisGraph, MLLMClient, SigLIPScorer
 
@@ -438,10 +447,11 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
         )
 
-        Helper.render_sim_state(
-            _current_agent_states(agent_sims),
-            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
-        )
+        if show_agent_views:
+            Helper.render_sim_state(
+                _current_agent_states(agent_sims),
+                viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
+            )
 
         # The graph summary is sent to the MLLM before update_from_mllm().
         # Therefore, sync the current agent viewpoint ids from observations first.
@@ -473,6 +483,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             agent_sims=agent_sims,
             agent_ids=agent_ids,
             completed_targets=completed_targets,
+            show_agent_views=show_agent_views,
         )
 
         # Check if all targets are found after processing direct detections, before updating the graph with MLLM output.
@@ -539,7 +550,11 @@ def run_scenario(config_path: str) -> Dict[str, object]:
             hypothesis_graph.nodes[next_vp_node_id].grounded = True
             print(f"Move spec for {agent_id}: {next_vp_node_id}")
 
-        Helper.execute_individual_first_hops(sims=agent_sims, move_specs=move_specs)
+        Helper.execute_individual_first_hops(
+            sims=agent_sims,
+            move_specs=move_specs,
+            render=show_agent_views,
+        )
         _append_executed_route_nodes(
             executed_routes_by_agent=executed_routes_by_agent,
             next_route_node_ids_by_agent=next_route_node_ids_by_agent,
@@ -548,7 +563,7 @@ def run_scenario(config_path: str) -> Dict[str, object]:
         for _ in range(2):
             print()
 
-        if debug_step_index >= 9:
+        if debug_step_index >= 15:
             debugpy.breakpoint()
 
 
@@ -572,6 +587,11 @@ def main(argv: List[str] | None = None) -> int:
         action="store_true",
         help="Run the perfect-knowledge oracle optimization for the named test case.",
     )
+    parser.add_argument(
+        "--hide-agent-views",
+        action="store_true",
+        help="Hide interactive agent observation and rotation windows.",
+    )
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
     if args.oracle:
@@ -580,7 +600,10 @@ def main(argv: List[str] | None = None) -> int:
         run_oracle(args.case_or_config)
         return 0
 
-    run_scenario(_resolve_scenario_config(args.case_or_config))
+    run_scenario(
+        _resolve_scenario_config(args.case_or_config),
+        show_agent_views=not args.hide_agent_views,
+    )
 
     debugpy.breakpoint()
     return 0
