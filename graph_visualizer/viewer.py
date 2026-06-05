@@ -1825,7 +1825,7 @@ def render_viewer_html() -> str:
 
     function targetSummaryHtml(step) {
       const targetFound = step.hypothesis.target_found || {};
-      const rows = (step.hypothesis.targets || []).map(target => {
+      const rows = payload.targets.map(target => {
         const targetId = String(target.target_id);
         const found = Boolean(targetFound[targetId]);
         const className = found ? "summary-target summary-target-found" : "summary-target";
@@ -1963,7 +1963,7 @@ def render_viewer_html() -> str:
       return {
         agent_id: agentId,
         target_id: String(targetId),
-        description: targetDescriptionFromStep(step, targetId),
+        description: targetDescription(targetId),
         raw_found: rawFound,
         found: verifiedFound(rawFound, verification),
         verification: verification,
@@ -1996,18 +1996,9 @@ def render_viewer_html() -> str:
       return rawFound;
     }
 
-    function targetDescriptionFromStep(step, targetId) {
-      const target = (step.hypothesis.targets || [])
-        .find(item => String(item.target_id) === String(targetId));
-      return target ? target.description : "";
-    }
-
     function targetDescription(targetId) {
-      for (const step of payload.steps || []) {
-        const description = targetDescriptionFromStep(step, targetId);
-        if (description) return description;
-      }
-      return "";
+      const target = payload.targets.find(item => String(item.target_id) === String(targetId));
+      return target ? target.description : "";
     }
 
     function renderImages(step) {

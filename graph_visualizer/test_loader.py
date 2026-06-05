@@ -7,7 +7,11 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-from graph_visualizer.loader import load_solution_payload, load_visualization_steps
+from graph_visualizer.loader import (
+    load_instance_targets,
+    load_solution_payload,
+    load_visualization_steps,
+)
 from graph_visualizer.server import start_visualizer_server
 from graph_visualizer.topdown_texture import missing_topdown_texture_payload
 from graph_visualizer.viewer import render_viewer_html
@@ -57,7 +61,6 @@ def _write_step(
     step_index,
     *,
     target_found,
-    targets=None,
     hypothesis_nodes=None,
     detection=None,
     open_vocab_verification=None,
@@ -81,7 +84,6 @@ def _write_step(
         debug_dir / ("hypothesis_step_%s.json" % suffix),
         {
             "target_found": target_found,
-            "targets": targets or [],
             "nodes": hypothesis_nodes or [],
             "edges": [],
         },
@@ -109,13 +111,13 @@ def _write_step(
         )
 
 
-def _write_environment_case(root, instance_name):
+def _write_environment_case(root, instance_name, targets=None):
     _write_json(
         root / "scenarios" / ("%s.json" % instance_name),
         {
             "scan_id": "scan",
             "agents": [],
-            "targets": [],
+            "targets": targets or [],
         },
     )
     _write_connectivity(root / "connectivity")
@@ -329,6 +331,14 @@ def test_load_visualization_step_preserves_raw_target_probs(tmp_path):
 
     assert steps[0]["hypothesis"]["nodes"][0]["raw_target_probs"] == {"0": 0.8}
     assert steps[0]["hypothesis"]["nodes"][0]["target_probs"] == {"0": 1.0}
+    assert "targets" not in steps[0]["hypothesis"]
+
+
+def test_load_instance_targets_reads_scenario_targets(tmp_path):
+    targets = [{"target_id": "0", "description": "target zero"}]
+    _write_environment_case(tmp_path, "case", targets=targets)
+
+    assert load_instance_targets("case", project_root=tmp_path) == targets
 
 
 def test_load_nonterminal_step_without_semantic_still_crashes(tmp_path):
@@ -475,7 +485,16 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
         1,
         target_found={"0": False},
     )
+    targets = [{"target_id": "0", "description": "target zero"}]
     _write_route_case(tmp_path, "case")
+    _write_json(
+        tmp_path / "scenarios" / "case.json",
+        {
+            "scan_id": "scan",
+            "agents": [],
+            "targets": targets,
+        },
+    )
     texture_calls = _patch_house_texture(monkeypatch)
     monkeypatch.setenv("MATTERPORT_CONNECTIVITY_DIR", str(tmp_path / "connectivity"))
     server = start_visualizer_server(
@@ -496,6 +515,7 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
             payload = json.loads(response.read().decode("utf-8"))
 
         assert payload["solutions"][0]["id"] == "mllm"
+        assert payload["targets"] == targets
         assert payload["environment_graph"]["scan_id"] == "scan"
         assert "house_texture" not in payload["environment_graph"]
         assert texture_calls == []
@@ -814,6 +834,7 @@ def test_step_renderer_toggles_selected_nodes_and_highlights_found_targets():
     assert html.count("toggleNodeSelection(node.id);") == 2
 
     assert "function targetSummaryHtml(step)" in html
+    assert "payload.targets.map" in html
     assert "Boolean(targetFound[targetId])" in html
     assert "summary-target-found" in html
     assert "background: #dcfce7;" in html
@@ -845,7 +866,8 @@ def test_step_renderer_includes_target_detection_sidebar_and_verification_normal
         '"threshold", "center x"], rows)'
     ) in html
     assert 'table(["agent", "target", "found", "verification", "center x"], rows)' in html
-    assert "targetDescriptionFromStep(step, targetId)" in html
+    assert "targetDescription(targetId)" in html
+    assert "payload.targets.find" in html
 
 
 def test_step_renderer_opens_observation_images_in_modal_with_overlays():

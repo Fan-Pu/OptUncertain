@@ -1,0 +1,51 @@
+{
+  "scan_id": "1pXnuDYAj8r",
+  "agents": [
+    {
+      "id": "agent0",
+      "start_viewpoint_id": "f6cbc0517fc14f129f5456e59dc66c76",
+      "heading": 307.5,
+      "elevation": 0.0
+    }
+  ],
+  "targets": [
+    {
+      "target_id": "0",
+      "description": "the open black laptop with a raised screen and visible keyboard base on the wooden office desk"
+    }
+  ],
+  "mllm": {
+    "detection_model_name": "google/gemma-4-26B-A4B-it:deepinfra",
+    "graph_model_name": "qwen3.5-plus",
+    "read_saved_raw_outputs": true,
+    "raw_output_dir": "mllm_raw_outputs/single_test",
+    "debug_output_dir": "mllm_debug_outputs/single_test",
+    "open_vocab_verification": {
+      "backend": "grounding_dino",
+      "model_name": "IDEA-Research/grounding-dino-tiny",
+      "box_threshold": 0.35,
+      "text_threshold": 0.25
+    },
+    "max_validation_retries": 4
+  },
+  "bayes": {
+    "eta_goal": 5.0,
+    "eta_exist": 5.0,
+    "sigma_vv2": 4.0,
+    "sigma_vz2": 9.0,
+    "kappa_vv": 1.0,
+    "kappa_vz": 1.0,
+    "varrho": 0.75,
+    "omega_vz": 0.7,
+    "eta_vz": 5.0,
+    "epsilon": 1e-6
+  },
+  "optimizer": {
+    "goal_weight": 0.2,
+    "dist_weight": 0.2,
+    "arc_weight": 0.2,
+    "node_weight": 0.2,
+    "visit_weight": 0.2,
+    "ungrounded_reward_weight": 0.8
+  }
+}

@@ -43,6 +43,15 @@ def load_visualization_steps(
     ]
 
 
+def load_instance_targets(
+    instance_name: str,
+    project_root: str | Path | None = None,
+) -> list[dict[str, object]]:
+    root = resolve_project_root(project_root)
+    scenario = _read_json(root / "scenarios" / ("%s.json" % str(instance_name)))
+    return scenario["targets"]
+
+
 def load_solution_payload(
     instance_name: str,
     project_root: str | Path | None = None,

@@ -1613,8 +1613,10 @@ class MLLMClient:
                     )
             print()
 
-        if step_index >= 15:
+        if step_index >= 9:
             debugpy.breakpoint()
+
+        debugpy.breakpoint()
 
         # Append newly found targets to the found_target_trace. This trace keeps a chronological record of when each target was first detected as found, along with the associated agent and localization information at that step.
         for target_id, detections in newly_found_targets_by_id.items():

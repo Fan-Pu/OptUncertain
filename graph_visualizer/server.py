@@ -13,6 +13,7 @@ from urllib.parse import unquote, urlparse
 from .loader import (
     load_house_texture_payload,
     load_instance_scan_id,
+    load_instance_targets,
     load_solution_payload,
     load_visualization_steps,
     resolve_project_root,
@@ -110,6 +111,7 @@ def start_visualizer_server(
     steps = load_visualization_steps(instance_name=instance_name, project_root=root)
     payload = {
         "instance_name": str(instance_name),
+        "targets": load_instance_targets(instance_name=instance_name, project_root=root),
         "steps": steps,
     }
     payload.update(

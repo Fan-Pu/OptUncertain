@@ -430,7 +430,7 @@ def run_scenario(
         max_request_timeout_retries=int(
             scenario["mllm"].get("max_request_timeout_retries", 1)
         ),
-        open_vocab_detector=open_vocab_detector,
+        open_vocab_detector=None,
     )
 
     scorer = SigLIPScorer()
@@ -563,7 +563,7 @@ def run_scenario(
         for _ in range(2):
             print()
 
-        if debug_step_index >= 15:
+        if debug_step_index >= 9:
             debugpy.breakpoint()
 
 

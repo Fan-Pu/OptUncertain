@@ -886,7 +886,6 @@ class HypothesisGraph:
 
         return {
             "observation_step": self.observation_step,
-            "targets": copy.deepcopy(self.target_records),
             "target_found": copy.deepcopy(self.target_found),
             "bayes_config": copy.deepcopy(self.bayes_config),
             "nodes": nodes,
