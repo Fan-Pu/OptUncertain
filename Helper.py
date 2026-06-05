@@ -364,7 +364,7 @@ def explore_world(sim, location=0, heading=0, elevation=0):
         locations = state.navigableLocations
         rgb = np.array(state.rgb, copy=False)
         print(
-            f"current vp: {state.location.viewpointId}, elevation: {math.degrees(state.elevation):.1f} deg"
+            f"current vp: {state.location.viewpointId}, elevation: {math.degrees(state.elevation):.1f} deg, heading: {math.degrees(state.heading):.1f} deg"
         )
         for idx, loc in enumerate(locations[1:]):
             # Draw actions on the screen
