@@ -756,6 +756,157 @@ class MLLMClient:
         return projected
 
     @staticmethod
+    def _graph_mllm_contract_sets(
+        agent_observations: List[Dict[str, object]],
+        graph_summary: Optional[Dict[str, object]] = None,
+    ) -> Dict[str, set]:
+        current_viewpoint_ids = {
+            int(observation["current_viewpoint_index"])
+            for observation in agent_observations
+        }
+
+        visible_viewpoint_ids = set()
+        for observation in agent_observations:
+            for item in observation["visible_viewpoints"]:
+                visible_viewpoint_ids.add(int(item["viewpoint_index"]))
+
+        graph_viewpoint_node_ids = set()
+        graph_viewpoint_status_by_id = {}
+
+        if graph_summary is not None:
+            for node in graph_summary.get("nodes", []):
+                if node.get("type") != "viewpoint":
+                    continue
+
+                viewpoint_id = int(node["id"])
+                graph_viewpoint_node_ids.add(viewpoint_id)
+                graph_viewpoint_status_by_id[viewpoint_id] = {
+                    "prior_grounded": bool(node.get("grounded", 0)),
+                    "prior_visit_times": int(node.get("node_visit_times", 0)),
+                }
+
+        first_reached_current_viewpoint_ids = set()
+        for viewpoint_id in current_viewpoint_ids:
+            status = graph_viewpoint_status_by_id.get(viewpoint_id, {})
+            prior_grounded = bool(status.get("prior_grounded", False))
+            prior_visit_times = int(status.get("prior_visit_times", 0))
+
+            if (
+                viewpoint_id not in graph_viewpoint_node_ids
+                or not prior_grounded
+                or prior_visit_times <= 0
+            ):
+                first_reached_current_viewpoint_ids.add(viewpoint_id)
+
+        new_visible_neighbor_assignment_viewpoint_ids = (
+            visible_viewpoint_ids - current_viewpoint_ids - graph_viewpoint_node_ids
+        )
+        assignment_required_viewpoint_ids = (
+            new_visible_neighbor_assignment_viewpoint_ids
+            | first_reached_current_viewpoint_ids
+        )
+
+        detection_fixed_viewpoint_ids = set(current_viewpoint_ids)
+        for viewpoint_id, status in graph_viewpoint_status_by_id.items():
+            if (
+                bool(status.get("prior_grounded", False))
+                or int(status.get("prior_visit_times", 0)) > 0
+            ):
+                detection_fixed_viewpoint_ids.add(viewpoint_id)
+
+        required_mllm_viewpoint_prob_ids = (
+            graph_viewpoint_node_ids | visible_viewpoint_ids
+        ) - detection_fixed_viewpoint_ids
+
+        return {
+            "current_viewpoint_ids": current_viewpoint_ids,
+            "visible_viewpoint_ids": visible_viewpoint_ids,
+            "graph_viewpoint_node_ids": graph_viewpoint_node_ids,
+            "detection_fixed_viewpoint_ids": detection_fixed_viewpoint_ids,
+            "required_mllm_viewpoint_prob_ids": required_mllm_viewpoint_prob_ids,
+            "assignment_required_viewpoint_ids": assignment_required_viewpoint_ids,
+        }
+
+    @staticmethod
+    def _project_saved_payload_to_graph_mllm_contract(
+        payload: Dict[str, object],
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph_summary: Optional[Dict[str, object]] = None,
+    ) -> Dict[str, object]:
+        target_ids = [str(target["target_id"]) for target in targets]
+        target_id_set = set(target_ids)
+        projected = MLLMClient._project_saved_payload_to_target_ids(
+            payload=payload,
+            target_ids=target_ids,
+        )
+        contract_sets = MLLMClient._graph_mllm_contract_sets(
+            agent_observations=agent_observations,
+            graph_summary=graph_summary,
+        )
+        required_mllm_viewpoint_prob_ids = contract_sets[
+            "required_mllm_viewpoint_prob_ids"
+        ]
+
+        projected_viewpoint_target_probs = []
+        for item in projected["viewpoint_target_probs"]:
+            viewpoint_id = int(item["id"])
+            if viewpoint_id not in required_mllm_viewpoint_prob_ids:
+                continue
+
+            source_key = (
+                "raw_target_probs" if "raw_target_probs" in item else "target_probs"
+            )
+            raw_target_probs = {
+                str(target_id): value
+                for target_id, value in item[source_key].items()
+                if str(target_id) in target_id_set
+            }
+
+            projected_viewpoint_target_probs.append(
+                {
+                    "id": viewpoint_id,
+                    "target_probs": dict(raw_target_probs),
+                    "raw_target_probs": raw_target_probs,
+                }
+            )
+
+        projected["viewpoint_target_probs"] = projected_viewpoint_target_probs
+        return projected
+
+    def _decode_saved_semantic_payload(
+        self,
+        decoded: str,
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph_summary: Optional[Dict[str, object]],
+        scorer,
+    ) -> tuple[Dict[str, object], List[str]]:
+        raw = self._strip_code_fences(decoded)
+        payload = self._parse_json_strict(raw)
+        payload = self._project_saved_payload_to_graph_mllm_contract(
+            payload=payload,
+            agent_observations=agent_observations,
+            targets=targets,
+            graph_summary=graph_summary,
+        )
+        repair_messages = self._repair_graph_mllm_payload(
+            payload=payload,
+            agent_observations=agent_observations,
+            targets=targets,
+            graph_summary=graph_summary,
+        )
+        payload = self._validate_payload(
+            payload=payload,
+            agent_observations=agent_observations,
+            targets=targets,
+            graph_summary=graph_summary,
+            scorer=scorer,
+            semantic_payload_contract="graph_mllm",
+        )
+        return payload, repair_messages
+
+    @staticmethod
     def _build_detection_retry_user_message(
         user_message: str,
         validation_error: str,
@@ -1613,10 +1764,10 @@ class MLLMClient:
                     )
             print()
 
-        if step_index >= 9:
+        if step_index >= 12:
             debugpy.breakpoint()
 
-        debugpy.breakpoint()
+        # debugpy.breakpoint()
 
         # Append newly found targets to the found_target_trace. This trace keeps a chronological record of when each target was first detected as found, along with the associated agent and localization information at that step.
         for target_id, detections in newly_found_targets_by_id.items():
@@ -1656,38 +1807,25 @@ class MLLMClient:
             decoded = self._read_semantic_raw_output(step_index)
             if decoded is not None:
                 print(f"Reading saved raw output for step {step_index}")
-                try:
-                    raw = self._strip_code_fences(decoded)
-                    payload = self._parse_json_strict(raw)
-                    payload = self._project_saved_payload_to_target_ids(
-                        payload=payload,
-                        target_ids=[
-                            str(target["target_id"]) for target in graph_targets
-                        ],
-                    )
-                    payload = self._validate_payload(
-                        payload=payload,
-                        agent_observations=agent_observations,
-                        targets=graph_targets,
-                        graph_summary=graph_summary,
-                        scorer=scorer,
-                        semantic_payload_contract="graph_mllm",
-                    )
-                    self._write_semantic_raw_output(
-                        step_index,
-                        json.dumps(payload, indent=2, sort_keys=True),
-                    )
-                    self.semantic_raw_output_index = step_index + 1
-                    self._write_user_message(step_index, user_message)
-                    return payload
-                except SigLIPRegionValidationError:
-                    raise
-                except Exception as exc:
-                    validation_errors.append(str(exc))
-                    print(
-                        "Saved semantic raw output for step %s is invalid. "
-                        "Requesting MLLM instead. Error: %s" % (step_index, str(exc))
-                    )
+                payload, repair_messages = self._decode_saved_semantic_payload(
+                    decoded=decoded,
+                    agent_observations=agent_observations,
+                    targets=graph_targets,
+                    graph_summary=graph_summary,
+                    scorer=scorer,
+                )
+                if repair_messages:
+                    print("Saved graph MLLM payload repair applied:")
+                    for repair_message in repair_messages:
+                        print("  - %s" % repair_message)
+
+                self._write_semantic_raw_output(
+                    step_index,
+                    json.dumps(payload, indent=2, sort_keys=True),
+                )
+                self.semantic_raw_output_index = step_index + 1
+                self._write_user_message(step_index, user_message)
+                return payload
             else:
                 print(
                     "Saved semantic raw output for step %s was not found. "

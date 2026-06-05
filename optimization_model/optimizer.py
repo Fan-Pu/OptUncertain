@@ -202,14 +202,25 @@ class RollingHorizonOptimizer:
                 for target_id in target_ids
             )
         else:
+            # change the goal_term to get the maximum reward of all targets at each node, instead of summing rewards of different targets at the same node, since only one target can be rewarded at each node in practice.
             goal_term = quicksum(
-                (1 - int(bool(target_found_flags[target_id])))
-                * node_reward[node_id][target_id]
+                max(
+                    (1 - int(bool(target_found_flags[target_id])))
+                    * node_reward[node_id][target_id]
+                    for target_id in target_ids
+                )
                 * y[(node_id, agent_id)]
                 for agent_id in agent_ids
                 for node_id in candidate_node_ids_by_agent[agent_id]
-                for target_id in target_ids
             )
+            # goal_term = quicksum(
+            #     (1 - int(bool(target_found_flags[target_id])))
+            #     * node_reward[node_id][target_id]
+            #     * y[(node_id, agent_id)]
+            #     for agent_id in agent_ids
+            #     for node_id in candidate_node_ids_by_agent[agent_id]
+            #     for target_id in target_ids
+            # )
 
         dist_term = quicksum(
             edge_distance[(source_id, target_id)] * x[(source_id, target_id, agent_id)]
