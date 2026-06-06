@@ -11,6 +11,7 @@ if os.path.isdir(GUROBI_PYTHON_LIB) and GUROBI_PYTHON_LIB not in sys.path:
     sys.path.append(GUROBI_PYTHON_LIB)
 
 helper_stub = types.ModuleType("Helper")
+helper_stub.TYPE_REGION = 0
 helper_stub.TYPE_VP = 1
 
 _original_helper = sys.modules.get("Helper")
@@ -219,6 +220,22 @@ class _RegionVisitGraph:
         self.edges = {
             (1, 2): _FakeEdge(1, 2, 1.0, 0.8),
             (1, 3): _FakeEdge(1, 3, 1.0, 0.8),
+        }
+
+
+class _UngroundedViewpointAndRegionRewardGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, False, 1.0, {"target": 0.5}),
+            3: _FakeNode(0, False, 1.0, {"target": 0.5}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 0.0, 1.0),
+            (2, 3): _FakeEdge(2, 3, 0.0, 1.0),
         }
 
 
@@ -477,7 +494,9 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         for node_id in all_node_ids:
             node = graph.nodes[node_id]
             reward_weight = (
-                1.0 if node.grounded else OPTIMIZER_CONFIG["ungrounded_reward_weight"]
+                OPTIMIZER_CONFIG["ungrounded_reward_weight"]
+                if node.type == helper_stub.TYPE_REGION and not node.grounded
+                else 1.0
             )
             node_reward[node_id] = {
                 target_id: reward_weight * node.target_probs.get(target_id, 0.0)
@@ -758,7 +777,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             bounds,
             (
                 0.0,
-                0.7200000000000001,
+                0.9,
                 2.0,
                 9.0,
                 0.0,
@@ -802,6 +821,135 @@ class MultiAgentOptimizerTest(unittest.TestCase):
 
         self.assertEqual(bounds[8], 0.0)
         self.assertEqual(bounds[9], 0.0)
+
+    def test_ungrounded_reward_weight_applies_only_to_regions(self):
+        result = RollingHorizonOptimizer(OPTIMIZER_CONFIG).solve(
+            hypothesis_graph=_UngroundedViewpointAndRegionRewardGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(
+            result["agent_paths"]["agent0"]["planned_path_node_ids"],
+            [2, 3],
+        )
+        self.assertAlmostEqual(
+            result["agent_paths"]["agent0"]["objective_terms"]["raw"]["goal"],
+            0.5 + OPTIMIZER_CONFIG["ungrounded_reward_weight"] * 0.5,
+        )
+
+    def test_objective_terms_global_raw_matches_selected_variables(self):
+        graph = _SharedTargetGraph()
+        result = RollingHorizonOptimizer(OPTIMIZER_CONFIG).solve(
+            hypothesis_graph=graph,
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target": False},
+        )
+
+        expected_distance = sum(
+            graph.edges[tuple(sorted(edge))].distance_mean
+            for edges in result["selected_edges"].values()
+            for edge in edges
+        )
+        expected_arc = sum(
+            1.0 - graph.edges[tuple(sorted(edge))].exist_prob
+            for edges in result["selected_edges"].values()
+            for edge in edges
+        )
+        expected_node = sum(
+            1.0 - graph.nodes[node_id].exist_prob
+            for agent_path in result["agent_paths"].values()
+            for node_id in agent_path["planned_path_node_ids"]
+        )
+        expected_visit = sum(
+            graph.nodes[node_id].node_visit_times
+            for agent_path in result["agent_paths"].values()
+            for node_id in agent_path["planned_path_node_ids"]
+        )
+        expected_goal = sum(
+            max(graph.nodes[node_id].target_probs.values())
+            for agent_path in result["agent_paths"].values()
+            for node_id in agent_path["planned_path_node_ids"]
+        )
+        global_raw = result["objective_terms"]["global"]["raw"]
+
+        self.assertAlmostEqual(global_raw["goal"], expected_goal)
+        self.assertAlmostEqual(global_raw["distance"], expected_distance)
+        self.assertAlmostEqual(global_raw["arc_nonexistence"], expected_arc)
+        self.assertAlmostEqual(global_raw["node_nonexistence"], expected_node)
+        self.assertAlmostEqual(global_raw["revisit"], expected_visit)
+
+    def test_objective_terms_per_agent_sum_to_global_raw(self):
+        result = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG).solve(
+            hypothesis_graph=_FakeGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"green plant": False, "glass on table": False},
+        )
+        terms = result["objective_terms"]
+
+        for term_name, global_value in terms["global"]["raw"].items():
+            self.assertAlmostEqual(
+                sum(
+                    agent_terms["raw"][term_name]
+                    for agent_terms in terms["by_agent"].values()
+                ),
+                global_value,
+            )
+
+    def test_objective_terms_weighted_contributions_reconcile_to_objective(self):
+        result = RollingHorizonOptimizer(OPTIMIZER_CONFIG).solve(
+            hypothesis_graph=_FakeGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"green plant": False, "glass on table": False},
+        )
+        terms = result["objective_terms"]
+        per_agent_weighted_sum = sum(
+            sum(agent_terms["weighted_contribution"].values())
+            for agent_terms in terms["by_agent"].values()
+        )
+
+        self.assertAlmostEqual(
+            per_agent_weighted_sum + terms["objective_constant_offset"],
+            result["objective_value"],
+        )
+        self.assertAlmostEqual(
+            terms["weighted_contribution_sum"],
+            result["objective_value"],
+        )
+
+    def test_unique_target_reward_records_start_node_goal_for_assigned_agent(self):
+        result = RollingHorizonOptimizer(ORACLE_EXACT_COVERAGE_CONFIG).solve(
+            hypothesis_graph=_OracleDistanceChoiceGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target0": False, "target1": False},
+        )
+
+        self.assertIn(
+            {"target_id": "target0", "node_id": 1, "agent_id": "agent0"},
+            result["target_assignments"],
+        )
+        self.assertEqual(
+            result["agent_paths"]["agent0"]["objective_terms"]["raw"]["goal"],
+            2.0,
+        )
+        self.assertEqual(
+            result["agent_paths"]["agent1"]["objective_terms"]["raw"]["goal"],
+            0.0,
+        )
+
+    def test_inactive_agent_records_zero_route_cost_terms(self):
+        result = RollingHorizonOptimizer(ORACLE_INACTIVE_AGENT_CONFIG).solve(
+            hypothesis_graph=_OneAgentCoversAllTargetsGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target0": False, "target1": False},
+        )
+        inactive_raw = result["agent_paths"]["agent1"]["objective_terms"]["raw"]
+
+        self.assertEqual(result["agent_paths"]["agent1"]["route_node_ids"], [2])
+        self.assertEqual(inactive_raw["distance"], 0.0)
+        self.assertEqual(inactive_raw["arc_nonexistence"], 0.0)
+        self.assertEqual(inactive_raw["node_nonexistence"], 0.0)
+        self.assertEqual(inactive_raw["revisit"], 0.0)
 
 
 if __name__ == "__main__":

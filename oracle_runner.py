@@ -13,6 +13,7 @@ from route_plotter import (
     print_route_summary,
     summarize_routes,
 )
+from optimizer_route_logger import write_optimizer_route_log
 
 TYPE_VP = 1
 
@@ -202,6 +203,15 @@ def run_oracle(
         else root / "mllm_debug_outputs" / instance.test_case
     )
     output_root.mkdir(parents=True, exist_ok=True)
+    optimizer_route_log_path = write_optimizer_route_log(
+        output_dir=output_root,
+        test_case=instance.test_case,
+        optimization_result=result,
+        agent_ids=list(instance.agent_current_vp_ids),
+        step_index=None,
+        filename="optimizer_routes_oracle.json",
+    )
+    print("Saved oracle optimizer route log to %s.\n" % str(optimizer_route_log_path))
     summary_path = output_root / ("%s_oracle_route_summary.txt" % instance.test_case)
     with open(summary_path, "w", encoding="utf-8") as summary_file_handle:
         json.dump(summary, summary_file_handle, indent=2)

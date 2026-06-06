@@ -12,6 +12,7 @@ from route_plotter import (
     print_route_summary,
     summarize_routes,
 )
+from optimizer_route_logger import write_optimizer_route_log
 
 
 def load_scenario_config(config_path: str) -> Dict[str, object]:
@@ -523,6 +524,14 @@ def run_scenario(
             agent_current_vp_ids=hypothesis_graph.agent_current_vp_ids,
             target_found_flags=hypothesis_graph.target_found,
         )
+        optimizer_route_log_path = write_optimizer_route_log(
+            output_dir=debug_output_dir,
+            test_case=test_case,
+            optimization_result=optimization_result,
+            agent_ids=agent_ids,
+            step_index=debug_step_index,
+        )
+        print("Saved optimizer route log to %s.\n" % str(optimizer_route_log_path))
 
         observations_by_agent = {
             str(observation["agent_id"]): observation
@@ -563,7 +572,7 @@ def run_scenario(
         for _ in range(2):
             print()
 
-        if debug_step_index >= 7:
+        if debug_step_index >= 8:
             debugpy.breakpoint()
 
 

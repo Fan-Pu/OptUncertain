@@ -6,7 +6,7 @@ import debugpy
 from gurobipy import GRB, Model, quicksum
 from torch import mode
 
-from Helper import TYPE_VP
+from Helper import TYPE_REGION, TYPE_VP
 
 
 class RollingHorizonOptimizer:
@@ -120,7 +120,11 @@ class RollingHorizonOptimizer:
         node_reward = {}
         for node_id in all_node_ids:
             node = hypothesis_graph.nodes[node_id]
-            reward_weight = 1.0 if node.grounded else self.ungrounded_reward_weight
+            reward_weight = (
+                self.ungrounded_reward_weight
+                if node.type == TYPE_REGION and not node.grounded
+                else 1.0
+            )
             node_reward[node_id] = {
                 target_id: reward_weight * node.target_probs.get(target_id, 0.0)
                 for target_id in target_ids
@@ -247,6 +251,7 @@ class RollingHorizonOptimizer:
             for node_id in candidate_viewpoint_node_ids_by_agent[agent_id]
         )
 
+        objective_bounds = None
         if self.minimize_distance_after_targets:
             model.setObjective(dist_term, GRB.MINIMIZE)
         else:
@@ -281,6 +286,13 @@ class RollingHorizonOptimizer:
                 allow_inactive_agents=self.allow_inactive_agents,
                 reward_node_ids_by_agent=reward_node_ids_by_agent,
             )
+            objective_bounds = {
+                "goal": (goal_lower_bound, goal_upper_bound),
+                "distance": (dist_lower_bound, dist_upper_bound),
+                "arc_nonexistence": (arc_lower_bound, arc_upper_bound),
+                "node_nonexistence": (node_lower_bound, node_upper_bound),
+                "revisit": (visit_lower_bound, visit_upper_bound),
+            }
 
             normalized_goal = self._normalized_expression(
                 goal_term,
@@ -567,26 +579,37 @@ class RollingHorizonOptimizer:
                 if target_reward_assignment[(target_id, node_id, agent_id)].X > 0.5
             ]
 
-        # calculate all terms in the objective for debugging and analysis
-        calculated_goal_term = goal_term.getValue()
-        calculated_dist_term = dist_term.getValue()
-        calculated_arc_term = arc_term.getValue()
-        calculated_node_term = node_term.getValue()
-        calculated_visit_term = visit_term.getValue()
-
-        calculated_x_by_agent = {
-            agent_id: [
-                (source_id, target_id)
-                for source_id, target_id in directed_edges
-                if x[(source_id, target_id, agent_id)].X == 1.0
+        objective_terms = self._build_objective_terms(
+            agent_ids=agent_ids,
+            target_ids=target_ids,
+            target_found_flags=target_found_flags,
+            directed_edges=directed_edges,
+            candidate_node_ids_by_agent=candidate_node_ids_by_agent,
+            candidate_viewpoint_node_ids_by_agent=(
+                candidate_viewpoint_node_ids_by_agent
+            ),
+            reward_node_ids_by_agent=reward_node_ids_by_agent,
+            edge_distance=edge_distance,
+            edge_nonexist_penalty=edge_nonexist_penalty,
+            node_nonexist_penalty=node_nonexist_penalty,
+            revisit_penalty=revisit_penalty,
+            node_reward=node_reward,
+            x=x,
+            y=y,
+            target_reward_assignment=target_reward_assignment,
+            objective_bounds=objective_bounds,
+            objective_value=float(model.ObjVal),
+        )
+        for agent_id in agent_ids:
+            agent_paths[agent_id]["objective_terms"] = objective_terms["by_agent"][
+                agent_id
             ]
-            for agent_id in agent_ids
-        }
 
         return {
             "agent_paths": agent_paths,
             "target_assignments": target_assignments,
             "objective_value": model.ObjVal,
+            "objective_terms": objective_terms,
             "selected_edges": selected_edges,
         }
 
@@ -623,6 +646,199 @@ class RollingHorizonOptimizer:
             return (expression - float(lower_bound)) / (
                 float(upper_bound) - float(lower_bound)
             )
+
+    def _normalized_value(
+        self, value: float, lower_bound: float, upper_bound: float
+    ) -> float:
+        if lower_bound == upper_bound:
+            return 0.0
+        return (float(value) - float(lower_bound)) / (
+            float(upper_bound) - float(lower_bound)
+        )
+
+    def _build_objective_terms(
+        self,
+        agent_ids,
+        target_ids,
+        target_found_flags,
+        directed_edges,
+        candidate_node_ids_by_agent,
+        candidate_viewpoint_node_ids_by_agent,
+        reward_node_ids_by_agent,
+        edge_distance,
+        edge_nonexist_penalty,
+        node_nonexist_penalty,
+        revisit_penalty,
+        node_reward,
+        x,
+        y,
+        target_reward_assignment,
+        objective_bounds,
+        objective_value: float,
+    ) -> Dict[str, object]:
+        term_names = [
+            "goal",
+            "distance",
+            "arc_nonexistence",
+            "node_nonexistence",
+            "revisit",
+        ]
+        weights = {
+            "goal": self.goal_weight,
+            "distance": self.dist_weight,
+            "arc_nonexistence": self.arc_weight,
+            "node_nonexistence": self.node_weight,
+            "revisit": self.visit_weight,
+        }
+        signs = {
+            "goal": 1.0,
+            "distance": -1.0,
+            "arc_nonexistence": -1.0,
+            "node_nonexistence": -1.0,
+            "revisit": -1.0,
+        }
+
+        raw_by_agent = {}
+        for agent_id in agent_ids:
+            if self.unique_target_reward:
+                goal_value = sum(
+                    node_reward[node_id][target_id]
+                    * target_reward_assignment[(target_id, node_id, agent_id)].X
+                    for node_id in reward_node_ids_by_agent[agent_id]
+                    for target_id in target_ids
+                )
+            else:
+                goal_value = sum(
+                    max(
+                        (1 - int(bool(target_found_flags[target_id])))
+                        * node_reward[node_id][target_id]
+                        for target_id in target_ids
+                    )
+                    * y[(node_id, agent_id)].X
+                    for node_id in candidate_node_ids_by_agent[agent_id]
+                )
+
+            raw_by_agent[agent_id] = {
+                "goal": float(goal_value),
+                "distance": float(
+                    sum(
+                        edge_distance[(source_id, target_id)]
+                        * x[(source_id, target_id, agent_id)].X
+                        for source_id, target_id in directed_edges
+                    )
+                ),
+                "arc_nonexistence": float(
+                    sum(
+                        edge_nonexist_penalty[(source_id, target_id)]
+                        * x[(source_id, target_id, agent_id)].X
+                        for source_id, target_id in directed_edges
+                    )
+                ),
+                "node_nonexistence": float(
+                    sum(
+                        node_nonexist_penalty[node_id] * y[(node_id, agent_id)].X
+                        for node_id in candidate_node_ids_by_agent[agent_id]
+                    )
+                ),
+                "revisit": float(
+                    sum(
+                        revisit_penalty[node_id] * y[(node_id, agent_id)].X
+                        for node_id in candidate_viewpoint_node_ids_by_agent[agent_id]
+                    )
+                ),
+            }
+
+        global_raw = {
+            term_name: float(
+                sum(raw_by_agent[agent_id][term_name] for agent_id in agent_ids)
+            )
+            for term_name in term_names
+        }
+
+        if self.minimize_distance_after_targets:
+            by_agent = {
+                agent_id: {
+                    "raw": raw_by_agent[agent_id],
+                    "normalized_contribution": {},
+                    "weighted_contribution": {
+                        "distance": raw_by_agent[agent_id]["distance"]
+                    },
+                }
+                for agent_id in agent_ids
+            }
+            return {
+                "objective_value": float(objective_value),
+                "objective_sense": "minimize",
+                "objective_constant_offset": 0.0,
+                "weighted_contribution_sum": global_raw["distance"],
+                "global": {
+                    "raw": global_raw,
+                    "bounds": {},
+                    "normalized": {},
+                    "weighted": {"distance": global_raw["distance"]},
+                },
+                "by_agent": by_agent,
+            }
+
+        global_normalized = {}
+        global_weighted = {}
+        objective_constant_offset = 0.0
+        by_agent = {}
+        for agent_id in agent_ids:
+            by_agent[agent_id] = {
+                "raw": raw_by_agent[agent_id],
+                "normalized_contribution": {},
+                "weighted_contribution": {},
+            }
+
+        for term_name in term_names:
+            lower_bound, upper_bound = objective_bounds[term_name]
+            global_normalized[term_name] = self._normalized_value(
+                global_raw[term_name],
+                lower_bound,
+                upper_bound,
+            )
+            global_weighted[term_name] = (
+                signs[term_name] * weights[term_name] * global_normalized[term_name]
+            )
+            if lower_bound == upper_bound:
+                for agent_id in agent_ids:
+                    by_agent[agent_id]["normalized_contribution"][term_name] = 0.0
+                    by_agent[agent_id]["weighted_contribution"][term_name] = 0.0
+                continue
+
+            term_range = float(upper_bound) - float(lower_bound)
+            objective_constant_offset += (
+                signs[term_name] * weights[term_name] * (-float(lower_bound))
+            ) / term_range
+            for agent_id in agent_ids:
+                normalized_contribution = raw_by_agent[agent_id][term_name] / term_range
+                by_agent[agent_id]["normalized_contribution"][term_name] = float(
+                    normalized_contribution
+                )
+                by_agent[agent_id]["weighted_contribution"][term_name] = float(
+                    signs[term_name] * weights[term_name] * normalized_contribution
+                )
+
+        return {
+            "objective_value": float(objective_value),
+            "objective_sense": "maximize",
+            "objective_constant_offset": float(objective_constant_offset),
+            "weighted_contribution_sum": float(sum(global_weighted.values())),
+            "global": {
+                "raw": global_raw,
+                "bounds": {
+                    term_name: {
+                        "lower": float(objective_bounds[term_name][0]),
+                        "upper": float(objective_bounds[term_name][1]),
+                    }
+                    for term_name in term_names
+                },
+                "normalized": global_normalized,
+                "weighted": global_weighted,
+            },
+            "by_agent": by_agent,
+        }
 
     def _build_directed_edges(
         self,

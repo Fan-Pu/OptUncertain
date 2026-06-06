@@ -38,7 +38,7 @@ GRAPH_MAX_NEW_TOKENS = 32768
 panorama_max_width_for_prompt = 1660
 
 detect_thinking = False
-graph_thinking = True
+graph_thinking = False
 
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
@@ -1764,7 +1764,7 @@ class MLLMClient:
                     )
             print()
 
-        if step_index >= 12:
+        if step_index >= 8:
             debugpy.breakpoint()
 
         # debugpy.breakpoint()
