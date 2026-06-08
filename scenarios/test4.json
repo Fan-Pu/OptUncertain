@@ -35,7 +35,7 @@
   "targets": [
     {
       "target_id": "0",
-      "description": "the leopard-print towels in the bathroom on top of the white dryer"
+      "description": "the leopard-print towels in the bathroom on top of the dryer"
     },
     {
       "target_id": "1",
@@ -47,11 +47,7 @@
     },
     {
       "target_id": "3",
-      "description": "the tablet on the desk counter below the upper cabinets"
-    },
-    {
-      "target_id": "4",
-      "description": "the black helmet in the bedroom near the recreation room"
+      "description": "the black helmet in the bedroom opposite the bathroom"
     }
   ],
   "mllm": {
@@ -81,11 +77,11 @@
     "epsilon": 1e-6
   },
   "optimizer": {
-    "goal_weight": 0.2,
-    "dist_weight": 0.2,
-    "arc_weight": 0.2,
-    "node_weight": 0.2,
-    "visit_weight": 0.2,
+    "goal_weight": 0.4,
+    "dist_weight": 0.4,
+    "arc_weight": 0.075,
+    "node_weight": 0.075,
+    "visit_weight": 0.05,
     "ungrounded_reward_weight": 0.8
   }
 }

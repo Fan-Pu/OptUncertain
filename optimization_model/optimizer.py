@@ -116,6 +116,20 @@ class RollingHorizonOptimizer:
             )
             for node_id in all_node_ids
         }
+        grounded_vv_degree = {node_id: 0 for node_id in all_node_ids}
+        for edge in hypothesis_graph.edges.values():
+            source_id = edge.source_node_id
+            target_id = edge.target_node_id
+            if self._is_grounded_vv_edge(hypothesis_graph, source_id, target_id):
+                grounded_vv_degree[source_id] += 1
+                grounded_vv_degree[target_id] += 1
+        blocked_revisit_viewpoint_node_ids = {
+            node_id
+            for node_id in all_node_ids
+            if hypothesis_graph.nodes[node_id].type == TYPE_VP
+            and hypothesis_graph.nodes[node_id].node_visit_times > 0
+            and grounded_vv_degree[node_id] == 1
+        }
 
         node_reward = {}
         for node_id in all_node_ids:
@@ -419,6 +433,13 @@ class RollingHorizonOptimizer:
                     model.addConstr(
                         y[(node_id, agent_id)] <= agent_active[agent_id],
                         name="inactive_no_visit_%s_%s" % (node_id, agent_id),
+                    )
+
+                if node_id in blocked_revisit_viewpoint_node_ids:
+                    model.addConstr(
+                        y[(node_id, agent_id)] == 0,
+                        name="no_revisit_grounded_leaf_%s_%s"
+                        % (node_id, agent_id),
                     )
 
                 if self.unique_target_reward:

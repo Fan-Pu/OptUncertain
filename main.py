@@ -572,7 +572,7 @@ def run_scenario(
         for _ in range(2):
             print()
 
-        if debug_step_index >= 8:
+        if debug_step_index >= 20:
             debugpy.breakpoint()
 
 

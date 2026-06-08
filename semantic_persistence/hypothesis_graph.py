@@ -140,6 +140,7 @@ class HypothesisGraph:
         self.region_to_viewpoints: Dict[int, Set[int]] = {}
         self.agent_current_vp_ids: Dict[str, int] = {}
         self.viewpoint_rgb_evidence: Dict[int, List[object]] = {}
+        self.viewpoint_target_score_basis: Dict[int, Dict[str, str]] = {}
         self.observation_step = 0
 
     def sync_agent_current_viewpoints(
@@ -436,6 +437,13 @@ class HypothesisGraph:
                 ),
                 raw_target_probs=raw_target_probs,
             )
+
+        for item in payload["viewpoint_target_score_basis"]:
+            viewpoint_id = int(item["id"])
+            self.viewpoint_target_score_basis[viewpoint_id] = {
+                str(target_id): str(basis)
+                for target_id, basis in item["score_basis"].items()
+            }
 
         self._refresh_region_to_viewpoints()
 
@@ -755,6 +763,15 @@ class HypothesisGraph:
                 if str(target_id) not in found_target_ids
             }
 
+        for viewpoint_id, target_score_basis in list(
+            self.viewpoint_target_score_basis.items()
+        ):
+            self.viewpoint_target_score_basis[viewpoint_id] = {
+                str(target_id): basis
+                for target_id, basis in target_score_basis.items()
+                if str(target_id) not in found_target_ids
+            }
+
     def get_mllm_summary(self) -> Dict[str, object]:
         nodes = []
 
@@ -864,6 +881,9 @@ class HypothesisGraph:
                     "exist_prob": node.exist_prob,
                     "target_probs": dict(node.target_probs),
                     "raw_target_probs": dict(node.raw_target_probs),
+                    "target_score_basis": copy.deepcopy(
+                        self.viewpoint_target_score_basis.get(node.node_id, {})
+                    ),
                     "node_visit_times": node.node_visit_times,
                 }
             )

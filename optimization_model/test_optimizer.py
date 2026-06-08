@@ -43,6 +43,14 @@ ORACLE_EXACT_COVERAGE_CONFIG = dict(
     force_positive_target_assignment=True,
     minimize_distance_after_targets=True,
 )
+GOAL_ONLY_OPTIMIZER_CONFIG = dict(
+    OPTIMIZER_CONFIG,
+    goal_weight=1.0,
+    dist_weight=0.0,
+    arc_weight=0.0,
+    node_weight=0.0,
+    visit_weight=0.0,
+)
 
 
 def tearDownModule():
@@ -137,6 +145,40 @@ class _RevisitPenaltyGraph:
         self.edges = {
             (1, 2): _FakeEdge(1, 2, 1.0, 0.9),
             (1, 3): _FakeEdge(1, 3, 1.0, 0.9),
+        }
+
+
+class _VisitedGroundedLeafGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 1.0}, node_visit_times=5),
+            3: _FakeNode(1, True, 1.0, {"target": 0.0}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
+            (1, 3): _FakeEdge(1, 3, 1.0, 1.0),
+        }
+
+
+class _VisitedGroundedNonLeafGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 1.0}, node_visit_times=5),
+            3: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            4: _FakeNode(1, True, 1.0, {"target": 0.0}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
+            (1, 3): _FakeEdge(1, 3, 1.0, 1.0),
+            (2, 4): _FakeEdge(2, 4, 1.0, 1.0),
         }
 
 
@@ -560,6 +602,30 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
 
         self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
+
+    def test_visited_grounded_leaf_viewpoint_cannot_be_revisited(self):
+        optimizer = RollingHorizonOptimizer(GOAL_ONLY_OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_VisitedGroundedLeafGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
+        self.assertNotIn(2, result["agent_paths"]["agent0"]["planned_path_node_ids"])
+        self.assertNotIn((1, 2), result["selected_edges"]["agent0"])
+
+    def test_visited_grounded_non_leaf_viewpoint_can_be_revisited(self):
+        optimizer = RollingHorizonOptimizer(GOAL_ONLY_OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_VisitedGroundedNonLeafGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 2)
+        self.assertIn(2, result["agent_paths"]["agent0"]["planned_path_node_ids"])
+        self.assertIn((1, 2), result["selected_edges"]["agent0"])
 
     def test_first_hop_must_use_grounded_vv_edge(self):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)

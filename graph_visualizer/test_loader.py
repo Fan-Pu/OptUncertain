@@ -322,6 +322,7 @@ def test_load_visualization_step_preserves_raw_target_probs(tmp_path):
                 "exist_prob": 1.0,
                 "target_probs": {"0": 1.0},
                 "raw_target_probs": {"0": 0.8},
+                "target_score_basis": {"0": "visible clue explains the score"},
                 "node_visit_times": 0,
             }
         ],
@@ -331,7 +332,22 @@ def test_load_visualization_step_preserves_raw_target_probs(tmp_path):
 
     assert steps[0]["hypothesis"]["nodes"][0]["raw_target_probs"] == {"0": 0.8}
     assert steps[0]["hypothesis"]["nodes"][0]["target_probs"] == {"0": 1.0}
+    assert steps[0]["hypothesis"]["nodes"][0]["target_score_basis"] == {
+        "0": "visible clue explains the score"
+    }
     assert "targets" not in steps[0]["hypothesis"]
+
+
+def test_viewer_template_renders_target_score_basis_column():
+    html = render_viewer_html()
+
+    assert "target_score_basis" in html
+    assert "target score basis" in html
+    assert "target_score_basis_previous" not in html
+    assert "findPriorTargetScoreBasis" in html
+    assert "displayTargetScoreBasis" in html
+    assert "formatObjectRows" in html
+    assert 'new Set(["current_agents", "targets"])' in html
 
 
 def test_load_instance_targets_reads_scenario_targets(tmp_path):
@@ -842,7 +858,7 @@ def test_step_renderer_toggles_selected_nodes_and_highlights_found_targets():
     assert 'definitionList(items, htmlKeys = new Set())' in html
     assert 'definitionList({\n        step_index: step.step_index,' in html
     assert "observation_step: step.layout.observation_step" not in html
-    assert '}, new Set(["targets"]));' in html
+    assert '}, new Set(["current_agents", "targets"]));' in html
 
 
 def test_step_renderer_includes_target_detection_sidebar_and_verification_normalization():

@@ -1783,6 +1783,7 @@ def render_viewer_html() -> str:
       if (selected.kind === "node") {
         const layout = step.layout.nodes.find(node => String(node.id) === String(selected.id));
         const hyp = step.hypothesis.nodes.find(node => String(node.id) === String(selected.id));
+        const scoreBasis = displayTargetScoreBasis(step, hyp);
         target.innerHTML = definitionList({
           id: layout.id,
           type: layout.type,
@@ -1793,8 +1794,9 @@ def render_viewer_html() -> str:
           current_agent: agentAtNode(step, layout.id) || "",
           assigned_viewpoint_ids: (layout.assigned_viewpoint_ids || []).join(", "),
           target_probs: formatObject(hyp.target_probs),
-          raw_target_probs: formatObject(hyp.raw_target_probs)
-        });
+          raw_target_probs: formatObject(hyp.raw_target_probs),
+          target_score_basis: formatObjectRows(scoreBasis)
+        }, new Set(["target_score_basis"]));
       } else {
         const hyp = step.hypothesis.edges.find(edge => edgeKey(edge.i, edge.j) === edgeKey(selected.i, selected.j));
         target.innerHTML = definitionList({
@@ -1811,7 +1813,7 @@ def render_viewer_html() -> str:
 
     function renderSummary(step) {
       const targetFound = formatObject(step.hypothesis.target_found);
-      const agents = formatObject(step.layout.agent_current_vp_ids);
+      const agents = formatObjectRows(step.layout.agent_current_vp_ids);
       const targets = targetSummaryHtml(step);
       document.getElementById("summary").innerHTML = definitionList({
         step_index: step.step_index,
@@ -1820,7 +1822,7 @@ def render_viewer_html() -> str:
         current_agents: agents,
         target_found: targetFound,
         targets: targets
-      }, new Set(["targets"]));
+      }, new Set(["current_agents", "targets"]));
     }
 
     function targetSummaryHtml(step) {
@@ -1865,9 +1867,10 @@ def render_viewer_html() -> str:
             <tr data-node-id="${escapeAttr(node.id)}">
               <td>${escapeHtml(String(node.id))}</td>
               <td>${escapeHtml(shortLabel(node.label, 34))}</td>
-              <td>${escapeHtml(formatNumber(hyp.exist_prob))}</td>
-              <td>${escapeHtml(formatObject(hyp.target_probs))}</td>
-              <td>${escapeHtml(formatObject(hyp.raw_target_probs))}</td>
+          <td>${escapeHtml(formatNumber(hyp.exist_prob))}</td>
+          <td>${escapeHtml(formatObject(hyp.target_probs))}</td>
+          <td>${escapeHtml(formatObject(hyp.raw_target_probs))}</td>
+          <td>${escapeHtml(formatObject(hyp.target_score_basis))}</td>
             </tr>
           `;
         });
@@ -1876,7 +1879,7 @@ def render_viewer_html() -> str:
         target.innerHTML = "<p style=\"margin:0;color:var(--muted);font-size:13px;\">No unassigned regions.</p>";
         return;
       }
-      target.innerHTML = `<table><thead><tr><th>id</th><th>label</th><th>exist</th><th>target probs</th><th>raw target probs</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+      target.innerHTML = `<table><thead><tr><th>id</th><th>label</th><th>exist</th><th>target probs</th><th>raw target probs</th><th>target score basis</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
       for (const row of target.querySelectorAll("tr[data-node-id]")) {
         row.addEventListener("click", () => {
           selected = { kind: "node", id: row.dataset.nodeId };
@@ -1892,14 +1895,14 @@ def render_viewer_html() -> str:
         .map(node => [
           node.id,
           node.type,
-          shortLabel(node.label, 30),
           node.grounded,
           formatNumber(node.exist_prob),
           formatObject(node.target_probs),
-          formatObject(node.raw_target_probs)
+          formatObject(node.raw_target_probs),
+          formatObject(node.target_score_basis)
         ]);
       document.getElementById("nodeTable").innerHTML =
-        table(["id", "type", "label", "grounded", "exist", "target probs", "raw target probs"], rows);
+        table(["id", "type", "grounded", "exist", "target probs", "raw target probs", "target score basis"], rows);
     }
 
     function renderEdgeTable(step) {
@@ -2533,6 +2536,44 @@ def render_viewer_html() -> str:
       return Object.entries(value || {})
         .map(([key, item]) => `${key}: ${typeof item === "number" ? formatNumber(item) : item}`)
         .join(", ");
+    }
+
+    function formatObjectRows(value) {
+      return Object.entries(value || {})
+        .map(([key, item]) => {
+          const formatted = typeof item === "number" ? formatNumber(item) : item;
+          return `<div class="kv-row">${escapeHtml(key)}: ${escapeHtml(formatted)}</div>`;
+        })
+        .join("");
+    }
+
+    function isNonEmptyObject(value) {
+      return value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0;
+    }
+
+    function findPriorTargetScoreBasis(step, nodeId) {
+      const currentIndex = payload.steps.findIndex(candidate => candidate === step);
+      if (currentIndex <= 0) return {};
+      const id = String(nodeId);
+      for (let index = currentIndex - 1; index >= 0; index -= 1) {
+        const priorNode = (payload.steps[index].hypothesis.nodes || [])
+          .find(node => String(node.id) === id);
+        if (priorNode && isNonEmptyObject(priorNode.target_score_basis)) {
+          return priorNode.target_score_basis;
+        }
+      }
+      return {};
+    }
+
+    function displayTargetScoreBasis(step, hyp) {
+      if (isNonEmptyObject(hyp.target_score_basis)) {
+        return hyp.target_score_basis;
+      }
+      const priorBasis = findPriorTargetScoreBasis(step, hyp.id);
+      if (isNonEmptyObject(priorBasis)) {
+        return priorBasis;
+      }
+      return hyp.target_score_basis;
     }
 
     function formatNumber(value) {
