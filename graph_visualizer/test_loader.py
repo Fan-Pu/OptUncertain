@@ -137,6 +137,7 @@ def _write_two_floor_environment_case(root, instance_name):
 
 def _write_route_case(root, instance_name):
     _write_environment_case(root, instance_name)
+    _write_connectivity(root / "connectivity", z_values=(0.0, 0.0, 0.0))
     _write_json(
         root / "mllm_debug_outputs" / instance_name / ("%s_mllm_route_summary.txt" % instance_name),
         {
@@ -144,14 +145,14 @@ def _write_route_case(root, instance_name):
             "agents": [
                 {
                     "agent_id": "agent0",
-                    "route_node_ids": [0, 1],
-                    "route_viewpoint_ids": ["vp0", "vp1"],
-                    "edge_distances": [1.0],
-                    "path_distance": 1.0,
+                    "route_node_ids": [0, 1, 2],
+                    "route_viewpoint_ids": ["vp0", "vp1", "vp2"],
+                    "edge_distances": [1.0, 2.0],
+                    "path_distance": 3.0,
                 }
             ],
-            "total_distance": 1.0,
-            "target_node_ids_by_target_id": {"0": 1},
+            "total_distance": 3.0,
+            "target_node_ids_by_target_id": {"0": 2},
         },
     )
 
@@ -381,7 +382,14 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
     payload = load_solution_payload("case", project_root=tmp_path)
 
     assert payload["solutions"][0]["id"] == "mllm"
-    assert payload["solutions"][0]["summary"]["total_distance"] == 1.0
+    assert payload["solutions"][0]["summary"]["total_distance"] == 3.0
+    assert payload["solutions"][0]["summary"]["agents"][0]["edge_distances"] == [
+        1.0,
+        2.0,
+    ]
+    assert payload["solutions"][0]["summary"]["target_node_ids_by_target_id"] == {
+        "0": 2
+    }
     assert payload["environment_graph"]["scan_id"] == "scan"
     assert payload["environment_graph"]["nodes"][0]["viewpoint_id"] == "vp0"
     assert payload["environment_graph"]["nodes"][0]["z"] == pytest.approx(0.0)
@@ -392,7 +400,7 @@ def test_load_solution_payload_detects_route_summary_and_environment_graph(
             "reference_z": 0.0,
             "z_min": 0.0,
             "z_max": 0.0,
-            "node_ids": [0, 1],
+            "node_ids": [0, 1, 2],
         }
     ]
     assert payload["environment_graph"]["edges"][0]["distance"] == pytest.approx(1.0)
@@ -542,7 +550,7 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
         assert house_texture["url"] == (
             "/assets/topdown_texture_cache/scan/scan_fake_topdown_texture.png"
         )
-        assert house_texture["floors"][0]["node_ids"] == [0, 1]
+        assert house_texture["floors"][0]["node_ids"] == [0, 1, 2]
         assert house_texture["output_size"] == 4096
         assert house_texture["cut_z_offset"] == 0.9
         assert house_texture["requested_render_mode"] == "single_cutaway"
@@ -557,7 +565,7 @@ def test_steps_api_includes_detected_solution_summaries(tmp_path, monkeypatch):
                         "reference_z": 0.0,
                         "z_min": 0.0,
                         "z_max": 0.0,
-                        "node_ids": [0, 1],
+                        "node_ids": [0, 1, 2],
                     }
                 ],
                 "output_size": 4096,
@@ -715,7 +723,7 @@ def test_house_texture_api_returns_strict_json_for_nonfinite_floor_bounds(
 def test_route_renderer_skips_wait_step_edges():
     html = render_viewer_html()
 
-    assert "Number(routeNodeIds[routeIndex]) === Number(nextNodeId)" in html
+    assert "Number(sourceNodeId) === Number(targetNodeId)" in html
     assert "sameRoutePoint(point, nextPoint)" in html
     assert 'id="houseTextureButton"' in html
     assert '"pointer-events": "none"' in html
@@ -747,7 +755,8 @@ def test_route_renderer_skips_wait_step_edges():
     assert "floor.screenX(node.x)" in html
     assert "floor.screenY(node.y)" in html
     assert "route-environment-edge ${edge.type === \"vz\" ? \"vz\" : \"vv\"}" in html
-    assert "route-line ${sourceNode.floor_index !== targetNode.floor_index ? \"vz\" : \"vv\"}" in html
+    assert "function routeLineClass(routeEvent, sourceNode, targetNode)" in html
+    assert 'const edgeClass = sourceNode.floor_index !== targetNode.floor_index ? "vz" : "vv";' in html
 
 
 def test_route_renderer_includes_target_descriptions_and_agent_legend():
@@ -757,12 +766,50 @@ def test_route_renderer_includes_target_descriptions_and_agent_legend():
     assert "function routeTargetRows" in html
     assert "targetDescription(targetId)" in html
     assert "routeAgentsForNode(summary, nodeId)" in html
-    assert 'table(["target", "description", "node", "found by"], targetRows)' in html
+    assert "function routeTargetArrival(summary, nodeId)" in html
+    assert "let cumulativeDistance = 0;" in html
+    assert "cumulativeDistance += Number(edgeDistances[routeIndex]);" in html
+    assert "if (bestArrival === null || arrival.distance < bestArrival.distance)" in html
+    assert "distance_to_find: formatNumber(arrival.distance)" in html
+    assert 'table(["target", "description", "node", "distance to find", "found by"], targetRows)' in html
+    assert ".route-summary table {\n      table-layout: fixed;" in html
+    assert ".route-summary th,\n    .route-summary td {\n      overflow-wrap: anywhere;" in html
     assert "Agent Legend" in html
     assert "function routeAgentLegendHtml" in html
     assert "function routeAgentColor" in html
     assert "routeAgentColor(agentIndex)" in html
     assert "agents ${routeTarget.agent_ids.join" in html
+    assert "max_agent_dis: formatNumber(routeMaximumAgentDistance(summary))" in html
+    assert "function routeMaximumAgentDistance(summary)" in html
+
+
+def test_route_renderer_separates_overlapping_segments_and_labels_focused_agent_steps():
+    html = render_viewer_html()
+
+    assert "let focusedRouteAgentId = null;" in html
+    assert "const ROUTE_LANE_SPACING = 5;" in html
+    assert "function routeSegmentEvents(solution, positions)" in html
+    assert "function routeDisplayEdgeEvents(movementEvents)" in html
+    assert "function routeVisitEvents(solution, positions)" in html
+    assert "function routeSegmentBundleKey(sourceNodeId, targetNodeId)" in html
+    assert "function assignRouteSegmentLanes(events)" in html
+    assert "laneIndex - (bundleEvents.length - 1) / 2" in html
+    assert "function routeSegmentPath(routeEvent)" in html
+    assert "function routeBundleNormal(routeEvent)" in html
+    assert 'const path = svgEl("path", {' in html
+    assert "Q ${controlX} ${controlY}" in html
+    assert "function bindRouteAgentLegendControls()" in html
+    assert 'data-route-agent-id=""' in html
+    assert "focusedRouteAgentId = button.dataset.routeAgentId || null;" in html
+    assert "function appendRouteVisitLabels(routeLabelLayer, routeEvents)" in html
+    assert "function routeVisitLabelPoint(point, visitIndex, visitCount, occupiedBoxes)" in html
+    assert "route-step-label-badge" in html
+    assert "route-step-label-text" in html
+    assert "route-step-label-leader" in html
+    assert "function boxesOverlap(first, second)" in html
+    assert "traversed at steps ${routeEvent.routeIndices.join" in html
+    assert "marker-end" not in html
+    assert "appendRouteArrowMarker" not in html
 
 
 def test_step_renderer_removes_layout_editing_and_drag_selection_code():

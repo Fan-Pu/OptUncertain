@@ -121,12 +121,14 @@ def summarize_routes(
         environment_graph=environment_graph,
         routes_by_agent=routes_by_agent,
     )
+    agent_path_distances = [
+        float(agent_summary["path_distance"]) for agent_summary in agent_summaries
+    ]
     return {
         "test_case": str(test_case),
         "agents": agent_summaries,
-        "total_distance": sum(
-            float(agent_summary["path_distance"]) for agent_summary in agent_summaries
-        ),
+        "total_distance": sum(agent_path_distances),
+        "maximum_agent_distance": max(agent_path_distances) if agent_path_distances else 0.0,
         "target_node_ids_by_target_id": {
             str(target_id): int(node_id)
             for target_id, node_id in target_node_ids_by_target_id.items()
@@ -158,6 +160,10 @@ def print_route_summary(summary: Dict[str, object], title: str) -> None:
         print()
 
     print("Sum of all path distances: %.6f" % float(summary["total_distance"]))
+    print(
+        "Maximum agent path distance: %.6f"
+        % float(summary.get("maximum_agent_distance", 0.0))
+    )
 
 
 def _read_json(path: Path) -> object:

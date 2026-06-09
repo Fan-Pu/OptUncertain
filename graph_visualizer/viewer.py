@@ -383,12 +383,38 @@ def render_viewer_html() -> str:
     }
     .route-line {
       fill: none;
-      stroke-width: 4;
+      stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
+      opacity: 0.78;
+    }
+    .route-line.route-faded,
+    .route-step-marker.route-faded,
+    .route-start-marker.route-faded {
+      opacity: 0.18;
     }
     .route-line.vz {
       stroke-dasharray: 8 5;
+    }
+    .route-step-label-badge {
+      fill: rgba(255, 255, 255, 0.76);
+      stroke: #111827;
+      stroke-width: 1.2;
+      opacity: 0.88;
+    }
+    .route-step-label-text {
+      fill: #111827;
+      font-size: 8px;
+      font-weight: 700;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+    .route-step-label-leader {
+      stroke: #111827;
+      stroke-width: 1;
+      stroke-dasharray: 2 3;
+      opacity: 0.55;
     }
     .route-selected {
       stroke: #111827;
@@ -415,6 +441,13 @@ def render_viewer_html() -> str:
       gap: 12px;
       font-size: 13px;
     }
+    .route-summary table {
+      table-layout: fixed;
+    }
+    .route-summary th,
+    .route-summary td {
+      overflow-wrap: anywhere;
+    }
     .agent-legend {
       display: grid;
       gap: 6px;
@@ -424,6 +457,24 @@ def render_viewer_html() -> str:
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+    .agent-legend-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      border: 1px solid #d0d5dd;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #344054;
+      padding: 4px 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .agent-legend-button[aria-pressed="true"] {
+      border-color: #111827;
+      color: #111827;
+      box-shadow: inset 0 0 0 1px #111827;
     }
     .route-agent {
       border-top: 1px solid #eaecf0;
@@ -639,6 +690,7 @@ def render_viewer_html() -> str:
     let observationModalTransform = { scale: 1, translateX: 0, translateY: 0 };
     let showHouseTexture = true;
     let houseTextureMissingCommand = "";
+    let focusedRouteAgentId = null;
     const viewportStates = new Map();
     const GRAPH_MIN_SCALE = 0.2;
     const GRAPH_MAX_SCALE = 5;
@@ -649,6 +701,11 @@ def render_viewer_html() -> str:
     const REGION_BOUNDARY_NODE_RADIUS_CAP = 38;
     const REGION_BOUNDARY_CORRIDOR_RADIUS_CAP = 18;
     const REGION_BOUNDARY_CELL_SIZE = 4;
+    const ROUTE_LANE_SPACING = 5;
+    const ROUTE_VISIT_BADGE_RADIUS = 18;
+    const ROUTE_VISIT_BADGE_STEP = 13;
+    const ROUTE_VISIT_LABEL_BOX_WIDTH = 22;
+    const ROUTE_VISIT_LABEL_BOX_HEIGHT = 18;
     const ROUTE_COLORS = ["#d62728", "#1f77b4", "#2ca02c", "#ff7f0e", "#9467bd", "#17becf"];
     const REGION_COLORS = [
       "#0f766e",
@@ -914,6 +971,7 @@ def render_viewer_html() -> str:
       for (const button of solutionButtons.querySelectorAll("button")) {
         button.addEventListener("click", () => {
           activeSolutionId = button.dataset.solutionId || null;
+          focusedRouteAgentId = null;
           selected = null;
           panState = null;
           render();
@@ -945,6 +1003,7 @@ def render_viewer_html() -> str:
       summaryTitle.textContent = solution.label;
       renderRouteSelection(solution);
       document.getElementById("summary").innerHTML = routeSummaryHtml(solution.summary);
+      bindRouteAgentLegendControls();
     }
 
     function routeSummaryHtml(summary) {
@@ -952,6 +1011,7 @@ def render_viewer_html() -> str:
         item.target_id,
         item.description,
         item.node_id,
+        item.distance_to_find,
         item.agent_ids.join(", ")
       ]);
       const agentBlocks = (summary.agents || []).map(agent => `
@@ -969,11 +1029,12 @@ def render_viewer_html() -> str:
         <div class="route-summary">
           ${definitionList({
             test_case: summary.test_case,
-            total_distance: formatNumber(summary.total_distance)
+            total_distance: formatNumber(summary.total_distance),
+            max_agent_dis: formatNumber(routeMaximumAgentDistance(summary))
           })}
           <div>
             <h3>Target viewpoint indices</h3>
-            ${table(["target", "description", "node", "found by"], targetRows)}
+            ${table(["target", "description", "node", "distance to find", "found by"], targetRows)}
           </div>
           <div>
             <h3>Agent Legend</h3>
@@ -987,12 +1048,48 @@ def render_viewer_html() -> str:
     function routeTargetRows(summary) {
       return Object.entries(summary.target_node_ids_by_target_id || {})
         .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
-        .map(([targetId, nodeId]) => ({
-          target_id: targetId,
-          description: targetDescription(targetId),
-          node_id: nodeId,
-          agent_ids: routeAgentsForNode(summary, nodeId)
-        }));
+        .map(([targetId, nodeId]) => {
+          const arrival = routeTargetArrival(summary, nodeId);
+          return {
+            target_id: targetId,
+            description: targetDescription(targetId),
+            node_id: nodeId,
+            distance_to_find: formatNumber(arrival.distance),
+            finder_agent_id: arrival.agent_id,
+            agent_ids: routeAgentsForNode(summary, nodeId)
+          };
+        });
+    }
+
+    function routeTargetArrival(summary, nodeId) {
+      let bestArrival = null;
+      for (const agent of summary.agents || []) {
+        const routeNodeIds = agent.route_node_ids.map(Number);
+        const edgeDistances = agent.edge_distances.map(Number);
+        let cumulativeDistance = 0;
+        for (let routeIndex = 0; routeIndex < routeNodeIds.length; routeIndex += 1) {
+          if (Number(routeNodeIds[routeIndex]) === Number(nodeId)) {
+            const arrival = {
+              agent_id: agent.agent_id,
+              distance: cumulativeDistance
+            };
+            if (bestArrival === null || arrival.distance < bestArrival.distance) {
+              bestArrival = arrival;
+            }
+            break;
+          }
+          if (routeIndex < routeNodeIds.length - 1) {
+            cumulativeDistance += Number(edgeDistances[routeIndex]);
+          }
+        }
+      }
+      return bestArrival;
+    }
+
+    function routeMaximumAgentDistance(summary) {
+      if (summary.maximum_agent_distance !== undefined) return Number(summary.maximum_agent_distance);
+      const distances = (summary.agents || []).map(agent => Number(agent.path_distance));
+      return distances.length ? Math.max(...distances) : 0;
     }
 
     function routeAgentsForNode(summary, nodeId) {
@@ -1015,12 +1112,27 @@ def render_viewer_html() -> str:
     function routeAgentLegendHtml(summary) {
       const rows = routeAgentLegendRows(summary);
       if (!rows.length) return "<p style=\"margin:0;color:var(--muted);font-size:13px;\">No agents.</p>";
-      return `<div class="agent-legend">${rows.map(item => `
-        <div class="agent-legend-row">
-          <span class="swatch" style="background:${escapeAttr(item.color)};"></span>
-          <span>${escapeHtml(item.agent_id)}</span>
-        </div>
-      `).join("")}</div>`;
+      const allPressed = focusedRouteAgentId === null;
+      return `<div class="agent-legend">
+        <button class="agent-legend-button" type="button" data-route-agent-id="" aria-pressed="${String(allPressed)}">
+          All
+        </button>
+        ${rows.map(item => `
+          <button class="agent-legend-button" type="button" data-route-agent-id="${escapeAttr(item.agent_id)}" aria-pressed="${String(focusedRouteAgentId === item.agent_id)}">
+            <span class="swatch" style="background:${escapeAttr(item.color)};"></span>
+            <span>${escapeHtml(item.agent_id)}</span>
+          </button>
+        `).join("")}
+      </div>`;
+    }
+
+    function bindRouteAgentLegendControls() {
+      for (const button of document.querySelectorAll("[data-route-agent-id]")) {
+        button.addEventListener("click", () => {
+          focusedRouteAgentId = button.dataset.routeAgentId || null;
+          render();
+        });
+      }
     }
 
     function routeAgentColor(agentIndex) {
@@ -1069,16 +1181,6 @@ def render_viewer_html() -> str:
       const positions = routePositions(environment.nodes, projection);
       const contentBounds = computeRouteContentBounds(solution, positions, projection);
 
-      const defs = svgEl("defs", {});
-      graph.appendChild(defs);
-      (solution.summary.agents || []).forEach((agent, agentIndex) => {
-        appendRouteArrowMarker(
-          defs,
-          routeArrowMarkerId(agentIndex),
-          routeAgentColor(agentIndex)
-        );
-      });
-
       const viewportLayer = svgEl("g", {});
       graph.appendChild(viewportLayer);
 
@@ -1119,56 +1221,46 @@ def render_viewer_html() -> str:
 
       const routeLayer = svgEl("g", {});
       viewportLayer.appendChild(routeLayer);
-      (solution.summary.agents || []).forEach((agent, agentIndex) => {
-        const color = routeAgentColor(agentIndex);
-        const routeNodeIds = (agent.route_node_ids || []).map(Number);
-        const routePoints = routeNodeIds.map(nodeId => positions.get(String(nodeId)));
-        routePoints.slice(0, -1).forEach((point, routeIndex) => {
-          const nextNodeId = routeNodeIds[routeIndex + 1];
-          if (Number(routeNodeIds[routeIndex]) === Number(nextNodeId)) return;
-          const nextPoint = routePoints[routeIndex + 1];
-          if (sameRoutePoint(point, nextPoint)) return;
-          const segment = routeSegmentEndpoints(
-            point,
-            nextPoint,
-            routeIndex === 0 ? 8 : 6,
-            10
-          );
-          const sourceNode = environmentNodeById(routeNodeIds[routeIndex]);
-          const targetNode = environmentNodeById(nextNodeId);
-          const line = svgEl("line", {
-            class: `route-line ${sourceNode.floor_index !== targetNode.floor_index ? "vz" : "vv"}`,
-            x1: segment.x1,
-            y1: segment.y1,
-            x2: segment.x2,
-            y2: segment.y2,
-            stroke: color,
-            "marker-end": `url(#${routeArrowMarkerId(agentIndex)})`
-          });
-          const title = svgEl("title", {});
-          title.textContent = `${agent.agent_id} step ${routeIndex} to ${routeIndex + 1}`;
-          line.appendChild(title);
-          routeLayer.appendChild(line);
+      const movementEvents = routeSegmentEvents(solution, positions);
+      const displayEdgeEvents = assignRouteSegmentLanes(routeDisplayEdgeEvents(movementEvents));
+      for (const routeEvent of displayEdgeEvents) {
+        const sourceNode = environmentNodeById(routeEvent.sourceNodeId);
+        const targetNode = environmentNodeById(routeEvent.targetNodeId);
+        const path = svgEl("path", {
+          class: routeLineClass(routeEvent, sourceNode, targetNode),
+          d: routeSegmentPath(routeEvent),
+          stroke: routeAgentColor(routeEvent.agentIndex)
         });
-        routePoints.forEach((point, routeIndex) => {
-          const nodeId = routeNodeIds[routeIndex];
-          const circle = svgEl("circle", {
-            class: routeNodeClass(
-              routeIndex === 0 ? "route-start-marker" : "route-step-marker",
-              nodeId
-            ),
-            cx: point.x,
-            cy: point.y,
-            r: routeIndex === 0 ? 8 : 6,
-            fill: color
-          });
-          circle.addEventListener("click", event => selectRouteNode(event, nodeId));
-          const circleTitle = svgEl("title", {});
-          circleTitle.textContent = `${agent.agent_id} step ${routeIndex}: node ${nodeId}`;
-          circle.appendChild(circleTitle);
-          routeLayer.appendChild(circle);
+        const title = svgEl("title", {});
+        title.textContent = `${routeEvent.agentId}; nodes ${routeEvent.sourceNodeId} -- ${routeEvent.targetNodeId}; traversed at steps ${routeEvent.routeIndices.join(", ")}`;
+        path.appendChild(title);
+        routeLayer.appendChild(path);
+      }
+
+      const visitEvents = routeVisitEvents(solution, positions);
+      for (const routeEvent of visitEvents) {
+        const circle = svgEl("circle", {
+          class: routeMarkerClass(routeEvent),
+          cx: routeEvent.point.x,
+          cy: routeEvent.point.y,
+          r: routeEvent.routeIndex === 0 ? 8 : 6,
+          fill: routeAgentColor(routeEvent.agentIndex)
         });
-      });
+        circle.addEventListener("click", event => selectRouteNode(event, routeEvent.nodeId));
+        const circleTitle = svgEl("title", {});
+        circleTitle.textContent = `${routeEvent.agentId} step ${routeEvent.routeIndex}: node ${routeEvent.nodeId}`;
+        circle.appendChild(circleTitle);
+        routeLayer.appendChild(circle);
+      }
+
+      const routeLabelLayer = svgEl("g", {});
+      viewportLayer.appendChild(routeLabelLayer);
+      if (focusedRouteAgentId !== null) {
+        appendRouteVisitLabels(
+          routeLabelLayer,
+          visitEvents.filter(routeEvent => routeEvent.agentId === focusedRouteAgentId)
+        );
+      }
 
       const targetLayer = svgEl("g", {});
       viewportLayer.appendChild(targetLayer);
@@ -1202,6 +1294,221 @@ def render_viewer_html() -> str:
       );
     }
 
+    function routeSegmentEvents(solution, positions) {
+      const events = [];
+      (solution.summary.agents || []).forEach((agent, agentIndex) => {
+        const routeNodeIds = (agent.route_node_ids || []).map(Number);
+        const routePoints = routeNodeIds.map(nodeId => positions.get(String(nodeId)));
+        routePoints.slice(0, -1).forEach((point, routeIndex) => {
+          const sourceNodeId = routeNodeIds[routeIndex];
+          const targetNodeId = routeNodeIds[routeIndex + 1];
+          if (Number(sourceNodeId) === Number(targetNodeId)) return;
+          const nextPoint = routePoints[routeIndex + 1];
+          if (sameRoutePoint(point, nextPoint)) return;
+          events.push({
+            agentId: agent.agent_id,
+            agentIndex,
+            routeIndex,
+            sourceNodeId,
+            targetNodeId,
+            sourcePoint: point,
+            targetPoint: nextPoint,
+            bundleKey: routeSegmentBundleKey(sourceNodeId, targetNodeId)
+          });
+        });
+      });
+      return events;
+    }
+
+    function routeVisitEvents(solution, positions) {
+      return (solution.summary.agents || []).flatMap((agent, agentIndex) => {
+        const routeNodeIds = (agent.route_node_ids || []).map(Number);
+        return routeNodeIds.map((nodeId, routeIndex) => ({
+          agentId: agent.agent_id,
+          agentIndex,
+          routeIndex,
+          nodeId,
+          point: positions.get(String(nodeId))
+        }));
+      });
+    }
+
+    function routeDisplayEdgeEvents(movementEvents) {
+      const edgeEvents = new Map();
+      for (const movementEvent of movementEvents) {
+        const key = `${movementEvent.agentId}:${movementEvent.bundleKey}`;
+        if (!edgeEvents.has(key)) {
+          const sourceFirst = Number(movementEvent.sourceNodeId) <= Number(movementEvent.targetNodeId);
+          edgeEvents.set(key, {
+            agentId: movementEvent.agentId,
+            agentIndex: movementEvent.agentIndex,
+            routeIndex: movementEvent.routeIndex,
+            routeIndices: [],
+            sourceNodeId: sourceFirst ? movementEvent.sourceNodeId : movementEvent.targetNodeId,
+            targetNodeId: sourceFirst ? movementEvent.targetNodeId : movementEvent.sourceNodeId,
+            sourcePoint: sourceFirst ? movementEvent.sourcePoint : movementEvent.targetPoint,
+            targetPoint: sourceFirst ? movementEvent.targetPoint : movementEvent.sourcePoint,
+            bundleKey: movementEvent.bundleKey
+          });
+        }
+        edgeEvents.get(key).routeIndices.push(movementEvent.routeIndex);
+      }
+      return Array.from(edgeEvents.values());
+    }
+
+    function routeSegmentBundleKey(sourceNodeId, targetNodeId) {
+      const source = Number(sourceNodeId);
+      const target = Number(targetNodeId);
+      return source < target ? `${source}:${target}` : `${target}:${source}`;
+    }
+
+    function assignRouteSegmentLanes(events) {
+      const bundles = new Map();
+      for (const routeEvent of events) {
+        if (!bundles.has(routeEvent.bundleKey)) bundles.set(routeEvent.bundleKey, []);
+        bundles.get(routeEvent.bundleKey).push(routeEvent);
+      }
+      const assigned = [];
+      for (const bundleEvents of bundles.values()) {
+        bundleEvents.sort((a, b) => {
+          if (a.agentIndex !== b.agentIndex) return a.agentIndex - b.agentIndex;
+          return a.routeIndex - b.routeIndex;
+        });
+        bundleEvents.forEach((routeEvent, laneIndex) => {
+          const laneOffset = (laneIndex - (bundleEvents.length - 1) / 2) * ROUTE_LANE_SPACING;
+          assigned.push({ ...routeEvent, laneOffset });
+        });
+      }
+      assigned.sort((a, b) => {
+        if (a.agentIndex !== b.agentIndex) return a.agentIndex - b.agentIndex;
+        return a.routeIndex - b.routeIndex;
+      });
+      return assigned;
+    }
+
+    function routeSegmentPath(routeEvent) {
+      const segment = routeSegmentEndpoints(
+        routeEvent.sourcePoint,
+        routeEvent.targetPoint,
+        routeEvent.routeIndex === 0 ? 8 : 6,
+        10
+      );
+      const midX = (segment.x1 + segment.x2) / 2;
+      const midY = (segment.y1 + segment.y2) / 2;
+      const normal = routeBundleNormal(routeEvent);
+      const controlX = midX + normal.x * routeEvent.laneOffset;
+      const controlY = midY + normal.y * routeEvent.laneOffset;
+      return `M ${segment.x1} ${segment.y1} Q ${controlX} ${controlY} ${segment.x2} ${segment.y2}`;
+    }
+
+    function routeBundleNormal(routeEvent) {
+      const forward = Number(routeEvent.sourceNodeId) < Number(routeEvent.targetNodeId);
+      const source = forward ? routeEvent.sourcePoint : routeEvent.targetPoint;
+      const target = forward ? routeEvent.targetPoint : routeEvent.sourcePoint;
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const length = Math.hypot(dx, dy);
+      return { x: -dy / length, y: dx / length };
+    }
+
+    function routeLineClass(routeEvent, sourceNode, targetNode) {
+      const edgeClass = sourceNode.floor_index !== targetNode.floor_index ? "vz" : "vv";
+      const focusClass = focusedRouteAgentId !== null && routeEvent.agentId !== focusedRouteAgentId ? "route-faded" : "";
+      return `route-line ${edgeClass} ${focusClass}`;
+    }
+
+    function routeMarkerClass(routeEvent) {
+      const baseClass = routeEvent.routeIndex === 0 ? "route-start-marker" : "route-step-marker";
+      const focusClass = focusedRouteAgentId !== null && routeEvent.agentId !== focusedRouteAgentId ? "route-faded" : "";
+      return `${routeNodeClass(baseClass, routeEvent.nodeId)} ${focusClass}`;
+    }
+
+    function appendRouteVisitLabels(routeLabelLayer, routeEvents) {
+      const visitsByNode = new Map();
+      for (const routeEvent of routeEvents) {
+        const key = String(routeEvent.nodeId);
+        if (!visitsByNode.has(key)) visitsByNode.set(key, []);
+        visitsByNode.get(key).push(routeEvent);
+      }
+      const occupiedBoxes = [];
+      for (const visits of visitsByNode.values()) {
+        visits.sort((a, b) => a.routeIndex - b.routeIndex);
+        visits.forEach((routeEvent, visitIndex) => {
+          const labelPoint = routeVisitLabelPoint(routeEvent.point, visitIndex, visits.length, occupiedBoxes);
+          const group = svgEl("g", {});
+          group.appendChild(svgEl("line", {
+            class: "route-step-label-leader",
+            x1: routeEvent.point.x,
+            y1: routeEvent.point.y,
+            x2: labelPoint.x,
+            y2: labelPoint.y
+          }));
+          const radius = String(routeEvent.routeIndex).length > 1 ? 8 : 7;
+          group.appendChild(svgEl("circle", {
+            class: "route-step-label-badge",
+            cx: labelPoint.x,
+            cy: labelPoint.y,
+            r: radius
+          }));
+          const label = svgEl("text", {
+            class: "route-step-label-text",
+            x: labelPoint.x,
+            y: labelPoint.y
+          });
+          label.textContent = `${routeEvent.routeIndex}`;
+          group.appendChild(label);
+          const title = svgEl("title", {});
+          title.textContent = `${routeEvent.agentId} step ${routeEvent.routeIndex}: node ${routeEvent.nodeId}`;
+          group.appendChild(title);
+          routeLabelLayer.appendChild(group);
+        });
+      }
+    }
+
+    function routeVisitLabelPoint(point, visitIndex, visitCount, occupiedBoxes) {
+      const baseAngle = visitCount === 1
+        ? -Math.PI / 2
+        : -Math.PI / 2 + (2 * Math.PI * visitIndex) / visitCount;
+      let attemptIndex = 0;
+      while (true) {
+        const ringIndex = Math.floor(attemptIndex / 8);
+        const angleIndex = attemptIndex % 8;
+        const angle = baseAngle + routeVisitLabelAngleOffset(angleIndex);
+        const radius = ROUTE_VISIT_BADGE_RADIUS + ringIndex * ROUTE_VISIT_BADGE_STEP;
+        const candidate = {
+          x: point.x + Math.cos(angle) * radius,
+          y: point.y + Math.sin(angle) * radius
+        };
+        const box = routeVisitLabelBox(candidate);
+        if (!occupiedBoxes.some(occupiedBox => boxesOverlap(box, occupiedBox))) {
+          occupiedBoxes.push(box);
+          return candidate;
+        }
+        attemptIndex += 1;
+      }
+    }
+
+    function routeVisitLabelAngleOffset(angleIndex) {
+      const offsets = [0, Math.PI / 4, -Math.PI / 4, Math.PI / 2, -Math.PI / 2, 3 * Math.PI / 4, -3 * Math.PI / 4, Math.PI];
+      return offsets[angleIndex];
+    }
+
+    function routeVisitLabelBox(point) {
+      return {
+        left: point.x - ROUTE_VISIT_LABEL_BOX_WIDTH / 2,
+        right: point.x + ROUTE_VISIT_LABEL_BOX_WIDTH / 2,
+        top: point.y - ROUTE_VISIT_LABEL_BOX_HEIGHT / 2,
+        bottom: point.y + ROUTE_VISIT_LABEL_BOX_HEIGHT / 2
+      };
+    }
+
+    function boxesOverlap(first, second) {
+      return first.left < second.right
+        && first.right > second.left
+        && first.top < second.bottom
+        && first.bottom > second.top;
+    }
+
     function appendHouseTexture(viewportLayer, environment, projection) {
       const texture = environment.house_texture;
       const textureFloors = texture.floors || [texture];
@@ -1218,28 +1525,6 @@ def render_viewer_html() -> str:
         });
         viewportLayer.appendChild(image);
       }
-    }
-
-    function appendRouteArrowMarker(defs, markerId, color) {
-      const marker = svgEl("marker", {
-        id: markerId,
-        viewBox: "0 0 8 8",
-        markerWidth: 3,
-        markerHeight: 3,
-        refX: 7,
-        refY: 4,
-        orient: "auto",
-        markerUnits: "strokeWidth"
-      });
-      marker.appendChild(svgEl("path", {
-        d: "M 0 0 L 8 4 L 0 8 z",
-        fill: color
-      }));
-      defs.appendChild(marker);
-    }
-
-    function routeArrowMarkerId(agentIndex) {
-      return `route-arrow-${agentIndex}`;
     }
 
     function routeNodeClass(baseClass, nodeId) {
@@ -2371,7 +2656,7 @@ def render_viewer_html() -> str:
       for (const agent of solution.summary.agents || []) {
         (agent.route_node_ids || []).forEach((nodeId, routeIndex) => {
           const position = positions.get(String(nodeId));
-          includeGraphPoint(bounds, position.x, position.y, routeIndex === 0 ? 12 : 10);
+          includeGraphPoint(bounds, position.x, position.y, routeIndex === 0 ? 80 : 72);
         });
       }
       for (const [targetId, nodeId] of Object.entries(solution.summary.target_node_ids_by_target_id || {})) {
