@@ -55,6 +55,88 @@ def _minimal_graph_summary(raw_target_probs=None):
     }
 
 
+def _vv_edge_validation_observations():
+    return [
+        {
+            "agent_id": "agent0",
+            "current_viewpoint_index": 0,
+            "visible_viewpoints": [
+                {"viewpoint_index": 1, "distance": 1.0},
+                {"viewpoint_index": 2, "distance": 1.0},
+            ],
+        }
+    ]
+
+
+def _vv_edge_validation_graph_summary(
+    endpoint2_grounded=False,
+    endpoint2_visit_times=0,
+):
+    return {
+        "nodes": [
+            {
+                "id": 0,
+                "type": "viewpoint",
+                "grounded": True,
+                "node_visit_times": 1,
+                "raw_target_probs": {"4": 0.0},
+            },
+            {
+                "id": 1,
+                "type": "viewpoint",
+                "grounded": False,
+                "node_visit_times": 0,
+                "raw_target_probs": {"4": 0.2},
+            },
+            {
+                "id": 2,
+                "type": "viewpoint",
+                "grounded": endpoint2_grounded,
+                "node_visit_times": endpoint2_visit_times,
+                "raw_target_probs": {"4": 0.2},
+            },
+            {
+                "id": 95,
+                "type": "region",
+                "label": "office room",
+                "assigned_viewpoint_ids": [0],
+                "target_probs": {"4": 1.0},
+                "raw_target_probs": {"4": 1.0},
+            },
+        ],
+        "target_found": {"4": False},
+        "targets": [{"target_id": "4", "description": "helmet"}],
+        "viewpoint_to_region": {"0": 95},
+    }
+
+
+def _vv_edge_validation_payload(edge):
+    return {
+        "current_viewpoints_reassignment": [],
+        "visible_region_nodes": [],
+        "invisible_region_nodes": [],
+        "region_target_scores": [],
+        "viewpoint_target_scores": [
+            {
+                "id": 1,
+                "target_scores": {
+                    "4": _structured_score(
+                        raw_score=0.6,
+                        evidence_strength="medium",
+                        basis="helmet remains possible at viewpoint one",
+                    )
+                },
+            }
+        ],
+        "viewpoint_node_assigns": [],
+        "new_edges": [edge],
+        "edge_distance_variances": {
+            "viewpoint_region": 1.0,
+            "viewpoint_viewpoint": 1.0,
+        },
+    }
+
+
 class _GraphStub:
     def __init__(self, summary):
         self.summary = summary
@@ -137,6 +219,7 @@ def _payload_with_structured_target_scores():
         "current_viewpoints_reassignment": [],
         "visible_region_nodes": [],
         "invisible_region_nodes": [],
+        "region_target_scores": [],
         "viewpoint_target_scores": [
             {
                 "id": 1,
@@ -227,6 +310,15 @@ def _current_assignment_repair_observations():
 
 
 def _current_assignment_repair_payload(assignment_region, reassignment_region):
+    region_target_scores = []
+    if assignment_region != 95:
+        region_target_scores.append(
+            {
+                "id": 95,
+                "target_scores": {"4": 0.3},
+            }
+        )
+
     return {
         "current_viewpoints_reassignment": [
             {
@@ -236,6 +328,7 @@ def _current_assignment_repair_payload(assignment_region, reassignment_region):
         ],
         "visible_region_nodes": [],
         "invisible_region_nodes": [],
+        "region_target_scores": region_target_scores,
         "viewpoint_target_scores": [],
         "viewpoint_node_assigns": [
             {
@@ -807,6 +900,75 @@ def test_validate_payload_requires_viewpoint_target_scores(monkeypatch):
         )
 
 
+def test_validate_payload_rejects_vv_edge_with_current_endpoint(monkeypatch):
+    Helper = importlib.import_module("Helper")
+    mllm_client = importlib.import_module("semantic_persistence.mllm_client")
+    client = object.__new__(mllm_client.MLLMClient)
+    payload = _vv_edge_validation_payload(
+        {"i": 0, "j": 1, "edge_type": "VV", "exist_prob": 0.8, "dist": 2.0}
+    )
+
+    monkeypatch.setattr(
+        Helper, "viewpoint_vp_label_by_index", {0: "vp0", 1: "vp1", 2: "vp2"}
+    )
+
+    with pytest.raises(ValueError, match="cannot use a current viewpoint"):
+        client._validate_payload(
+            payload=payload,
+            agent_observations=_vv_edge_validation_observations(),
+            targets=[{"target_id": "4", "description": "helmet"}],
+            graph_summary=_vv_edge_validation_graph_summary(),
+            scorer=None,
+            semantic_payload_contract="graph_mllm",
+        )
+
+
+def test_validate_payload_rejects_vv_edge_with_grounded_endpoint(monkeypatch):
+    Helper = importlib.import_module("Helper")
+    mllm_client = importlib.import_module("semantic_persistence.mllm_client")
+    client = object.__new__(mllm_client.MLLMClient)
+    payload = _vv_edge_validation_payload(
+        {"i": 1, "j": 2, "edge_type": "VV", "exist_prob": 0.8, "dist": 2.0}
+    )
+
+    monkeypatch.setattr(
+        Helper, "viewpoint_vp_label_by_index", {0: "vp0", 1: "vp1", 2: "vp2"}
+    )
+
+    with pytest.raises(ValueError, match="ungrounded and unvisited"):
+        client._validate_payload(
+            payload=payload,
+            agent_observations=_vv_edge_validation_observations(),
+            targets=[{"target_id": "4", "description": "helmet"}],
+            graph_summary=_vv_edge_validation_graph_summary(endpoint2_grounded=True),
+            scorer=None,
+            semantic_payload_contract="graph_mllm",
+        )
+
+
+def test_validate_payload_rejects_vv_edge_with_visited_endpoint(monkeypatch):
+    Helper = importlib.import_module("Helper")
+    mllm_client = importlib.import_module("semantic_persistence.mllm_client")
+    client = object.__new__(mllm_client.MLLMClient)
+    payload = _vv_edge_validation_payload(
+        {"i": 1, "j": 2, "edge_type": "VV", "exist_prob": 0.8, "dist": 2.0}
+    )
+
+    monkeypatch.setattr(
+        Helper, "viewpoint_vp_label_by_index", {0: "vp0", 1: "vp1", 2: "vp2"}
+    )
+
+    with pytest.raises(ValueError, match="ungrounded and unvisited"):
+        client._validate_payload(
+            payload=payload,
+            agent_observations=_vv_edge_validation_observations(),
+            targets=[{"target_id": "4", "description": "helmet"}],
+            graph_summary=_vv_edge_validation_graph_summary(endpoint2_visit_times=1),
+            scorer=None,
+            semantic_payload_contract="graph_mllm",
+        )
+
+
 def test_validate_payload_materializes_graph_scores_without_returning_live_field(
     monkeypatch,
 ):
@@ -1002,6 +1164,7 @@ def test_validate_payload_preserves_distinct_raw_scores_before_normalization(
         "current_viewpoints_reassignment": [],
         "visible_region_nodes": [],
         "invisible_region_nodes": [],
+        "region_target_scores": [],
         "viewpoint_target_scores": [
             {
                 "id": 1,
@@ -1109,6 +1272,7 @@ def test_validate_payload_repairs_low_score_above_high_score(monkeypatch):
         "current_viewpoints_reassignment": [],
         "visible_region_nodes": [],
         "invisible_region_nodes": [],
+        "region_target_scores": [],
         "viewpoint_target_scores": [
             {
                 "id": 1,
@@ -1216,6 +1380,7 @@ def test_validate_payload_repairs_three_strength_buckets_before_normalization(
         "current_viewpoints_reassignment": [],
         "visible_region_nodes": [],
         "invisible_region_nodes": [],
+        "region_target_scores": [],
         "viewpoint_target_scores": [
             {
                 "id": 1,
@@ -1273,6 +1438,265 @@ def test_validate_payload_repairs_three_strength_buckets_before_normalization(
     )
 
 
+def test_validate_payload_normalizes_type2_region_target_scores(monkeypatch):
+    Helper = importlib.import_module("Helper")
+    mllm_client = importlib.import_module("semantic_persistence.mllm_client")
+    client = object.__new__(mllm_client.MLLMClient)
+    graph_summary = {
+        "nodes": [
+            {
+                "id": 0,
+                "type": "viewpoint",
+                "grounded": True,
+                "node_visit_times": 1,
+                "raw_target_probs": {"4": 0.0},
+            },
+            {
+                "id": 95,
+                "type": "region",
+                "label": "office room",
+                "assigned_viewpoint_ids": [0],
+                "target_probs": {"4": 0.0},
+                "raw_target_probs": {"4": 0.0},
+            },
+            {
+                "id": 103,
+                "type": "region",
+                "label": "hallway area",
+                "assigned_viewpoint_ids": [],
+                "target_probs": {"4": 0.2},
+                "raw_target_probs": {"4": 0.2},
+            },
+            {
+                "id": 104,
+                "type": "region",
+                "label": "storage area",
+                "assigned_viewpoint_ids": [],
+                "target_probs": {"4": 0.1},
+                "raw_target_probs": {"4": 0.1},
+            },
+        ],
+        "target_found": {"4": False},
+        "targets": [{"target_id": "4", "description": "helmet"}],
+        "viewpoint_to_region": {"0": 95},
+    }
+    payload = {
+        "current_viewpoints_reassignment": [],
+        "visible_region_nodes": [],
+        "invisible_region_nodes": [
+            {
+                "id": 105,
+                "label": "unseen laundry area",
+                "exist_prob": 0.6,
+                "target_probs": {"4": 0.5},
+            }
+        ],
+        "region_target_scores": [{"id": 103, "target_scores": {"4": 0.4}}],
+        "viewpoint_target_scores": [],
+        "viewpoint_node_assigns": [],
+        "new_edges": [],
+        "edge_distance_variances": {
+            "viewpoint_region": 1.0,
+            "viewpoint_viewpoint": 1.0,
+        },
+    }
+
+    monkeypatch.setattr(Helper, "viewpoint_vp_label_by_index", {0: "vp0"})
+
+    validated = client._validate_payload(
+        payload=payload,
+        agent_observations=[
+            {
+                "agent_id": "agent0",
+                "current_viewpoint_index": 0,
+                "visible_viewpoints": [],
+            }
+        ],
+        targets=[{"target_id": "4", "description": "helmet"}],
+        graph_summary=graph_summary,
+        scorer=None,
+        semantic_payload_contract="graph_mllm",
+    )
+
+    region_raw = {
+        item["id"]: item["target_scores"]["4"]
+        for item in validated["region_target_scores"]
+    }
+    assert region_raw == pytest.approx({103: 0.4, 104: 0.1, 105: 0.5})
+    assert validated["invisible_region_nodes"][0]["target_probs"] == {"4": 0.5}
+
+
+def test_validate_payload_forces_assigned_region_target_probs_to_zero(monkeypatch):
+    Helper = importlib.import_module("Helper")
+    mllm_client = importlib.import_module("semantic_persistence.mllm_client")
+    client = object.__new__(mllm_client.MLLMClient)
+    payload = {
+        "current_viewpoints_reassignment": [],
+        "visible_region_nodes": [
+            {
+                "id": 95,
+                "label": "bright kitchen area",
+                "exist_prob": 1.0,
+                "target_probs": {"4": 0.0},
+            }
+        ],
+        "invisible_region_nodes": [],
+        "region_target_scores": [],
+        "viewpoint_target_scores": [],
+        "viewpoint_node_assigns": [
+            {"region_node_id": 95, "assigned_viewpoint_node_indices": [0]}
+        ],
+        "new_edges": [],
+        "edge_distance_variances": {
+            "viewpoint_region": 1.0,
+            "viewpoint_viewpoint": 1.0,
+        },
+    }
+
+    monkeypatch.setattr(Helper, "viewpoint_vp_label_by_index", {0: "vp0"})
+
+    validated = client._validate_payload(
+        payload=payload,
+        agent_observations=[
+            {
+                "agent_id": "agent0",
+                "current_viewpoint_index": 0,
+                "visible_viewpoints": [],
+            }
+        ],
+        targets=[{"target_id": "4", "description": "helmet"}],
+        graph_summary={"nodes": [], "viewpoint_to_region": {}},
+        scorer=None,
+        semantic_payload_contract="graph_mllm",
+    )
+
+    assert validated["visible_region_nodes"][0]["target_probs"] == {"4": 0.0}
+    assert validated["region_target_scores"] == []
+
+
+def test_validate_payload_requires_scores_when_region_becomes_type2(monkeypatch):
+    Helper = importlib.import_module("Helper")
+    mllm_client = importlib.import_module("semantic_persistence.mllm_client")
+    client = object.__new__(mllm_client.MLLMClient)
+    payload = {
+        "current_viewpoints_reassignment": [
+            {"viewpoint_id": 0, "new_assigned_region_id": 96}
+        ],
+        "visible_region_nodes": [
+            {
+                "id": 96,
+                "label": "new hallway area",
+                "exist_prob": 1.0,
+                "target_probs": {"4": 0.3},
+            }
+        ],
+        "invisible_region_nodes": [],
+        "region_target_scores": [],
+        "viewpoint_target_scores": [],
+        "viewpoint_node_assigns": [],
+        "new_edges": [],
+        "edge_distance_variances": {
+            "viewpoint_region": 1.0,
+            "viewpoint_viewpoint": 1.0,
+        },
+    }
+
+    monkeypatch.setattr(Helper, "viewpoint_vp_label_by_index", {0: "vp0"})
+
+    with pytest.raises(ValueError, match="changed from assigned to unassigned"):
+        client._validate_payload(
+            payload=payload,
+            agent_observations=[
+                {
+                    "agent_id": "agent0",
+                    "current_viewpoint_index": 0,
+                    "visible_viewpoints": [],
+                }
+            ],
+            targets=[{"target_id": "4", "description": "helmet"}],
+            graph_summary={
+                "nodes": [
+                    {
+                        "id": 0,
+                        "type": "viewpoint",
+                        "grounded": True,
+                        "node_visit_times": 1,
+                        "raw_target_probs": {"4": 0.0},
+                    },
+                    {
+                        "id": 95,
+                        "type": "region",
+                        "label": "office room",
+                        "assigned_viewpoint_ids": [0],
+                        "target_probs": {"4": 0.0},
+                        "raw_target_probs": {"4": 0.0},
+                    },
+                ],
+                "target_found": {"4": False},
+                "targets": [{"target_id": "4", "description": "helmet"}],
+                "viewpoint_to_region": {"0": 95},
+            },
+            scorer=None,
+            semantic_payload_contract="graph_mllm",
+        )
+
+
+def test_validate_payload_rejects_zero_raw_sum_for_type2_regions(monkeypatch):
+    Helper = importlib.import_module("Helper")
+    mllm_client = importlib.import_module("semantic_persistence.mllm_client")
+    client = object.__new__(mllm_client.MLLMClient)
+    graph_summary = {
+        "nodes": [
+            {
+                "id": 0,
+                "type": "viewpoint",
+                "grounded": True,
+                "node_visit_times": 1,
+                "raw_target_probs": {"4": 0.0},
+            },
+            {
+                "id": 95,
+                "type": "region",
+                "label": "office room",
+                "assigned_viewpoint_ids": [0],
+                "target_probs": {"4": 0.0},
+                "raw_target_probs": {"4": 0.0},
+            },
+            {
+                "id": 103,
+                "type": "region",
+                "label": "empty storage area",
+                "assigned_viewpoint_ids": [],
+                "target_probs": {"4": 0.0},
+                "raw_target_probs": {"4": 0.0},
+            },
+        ],
+        "target_found": {"4": False},
+        "targets": [{"target_id": "4", "description": "helmet"}],
+        "viewpoint_to_region": {"0": 95},
+    }
+    payload = _payload_with_structured_target_scores()
+    payload["viewpoint_target_scores"] = []
+
+    monkeypatch.setattr(Helper, "viewpoint_vp_label_by_index", {0: "vp0", 1: "vp1"})
+
+    with pytest.raises(ValueError, match="Type-\\(2\\) region target probabilities"):
+        client._validate_payload(
+            payload=payload,
+            agent_observations=[
+                {
+                    "agent_id": "agent0",
+                    "current_viewpoint_index": 0,
+                    "visible_viewpoints": [],
+                }
+            ],
+            targets=[{"target_id": "4", "description": "helmet"}],
+            graph_summary=graph_summary,
+            scorer=None,
+            semantic_payload_contract="graph_mllm",
+        )
+
+
 def test_build_instruction_uses_evidence_contract_without_random_score_templates(
     monkeypatch,
 ):
@@ -1298,7 +1722,7 @@ def test_build_instruction_uses_evidence_contract_without_random_score_templates
     assert "support may be []" not in user_message
     assert "against may be []" not in user_message
     assert "<nonnegative raw score justified by evidence>" in user_message
-    assert "<score in (0, 1] justified by evidence>" in user_message
+    assert "<score in [0, 1] justified by evidence>" in user_message
     assert '"4": 0.6' not in user_message
     assert '"4": 0.8' not in user_message
 

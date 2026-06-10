@@ -38,11 +38,17 @@ class GraphNode:
         target_probs: Dict[str, float],
         raw_target_probs: Dict[str, float],
         node_visit_times: int = 0,
+        latent_exist_prob: Optional[float] = None,
     ):
         self.node_id = int(node_id)
         self.label = str(label)
         self.type = int(node_type)
         self.exist_prob = float(exist_prob)
+        self.latent_exist_prob = (
+            float(exist_prob)
+            if latent_exist_prob is None
+            else float(latent_exist_prob)
+        )
         self.grounded = bool(grounded)
         self.target_probs = {
             str(target_id): float(value) for target_id, value in target_probs.items()
@@ -179,6 +185,7 @@ class HypothesisGraph:
         target_probs: Optional[Dict[str, float]] = None,
         raw_target_probs: Optional[Dict[str, float]] = None,
         node_visit_times: Optional[int] = None,
+        latent_exist_prob: Optional[float] = None,
     ) -> GraphNode:
         node_id = int(node_id)
 
@@ -205,6 +212,15 @@ class HypothesisGraph:
                 node_visit_times=(
                     0 if node_visit_times is None else int(node_visit_times)
                 ),
+                latent_exist_prob=(
+                    1.0
+                    if node_type == TYPE_VP
+                    else (
+                        float(exist_prob)
+                        if latent_exist_prob is None
+                        else float(latent_exist_prob)
+                    )
+                ),
             )
             return self.nodes[node_id]
 
@@ -214,6 +230,14 @@ class HypothesisGraph:
 
         if exist_prob is not None:
             node.exist_prob = float(exist_prob)
+            node.latent_exist_prob = (
+                1.0 if node.type == TYPE_VP else float(exist_prob)
+            )
+
+        if latent_exist_prob is not None:
+            node.latent_exist_prob = (
+                1.0 if node.type == TYPE_VP else float(latent_exist_prob)
+            )
 
         if grounded is not None:
             node.grounded = bool(grounded)
@@ -302,8 +326,9 @@ class HypothesisGraph:
 
         existing_node_ids = set(self.nodes)
 
-        previous_exist_probs = {
-            node_id: float(node.exist_prob) for node_id, node in self.nodes.items()
+        previous_latent_exist_probs = {
+            node_id: float(node.latent_exist_prob)
+            for node_id, node in self.nodes.items()
         }
         previous_grounded = {
             node_id: bool(node.grounded) for node_id, node in self.nodes.items()
@@ -331,10 +356,16 @@ class HypothesisGraph:
 
         region_initial_probs: Dict[int, Dict[str, float]] = {}
         region_initial_exist_probs: Dict[int, float] = {}
+        region_target_scores: Dict[int, Dict[str, float]] = {}
         viewpoint_initial_probs: Dict[int, Dict[str, float]] = {}
         current_region_for_agent: Dict[str, int] = {}
         newly_grounded_viewpoints: Set[int] = set()
         candidate_viewpoint_ids: Set[int] = set()
+        previous_type1_region_ids = {
+            region_id
+            for region_id, viewpoint_ids in self.region_to_viewpoints.items()
+            if viewpoint_ids
+        }
 
         region_info_by_id: Dict[int, Dict[str, object]] = {}
         visible_region_ids: Set[int] = set()
@@ -360,6 +391,12 @@ class HypothesisGraph:
                     target_probs=region_initial_probs[region_id],
                     raw_target_probs=region_initial_probs[region_id],
                 )
+
+        for item in payload.get("region_target_scores", []):
+            region_id = int(item["id"])
+            region_target_scores[region_id] = self._materialize_target_probs(
+                item["target_scores"]
+            )
 
         for observation in agent_observations:
             agent_id = str(observation["agent_id"])
@@ -614,10 +651,15 @@ class HypothesisGraph:
             )
 
         self._drop_invalid_vz_edges()
+        self._drop_invalid_hypothesized_vv_edges()
 
         self._apply_mllm_viewpoint_target_probabilities(
             viewpoint_initial_probs=viewpoint_initial_probs,
             current_viewpoint_ids=set(self.agent_current_vp_ids.values()),
+        )
+        self._apply_region_target_probabilities(
+            region_target_scores=region_target_scores,
+            previous_type1_region_ids=previous_type1_region_ids,
         )
 
         # Remove all found targets from every node's target_probs.
@@ -626,11 +668,12 @@ class HypothesisGraph:
         self._remove_found_target_probs_from_nodes()
 
         self._update_region_existence_posteriors(
-            previous_exist_probs=previous_exist_probs,
+            previous_latent_exist_probs=previous_latent_exist_probs,
             existing_node_ids=existing_node_ids,
             region_initial_exist_probs=region_initial_exist_probs,
             scorer=scorer,
         )
+        self._refresh_region_grounding()
         self._update_edge_distance_posteriors(
             previous_distance_means=previous_distance_means,
             previous_distance_vars=previous_distance_vars,
@@ -733,9 +776,14 @@ class HypothesisGraph:
         # If a region already has this viewpoint assigned, grounding the viewpoint
         # should also ground that region.
         self._refresh_region_grounding()
+        self._apply_region_target_probabilities(
+            region_target_scores={},
+            previous_type1_region_ids=set(),
+        )
 
         # Remove VZ edges whose region now has assigned viewpoints.
         self._drop_invalid_vz_edges()
+        self._drop_invalid_hypothesized_vv_edges()
 
         # If target_found has already been updated elsewhere, remove those found
         # targets from every node's target probability dictionary.
@@ -784,6 +832,7 @@ class HypothesisGraph:
                 "type": "region" if node.type == TYPE_REGION else "viewpoint",
                 "grounded": 1 if node.grounded else 0,
                 "exist_prob": node.exist_prob,
+                "latent_exist_prob": node.latent_exist_prob,
                 "target_probs": dict(node.target_probs),
                 "raw_target_probs": dict(node.raw_target_probs),
                 "node_visit_times": node.node_visit_times,
@@ -833,6 +882,8 @@ class HypothesisGraph:
                 "label": node.label,
                 "type": "region" if node.type == TYPE_REGION else "viewpoint",
                 "grounded": bool(node.grounded),
+                "exist_prob": node.exist_prob,
+                "latent_exist_prob": node.latent_exist_prob,
                 "node_visit_times": node.node_visit_times,
                 "connected_node_ids": sorted(node.connected_node_ids),
             }
@@ -879,6 +930,7 @@ class HypothesisGraph:
                     "type": "region" if node.type == TYPE_REGION else "viewpoint",
                     "grounded": bool(node.grounded),
                     "exist_prob": node.exist_prob,
+                    "latent_exist_prob": node.latent_exist_prob,
                     "target_probs": dict(node.target_probs),
                     "raw_target_probs": dict(node.raw_target_probs),
                     "target_score_basis": copy.deepcopy(
@@ -887,6 +939,10 @@ class HypothesisGraph:
                     "node_visit_times": node.node_visit_times,
                 }
             )
+            if node.type == TYPE_REGION:
+                nodes[-1]["assigned_viewpoint_ids"] = sorted(
+                    self.region_to_viewpoints.get(node.node_id, set())
+                )
 
         edges = []
         for edge_id in sorted(self.edges):
@@ -1031,10 +1087,13 @@ class HypothesisGraph:
     def _merge_region_nodes(self, canonical_id: int, merged_id: int) -> None:
         canonical_node = self.nodes[canonical_id]
         merged_node = self.nodes[merged_id]
+        canonical_node.latent_exist_prob = max(
+            canonical_node.latent_exist_prob,
+            merged_node.latent_exist_prob,
+        )
         canonical_node.exist_prob = max(
             canonical_node.exist_prob, merged_node.exist_prob
         )
-        canonical_node.grounded = canonical_node.grounded or merged_node.grounded
         for target_id in self.target_ids:
             canonical_node.target_probs[target_id] = max(
                 canonical_node.target_probs[target_id],
@@ -1113,14 +1172,15 @@ class HypothesisGraph:
     def _refresh_region_grounding(self) -> None:
         for node in self.nodes.values():
             if node.type != TYPE_REGION:
+                node.exist_prob = 1.0
+                node.latent_exist_prob = 1.0
                 continue
             assigned_viewpoints = self.region_to_viewpoints.get(node.node_id, set())
-            node.grounded = node.grounded or any(
+            node.grounded = any(
                 self.nodes[viewpoint_id].grounded
                 for viewpoint_id in assigned_viewpoints
             )
-            if node.grounded:
-                node.exist_prob = 1.0
+            node.exist_prob = 1.0 if node.grounded else node.latent_exist_prob
 
     def _drop_invalid_vz_edges(self) -> None:
         invalid_edges = []
@@ -1133,6 +1193,19 @@ class HypothesisGraph:
                 else edge.target_node_id
             )
             if self.region_to_viewpoints.get(region_id):
+                invalid_edges.append(edge_id)
+        for edge_id in invalid_edges:
+            self.remove_edge(edge_id)
+
+    def _drop_invalid_hypothesized_vv_edges(self) -> None:
+        invalid_edges = []
+        for edge_id, edge in self.edges.items():
+            if self._edge_type(edge) != "vv" or edge.grounded:
+                continue
+            if (
+                self.nodes[edge.source_node_id].grounded
+                or self.nodes[edge.target_node_id].grounded
+            ):
                 invalid_edges.append(edge_id)
         for edge_id in invalid_edges:
             self.remove_edge(edge_id)
@@ -1209,9 +1282,74 @@ class HypothesisGraph:
                     float(viewpoint_initial_probs[node_id][target_id]) / raw_total
                 )
 
+    def _apply_region_target_probabilities(
+        self,
+        region_target_scores: Dict[int, Dict[str, float]],
+        previous_type1_region_ids: Set[int],
+    ) -> None:
+        type2_region_ids = [
+            node_id
+            for node_id, node in self.nodes.items()
+            if node.type == TYPE_REGION
+            and not self.region_to_viewpoints.get(node_id, set())
+        ]
+
+        for node_id, node in self.nodes.items():
+            if node.type != TYPE_REGION:
+                continue
+
+            if self.region_to_viewpoints.get(node_id, set()):
+                for target_id in self.target_ids:
+                    node.target_probs[target_id] = 0.0
+                    node.raw_target_probs[target_id] = 0.0
+                continue
+
+            if node_id in region_target_scores:
+                for target_id, value in region_target_scores[node_id].items():
+                    node.raw_target_probs[target_id] = float(value)
+            elif node_id in previous_type1_region_ids:
+                missing_target_ids = [
+                    target_id
+                    for target_id in self.target_ids
+                    if target_id not in region_target_scores.get(node_id, {})
+                ]
+                if missing_target_ids:
+                    raise ValueError(
+                        "Region %s changed from assigned to unassigned and requires "
+                        "fresh region_target_scores for targets %s."
+                        % (node_id, missing_target_ids)
+                    )
+
+        if not type2_region_ids:
+            for node in self.nodes.values():
+                if node.type == TYPE_REGION:
+                    for target_id in self.target_ids:
+                        node.target_probs[target_id] = 0.0
+                        node.raw_target_probs[target_id] = 0.0
+            return
+
+        for target_id in self.target_ids:
+            if self.target_found.get(target_id, False):
+                continue
+
+            raw_total = sum(
+                float(self.nodes[node_id].raw_target_probs[target_id])
+                for node_id in type2_region_ids
+            )
+            if raw_total <= 0.0:
+                raise ValueError(
+                    "Type-(2) region target probabilities for target %s sum to %s."
+                    % (target_id, raw_total)
+                )
+
+            for node_id in type2_region_ids:
+                self.nodes[node_id].target_probs[target_id] = (
+                    float(self.nodes[node_id].raw_target_probs[target_id]) / raw_total
+                )
+
     def _update_region_existence_posteriors(
         self,
-        previous_exist_probs: Dict[int, float],
+        previous_latent_exist_probs: Dict[int, float],
         existing_node_ids: Set[int],
         region_initial_exist_probs: Dict[int, float],
         scorer,
@@ -1220,14 +1358,16 @@ class HypothesisGraph:
         for node_id, node in self.nodes.items():
             if node.type != TYPE_REGION:
                 node.exist_prob = 1.0
-                continue
-            if node.grounded:
-                node.exist_prob = 1.0
+                node.latent_exist_prob = 1.0
                 continue
             if node_id in existing_node_ids:
-                prior_prob = previous_exist_probs.get(node_id, node.exist_prob)
+                prior_prob = previous_latent_exist_probs.get(
+                    node_id, node.latent_exist_prob
+                )
             else:
-                prior_prob = region_initial_exist_probs.get(node_id, node.exist_prob)
+                prior_prob = region_initial_exist_probs.get(
+                    node_id, node.latent_exist_prob
+                )
             assigned_viewpoints = self.region_to_viewpoints.get(node_id, set())
             scored_viewpoints = [
                 viewpoint_id
@@ -1251,9 +1391,9 @@ class HypothesisGraph:
                 1.0 - prior_prob
             )
             if denominator <= 0.0:
-                node.exist_prob = prior_prob
+                node.latent_exist_prob = prior_prob
             else:
-                node.exist_prob = exist_likelihood * prior_prob / denominator
+                node.latent_exist_prob = exist_likelihood * prior_prob / denominator
 
     def _empirical_grounded_vv_stats(self) -> Tuple[float, float]:
         epsilon = float(self.bayes_config["epsilon"])
@@ -1264,7 +1404,10 @@ class HypothesisGraph:
         ]
 
         if not grounded_vv_edges:
-            return 1.0, 1.0 + epsilon
+            raise ValueError(
+                "Cannot update uncertain edge hypotheses without grounded "
+                "viewpoint-viewpoint distance evidence."
+            )
 
         mean_distance = sum(edge.distance_mean for edge in grounded_vv_edges) / float(
             len(grounded_vv_edges)
@@ -1389,12 +1532,13 @@ class HypothesisGraph:
                 gaussian_term = self._gaussian_density(
                     edge.distance_mean, empirical_mean, empirical_var
                 )
+                gaussian_normalizer = 1.0 / math.sqrt(2.0 * math.pi * empirical_var)
                 exist_likelihood = gaussian_term * (
                     (varrho**assignment_indicator)
                     * ((1.0 - varrho) ** (1 - assignment_indicator))
                 )
                 non_exist_likelihood = (
-                    gaussian_term
+                    gaussian_normalizer
                     * (
                         1.0
                         - math.exp(
