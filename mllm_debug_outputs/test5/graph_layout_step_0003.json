@@ -1,0 +1,127 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 58
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 12,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 12,
+      "j": 58,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 50,
+      "j": 58,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 50,
+      "j": 76,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        50,
+        58
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 12,
+      "label": "6c34dde402304953a9416e2781de607f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        12,
+        58,
+        76
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "1239dba1b6234964b420a56d82d79d7a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        12,
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 58,
+      "label": "159bf39081724055a73e686a6577096b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 76,
+      "label": "6a3fba49106e4a9fb40cd0bf47dd4d46",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        12,
+        50,
+        58,
+        76
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 95,
+      "label": "upstairs loft area with railing and high ceiling",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 96,
+      "label": "lower living room area visible below loft",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "region_to_viewpoints": {
+    "95": [
+      12,
+      50,
+      58,
+      76
+    ]
+  },
+  "viewpoint_to_region": {
+    "12": 95,
+    "50": 95,
+    "58": 95,
+    "76": 95
+  }
+}
