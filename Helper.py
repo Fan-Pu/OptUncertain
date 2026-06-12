@@ -52,7 +52,7 @@ def init_render():
 
     sim.setDatasetPath(os.path.join(MP_ROOT, "data/v1/scans"))
     sim.setNavGraphPath(os.path.join(MP_ROOT, "connectivity"))
-    sim.setPreloadingEnabled(True)
+    sim.setPreloadingEnabled(False)
     sim.setBatchSize(1)
     sim.setCacheSize(
         2
