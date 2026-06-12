@@ -2080,8 +2080,9 @@ def render_viewer_html() -> str:
           assigned_viewpoint_ids: (layout.assigned_viewpoint_ids || []).join(", "),
           target_probs: formatObject(hyp.target_probs),
           raw_target_probs: formatObject(hyp.raw_target_probs),
-          target_score_basis: formatObjectRows(scoreBasis)
-        }, new Set(["target_score_basis"]));
+          target_score_basis: formatObjectRows(scoreBasis),
+          connected_edges: layout.type === "viewpoint" ? formatConnectedEdges(selectedNodeConnectedEdges(step, layout.id)) : ""
+        }, new Set(["target_score_basis", "connected_edges"]));
       } else {
         const hyp = step.hypothesis.edges.find(edge => edgeKey(edge.i, edge.j) === edgeKey(selected.i, selected.j));
         target.innerHTML = definitionList({
@@ -2830,6 +2831,20 @@ def render_viewer_html() -> str:
           return `<div class="kv-row">${escapeHtml(key)}: ${escapeHtml(formatted)}</div>`;
         })
         .join("");
+    }
+
+    function selectedNodeConnectedEdges(step, nodeId) {
+      const selectedNodeId = String(nodeId);
+      return step.hypothesis.edges
+        .filter(edge => String(edge.i) === selectedNodeId || String(edge.j) === selectedNodeId)
+        .sort((a, b) => edgeKey(a.i, a.j).localeCompare(edgeKey(b.i, b.j)));
+    }
+
+    function formatConnectedEdges(edges) {
+      return edges.map(edge => {
+        const text = `${edge.i} - ${edge.j} ${edge.type} grounded=${edge.grounded} dist=${formatNumber(edge.distance_mean)} exist=${formatNumber(edge.exist_prob)}`;
+        return `<div class="kv-row">${escapeHtml(text)}</div>`;
+      }).join("");
     }
 
     function isNonEmptyObject(value) {

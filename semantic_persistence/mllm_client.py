@@ -1563,9 +1563,9 @@ class MLLMClient:
             - A region id must appear in only one of visible_region_nodes or invisible_region_nodes.
             - Region labels must be room or area labels, not object names. Include appearance cue, area type, and physical relative location cue. Do not mention agent ids or names. Avoid generic labels unless they include both appearance and relative location cues.
             - Detections are handled by a separate detection step outside this graph MLLM call. Do not output detections.
-            - Newly proposed region exist_prob is the initial semantic-zone existence hypothesis used while the region remains ungrounded. Newly proposed region target_probs must contain every active target_id with values in [0, 1]. These are initial raw region target scores and are forced to zero later when the region has final assigned viewpoints.
+            - Newly proposed region exist_prob is the initial semantic-zone existence hypothesis used while the region remains ungrounded. Newly proposed region target_probs must contain every active target_id with values in [0, 1]. These are initial raw region target scores for regions with no final assigned viewpoints.
             - region_target_scores is incremental for semantic regions with no final assigned viewpoints. Include only region-target raw scores that should change, except a region that loses all assigned viewpoints in this step must include every active target_id.
-            - Do not include region_target_scores for any region that has final assigned viewpoints. Its region target probability is forced to zero locally.
+            - Do not include region_target_scores for any region that has final assigned viewpoints. Its raw region target score is computed locally as the mean of target_probs over assigned viewpoints.
             - viewpoint_target_scores is incremental. Include only MLLM-updatable viewpoint-target values whose raw hypothesis score should change because of the current observations.
             - Each viewpoint_target_scores target entry must contain raw_score, evidence_strength, and basis. evidence_strength must be exactly low, medium, or high.
             - Returned raw_score values are raw nonnegative scores; they do not need to sum to 1 because the validator materializes unchanged prior raw scores, repairs any raw_score/evidence_strength order mismatch, and then normalizes per target.
@@ -1675,8 +1675,9 @@ class MLLMClient:
                 
                 Target probability rule:
                 - viewpoint_target_scores raw_score values are raw target-location scores, not calibrated probabilities. The validator stores the repaired materialized values as raw_target_probs and normalizes target_probs per target across eligible viewpoint ids.
-                - Region target_scores values are raw target-location scores for type-(2) regions: semantic regions with no final assigned viewpoints. The validator stores the materialized raw values as raw_target_probs and normalizes target_probs per target across all type-(2) regions.
-                - Type-(1) regions, meaning regions with any final assigned viewpoints, must not carry region target mass. The validator forces their region target_probs and raw_target_probs to 0.
+                - Region target_scores values are raw target-location scores for type-(2) regions: semantic regions with no final assigned viewpoints. The validator stores the materialized raw values as raw_target_probs.
+                - Type-(1) regions, meaning regions with any final assigned viewpoints, compute raw region target scores locally as the mean of normalized target_probs over assigned viewpoints.
+                - Region target_probs are normalized per target across the union of type-(1) and type-(2) regions.
                 - Existing type-(2) regions keep prior raw_target_probs unless region_target_scores changes a value. Newly proposed type-(2) regions use their region target_probs as initial raw scores unless region_target_scores overrides them.
                 - If a region loses all assigned viewpoints in this step and becomes type-(2), provide region_target_scores for every active target_id.
                 - Do not copy default values from the schema or examples.
@@ -1686,7 +1687,7 @@ class MLLMClient:
                 - Use different scores when evidence differs.
                 - Equal scores are allowed only when the basis, assigned region, spatial context, and graph history are substantively indistinguishable.
                 - For each active target_id, the sum of materialized raw scores across eligible viewpoint ids must be positive.
-                - For each active target_id, if any type-(2) regions exist, the sum of materialized raw scores across type-(2) regions must be positive.
+                - For each active target_id, the sum of materialized raw scores across all regions must be positive.
                 
                 All non-current visible neighboring viewpoint ids:
                 {visible_neighbor_viewpoint_ids_json}
@@ -3478,6 +3479,7 @@ class MLLMClient:
                 )
 
         normalized_viewpoint_target_probs = []
+        normalized_viewpoint_target_probs_by_id = {}
         for target_id in ordered_target_ids:
             raw_sum = sum(
                 raw_viewpoint_target_probs_by_id[viewpoint_id][target_id]
@@ -3508,6 +3510,9 @@ class MLLMClient:
                         raw_viewpoint_target_probs_by_id[viewpoint_id]
                     ),
                 }
+            )
+            normalized_viewpoint_target_probs_by_id[viewpoint_id] = dict(
+                normalized_target_probs
             )
 
         payload["viewpoint_target_probs"] = normalized_viewpoint_target_probs
@@ -3799,10 +3804,23 @@ class MLLMClient:
             )
 
         for region_id in sorted(all_region_ids):
-            if region_to_all_assigned_viewpoints.get(region_id, set()):
-                raw_region_target_probs_by_id[region_id] = {
-                    target_id: 0.0 for target_id in ordered_target_ids
-                }
+            assigned_viewpoint_ids = region_to_all_assigned_viewpoints.get(
+                region_id,
+                set(),
+            )
+            if assigned_viewpoint_ids:
+                raw_region_target_probs_by_id[region_id] = {}
+                for target_id in ordered_target_ids:
+                    raw_region_target_probs_by_id[region_id][target_id] = sum(
+                        (
+                            0.0
+                            if viewpoint_id in detection_fixed_viewpoint_ids
+                            else normalized_viewpoint_target_probs_by_id[viewpoint_id][
+                                target_id
+                            ]
+                        )
+                        for viewpoint_id in assigned_viewpoint_ids
+                    ) / float(len(assigned_viewpoint_ids))
                 continue
 
             if region_id in prior_type1_region_ids:
@@ -3819,36 +3837,30 @@ class MLLMClient:
                         % (region_id, missing_target_ids)
                     )
 
-        if type2_region_ids:
+        if all_region_ids:
             for target_id in ordered_target_ids:
                 raw_sum = sum(
                     raw_region_target_probs_by_id[region_id][target_id]
-                    for region_id in type2_region_ids
+                    for region_id in all_region_ids
                 )
                 if raw_sum <= 0.0:
                     raise ValueError(
-                        "Type-(2) region target probabilities for target %s sum to %s."
+                        "Region target probabilities for target %s sum to %s."
                         % (target_id, raw_sum)
                     )
 
-                for region_id in type2_region_ids:
+                for region_id in all_region_ids:
                     raw_region_target_probs_by_id[region_id][target_id] = float(
                         raw_region_target_probs_by_id[region_id][target_id]
                     )
 
         normalized_region_target_probs_by_id = {}
         for region_id in sorted(all_region_ids):
-            if not type2_region_ids or region_id not in type2_region_ids:
-                normalized_region_target_probs_by_id[region_id] = {
-                    target_id: 0.0 for target_id in ordered_target_ids
-                }
-                continue
-
             normalized_region_target_probs_by_id[region_id] = {}
             for target_id in ordered_target_ids:
                 raw_sum = sum(
                     raw_region_target_probs_by_id[other_region_id][target_id]
-                    for other_region_id in type2_region_ids
+                    for other_region_id in all_region_ids
                 )
                 normalized_region_target_probs_by_id[region_id][target_id] = (
                     raw_region_target_probs_by_id[region_id][target_id] / raw_sum

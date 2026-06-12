@@ -906,6 +906,12 @@ def test_step_renderer_toggles_selected_nodes_and_highlights_found_targets():
     assert 'definitionList({\n        step_index: step.step_index,' in html
     assert "observation_step: step.layout.observation_step" not in html
     assert '}, new Set(["current_agents", "targets"]));' in html
+    assert "function selectedNodeConnectedEdges(step, nodeId)" in html
+    assert "function formatConnectedEdges(edges)" in html
+    assert "connected_edges:" in html
+    assert "cond=${formatNumber(edge.cond_exist_prob)}" not in html
+    assert '}, new Set(["target_score_basis", "connected_edges"]));' in html
+    assert "return a < b ? `${a}:${b}` : `${b}:${a}`;" in html
 
 
 def test_step_renderer_includes_target_detection_sidebar_and_verification_normalization():

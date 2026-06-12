@@ -6,8 +6,9 @@ The graph follows the paper's two-layer representation:
   - region nodes: semantic zones proposed by the MLLM
 
 Viewpoint target probabilities are inferred by the MLLM and normalized per
-target across non-current viewpoint nodes. Region target probabilities are kept
-from MLLM region proposals. Uncertain region existence / edge distance / edge
+target across non-current viewpoint nodes. Region target probabilities are
+derived from assigned viewpoints or MLLM region scores, then normalized per
+target across region nodes. Uncertain region existence / edge distance / edge
 existence are updated with the paper's Bayesian rules.
 """
 
@@ -1280,6 +1281,11 @@ class HypothesisGraph:
         region_target_scores: Dict[int, Dict[str, float]],
         previous_type1_region_ids: Set[int],
     ) -> None:
+        region_node_ids = [
+            node_id
+            for node_id, node in self.nodes.items()
+            if node.type == TYPE_REGION
+        ]
         type2_region_ids = [
             node_id
             for node_id, node in self.nodes.items()
@@ -1291,10 +1297,13 @@ class HypothesisGraph:
             if node.type != TYPE_REGION:
                 continue
 
-            if self.region_to_viewpoints.get(node_id, set()):
+            assigned_viewpoint_ids = self.region_to_viewpoints.get(node_id, set())
+            if assigned_viewpoint_ids:
                 for target_id in self.target_ids:
-                    node.target_probs[target_id] = 0.0
-                    node.raw_target_probs[target_id] = 0.0
+                    node.raw_target_probs[target_id] = sum(
+                        float(self.nodes[viewpoint_id].target_probs[target_id])
+                        for viewpoint_id in assigned_viewpoint_ids
+                    ) / float(len(assigned_viewpoint_ids))
                 continue
 
             if node_id in region_target_scores:
@@ -1313,12 +1322,7 @@ class HypothesisGraph:
                         % (node_id, missing_target_ids)
                     )
 
-        if not type2_region_ids:
-            for node in self.nodes.values():
-                if node.type == TYPE_REGION:
-                    for target_id in self.target_ids:
-                        node.target_probs[target_id] = 0.0
-                        node.raw_target_probs[target_id] = 0.0
+        if not region_node_ids:
             return
 
         for target_id in self.target_ids:
@@ -1327,15 +1331,15 @@ class HypothesisGraph:
 
             raw_total = sum(
                 float(self.nodes[node_id].raw_target_probs[target_id])
-                for node_id in type2_region_ids
+                for node_id in region_node_ids
             )
             if raw_total <= 0.0:
                 raise ValueError(
-                    "Type-(2) region target probabilities for target %s sum to %s."
+                    "Region target probabilities for target %s sum to %s."
                     % (target_id, raw_total)
                 )
 
-            for node_id in type2_region_ids:
+            for node_id in region_node_ids:
                 self.nodes[node_id].target_probs[target_id] = (
                     float(self.nodes[node_id].raw_target_probs[target_id]) / raw_total
                 )
