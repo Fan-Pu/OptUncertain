@@ -77,6 +77,8 @@ def get_viewpoints(scan_id):
 
 def build_viewpoint_index(scan_id):
     """Create a stable scan-level integer marker for each viewpoint id."""
+    viewpoint_index_by_vp_label.clear()
+    viewpoint_vp_label_by_index.clear()
     for idx, vp_id in enumerate(get_viewpoints(scan_id)):
         viewpoint_index_by_vp_label[vp_id] = idx
         viewpoint_vp_label_by_index[idx] = vp_id
@@ -363,8 +365,9 @@ def explore_world(sim, location=0, heading=0, elevation=0):
         state = sim.getState()[0]
         locations = state.navigableLocations
         rgb = np.array(state.rgb, copy=False)
+        current_vp_id = viewpoint_index_by_vp_label[str(state.location.viewpointId)]
         print(
-            f"current vp: {state.location.viewpointId}, elevation: {math.degrees(state.elevation):.1f} deg, heading: {math.degrees(state.heading):.1f} deg"
+            f"current vp: {current_vp_id}, elevation: {math.degrees(state.elevation):.1f} deg, heading: {math.degrees(state.heading):.1f} deg"
         )
         for idx, loc in enumerate(locations[1:]):
             # Draw actions on the screen
