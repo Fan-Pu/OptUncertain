@@ -72,8 +72,7 @@ The scenario file must contain:
     "dist_weight": 0.2222,
     "arc_weight": 0.3333,
     "node_weight": 0.1111,
-    "visit_weight": 0.1111,
-    "ungrounded_reward_weight": 0.8
+    "visit_weight": 0.1111
   }
 }
 ```

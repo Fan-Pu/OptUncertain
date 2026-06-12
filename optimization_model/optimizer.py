@@ -18,9 +18,6 @@ class RollingHorizonOptimizer:
         self.node_weight = float(optimizer_config.get("node_weight"))
         self.visit_weight = float(optimizer_config.get("visit_weight"))
         # the above should sum to 1.0
-        self.ungrounded_reward_weight = float(
-            optimizer_config.get("ungrounded_reward_weight")
-        )  # the weight for rewards from ungrounded nodes, which may be less reliable than grounded nodes.
         self.unique_target_reward = bool(
             optimizer_config.get("unique_target_reward", False)
         )
@@ -71,7 +68,6 @@ class RollingHorizonOptimizer:
             + candidate_node_ids_by_agent[agent_id]
             for agent_id in agent_ids
         }
-
         for agent_id in agent_ids:
             if not candidate_node_ids_by_agent[agent_id]:
                 if self.allow_inactive_agents:
@@ -99,7 +95,9 @@ class RollingHorizonOptimizer:
 
         edge_nonexist_penalty = {
             (source_id, target_id): 1.0
-            - hypothesis_graph.edges[tuple(sorted((source_id, target_id)))].exist_prob
+            - hypothesis_graph.edges[
+                tuple(sorted((source_id, target_id)))
+            ].cond_exist_prob
             for source_id, target_id in directed_edges
         }
 
@@ -134,13 +132,8 @@ class RollingHorizonOptimizer:
         node_reward = {}
         for node_id in all_node_ids:
             node = hypothesis_graph.nodes[node_id]
-            reward_weight = (
-                self.ungrounded_reward_weight
-                if node.type == TYPE_REGION and not node.grounded
-                else 1.0
-            )
             node_reward[node_id] = {
-                target_id: reward_weight * node.target_probs.get(target_id, 0.0)
+                target_id: node.target_probs.get(target_id, 0.0)
                 for target_id in target_ids
             }
 
@@ -220,7 +213,6 @@ class RollingHorizonOptimizer:
                 for target_id in target_ids
             )
         else:
-            # change the goal_term to get the maximum reward of all targets at each node, instead of summing rewards of different targets at the same node, since only one target can be rewarded at each node in practice.
             goal_term = quicksum(
                 max(
                     (1 - int(bool(target_found_flags[target_id])))
@@ -231,14 +223,6 @@ class RollingHorizonOptimizer:
                 for agent_id in agent_ids
                 for node_id in candidate_node_ids_by_agent[agent_id]
             )
-            # goal_term = quicksum(
-            #     (1 - int(bool(target_found_flags[target_id])))
-            #     * node_reward[node_id][target_id]
-            #     * y[(node_id, agent_id)]
-            #     for agent_id in agent_ids
-            #     for node_id in candidate_node_ids_by_agent[agent_id]
-            #     for target_id in target_ids
-            # )
 
         dist_term = quicksum(
             edge_distance[(source_id, target_id)] * x[(source_id, target_id, agent_id)]
@@ -442,17 +426,23 @@ class RollingHorizonOptimizer:
                         % (node_id, agent_id),
                     )
 
-                if self.unique_target_reward:
+            if self.unique_target_reward:
+                for node_id in reward_node_ids_by_agent[agent_id]:
                     for target_id in target_ids:
-                        model.addConstr(
-                            target_reward_assignment[(target_id, node_id, agent_id)]
-                            <= y[(node_id, agent_id)],
-                            name="target_reward_visit_%s_%s_%s"
-                            % (target_id, node_id, agent_id),
-                        )
+                        if node_id != start_node_id:
+                            model.addConstr(
+                                target_reward_assignment[
+                                    (target_id, node_id, agent_id)
+                                ]
+                                <= y[(node_id, agent_id)],
+                                name="target_reward_visit_%s_%s_%s"
+                                % (target_id, node_id, agent_id),
+                            )
                         if self.allow_inactive_agents:
                             model.addConstr(
-                                target_reward_assignment[(target_id, node_id, agent_id)]
+                                target_reward_assignment[
+                                    (target_id, node_id, agent_id)
+                                ]
                                 <= agent_active[agent_id],
                                 name="target_reward_active_%s_%s_%s"
                                 % (target_id, node_id, agent_id),
@@ -466,6 +456,38 @@ class RollingHorizonOptimizer:
                     <= mtz_node_count - 1,
                     name="mtz_%s_%s_%s" % (source_id, target_id, agent_id),
                 )
+
+        if self.unique_target_reward and self.force_positive_target_assignment:
+            for target_id in target_ids:
+                for agent_id in agent_ids:
+                    for node_id in reward_node_ids_by_agent[agent_id]:
+                        if node_reward[node_id][target_id] == 0.0:
+                            model.addConstr(
+                                target_reward_assignment[
+                                    (target_id, node_id, agent_id)
+                                ]
+                                == 0,
+                                name="target_reward_positive_%s_%s_%s"
+                                % (target_id, node_id, agent_id),
+                            )
+
+        if self.unique_target_reward:
+            for target_id in target_ids:
+                target_assignment_sum = quicksum(
+                    target_reward_assignment[(target_id, node_id, agent_id)]
+                    for agent_id in agent_ids
+                    for node_id in reward_node_ids_by_agent[agent_id]
+                )
+                if target_found_flags[target_id]:
+                    model.addConstr(
+                        target_assignment_sum == 0,
+                        name="target_reward_found_%s" % target_id,
+                    )
+                else:
+                    model.addConstr(
+                        target_assignment_sum == 1,
+                        name="target_reward_unique_%s" % target_id,
+                    )
 
         viewpoint_node_ids = [
             node_id
@@ -505,36 +527,6 @@ class RollingHorizonOptimizer:
                             "unique_action_%s_%s_%s"
                             % (agent_id, other_agent_id, viewpoint_id)
                         ),
-                    )
-
-        if self.unique_target_reward and self.force_positive_target_assignment:
-            for target_id in target_ids:
-                for agent_id in agent_ids:
-                    for node_id in reward_node_ids_by_agent[agent_id]:
-                        if node_reward[node_id][target_id] == 0.0:
-                            model.addConstr(
-                                target_reward_assignment[(target_id, node_id, agent_id)]
-                                == 0,
-                                name="target_reward_positive_%s_%s_%s"
-                                % (target_id, node_id, agent_id),
-                            )
-
-        if self.unique_target_reward:
-            for target_id in target_ids:
-                target_assignment_sum = quicksum(
-                    target_reward_assignment[(target_id, node_id, agent_id)]
-                    for agent_id in agent_ids
-                    for node_id in reward_node_ids_by_agent[agent_id]
-                )
-                if target_found_flags[target_id]:
-                    model.addConstr(
-                        target_assignment_sum == 0,
-                        name="target_reward_found_%s" % target_id,
-                    )
-                else:
-                    model.addConstr(
-                        target_assignment_sum == 1,
-                        name="target_reward_unique_%s" % target_id,
                     )
 
         # test
@@ -928,6 +920,14 @@ class RollingHorizonOptimizer:
         agent_ids = list(agent_current_vp_ids)
         if reward_node_ids_by_agent is None:
             reward_node_ids_by_agent = candidate_node_ids_by_agent
+
+        def active_node_reward(node_id: int) -> float:
+            return max(
+                (1 - int(bool(target_found_flags[target_id])))
+                * node_reward[node_id][target_id]
+                for target_id in target_ids
+            )
+
         goal_lower_bound = 0.0
         if unique_target_reward:
             goal_upper_bound = sum(
@@ -944,11 +944,9 @@ class RollingHorizonOptimizer:
             )
         else:
             goal_upper_bound = sum(
-                (1 - int(bool(target_found_flags[target_id])))
-                * node_reward[node_id][target_id]
+                active_node_reward(node_id)
                 for agent_id in agent_ids
                 for node_id in candidate_node_ids_by_agent[agent_id]
-                for target_id in target_ids
             )
 
         dist_lower_bound = 0.0
@@ -980,11 +978,7 @@ class RollingHorizonOptimizer:
 
             if not unique_target_reward:
                 goal_lower_bound += min(
-                    sum(
-                        (1 - int(bool(target_found_flags[target_id])))
-                        * node_reward[first_hop_node_id][target_id]
-                        for target_id in target_ids
-                    )
+                    active_node_reward(first_hop_node_id)
                     for _, first_hop_node_id in first_hop_grounded_vv_edges
                 )
 

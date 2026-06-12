@@ -39,6 +39,7 @@ def build_optimizer_route_log_payload(
 ) -> Dict[str, object]:
     agent_paths = optimization_result["agent_paths"]
     return {
+        "target_assignments": optimization_result["target_assignments"],
         "agents": [
             {
                 "agent_id": str(agent_id),

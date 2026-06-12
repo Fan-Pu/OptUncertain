@@ -277,13 +277,16 @@ def _resolve_oracle_case(case_or_config: str, project_root: Path) -> Tuple[str, 
 
 
 def _oracle_optimizer_config() -> Dict[str, float]:
+    # unique_target_reward: enables target assignment variables z[target, node, agent].
+    # allow_inactive_agents: lets agents with no assigned target stay at their current viewpoint.
+    # force_positive_target_assignment: prevents assigning a target to a zero-probability node.
+    # minimize_distance_after_targets: makes the oracle minimize travel distance after target coverage constraints are enforced.
     return {
         "goal_weight": 1000.0,
         "dist_weight": 1.0,
         "arc_weight": 0.0,
         "node_weight": 0.0,
         "visit_weight": 0.0,
-        "ungrounded_reward_weight": 1.0,
         "unique_target_reward": True,
         "allow_inactive_agents": True,
         "force_positive_target_assignment": True,

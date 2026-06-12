@@ -54,7 +54,10 @@ def test_write_optimizer_route_log_serializes_agent_routes_and_edges(tmp_path):
 
     assert output_path == tmp_path / "optimizer_routes_step_0003.json"
     payload = json.loads(output_path.read_text(encoding="utf-8"))
-    assert set(payload) == {"agents"}
+    assert set(payload) == {"agents", "target_assignments"}
+    assert payload["target_assignments"] == [
+        {"target_id": "target", "node_id": 2, "agent_id": "agent0"}
+    ]
     assert payload["agents"] == [
         {
             "agent_id": "agent0",
@@ -94,4 +97,7 @@ def test_write_optimizer_route_log_uses_explicit_filename(tmp_path):
     )
 
     assert output_path == tmp_path / "optimizer_routes_oracle.json"
-    assert set(json.loads(output_path.read_text(encoding="utf-8"))) == {"agents"}
+    assert set(json.loads(output_path.read_text(encoding="utf-8"))) == {
+        "agents",
+        "target_assignments",
+    }

@@ -30,10 +30,10 @@ OPTIMIZER_CONFIG = {
     "arc_weight": 0.3333,
     "node_weight": 0.1111,
     "visit_weight": 0.1111,
-    "ungrounded_reward_weight": 0.8,
 }
 
 UNIQUE_TARGET_REWARD_CONFIG = dict(OPTIMIZER_CONFIG, unique_target_reward=True)
+INACTIVE_AGENT_CONFIG = dict(OPTIMIZER_CONFIG, allow_inactive_agents=True)
 ORACLE_INACTIVE_AGENT_CONFIG = dict(
     UNIQUE_TARGET_REWARD_CONFIG,
     allow_inactive_agents=True,
@@ -84,11 +84,15 @@ class _FakeEdge:
         distance_mean,
         exist_prob,
         grounded=True,
+        cond_exist_prob=None,
     ):
         self.source_node_id = source_node_id
         self.target_node_id = target_node_id
         self.distance_mean = distance_mean
         self.exist_prob = exist_prob
+        self.cond_exist_prob = (
+            exist_prob if cond_exist_prob is None else cond_exist_prob
+        )
         self.grounded = grounded
 
 
@@ -262,6 +266,29 @@ class _RegionVisitGraph:
         self.edges = {
             (1, 2): _FakeEdge(1, 2, 1.0, 0.8),
             (1, 3): _FakeEdge(1, 3, 1.0, 0.8),
+        }
+
+
+class _VZConditionalEdgeGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 0.1}),
+            3: _FakeNode(0, False, 0.2, {"target": 1.0}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 0.0, 1.0, grounded=True),
+            (2, 3): _FakeEdge(
+                2,
+                3,
+                0.0,
+                0.14,
+                grounded=False,
+                cond_exist_prob=0.7,
+            ),
         }
 
 
@@ -486,7 +513,6 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         graph,
         agent_current_vp_ids,
         target_found_flags,
-        unique_target_reward=False,
     ):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
         agent_ids = list(agent_current_vp_ids)
@@ -517,7 +543,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         }
         edge_nonexist_penalty = {
             (source_id, target_id): 1.0
-            - graph.edges[tuple(sorted((source_id, target_id)))].exist_prob
+            - graph.edges[tuple(sorted((source_id, target_id)))].cond_exist_prob
             for source_id, target_id in directed_edges
         }
         node_nonexist_penalty = {
@@ -535,13 +561,8 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         node_reward = {}
         for node_id in all_node_ids:
             node = graph.nodes[node_id]
-            reward_weight = (
-                OPTIMIZER_CONFIG["ungrounded_reward_weight"]
-                if node.type == helper_stub.TYPE_REGION and not node.grounded
-                else 1.0
-            )
             node_reward[node_id] = {
-                target_id: reward_weight * node.target_probs.get(target_id, 0.0)
+                target_id: node.target_probs.get(target_id, 0.0)
                 for target_id in target_ids
             }
 
@@ -561,37 +582,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             node_reward=node_reward,
             node_nonexist_penalty=node_nonexist_penalty,
             revisit_penalty=revisit_penalty,
-            unique_target_reward=unique_target_reward,
         )
-
-    def test_assigns_each_unfound_target_at_most_once_across_agents(self):
-        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
-        result = optimizer.solve(
-            hypothesis_graph=_FakeGraph(),
-            agent_current_vp_ids={"agent0": 1, "agent1": 2},
-            target_found_flags={"green plant": False, "glass on table": False},
-        )
-
-        self.assertEqual(len(result["target_assignments"]), 2)
-        self.assertEqual(
-            sorted(item["target_id"] for item in result["target_assignments"]),
-            ["glass on table", "green plant"],
-        )
-
-    def test_masks_found_targets_and_first_hop_is_viewpoint_for_each_agent(self):
-        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
-        result = optimizer.solve(
-            hypothesis_graph=_FakeGraph(),
-            agent_current_vp_ids={"agent0": 1, "agent1": 2},
-            target_found_flags={"green plant": True, "glass on table": False},
-        )
-
-        self.assertEqual(
-            [item["target_id"] for item in result["target_assignments"]],
-            ["glass on table"],
-        )
-        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
-        self.assertEqual(result["agent_paths"]["agent1"]["next_vp_node_id"], 4)
 
     def test_revisit_penalty_avoids_visited_viewpoint_when_other_terms_match(self):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
@@ -655,7 +646,36 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         }
         self.assertEqual(selected_cycle_nodes, set())
 
-    def test_agent_can_assign_target_at_other_agents_current_viewpoint(self):
+    def test_assigns_each_unfound_target_at_most_once_across_agents(self):
+        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_FakeGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"green plant": False, "glass on table": False},
+        )
+
+        self.assertEqual(len(result["target_assignments"]), 2)
+        self.assertEqual(
+            sorted(item["target_id"] for item in result["target_assignments"]),
+            ["glass on table", "green plant"],
+        )
+
+    def test_masks_found_targets_and_first_hop_is_viewpoint_for_each_agent(self):
+        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_FakeGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"green plant": True, "glass on table": False},
+        )
+
+        self.assertEqual(
+            [item["target_id"] for item in result["target_assignments"]],
+            ["glass on table"],
+        )
+        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
+        self.assertEqual(result["agent_paths"]["agent1"]["next_vp_node_id"], 4)
+
+    def test_unique_target_reward_can_assign_target_at_current_viewpoint(self):
         optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
         result = optimizer.solve(
             hypothesis_graph=_OtherAgentCurrentNodeGraph(),
@@ -666,7 +686,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertIn(2, result["agent_paths"]["agent0"]["planned_path_node_ids"])
         self.assertTrue(
             any(
-                assignment["agent_id"] == "agent0"
+                assignment["agent_id"] == "agent1"
                 and assignment["node_id"] == 2
                 and assignment["target_id"] == "target"
                 for assignment in result["target_assignments"]
@@ -723,7 +743,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertIn(5, result["agent_paths"]["agent0"]["planned_path_node_ids"])
         self.assertIn(5, result["agent_paths"]["agent1"]["planned_path_node_ids"])
 
-    def test_inactive_agent_current_viewpoint_blocks_active_first_hop(self):
+    def test_agent_can_enter_other_agents_start_if_other_agent_departs(self):
         optimizer = RollingHorizonOptimizer(
             dict(OPTIMIZER_CONFIG, allow_inactive_agents=True)
         )
@@ -733,8 +753,8 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             target_found_flags={"target": False},
         )
 
-        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 3)
-        self.assertEqual(result["agent_paths"]["agent1"]["route_node_ids"], [2])
+        self.assertEqual(result["agent_paths"]["agent0"]["next_vp_node_id"], 2)
+        self.assertNotEqual(result["agent_paths"]["agent1"]["route_node_ids"], [2])
 
     def test_oracle_mode_allows_unassigned_agent_to_wait_at_start(self):
         optimizer = RollingHorizonOptimizer(ORACLE_INACTIVE_AGENT_CONFIG)
@@ -758,7 +778,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
 
     def test_inactive_agent_does_not_need_grounded_first_hop(self):
-        optimizer = RollingHorizonOptimizer(ORACLE_INACTIVE_AGENT_CONFIG)
+        optimizer = RollingHorizonOptimizer(INACTIVE_AGENT_CONFIG)
         result = optimizer.solve(
             hypothesis_graph=_InactiveAgentUngroundedOnlyGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
@@ -773,7 +793,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
 
     def test_default_mode_still_forces_each_agent_to_depart(self):
-        optimizer = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG)
+        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
         result = optimizer.solve(
             hypothesis_graph=_OneAgentCoversAllTargetsGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
@@ -781,6 +801,13 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
 
         self.assertNotEqual(result["agent_paths"]["agent1"]["route_node_ids"], [2])
+
+    def test_default_mode_leaves_oracle_exact_coverage_flags_disabled(self):
+        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
+
+        self.assertFalse(optimizer.unique_target_reward)
+        self.assertFalse(optimizer.force_positive_target_assignment)
+        self.assertFalse(optimizer.minimize_distance_after_targets)
 
     def test_oracle_exact_coverage_assigns_target_to_lower_distance_agent(self):
         optimizer = RollingHorizonOptimizer(ORACLE_EXACT_COVERAGE_CONFIG)
@@ -814,12 +841,6 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             [{"target_id": "target", "node_id": 2, "agent_id": "agent0"}],
         )
 
-    def test_default_mode_leaves_oracle_exact_coverage_flags_disabled(self):
-        optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
-
-        self.assertFalse(optimizer.force_positive_target_assignment)
-        self.assertFalse(optimizer.minimize_distance_after_targets)
-
     def test_normalized_objective_value_is_bounded(self):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
         result = optimizer.solve(
@@ -836,14 +857,13 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             graph=_ObjectiveBoundsGraph(),
             agent_current_vp_ids={"agent0": 1},
             target_found_flags={"target": False},
-            unique_target_reward=True,
         )
 
         self.assertEqual(
             bounds,
             (
-                0.0,
-                0.9,
+                0.5,
+                2.2,
                 2.0,
                 9.0,
                 0.0,
@@ -888,7 +908,22 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertEqual(bounds[8], 0.0)
         self.assertEqual(bounds[9], 0.0)
 
-    def test_ungrounded_reward_weight_applies_only_to_regions(self):
+    def test_vz_arc_uncertainty_uses_conditional_edge_existence(self):
+        result = RollingHorizonOptimizer(GOAL_ONLY_OPTIMIZER_CONFIG).solve(
+            hypothesis_graph=_VZConditionalEdgeGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(
+            result["agent_paths"]["agent0"]["planned_path_node_ids"],
+            [2, 3],
+        )
+        raw_terms = result["agent_paths"]["agent0"]["objective_terms"]["raw"]
+        self.assertAlmostEqual(raw_terms["arc_nonexistence"], 0.3)
+        self.assertAlmostEqual(raw_terms["node_nonexistence"], 0.8)
+
+    def test_ungrounded_nodes_use_raw_target_probability(self):
         result = RollingHorizonOptimizer(OPTIMIZER_CONFIG).solve(
             hypothesis_graph=_UngroundedViewpointAndRegionRewardGraph(),
             agent_current_vp_ids={"agent0": 1},
@@ -901,7 +936,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
         self.assertAlmostEqual(
             result["agent_paths"]["agent0"]["objective_terms"]["raw"]["goal"],
-            0.5 + OPTIMIZER_CONFIG["ungrounded_reward_weight"] * 0.5,
+            1.0,
         )
 
     def test_objective_terms_global_raw_matches_selected_variables(self):
@@ -918,7 +953,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             for edge in edges
         )
         expected_arc = sum(
-            1.0 - graph.edges[tuple(sorted(edge))].exist_prob
+            1.0 - graph.edges[tuple(sorted(edge))].cond_exist_prob
             for edges in result["selected_edges"].values()
             for edge in edges
         )
@@ -946,7 +981,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertAlmostEqual(global_raw["revisit"], expected_visit)
 
     def test_objective_terms_per_agent_sum_to_global_raw(self):
-        result = RollingHorizonOptimizer(UNIQUE_TARGET_REWARD_CONFIG).solve(
+        result = RollingHorizonOptimizer(OPTIMIZER_CONFIG).solve(
             hypothesis_graph=_FakeGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
             target_found_flags={"green plant": False, "glass on table": False},
@@ -1004,7 +1039,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         )
 
     def test_inactive_agent_records_zero_route_cost_terms(self):
-        result = RollingHorizonOptimizer(ORACLE_INACTIVE_AGENT_CONFIG).solve(
+        result = RollingHorizonOptimizer(INACTIVE_AGENT_CONFIG).solve(
             hypothesis_graph=_OneAgentCoversAllTargetsGraph(),
             agent_current_vp_ids={"agent0": 1, "agent1": 2},
             target_found_flags={"target0": False, "target1": False},

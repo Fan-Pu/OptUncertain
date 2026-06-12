@@ -326,10 +326,7 @@ class HypothesisGraph:
 
         existing_node_ids = set(self.nodes)
 
-        previous_latent_exist_probs = {
-            node_id: float(node.latent_exist_prob)
-            for node_id, node in self.nodes.items()
-        }
+        existing_edge_ids = set(self.edges)
         previous_grounded = {
             node_id: bool(node.grounded) for node_id, node in self.nodes.items()
         }
@@ -667,20 +664,16 @@ class HypothesisGraph:
         # update may otherwise add the found target keys back.
         self._remove_found_target_probs_from_nodes()
 
-        self._update_region_existence_posteriors(
-            previous_latent_exist_probs=previous_latent_exist_probs,
-            existing_node_ids=existing_node_ids,
-            region_initial_exist_probs=region_initial_exist_probs,
-            scorer=scorer,
-        )
         self._refresh_region_grounding()
         self._update_edge_distance_posteriors(
+            existing_edge_ids=existing_edge_ids,
             previous_distance_means=previous_distance_means,
             previous_distance_vars=previous_distance_vars,
             previous_cond_exist_probs=previous_cond_exist_probs,
             scorer=scorer,
         )
         self._update_edge_existence_posteriors(
+            existing_edge_ids=existing_edge_ids,
             previous_distance_means=previous_distance_means,
             previous_cond_exist_probs=previous_cond_exist_probs,
             scorer=scorer,
@@ -1347,54 +1340,6 @@ class HypothesisGraph:
                     float(self.nodes[node_id].raw_target_probs[target_id]) / raw_total
                 )
 
-    def _update_region_existence_posteriors(
-        self,
-        previous_latent_exist_probs: Dict[int, float],
-        existing_node_ids: Set[int],
-        region_initial_exist_probs: Dict[int, float],
-        scorer,
-    ) -> None:
-        eta_exist = float(self.bayes_config["eta_exist"])
-        for node_id, node in self.nodes.items():
-            if node.type != TYPE_REGION:
-                node.exist_prob = 1.0
-                node.latent_exist_prob = 1.0
-                continue
-            if node_id in existing_node_ids:
-                prior_prob = previous_latent_exist_probs.get(
-                    node_id, node.latent_exist_prob
-                )
-            else:
-                prior_prob = region_initial_exist_probs.get(
-                    node_id, node.latent_exist_prob
-                )
-            assigned_viewpoints = self.region_to_viewpoints.get(node_id, set())
-            scored_viewpoints = [
-                viewpoint_id
-                for viewpoint_id in assigned_viewpoints
-                if self.viewpoint_rgb_evidence.get(viewpoint_id)
-            ]
-            if scored_viewpoints:
-                zone_visual_score = max(
-                    float(
-                        scorer.score_images_text(
-                            self.viewpoint_rgb_evidence[viewpoint_id], node.label
-                        )
-                    )
-                    for viewpoint_id in scored_viewpoints
-                )
-            else:
-                zone_visual_score = 0.0
-            exist_likelihood = math.exp(eta_exist * zone_visual_score)
-            non_exist_likelihood = math.exp(-eta_exist * zone_visual_score)
-            denominator = exist_likelihood * prior_prob + non_exist_likelihood * (
-                1.0 - prior_prob
-            )
-            if denominator <= 0.0:
-                node.latent_exist_prob = prior_prob
-            else:
-                node.latent_exist_prob = exist_likelihood * prior_prob / denominator
-
     def _empirical_grounded_vv_stats(self) -> Tuple[float, float]:
         epsilon = float(self.bayes_config["epsilon"])
         grounded_vv_edges = [
@@ -1443,6 +1388,7 @@ class HypothesisGraph:
 
     def _update_edge_distance_posteriors(
         self,
+        existing_edge_ids: Set[Tuple[int, int]],
         previous_distance_means: Dict[Tuple[int, int], float],
         previous_distance_vars: Dict[Tuple[int, int], float],
         previous_cond_exist_probs: Dict[Tuple[int, int], float],
@@ -1453,8 +1399,12 @@ class HypothesisGraph:
         sigma_vv2 = float(self.bayes_config["sigma_vv2"])
         kappa_vv = float(self.bayes_config["kappa_vv"])
         kappa_vz = float(self.bayes_config["kappa_vz"])
-        empirical_mean, empirical_var = self._empirical_grounded_vv_stats()
-        empirical_var = max(empirical_var, epsilon)
+        grounded_vv_edges = [
+            edge
+            for edge in self.edges.values()
+            if self._edge_type(edge) == "vv" and edge.grounded
+        ]
+        grounded_vv_stats = self._empirical_grounded_vv_stats() if grounded_vv_edges else None
 
         for edge_id, edge in self.edges.items():
             edge_type = self._edge_type(edge)
@@ -1464,6 +1414,12 @@ class HypothesisGraph:
                 edge.exist_prob = 1.0
                 continue
 
+            if edge_id not in existing_edge_ids:
+                edge.cond_exist_prob = previous_cond_exist_probs.get(
+                    edge_id, edge.cond_exist_prob
+                )
+                continue
+
             prior_mean = previous_distance_means.get(edge_id, edge.distance_mean)
             prior_var = previous_distance_vars.get(
                 edge_id, sigma_vv2 if edge_type == "vv" else sigma_vz2
@@ -1471,12 +1427,33 @@ class HypothesisGraph:
             prior_var = max(float(prior_var), epsilon)
 
             if edge_type == "vv":
+                if grounded_vv_stats is None:
+                    edge.distance_mean = prior_mean
+                    edge.distance_var = prior_var
+                    edge.cond_exist_prob = previous_cond_exist_probs.get(
+                        edge_id, edge.cond_exist_prob
+                    )
+                    continue
+                empirical_mean, empirical_var = grounded_vv_stats
+                empirical_var = max(empirical_var, epsilon)
                 assignment_indicator = self._vp_assignment_indicator(
                     edge.source_node_id, edge.target_node_id
                 )
                 cue_mean = empirical_mean
                 cue_var = empirical_var / (1.0 + kappa_vv * assignment_indicator)
             else:
+                viewpoint_id = (
+                    edge.source_node_id
+                    if self.nodes[edge.source_node_id].type == TYPE_VP
+                    else edge.target_node_id
+                )
+                if not self.viewpoint_rgb_evidence.get(viewpoint_id):
+                    edge.distance_mean = prior_mean
+                    edge.distance_var = prior_var
+                    edge.cond_exist_prob = previous_cond_exist_probs.get(
+                        edge_id, edge.cond_exist_prob
+                    )
+                    continue
                 semantic_score = self._vz_semantic_score(edge, scorer)
                 cue_mean = prior_mean * (1.0 - semantic_score)
                 cue_var = sigma_vz2 / (1.0 + kappa_vz * ((1.0 + semantic_score) / 2.0))
@@ -1502,16 +1479,22 @@ class HypothesisGraph:
 
     def _update_edge_existence_posteriors(
         self,
+        existing_edge_ids: Set[Tuple[int, int]],
         previous_distance_means: Dict[Tuple[int, int], float],
         previous_cond_exist_probs: Dict[Tuple[int, int], float],
         scorer,
     ) -> None:
         epsilon = float(self.bayes_config["epsilon"])
         varrho = float(self.bayes_config["varrho"])
-        omega_vz = float(self.bayes_config["omega_vz"])
         eta_vz = float(self.bayes_config["eta_vz"])
-        empirical_mean, empirical_var = self._empirical_grounded_vv_stats()
-        empirical_var = max(empirical_var, epsilon)
+        grounded_vv_edges = [
+            edge
+            for edge in self.edges.values()
+            if self._edge_type(edge) == "vv" and edge.grounded
+        ]
+        grounded_vv_stats = (
+            self._empirical_grounded_vv_stats() if grounded_vv_edges else None
+        )
 
         for edge_id, edge in self.edges.items():
             edge_type = self._edge_type(edge)
@@ -1525,46 +1508,34 @@ class HypothesisGraph:
                 edge_id, edge.cond_exist_prob
             )
 
+            if edge_id not in existing_edge_ids:
+                edge.cond_exist_prob = prior_cond_exist_prob
+                edge.exist_prob = self._unconditional_edge_exist_prob(edge)
+                edge.grounded = False
+                continue
+
             if edge_type == "vv":
                 assignment_indicator = self._vp_assignment_indicator(
                     edge.source_node_id, edge.target_node_id
                 )
-                gaussian_term = self._gaussian_density(
-                    edge.distance_mean, empirical_mean, empirical_var
+                edge_comp_score = math.log(varrho / (1.0 - varrho)) * (
+                    2.0 * assignment_indicator - 1.0
                 )
-                gaussian_normalizer = 1.0 / math.sqrt(2.0 * math.pi * empirical_var)
-                exist_likelihood = gaussian_term * (
-                    (varrho**assignment_indicator)
-                    * ((1.0 - varrho) ** (1 - assignment_indicator))
-                )
-                non_exist_likelihood = (
-                    gaussian_normalizer
-                    * (
-                        1.0
-                        - math.exp(
-                            -((edge.distance_mean - empirical_mean) ** 2)
-                            / (2.0 * empirical_var)
-                        )
+                if grounded_vv_stats is not None:
+                    empirical_mean, empirical_var = grounded_vv_stats
+                    empirical_var = max(empirical_var, epsilon)
+                    prior_distance = previous_distance_means.get(
+                        edge_id, edge.distance_mean
                     )
-                    * (
-                        ((1.0 - varrho) ** assignment_indicator)
-                        * (varrho ** (1 - assignment_indicator))
+                    edge_comp_score -= ((prior_distance - empirical_mean) ** 2) / (
+                        2.0 * empirical_var
                     )
-                )
+                exist_likelihood = math.exp(0.5 * edge_comp_score)
+                non_exist_likelihood = math.exp(-0.5 * edge_comp_score)
             else:
                 semantic_score = self._vz_semantic_score(edge, scorer)
-                previous_distance = previous_distance_means.get(
-                    edge_id, edge.distance_mean
-                )
-                approach_effort = math.tanh(
-                    (previous_distance - edge.distance_mean)
-                    / (empirical_mean + epsilon)
-                )
-                edge_comp_score = (
-                    omega_vz * semantic_score + (1.0 - omega_vz) * approach_effort
-                )
-                exist_likelihood = math.exp(eta_vz * edge_comp_score)
-                non_exist_likelihood = math.exp(-eta_vz * edge_comp_score)
+                exist_likelihood = math.exp(eta_vz * semantic_score)
+                non_exist_likelihood = math.exp(-eta_vz * semantic_score)
 
             denominator = (
                 exist_likelihood * prior_cond_exist_prob
@@ -1577,10 +1548,18 @@ class HypothesisGraph:
                     exist_likelihood * prior_cond_exist_prob / denominator
                 )
 
-            source_exist = self.nodes[edge.source_node_id].exist_prob
-            target_exist = self.nodes[edge.target_node_id].exist_prob
-            edge.exist_prob = edge.cond_exist_prob * source_exist * target_exist
+            edge.exist_prob = self._unconditional_edge_exist_prob(edge)
             edge.grounded = False
+
+    def _unconditional_edge_exist_prob(self, edge: GraphEdge) -> float:
+        if self._edge_type(edge) == "vv":
+            return float(edge.cond_exist_prob)
+        region_id = (
+            edge.source_node_id
+            if self.nodes[edge.source_node_id].type == TYPE_REGION
+            else edge.target_node_id
+        )
+        return float(edge.cond_exist_prob) * float(self.nodes[region_id].exist_prob)
 
     def _edge_type(self, edge: GraphEdge) -> str:
         return self._edge_type_for_ids(edge.source_node_id, edge.target_node_id)

@@ -15,6 +15,11 @@ class _Scorer:
         return 0.0
 
 
+class _PositiveScorer:
+    def score_images_text(self, images, text):
+        return 1.0
+
+
 def _base_payload(region_id, assigned_viewpoints, target_prob_viewpoints):
     return {
         "current_viewpoints_reassignment": [],
@@ -151,7 +156,7 @@ def test_region_reassignment_recomputes_grounding_and_restores_latent_existence(
                 "visible_viewpoints": [{"viewpoint_index": 1, "distance": 1.0}],
             }
         ],
-        scorer=_Scorer(),
+        scorer=_PositiveScorer(),
     )
 
     first_nodes = {
@@ -465,6 +470,10 @@ def test_hypothesized_vv_edge_is_removed_when_endpoint_becomes_grounded(monkeypa
     )
     assert (1, 2) in graph.edges
     assert graph.edges[(1, 2)].grounded is False
+    assert graph.edges[(1, 2)].distance_mean == 2.0
+    assert graph.edges[(1, 2)].distance_var == 1.0
+    assert graph.edges[(1, 2)].cond_exist_prob == 0.8
+    assert graph.edges[(1, 2)].exist_prob == 0.8
 
     second_payload = _base_payload(
         region_id=96,
@@ -640,6 +649,7 @@ def test_vv_edge_non_existence_likelihood_uses_paper_mismatch_term(monkeypatch):
     graph.region_to_viewpoints = {95: {3}, 96: {4}}
 
     graph._update_edge_existence_posteriors(
+        existing_edge_ids={(0, 1), (1, 2), (3, 4)},
         previous_distance_means={(3, 4): 4.0},
         previous_cond_exist_probs={(3, 4): 0.6},
         scorer=_Scorer(),
@@ -647,20 +657,15 @@ def test_vv_edge_non_existence_likelihood_uses_paper_mismatch_term(monkeypatch):
 
     empirical_mean = 2.0
     empirical_var = 1.0 + 1e-6
-    distance_mean = 4.0
+    prior_distance = 4.0
     prior = 0.6
     varrho = 0.75
     assignment_indicator = 0
-    gaussian_normalizer = 1.0 / math.sqrt(2.0 * math.pi * empirical_var)
-    gaussian_exponent = math.exp(
-        -((distance_mean - empirical_mean) ** 2) / (2.0 * empirical_var)
-    )
-    exist_likelihood = gaussian_normalizer * gaussian_exponent * (
-        (varrho**assignment_indicator) * ((1.0 - varrho) ** (1 - assignment_indicator))
-    )
-    non_exist_likelihood = gaussian_normalizer * (1.0 - gaussian_exponent) * (
-        ((1.0 - varrho) ** assignment_indicator) * (varrho ** (1 - assignment_indicator))
-    )
+    edge_comp_score = math.log(varrho / (1.0 - varrho)) * (
+        2.0 * assignment_indicator - 1.0
+    ) - ((prior_distance - empirical_mean) ** 2) / (2.0 * empirical_var)
+    exist_likelihood = math.exp(0.5 * edge_comp_score)
+    non_exist_likelihood = math.exp(-0.5 * edge_comp_score)
     expected = (
         exist_likelihood
         * prior
@@ -670,6 +675,138 @@ def test_vv_edge_non_existence_likelihood_uses_paper_mismatch_term(monkeypatch):
     assert math.isclose(
         graph.edges[(3, 4)].cond_exist_prob,
         expected,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    )
+
+
+def test_vv_edge_update_without_grounded_vv_uses_assignment_only(monkeypatch):
+    import Helper
+
+    monkeypatch.setattr(
+        Helper,
+        "viewpoint_vp_label_by_index",
+        {0: "vp0", 1: "vp1"},
+    )
+
+    graph = HypothesisGraph(
+        targets=[{"target_id": "0", "description": "target zero"}],
+        bayes_config={"epsilon": 1e-6, "varrho": 0.75},
+    )
+    for node_id in (0, 1):
+        graph.add_or_update_node(
+            node_id=node_id,
+            label="vp%s" % node_id,
+            node_type=Helper.TYPE_VP,
+            exist_prob=1.0,
+            grounded=False,
+            target_probs={"0": 1.0},
+        )
+    graph.add_or_update_edge(
+        source_node_id=0,
+        target_node_id=1,
+        distance_mean=5.0,
+        distance_var=2.0,
+        cond_exist_prob=0.4,
+        exist_prob=0.4,
+        grounded=False,
+    )
+    graph.viewpoint_to_region = {0: 95, 1: 95}
+    graph.region_to_viewpoints = {95: {0, 1}}
+
+    graph._update_edge_distance_posteriors(
+        existing_edge_ids={(0, 1)},
+        previous_distance_means={(0, 1): 5.0},
+        previous_distance_vars={(0, 1): 2.0},
+        previous_cond_exist_probs={(0, 1): 0.4},
+        scorer=_Scorer(),
+    )
+    graph._update_edge_existence_posteriors(
+        existing_edge_ids={(0, 1)},
+        previous_distance_means={(0, 1): 5.0},
+        previous_cond_exist_probs={(0, 1): 0.4},
+        scorer=_Scorer(),
+    )
+
+    assert graph.edges[(0, 1)].distance_mean == 5.0
+    assert graph.edges[(0, 1)].distance_var == 2.0
+    edge_comp_score = math.log(0.75 / 0.25)
+    exist_likelihood = math.exp(0.5 * edge_comp_score)
+    non_exist_likelihood = math.exp(-0.5 * edge_comp_score)
+    expected = (
+        exist_likelihood
+        * 0.4
+        / (exist_likelihood * 0.4 + non_exist_likelihood * 0.6)
+    )
+
+    assert math.isclose(
+        graph.edges[(0, 1)].cond_exist_prob,
+        expected,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    )
+
+
+def test_vz_existence_uses_semantic_score_only(monkeypatch):
+    import Helper
+
+    monkeypatch.setattr(Helper, "viewpoint_vp_label_by_index", {0: "vp0"})
+
+    graph = HypothesisGraph(
+        targets=[{"target_id": "0", "description": "target zero"}],
+        bayes_config={"eta_vz": 2.0},
+    )
+    graph.add_or_update_node(
+        node_id=0,
+        label="vp0",
+        node_type=Helper.TYPE_VP,
+        exist_prob=1.0,
+        grounded=True,
+        target_probs={"0": 0.0},
+    )
+    graph.add_or_update_node(
+        node_id=95,
+        label="bright kitchen",
+        node_type=Helper.TYPE_REGION,
+        exist_prob=0.5,
+        grounded=False,
+        target_probs={"0": 1.0},
+    )
+    graph.add_or_update_edge(
+        source_node_id=0,
+        target_node_id=95,
+        distance_mean=6.0,
+        distance_var=2.0,
+        cond_exist_prob=0.25,
+        exist_prob=0.125,
+        grounded=False,
+    )
+    graph.viewpoint_rgb_evidence[0] = ["image"]
+
+    graph._update_edge_existence_posteriors(
+        existing_edge_ids={(0, 95)},
+        previous_distance_means={(0, 95): 100.0},
+        previous_cond_exist_probs={(0, 95): 0.25},
+        scorer=_PositiveScorer(),
+    )
+
+    exist_likelihood = math.exp(2.0)
+    non_exist_likelihood = math.exp(-2.0)
+    expected_cond = (
+        exist_likelihood
+        * 0.25
+        / (exist_likelihood * 0.25 + non_exist_likelihood * 0.75)
+    )
+
+    assert math.isclose(
+        graph.edges[(0, 95)].cond_exist_prob,
+        expected_cond,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    )
+    assert math.isclose(
+        graph.edges[(0, 95)].exist_prob,
+        expected_cond * 0.5,
         rel_tol=1e-12,
         abs_tol=1e-12,
     )
