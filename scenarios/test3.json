@@ -1,5 +1,5 @@
 {
-  "scan_id": "1pXnuDYAj8r",
+  "scan_id": "17DRP5sb8fy",
   "agents": [
     {
       "id": "agent0",
@@ -50,6 +50,12 @@
     "read_saved_raw_outputs": true,
     "raw_output_dir": "mllm_raw_outputs/test3",
     "debug_output_dir": "mllm_debug_outputs/test3",
+    "open_vocab_verification": {
+      "backend": "grounding_dino",
+      "model_name": "IDEA-Research/grounding-dino-tiny",
+      "box_threshold": 0.35,
+      "text_threshold": 0.25
+    },
     "max_validation_retries": 4
   },
   "bayes": {
@@ -65,10 +71,10 @@
     "epsilon": 1e-6
   },
   "optimizer": {
-    "goal_weight": 0.2,
-    "dist_weight": 0.2,
-    "arc_weight": 0.2,
-    "node_weight": 0.2,
-    "visit_weight": 0.2
+    "goal_weight": 0.4,
+    "dist_weight": 0.4,
+    "arc_weight": 0.075,
+    "node_weight": 0.075,
+    "visit_weight": 0.05
   }
 }
