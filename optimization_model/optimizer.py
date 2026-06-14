@@ -125,13 +125,18 @@ class RollingHorizonOptimizer:
             node_id
             for node_id in all_node_ids
             if hypothesis_graph.nodes[node_id].type == TYPE_VP
+            and hypothesis_graph.nodes[node_id].grounded
             and hypothesis_graph.nodes[node_id].node_visit_times > 0
             and grounded_vv_degree[node_id] == 1
         }
 
         node_reward = {}
+        region_to_viewpoints = getattr(hypothesis_graph, "region_to_viewpoints", {})
         for node_id in all_node_ids:
             node = hypothesis_graph.nodes[node_id]
+            if node.type == TYPE_REGION and region_to_viewpoints.get(node_id):
+                node_reward[node_id] = {target_id: 0.0 for target_id in target_ids}
+                continue
             node_reward[node_id] = {
                 target_id: node.target_probs.get(target_id, 0.0)
                 for target_id in target_ids
@@ -283,6 +288,7 @@ class RollingHorizonOptimizer:
                 unique_target_reward=self.unique_target_reward,
                 allow_inactive_agents=self.allow_inactive_agents,
                 reward_node_ids_by_agent=reward_node_ids_by_agent,
+                blocked_revisit_viewpoint_node_ids=blocked_revisit_viewpoint_node_ids,
             )
             objective_bounds = {
                 "goal": (goal_lower_bound, goal_upper_bound),
@@ -916,10 +922,14 @@ class RollingHorizonOptimizer:
         unique_target_reward=False,
         allow_inactive_agents=False,
         reward_node_ids_by_agent=None,
+        blocked_revisit_viewpoint_node_ids=None,
     ):
         agent_ids = list(agent_current_vp_ids)
         if reward_node_ids_by_agent is None:
             reward_node_ids_by_agent = candidate_node_ids_by_agent
+        blocked_revisit_viewpoint_node_ids = set(
+            blocked_revisit_viewpoint_node_ids or set()
+        )
 
         def active_node_reward(node_id: int) -> float:
             return max(
@@ -947,6 +957,7 @@ class RollingHorizonOptimizer:
                 active_node_reward(node_id)
                 for agent_id in agent_ids
                 for node_id in candidate_node_ids_by_agent[agent_id]
+                if node_id not in blocked_revisit_viewpoint_node_ids
             )
 
         dist_lower_bound = 0.0
@@ -977,9 +988,21 @@ class RollingHorizonOptimizer:
                 )
 
             if not unique_target_reward:
+                first_hop_goal_edges = [
+                    (source_id, target_id)
+                    for source_id, target_id in first_hop_grounded_vv_edges
+                    if target_id not in blocked_revisit_viewpoint_node_ids
+                ]
+                if not first_hop_goal_edges:
+                    if allow_inactive_agents:
+                        continue
+                    raise RuntimeError(
+                        "Agent %s has no non-dead-end grounded first-hop edge from "
+                        "node %s." % (agent_id, start_node_id)
+                    )
                 goal_lower_bound += min(
                     active_node_reward(first_hop_node_id)
-                    for _, first_hop_node_id in first_hop_grounded_vv_edges
+                    for _, first_hop_node_id in first_hop_goal_edges
                 )
 
             if not allow_inactive_agents:

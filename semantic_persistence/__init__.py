@@ -1,8 +1,8 @@
 __all__ = [
     "HypothesisGraph",
-    "GroundingDinoDetector",
     "MLLMClient",
-    "OpenVocabularyDetector",
+    "MLLMProviderCreditError",
+    "MLLMRetryExhaustedError",
     "SigLIPScorer",
     "load_nav_graph",
     "shortest_path_next_hop",
@@ -19,14 +19,14 @@ def __getattr__(name):
         from .mllm_client import MLLMClient
 
         return MLLMClient
-    if name == "GroundingDinoDetector":
-        from .grounding_dino_detector import GroundingDinoDetector
+    if name == "MLLMRetryExhaustedError":
+        from .mllm_client import MLLMRetryExhaustedError
 
-        return GroundingDinoDetector
-    if name == "OpenVocabularyDetector":
-        from .open_vocab_detector import OpenVocabularyDetector
+        return MLLMRetryExhaustedError
+    if name == "MLLMProviderCreditError":
+        from .mllm_client import MLLMProviderCreditError
 
-        return OpenVocabularyDetector
+        return MLLMProviderCreditError
     if name == "SigLIPScorer":
         from .siglip_scorer import SigLIPScorer
 

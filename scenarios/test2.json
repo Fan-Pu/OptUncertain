@@ -23,32 +23,5 @@
       "target_id": "1",
       "description": "the toilet paper roll in the bathroom"
     }
-  ],
-  "mllm": {
-    "detection_model_name": "google/gemma-4-31B-it:deepinfra",
-    "graph_model_name": "qwen3.5-plus",
-    "read_saved_raw_outputs": true,
-    "raw_output_dir": "mllm_raw_outputs/test2",
-    "debug_output_dir": "mllm_debug_outputs/test2",
-    "max_validation_retries": 4
-  },
-  "bayes": {
-    "eta_goal": 5.0,
-    "eta_exist": 5.0,
-    "sigma_vv2": 4.0,
-    "sigma_vz2": 9.0,
-    "kappa_vv": 1.0,
-    "kappa_vz": 1.0,
-    "varrho": 0.75,
-    "omega_vz": 0.7,
-    "eta_vz": 5.0,
-    "epsilon": 1e-6
-  },
-  "optimizer": {
-    "goal_weight": 0.2,
-    "dist_weight": 0.2,
-    "arc_weight": 0.2,
-    "node_weight": 0.2,
-    "visit_weight": 0.2
-  }
+  ]
 }

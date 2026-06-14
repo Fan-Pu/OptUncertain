@@ -2129,9 +2129,6 @@ def render_viewer_html() -> str:
           item.agent_id,
           item.target_id,
           item.description,
-          item.verification,
-          formatNumber(item.score),
-          formatNumber(item.score_threshold),
           formatNumber(item.target_center_x)
         ]);
       const target = document.getElementById("targetDetections");
@@ -2139,7 +2136,7 @@ def render_viewer_html() -> str:
         target.innerHTML = "<p style=\"margin:0;color:var(--muted);font-size:13px;\">No target detections in this step.</p>";
         return;
       }
-      target.innerHTML = table(["agent", "target", "description", "verification", "score", "threshold", "center x"], rows);
+      target.innerHTML = table(["agent", "target", "description", "center x"], rows);
     }
 
     function renderUnassignedRegions(step) {
@@ -2211,21 +2208,18 @@ def render_viewer_html() -> str:
         item.agent_id,
         item.target_id,
         item.found,
-        item.verification,
         formatNumber(item.target_center_x)
       ]);
       document.getElementById("detections").innerHTML =
-        table(["agent", "target", "found", "verification", "center x"], rows);
+        table(["agent", "target", "found", "center x"], rows);
     }
 
     function normalizedDetectionRows(step) {
-      const verificationChecks = openVocabularyVerificationChecks(step);
       return (step.detection.detections || []).flatMap(detection => {
         if (Array.isArray(detection.found_target_indices)) {
           return detection.found_target_indices.map((targetId, index) =>
             normalizedDetectionRow({
               step: step,
-              verificationChecks: verificationChecks,
               agentId: detection.agent_id,
               targetId: targetId,
               rawFound: true,
@@ -2236,7 +2230,6 @@ def render_viewer_html() -> str:
         return (detection.target_indices || []).map((targetId, index) =>
           normalizedDetectionRow({
             step: step,
-            verificationChecks: verificationChecks,
             agentId: detection.agent_id,
             targetId: targetId,
             rawFound: Boolean(detection.founds[index]),
@@ -2246,43 +2239,15 @@ def render_viewer_html() -> str:
       });
     }
 
-    function normalizedDetectionRow({ step, verificationChecks, agentId, targetId, rawFound, targetCenterX }) {
-      const check = verificationChecks.get(verificationKey(agentId, targetId));
-      const verification = verificationStatus(check);
+    function normalizedDetectionRow({ step, agentId, targetId, rawFound, targetCenterX }) {
       return {
         agent_id: agentId,
         target_id: String(targetId),
         description: targetDescription(targetId),
         raw_found: rawFound,
-        found: verifiedFound(rawFound, verification),
-        verification: verification,
-        score: check ? check.score : "",
-        score_threshold: check ? check.score_threshold : "",
+        found: rawFound,
         target_center_x: targetCenterX
       };
-    }
-
-    function openVocabularyVerificationChecks(step) {
-      const checks = new Map();
-      for (const check of ((step.open_vocab_verification || {}).checks || [])) {
-        checks.set(verificationKey(check.agent_id, check.target_id), check);
-      }
-      return checks;
-    }
-
-    function verificationKey(agentId, targetId) {
-      return `${String(agentId)}\u0000${String(targetId)}`;
-    }
-
-    function verificationStatus(check) {
-      if (!check) return "unverified";
-      return check.accepted ? "accepted" : "rejected";
-    }
-
-    function verifiedFound(rawFound, verification) {
-      if (verification === "accepted") return true;
-      if (verification === "rejected") return false;
-      return rawFound;
     }
 
     function targetDescription(targetId) {

@@ -94,14 +94,11 @@ class HypothesisGraph:
         bayes_config: Optional[Dict[str, float]] = None,
     ):
         defaults = {
-            "eta_goal": 5.0,
-            "eta_exist": 5.0,
             "sigma_vv2": 4.0,
             "sigma_vz2": 9.0,
             "kappa_vv": 1.0,
             "kappa_vz": 1.0,
             "varrho": 0.75,
-            "omega_vz": 0.7,
             "eta_vz": 5.0,
             "epsilon": 1e-6,
         }

@@ -48,7 +48,7 @@ def load_instance_targets(
     project_root: str | Path | None = None,
 ) -> list[dict[str, object]]:
     root = resolve_project_root(project_root)
-    scenario = _read_json(root / "scenarios" / ("%s.json" % str(instance_name)))
+    scenario = _load_instance_scenario(instance_name=str(instance_name), project_root=root)
     return scenario["targets"]
 
 
@@ -122,7 +122,7 @@ def load_instance_scan_id(
     project_root: str | Path | None = None,
 ) -> str:
     root = resolve_project_root(project_root)
-    scenario = _read_json(root / "scenarios" / ("%s.json" % str(instance_name)))
+    scenario = _load_instance_scenario(instance_name=str(instance_name), project_root=root)
     return str(scenario["scan_id"])
 
 
@@ -157,11 +157,30 @@ def _load_solution_summaries(
     return solutions
 
 
+def _load_instance_scenario(instance_name: str, project_root: Path) -> dict[str, object]:
+    scenario_path = project_root / "scenarios" / ("%s.json" % str(instance_name))
+    if scenario_path.exists():
+        return _read_json(scenario_path)
+
+    for generated_cases_path in sorted(
+        (project_root / "mllm_debug_outputs").glob("*/generated_cases.json")
+    ):
+        generated_cases = _read_json(generated_cases_path)
+        cases = generated_cases.get("cases", {})
+        if str(instance_name) in cases:
+            return cases[str(instance_name)]
+
+    raise FileNotFoundError(
+        "No scenario JSON or generated batch case metadata found for %s."
+        % str(instance_name)
+    )
+
+
 def _load_route_environment_graph(
     instance_name: str,
     project_root: Path,
 ) -> dict[str, object]:
-    scenario = _read_json(project_root / "scenarios" / ("%s.json" % instance_name))
+    scenario = _load_instance_scenario(instance_name=instance_name, project_root=project_root)
     scan_id = str(scenario["scan_id"])
     connectivity_path = project_root / "connectivity" / ("%s_connectivity.json" % scan_id)
     viewpoints = load_connectivity_viewpoints(connectivity_path)
@@ -230,19 +249,11 @@ def _load_step(
     hypothesis_path = debug_dir / ("hypothesis_step_%s.json" % suffix)
     semantic_path = raw_dir / ("semantic_step_%s.json" % suffix)
     detection_path = raw_dir / ("detection_step_%s.json" % suffix)
-    open_vocab_verification_path = raw_dir / (
-        "open_vocab_verification_step_%s.json" % suffix
-    )
     user_message_path = raw_dir / ("user_message_step_%s.txt" % suffix)
 
     layout = _read_json(layout_path)
     hypothesis = _read_json(hypothesis_path)
     detection = _read_json(detection_path)
-    open_vocab_verification = (
-        _read_json(open_vocab_verification_path)
-        if open_vocab_verification_path.exists()
-        else None
-    )
     semantic, user_message = _load_semantic_and_user_message(
         semantic_path=semantic_path,
         user_message_path=user_message_path,
@@ -263,17 +274,12 @@ def _load_step(
             "hypothesis": _relative_posix(project_root, hypothesis_path),
             "semantic": _relative_posix(project_root, semantic_path),
             "detection": _relative_posix(project_root, detection_path),
-            "open_vocab_verification": _relative_posix(
-                project_root,
-                open_vocab_verification_path,
-            ),
             "user_message": _relative_posix(project_root, user_message_path),
         },
         "layout": layout,
         "hypothesis": hypothesis,
         "semantic": semantic,
         "detection": detection,
-        "open_vocab_verification": open_vocab_verification,
         "user_message": user_message,
         "observation_images": observation_images,
     }

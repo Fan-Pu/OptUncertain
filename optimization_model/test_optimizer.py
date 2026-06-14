@@ -210,7 +210,7 @@ class _ObjectiveBoundsUngroundedFirstHopGraph:
         self.nodes = {
             1: _FakeNode(1, True, 1.0, {"target": 0.0}),
             2: _FakeNode(1, True, 1.0, {"target": 0.9}, node_visit_times=3),
-            3: _FakeNode(1, True, 1.0, {"target": 0.4}, node_visit_times=7),
+            3: _FakeNode(1, True, 1.0, {"target": 0.4}, node_visit_times=0),
         }
         self.edges = {
             (1, 2): _FakeEdge(1, 2, 1.0, 0.2, grounded=False),
@@ -301,6 +301,23 @@ class _UngroundedViewpointAndRegionRewardGraph:
             1: _FakeNode(1, True, 1.0, {"target": 0.0}),
             2: _FakeNode(1, False, 1.0, {"target": 0.5}),
             3: _FakeNode(0, False, 1.0, {"target": 0.5}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 0.0, 1.0),
+            (2, 3): _FakeEdge(2, 3, 0.0, 1.0),
+        }
+
+
+class _AssignedRegionRewardGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.region_to_viewpoints = {3: {2}}
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
+            2: _FakeNode(1, False, 1.0, {"target": 0.5}),
+            3: _FakeNode(0, False, 1.0, {"target": 1.0}),
         }
         self.edges = {
             (1, 2): _FakeEdge(1, 2, 0.0, 1.0),
@@ -559,12 +576,33 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             for node_id in all_node_ids
         }
         node_reward = {}
+        region_to_viewpoints = getattr(graph, "region_to_viewpoints", {})
         for node_id in all_node_ids:
             node = graph.nodes[node_id]
+            if node.type == 0 and region_to_viewpoints.get(node_id):
+                node_reward[node_id] = {target_id: 0.0 for target_id in target_ids}
+                continue
             node_reward[node_id] = {
                 target_id: node.target_probs.get(target_id, 0.0)
                 for target_id in target_ids
             }
+        grounded_vv_degree = {node_id: 0 for node_id in all_node_ids}
+        for edge in graph.edges.values():
+            if (
+                graph.nodes[edge.source_node_id].type == 1
+                and graph.nodes[edge.target_node_id].type == 1
+                and edge.grounded
+            ):
+                grounded_vv_degree[edge.source_node_id] += 1
+                grounded_vv_degree[edge.target_node_id] += 1
+        blocked_revisit_viewpoint_node_ids = {
+            node_id
+            for node_id in all_node_ids
+            if graph.nodes[node_id].type == 1
+            and graph.nodes[node_id].grounded
+            and graph.nodes[node_id].node_visit_times > 0
+            and grounded_vv_degree[node_id] == 1
+        }
 
         return optimizer._objective_bounds(
             hypothesis_graph=graph,
@@ -582,6 +620,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             node_reward=node_reward,
             node_nonexist_penalty=node_nonexist_penalty,
             revisit_penalty=revisit_penalty,
+            blocked_revisit_viewpoint_node_ids=blocked_revisit_viewpoint_node_ids,
         )
 
     def test_revisit_penalty_avoids_visited_viewpoint_when_other_terms_match(self):
@@ -862,8 +901,8 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertEqual(
             bounds,
             (
-                0.5,
-                2.2,
+                0.9,
+                1.7000000000000002,
                 2.0,
                 9.0,
                 0.0,
@@ -893,8 +932,8 @@ class MultiAgentOptimizerTest(unittest.TestCase):
                 1.6,
                 0.0,
                 0.0,
-                7.0,
-                10.0,
+                0.0,
+                3.0,
             ),
         )
 
@@ -937,6 +976,18 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertAlmostEqual(
             result["agent_paths"]["agent0"]["objective_terms"]["raw"]["goal"],
             1.0,
+        )
+
+    def test_assigned_region_target_probability_has_zero_reward(self):
+        result = RollingHorizonOptimizer(GOAL_ONLY_OPTIMIZER_CONFIG).solve(
+            hypothesis_graph=_AssignedRegionRewardGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertAlmostEqual(
+            result["agent_paths"]["agent0"]["objective_terms"]["raw"]["goal"],
+            0.5,
         )
 
     def test_objective_terms_global_raw_matches_selected_variables(self):

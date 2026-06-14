@@ -1,9 +1,13 @@
 ﻿import argparse
+import copy
+from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
+import random
 import sys
 import time
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import debugpy
 
 import Helper
@@ -15,9 +19,114 @@ from route_plotter import (
 from optimizer_route_logger import write_optimizer_route_log
 
 
-def load_scenario_config(config_path: str) -> Dict[str, object]:
-    with open(config_path, "r", encoding="utf-8") as file_handle:
+CENTRAL_CONFIG_SECTIONS = ("mllm", "bayes", "optimizer")
+DEFAULT_CONFIG_PATH = Path("config") / "default_config.json"
+DEBUGPY_LISTENING = False
+
+
+def _read_json(path: str | Path) -> object:
+    with open(path, "r", encoding="utf-8") as file_handle:
         return json.load(file_handle)
+
+
+def _write_json(path: str | Path, payload: object) -> None:
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as file_handle:
+        json.dump(payload, file_handle, indent=2)
+        file_handle.write("\n")
+
+
+def _read_json_if_exists(path: str | Path) -> object | None:
+    json_path = Path(path)
+    if not json_path.exists():
+        return None
+    return _read_json(json_path)
+
+
+def _project_root() -> Path:
+    return Path(__file__).resolve().parent
+
+
+def _default_config_path(project_root: str | Path | None = None) -> Path:
+    root = Path(project_root).resolve() if project_root is not None else _project_root()
+    return root / DEFAULT_CONFIG_PATH
+
+
+def load_default_config(project_root: str | Path | None = None) -> Dict[str, object]:
+    config = _read_json(_default_config_path(project_root))
+    if not isinstance(config, dict):
+        raise TypeError("Central config must be a JSON object.")
+    for section in CENTRAL_CONFIG_SECTIONS:
+        if section not in config:
+            raise KeyError("Central config is missing section %s." % section)
+        if not isinstance(config[section], dict):
+            raise TypeError("Central config section %s must be an object." % section)
+    return copy.deepcopy(config)
+
+
+def is_batch_config(config: Dict[str, object]) -> bool:
+    return all(
+        key in config
+        for key in ("scans", "agent_num_selections", "target_num_selections")
+    )
+
+
+def _merge_single_scenario_config(
+    scenario_config: Dict[str, object],
+    case_id: str,
+    default_config: Dict[str, object],
+) -> Dict[str, object]:
+    scenario = copy.deepcopy(scenario_config)
+    for key in ("scan_id", "agents", "targets"):
+        if key not in scenario:
+            raise KeyError("Scenario %s is missing %s." % (case_id, key))
+
+    for section in CENTRAL_CONFIG_SECTIONS:
+        scenario.pop(section, None)
+
+    scenario["test_case"] = str(case_id)
+    for section in CENTRAL_CONFIG_SECTIONS:
+        scenario[section] = copy.deepcopy(default_config[section])
+
+    scenario["mllm"]["raw_output_dir"] = (
+        Path("mllm_raw_outputs") / str(case_id)
+    ).as_posix()
+    scenario["mllm"]["debug_output_dir"] = (
+        Path("mllm_debug_outputs") / str(case_id)
+    ).as_posix()
+    return scenario
+
+
+def load_scenario_config(
+    config_path: str | Path,
+    default_config: Dict[str, object] | None = None,
+) -> Dict[str, object]:
+    path = Path(config_path)
+    scenario = _read_json(path)
+    if not isinstance(scenario, dict):
+        raise TypeError("Scenario config must be a JSON object.")
+    if is_batch_config(scenario):
+        raise ValueError("Batch config cannot be loaded as a single scenario.")
+    return _merge_single_scenario_config(
+        scenario_config=scenario,
+        case_id=path.stem,
+        default_config=default_config or load_default_config(),
+    )
+
+
+def _normalize_scenario_record(
+    scenario: Dict[str, object],
+    case_id: str,
+    default_config: Dict[str, object],
+) -> Dict[str, object]:
+    if is_batch_config(scenario):
+        raise ValueError("Batch config cannot be normalized as a single scenario.")
+    return _merge_single_scenario_config(
+        scenario_config=scenario,
+        case_id=case_id,
+        default_config=default_config,
+    )
 
 
 def _normalize_targets(targets: List[Dict[str, object]]) -> List[Dict[str, object]]:
@@ -80,6 +189,245 @@ def _id_sort_key(identifier: object):
     if text.isdigit():
         return (0, int(text), text)
     return (1, text)
+
+
+def _selection_requests(
+    selections: List[Dict[str, object]],
+    number_key: str,
+) -> List[Tuple[int, int]]:
+    requests = []
+    for selection in selections:
+        number = int(selection[number_key])
+        case_number = int(selection["case_number"])
+        for case_index in range(case_number):
+            requests.append((number, case_index))
+    return requests
+
+
+def _available_viewpoint_ids(scan_id: str, project_root: Path) -> List[str]:
+    environment_graph = load_environment_graph(
+        scan_id=scan_id,
+        connectivity_dir=project_root / "connectivity",
+    )
+    return [
+        environment_graph.viewpoint_id_by_index[node_id]
+        for node_id in sorted(environment_graph.viewpoint_id_by_index)
+    ]
+
+
+def _batch_config_hash(batch_config: Dict[str, object]) -> str:
+    encoded = json.dumps(
+        batch_config,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def generate_batch_scenarios(
+    batch_config: Dict[str, object],
+    batch_id: str,
+    project_root: str | Path | None = None,
+    default_config: Dict[str, object] | None = None,
+    rng: random.Random | None = None,
+) -> Tuple[List[Dict[str, object]], Dict[str, object]]:
+    if not is_batch_config(batch_config):
+        raise ValueError("Batch config must contain scans and selection blocks.")
+
+    root = Path(project_root).resolve() if project_root is not None else _project_root()
+    central_config = default_config or load_default_config(root)
+    random_source = rng or random.Random()
+    max_steps = (
+        int(batch_config["max_steps"]) if "max_steps" in batch_config else None
+    )
+
+    agent_requests = _selection_requests(
+        list(batch_config["agent_num_selections"]),
+        "agent_number",
+    )
+    target_requests = _selection_requests(
+        list(batch_config["target_num_selections"]),
+        "target_number",
+    )
+
+    scenarios = []
+    generated_cases: Dict[str, object] = {}
+    for scan in batch_config["scans"]:
+        scan_id = str(scan["scan_id"])
+        scan_targets = _normalize_targets(list(scan["targets"]))
+        viewpoint_ids = _available_viewpoint_ids(scan_id=scan_id, project_root=root)
+        case_index_for_scan = 1
+
+        for agent_number, agent_selection_index in agent_requests:
+            if agent_number > len(viewpoint_ids):
+                raise ValueError(
+                    "Batch scan %s requested %s agents but only %s viewpoints exist."
+                    % (scan_id, agent_number, len(viewpoint_ids))
+                )
+
+            for target_number, target_selection_index in target_requests:
+                if target_number > len(scan_targets):
+                    raise ValueError(
+                        "Batch scan %s requested %s targets but only %s targets are "
+                        "defined."
+                        % (scan_id, target_number, len(scan_targets))
+                    )
+
+                case_id = "%s_case_%04d" % (scan_id, case_index_for_scan)
+                case_index_for_scan += 1
+
+                selected_viewpoint_ids = random_source.sample(
+                    viewpoint_ids,
+                    agent_number,
+                )
+                selected_targets = random_source.sample(scan_targets, target_number)
+                agents = [
+                    {
+                        "id": "agent%s" % agent_index,
+                        "start_viewpoint_id": viewpoint_id,
+                        "heading": 0.0,
+                        "elevation": 0.0,
+                    }
+                    for agent_index, viewpoint_id in enumerate(selected_viewpoint_ids)
+                ]
+                base_scenario = {
+                    "scan_id": scan_id,
+                    "agents": agents,
+                    "targets": selected_targets,
+                }
+                scenario = _normalize_scenario_record(
+                    scenario=base_scenario,
+                    case_id=case_id,
+                    default_config=central_config,
+                )
+                if max_steps is not None:
+                    scenario["max_steps"] = max_steps
+                scenarios.append(scenario)
+                generated_case = {
+                    "test_case": case_id,
+                    "scan_id": scan_id,
+                    "agent_number": agent_number,
+                    "agent_selection_index": agent_selection_index,
+                    "target_number": target_number,
+                    "target_selection_index": target_selection_index,
+                    "agents": agents,
+                    "targets": selected_targets,
+                    "raw_output_dir": scenario["mllm"]["raw_output_dir"],
+                    "debug_output_dir": scenario["mllm"]["debug_output_dir"],
+                }
+                if max_steps is not None:
+                    generated_case["max_steps"] = max_steps
+                generated_cases[case_id] = generated_case
+
+    summary = {
+        "batch_id": str(batch_id),
+        "batch_config_hash": _batch_config_hash(batch_config),
+        "generated_case_count": len(generated_cases),
+        "case_order": list(generated_cases),
+        "cases": generated_cases,
+    }
+    return scenarios, summary
+
+
+def write_batch_case_summary(
+    batch_id: str,
+    summary: Dict[str, object],
+    project_root: str | Path | None = None,
+) -> Path:
+    root = Path(project_root).resolve() if project_root is not None else _project_root()
+    output_path = root / "mllm_debug_outputs" / str(batch_id) / "generated_cases.json"
+    _write_json(output_path, summary)
+    return output_path
+
+
+def _batch_case_summary_path(
+    batch_id: str,
+    project_root: str | Path | None = None,
+) -> Path:
+    root = Path(project_root).resolve() if project_root is not None else _project_root()
+    return root / "mllm_debug_outputs" / str(batch_id) / "generated_cases.json"
+
+
+def _case_order_from_batch_summary(summary: Dict[str, object]) -> List[str]:
+    if "case_order" in summary:
+        return [str(case_id) for case_id in summary["case_order"]]
+    return [str(case_id) for case_id in summary["cases"]]
+
+
+def _scenario_from_generated_case(
+    generated_case: Dict[str, object],
+    default_config: Dict[str, object],
+) -> Dict[str, object]:
+    case_id = str(generated_case["test_case"])
+    base_scenario = {
+        "scan_id": str(generated_case["scan_id"]),
+        "agents": copy.deepcopy(generated_case["agents"]),
+        "targets": copy.deepcopy(generated_case["targets"]),
+    }
+    scenario = _normalize_scenario_record(
+        scenario=base_scenario,
+        case_id=case_id,
+        default_config=default_config,
+    )
+    if "max_steps" in generated_case:
+        scenario["max_steps"] = int(generated_case["max_steps"])
+    return scenario
+
+
+def _scenarios_from_batch_summary(
+    summary: Dict[str, object],
+    default_config: Dict[str, object],
+) -> List[Dict[str, object]]:
+    cases = summary["cases"]
+    return [
+        _scenario_from_generated_case(
+            generated_case=cases[case_id],
+            default_config=default_config,
+        )
+        for case_id in _case_order_from_batch_summary(summary)
+    ]
+
+
+def load_or_generate_batch_scenarios(
+    batch_config: Dict[str, object],
+    batch_id: str,
+    default_config: Dict[str, object],
+    project_root: str | Path | None = None,
+) -> Tuple[List[Dict[str, object]], Dict[str, object], Path]:
+    summary_path = _batch_case_summary_path(
+        batch_id,
+        project_root=project_root,
+    )
+    existing_summary = _read_json_if_exists(summary_path)
+    expected_hash = _batch_config_hash(batch_config)
+    if existing_summary is not None:
+        if not isinstance(existing_summary, dict):
+            raise TypeError("Generated batch case summary must be a JSON object.")
+        saved_hash = existing_summary.get("batch_config_hash")
+        if saved_hash != expected_hash:
+            raise ValueError(
+                "Existing generated batch cases for %s were produced from a "
+                "different batch config. Delete %s to start a new random batch."
+                % (str(batch_id), str(summary_path))
+            )
+        return (
+            _scenarios_from_batch_summary(existing_summary, default_config),
+            existing_summary,
+            summary_path,
+        )
+
+    scenarios, summary = generate_batch_scenarios(
+        batch_config=batch_config,
+        batch_id=batch_id,
+        project_root=project_root,
+        default_config=default_config,
+    )
+    write_batch_case_summary(
+        batch_id=batch_id,
+        summary=summary,
+        project_root=project_root,
+    )
+    return scenarios, summary, summary_path
 
 
 def _collect_completed_targets(
@@ -300,12 +648,18 @@ def _record_completed_target_nodes(
             )
 
 
-def _write_mllm_completion_route_summary(
+def _write_mllm_route_summary(
     test_case: str,
     scan_id: str,
     debug_output_dir: str,
     executed_routes_by_agent: Dict[str, List[int]],
     completed_target_node_ids: Dict[str, int],
+    target_found: Dict[str, bool],
+    status: str,
+    stop_reason: str,
+    steps_completed: int,
+    max_steps: int | None = None,
+    extra_metadata: Dict[str, object] | None = None,
 ) -> Dict[str, object]:
     environment_graph = load_environment_graph(scan_id=scan_id)
     summary = summarize_routes(
@@ -314,6 +668,16 @@ def _write_mllm_completion_route_summary(
         routes_by_agent=executed_routes_by_agent,
         target_node_ids_by_target_id=completed_target_node_ids,
     )
+    summary["status"] = str(status)
+    summary["stop_reason"] = str(stop_reason)
+    summary["target_found"] = {
+        str(target_id): bool(found) for target_id, found in target_found.items()
+    }
+    summary["steps_completed"] = int(steps_completed)
+    if max_steps is not None:
+        summary["max_steps"] = int(max_steps)
+    if extra_metadata is not None:
+        summary.update(copy.deepcopy(extra_metadata))
     output_dir = Path(debug_output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     summary_path = output_dir / ("%s_mllm_route_summary.txt" % str(test_case))
@@ -327,71 +691,64 @@ def _write_mllm_completion_route_summary(
     return summary
 
 
-def _build_open_vocab_detector(mllm_config: Dict[str, object]):
-    open_vocab_config = mllm_config.get("open_vocab_verification", {})
+def _max_steps_reached(step_index: int, max_steps: int | None) -> bool:
+    if max_steps is None:
+        return False
+    return int(step_index) + 1 >= int(max_steps)
 
-    if not bool(open_vocab_config.get("enabled", True)):
-        return None
 
-    from semantic_persistence.mllm_client import OPEN_VOCAB_SCORE_THRESHOLD
+def _wait_for_debugger() -> None:
+    global DEBUGPY_LISTENING
 
-    backend = str(open_vocab_config.get("backend", "owlv2"))
-    if backend == "grounding_dino":
-        from semantic_persistence import GroundingDinoDetector
+    if not DEBUGPY_LISTENING:
+        debugpy.listen(("0.0.0.0", 5678))
+        DEBUGPY_LISTENING = True
+        print("debugpy listening on 5678, waiting...")
 
-        return GroundingDinoDetector(
-            model_name=str(
-                open_vocab_config.get(
-                    "model_name",
-                    "IDEA-Research/grounding-dino-tiny",
-                )
-            ),
-            score_threshold=float(open_vocab_config.get("box_threshold", 0.35)),
-            text_threshold=float(open_vocab_config.get("text_threshold", 0.25)),
-            device=open_vocab_config.get("device"),
-        )
-    if backend == "owlv2":
-        from semantic_persistence import OpenVocabularyDetector
-
-        return OpenVocabularyDetector(
-            model_name=str(
-                open_vocab_config.get(
-                    "model_name",
-                    "google/owlv2-base-patch16-ensemble",
-                )
-            ),
-            score_threshold=float(
-                open_vocab_config.get(
-                    "score_threshold",
-                    OPEN_VOCAB_SCORE_THRESHOLD,
-                )
-            ),
-            device=open_vocab_config.get("device"),
-        )
-    raise ValueError("Unsupported open_vocab_verification backend: %s" % backend)
+    if not debugpy.is_client_connected():
+        debugpy.wait_for_client()
+    print("debugger attached, continuing...")
 
 
 def run_scenario(
-    config_path: str,
+    config_or_scenario: str | Path | Dict[str, object],
     show_agent_views: bool = True,
+    default_config: Dict[str, object] | None = None,
 ) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
-    from semantic_persistence import HypothesisGraph, MLLMClient, SigLIPScorer
+    from semantic_persistence import (
+        HypothesisGraph,
+        MLLMClient,
+        MLLMProviderCreditError,
+        MLLMRetryExhaustedError,
+        SigLIPScorer,
+    )
 
     # -------------------- Debugger --------------------
-    debugpy.listen(("0.0.0.0", 5678))
-    print("debugpy listening on 5678, waiting...")
-    debugpy.wait_for_client()
-    print("debugger attached, continuing...")
+    _wait_for_debugger()
 
-    scenario = load_scenario_config(config_path)
+    if isinstance(config_or_scenario, dict):
+        if "mllm" in config_or_scenario:
+            scenario = copy.deepcopy(config_or_scenario)
+        else:
+            scenario = _normalize_scenario_record(
+                scenario=config_or_scenario,
+                case_id=str(config_or_scenario.get("test_case", "default")),
+                default_config=default_config or load_default_config(),
+            )
+    else:
+        scenario = load_scenario_config(
+            config_or_scenario,
+            default_config=default_config,
+        )
     run_output_dir = scenario["mllm"].get("raw_output_dir", "mllm_raw_outputs/default")
     debug_output_dir = scenario["mllm"].get(
         "debug_output_dir", "mllm_debug_outputs/default"
     )
     agent_ids = [str(agent["id"]) for agent in scenario["agents"]]
     scan_id = str(scenario["scan_id"])
-    test_case = Path(debug_output_dir).name
+    test_case = str(scenario["test_case"])
+    max_steps = int(scenario["max_steps"]) if "max_steps" in scenario else None
 
     Helper.build_viewpoint_index(scan_id)
     executed_routes_by_agent = _initialize_executed_routes(scenario)
@@ -407,8 +764,6 @@ def run_scenario(
     )
 
     optimizer = RollingHorizonOptimizer(scenario["optimizer"])
-
-    open_vocab_detector = _build_open_vocab_detector(scenario["mllm"])
 
     # for huggingface, use base_url="https://router.huggingface.co/v1" and api_key_env="HF_TOKEN"
     # for DeepInfra, use base_url="https://api.deepinfra.com/v1/openai" and api_key_env="DEEPINFRA_TOKEN"
@@ -431,7 +786,6 @@ def run_scenario(
         max_request_timeout_retries=int(
             scenario["mllm"].get("max_request_timeout_retries", 1)
         ),
-        open_vocab_detector=None,
     )
 
     scorer = SigLIPScorer()
@@ -459,12 +813,95 @@ def run_scenario(
         # This does not create semantic regions or viewpoint assignments.
         hypothesis_graph.sync_agent_current_viewpoints(agent_observations)
 
-        mllm_output = mllm_client.propose_semantic_nodes(
-            agent_observations=agent_observations,
-            targets=graph_targets,
-            graph=hypothesis_graph,
-            scorer=scorer,
-        )
+        try:
+            mllm_output = mllm_client.propose_semantic_nodes(
+                agent_observations=agent_observations,
+                targets=graph_targets,
+                graph=hypothesis_graph,
+                scorer=scorer,
+            )
+        except MLLMRetryExhaustedError as exc:
+            failed_step_index = int(exc.step_index)
+            steps_completed = max(0, failed_step_index - 1)
+            hypothesis_graph.export_debug_snapshot(
+                output_dir=debug_output_dir,
+                step_index=failed_step_index,
+            )
+            route_summary = _write_mllm_route_summary(
+                test_case=test_case,
+                scan_id=scan_id,
+                debug_output_dir=debug_output_dir,
+                executed_routes_by_agent=executed_routes_by_agent,
+                completed_target_node_ids=completed_target_node_ids,
+                target_found=hypothesis_graph.target_found,
+                status="incomplete",
+                stop_reason="mllm_retry_exhausted",
+                steps_completed=steps_completed,
+                max_steps=max_steps,
+                extra_metadata={
+                    "failed_step_index": failed_step_index,
+                    "mllm_stage": exc.stage,
+                    "mllm_attempts": exc.attempts,
+                    "error": exc.last_error,
+                },
+            )
+            return {
+                "target_found": dict(hypothesis_graph.target_found),
+                "status": "incomplete",
+                "stop_reason": "mllm_retry_exhausted",
+                "steps_completed": steps_completed,
+                "max_steps": max_steps,
+                "failed_step_index": failed_step_index,
+                "mllm_stage": exc.stage,
+                "mllm_attempts": exc.attempts,
+                "error": exc.last_error,
+                "route_summary": route_summary,
+            }
+        except MLLMProviderCreditError as exc:
+            failed_step_index = int(exc.step_index or 0)
+            steps_completed = max(0, failed_step_index - 1)
+            hypothesis_graph.export_debug_snapshot(
+                output_dir=debug_output_dir,
+                step_index=failed_step_index,
+            )
+            route_summary = _write_mllm_route_summary(
+                test_case=test_case,
+                scan_id=scan_id,
+                debug_output_dir=debug_output_dir,
+                executed_routes_by_agent=executed_routes_by_agent,
+                completed_target_node_ids=completed_target_node_ids,
+                target_found=hypothesis_graph.target_found,
+                status="terminated",
+                stop_reason="provider_credit_exhausted",
+                steps_completed=steps_completed,
+                max_steps=max_steps,
+                extra_metadata={
+                    "failed_step_index": failed_step_index,
+                    "mllm_stage": exc.stage,
+                    "mllm_router": exc.router,
+                    "mllm_model": exc.model,
+                    "provider_status_code": exc.status_code,
+                    "provider_code": exc.provider_code,
+                    "provider_type": exc.provider_type,
+                    "error": exc.message,
+                },
+            )
+            return {
+                "target_found": dict(hypothesis_graph.target_found),
+                "status": "terminated",
+                "stop_reason": "provider_credit_exhausted",
+                "steps_completed": steps_completed,
+                "max_steps": max_steps,
+                "failed_step_index": failed_step_index,
+                "mllm_stage": exc.stage,
+                "mllm_router": exc.router,
+                "mllm_model": exc.model,
+                "provider_status_code": exc.status_code,
+                "provider_code": exc.provider_code,
+                "provider_type": exc.provider_type,
+                "error": exc.message,
+                "route_summary": route_summary,
+            }
 
         debug_step_index = int(mllm_client.semantic_raw_output_index) - 1
 
@@ -506,16 +943,23 @@ def run_scenario(
         )
 
         if all_targets_found:
-            route_summary = _write_mllm_completion_route_summary(
+            route_summary = _write_mllm_route_summary(
                 test_case=test_case,
                 scan_id=scan_id,
                 debug_output_dir=debug_output_dir,
                 executed_routes_by_agent=executed_routes_by_agent,
                 completed_target_node_ids=completed_target_node_ids,
+                target_found=hypothesis_graph.target_found,
+                status="completed",
+                stop_reason="all_targets_found",
+                steps_completed=debug_step_index + 1,
+                max_steps=max_steps,
             )
-            debugpy.breakpoint()
             return {
                 "target_found": dict(hypothesis_graph.target_found),
+                "status": "completed",
+                "stop_reason": "all_targets_found",
+                "steps_completed": debug_step_index + 1,
                 "route_summary": route_summary,
             }
 
@@ -572,8 +1016,27 @@ def run_scenario(
         for _ in range(2):
             print()
 
-        if debug_step_index >= 15:
-            debugpy.breakpoint()
+        if _max_steps_reached(debug_step_index, max_steps):
+            route_summary = _write_mllm_route_summary(
+                test_case=test_case,
+                scan_id=scan_id,
+                debug_output_dir=debug_output_dir,
+                executed_routes_by_agent=executed_routes_by_agent,
+                completed_target_node_ids=completed_target_node_ids,
+                target_found=hypothesis_graph.target_found,
+                status="incomplete",
+                stop_reason="max_steps",
+                steps_completed=debug_step_index + 1,
+                max_steps=max_steps,
+            )
+            return {
+                "target_found": dict(hypothesis_graph.target_found),
+                "status": "incomplete",
+                "stop_reason": "max_steps",
+                "steps_completed": debug_step_index + 1,
+                "max_steps": max_steps,
+                "route_summary": route_summary,
+            }
 
 
 def _resolve_scenario_config(case_or_config: str) -> str:
@@ -581,6 +1044,322 @@ def _resolve_scenario_config(case_or_config: str) -> str:
     if path.exists():
         return str(path)
     return str(Path("scenarios") / ("%s.json" % str(case_or_config)))
+
+
+def _batch_skip_ledger_path(
+    batch_id: str,
+    project_root: str | Path | None = None,
+) -> Path:
+    root = Path(project_root).resolve() if project_root is not None else _project_root()
+    return root / "mllm_debug_outputs" / str(batch_id) / "skipped_cases.json"
+
+
+def _batch_progress_path(
+    batch_id: str,
+    project_root: str | Path | None = None,
+) -> Path:
+    root = Path(project_root).resolve() if project_root is not None else _project_root()
+    return root / "mllm_debug_outputs" / str(batch_id) / "batch_progress.json"
+
+
+def _batch_termination_path(
+    batch_id: str,
+    project_root: str | Path | None = None,
+) -> Path:
+    root = Path(project_root).resolve() if project_root is not None else _project_root()
+    return root / "mllm_debug_outputs" / str(batch_id) / "batch_termination.json"
+
+
+def _build_batch_skip_record(
+    scenario: Dict[str, object],
+    result: Dict[str, object],
+) -> Dict[str, object]:
+    mllm_config = scenario["mllm"]
+    record = {
+        "test_case": str(scenario["test_case"]),
+        "scan_id": str(scenario["scan_id"]),
+        "status": str(result.get("status", "incomplete")),
+        "reason": str(result.get("stop_reason", "not_completed")),
+        "debug_output_dir": str(mllm_config["debug_output_dir"]),
+        "raw_output_dir": str(mllm_config["raw_output_dir"]),
+    }
+
+    if "steps_completed" in result:
+        record["steps_completed"] = int(result["steps_completed"])
+    if "max_steps" in result and result["max_steps"] is not None:
+        record["max_steps"] = int(result["max_steps"])
+    elif "max_steps" in scenario:
+        record["max_steps"] = int(scenario["max_steps"])
+
+    for key in (
+        "failed_step_index",
+        "mllm_stage",
+        "mllm_router",
+        "mllm_model",
+        "mllm_attempts",
+        "provider_status_code",
+        "provider_code",
+        "provider_type",
+        "error",
+    ):
+        if key in result:
+            record[key] = result[key]
+
+    return record
+
+
+def _build_batch_completed_record(
+    scenario: Dict[str, object],
+    result: Dict[str, object],
+) -> Dict[str, object]:
+    mllm_config = scenario["mllm"]
+    record = {
+        "test_case": str(scenario["test_case"]),
+        "scan_id": str(scenario["scan_id"]),
+        "status": str(result["status"]),
+        "reason": str(result.get("stop_reason", "all_targets_found")),
+        "debug_output_dir": str(mllm_config["debug_output_dir"]),
+        "raw_output_dir": str(mllm_config["raw_output_dir"]),
+    }
+    if "steps_completed" in result:
+        record["steps_completed"] = int(result["steps_completed"])
+    return record
+
+
+def write_batch_skip_ledger(
+    batch_id: str,
+    skipped_cases: Dict[str, object],
+    project_root: str | Path | None = None,
+) -> Path:
+    payload = {
+        "batch_id": str(batch_id),
+        "skipped_case_count": len(skipped_cases),
+        "cases": skipped_cases,
+    }
+    output_path = _batch_skip_ledger_path(batch_id, project_root=project_root)
+    _write_json(output_path, payload)
+    return output_path
+
+
+def _next_pending_case_id(
+    case_order: List[str],
+    completed_cases: Dict[str, object],
+    skipped_cases: Dict[str, object],
+    terminated_case: str | None,
+) -> str | None:
+    if terminated_case is not None:
+        return str(terminated_case)
+    completed_or_skipped = set(completed_cases).union(skipped_cases)
+    for case_id in case_order:
+        if case_id not in completed_or_skipped:
+            return case_id
+    return None
+
+
+def write_batch_progress(
+    batch_id: str,
+    case_order: List[str],
+    completed_cases: Dict[str, object],
+    skipped_cases: Dict[str, object],
+    status: str,
+    terminated_case: str | None = None,
+    project_root: str | Path | None = None,
+) -> Path:
+    payload = {
+        "batch_id": str(batch_id),
+        "status": str(status),
+        "case_order": [str(case_id) for case_id in case_order],
+        "completed_case_count": len(completed_cases),
+        "skipped_case_count": len(skipped_cases),
+        "completed_cases": completed_cases,
+        "skipped_cases": skipped_cases,
+        "terminated_case": None if terminated_case is None else str(terminated_case),
+        "next_case_id": _next_pending_case_id(
+            case_order=case_order,
+            completed_cases=completed_cases,
+            skipped_cases=skipped_cases,
+            terminated_case=terminated_case,
+        ),
+    }
+    output_path = _batch_progress_path(batch_id, project_root=project_root)
+    _write_json(output_path, payload)
+    return output_path
+
+
+def _build_batch_termination_record(
+    scenario: Dict[str, object],
+    result: Dict[str, object],
+) -> Dict[str, object]:
+    mllm_config = scenario["mllm"]
+    record = {
+        "reason": "provider_credit_exhausted",
+        "test_case": str(scenario["test_case"]),
+        "scan_id": str(scenario["scan_id"]),
+        "status": str(result["status"]),
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "debug_output_dir": str(mllm_config["debug_output_dir"]),
+        "raw_output_dir": str(mllm_config["raw_output_dir"]),
+    }
+    for key in (
+        "failed_step_index",
+        "steps_completed",
+        "mllm_stage",
+        "mllm_router",
+        "mllm_model",
+        "provider_status_code",
+        "provider_code",
+        "provider_type",
+        "error",
+    ):
+        if key in result:
+            record[key] = result[key]
+    return record
+
+
+def write_batch_termination(
+    batch_id: str,
+    scenario: Dict[str, object],
+    result: Dict[str, object],
+    project_root: str | Path | None = None,
+) -> Path:
+    output_path = _batch_termination_path(batch_id, project_root=project_root)
+    _write_json(output_path, _build_batch_termination_record(scenario, result))
+    return output_path
+
+
+def _load_batch_resume_state(
+    batch_id: str,
+    project_root: str | Path | None = None,
+) -> Tuple[Dict[str, object], Dict[str, object]]:
+    progress = _read_json_if_exists(
+        _batch_progress_path(batch_id, project_root=project_root)
+    )
+    skipped = _read_json_if_exists(
+        _batch_skip_ledger_path(batch_id, project_root=project_root)
+    )
+    completed_cases = {}
+    skipped_cases = {}
+    if isinstance(progress, dict):
+        completed_cases = dict(progress.get("completed_cases", {}))
+        skipped_cases.update(dict(progress.get("skipped_cases", {})))
+    if isinstance(skipped, dict):
+        skipped_cases.update(dict(skipped.get("cases", {})))
+    return completed_cases, skipped_cases
+
+
+def run_batch_config(
+    batch_config_path: str | Path,
+    show_agent_views: bool = True,
+) -> Dict[str, object]:
+    path = Path(batch_config_path)
+    batch_config = _read_json(path)
+    if not isinstance(batch_config, dict):
+        raise TypeError("Batch config must be a JSON object.")
+    if not is_batch_config(batch_config):
+        raise ValueError("Config %s is not a batch config." % str(path))
+
+    batch_id = path.stem
+    default_config = load_default_config()
+    scenarios, summary, summary_path = load_or_generate_batch_scenarios(
+        batch_config=batch_config,
+        batch_id=batch_id,
+        default_config=default_config,
+    )
+    print("Using generated batch case summary at %s.\n" % str(summary_path))
+
+    case_order = _case_order_from_batch_summary(summary)
+    results = {}
+    completed_cases, skipped_cases = _load_batch_resume_state(batch_id)
+    skipped_cases_path = _batch_skip_ledger_path(batch_id)
+    progress_path = write_batch_progress(
+        batch_id=batch_id,
+        case_order=case_order,
+        completed_cases=completed_cases,
+        skipped_cases=skipped_cases,
+        status="running",
+    )
+    termination_path = _batch_termination_path(batch_id)
+
+    for scenario in scenarios:
+        test_case = str(scenario["test_case"])
+        if test_case in completed_cases:
+            print("Skipping previously completed batch case %s.\n" % test_case)
+            continue
+        if test_case in skipped_cases:
+            print("Skipping previously skipped batch case %s.\n" % test_case)
+            continue
+
+        print("Running generated batch case %s.\n" % test_case)
+        results[test_case] = run_scenario(
+            scenario,
+            show_agent_views=show_agent_views,
+            default_config=default_config,
+        )
+        if results[test_case].get("status") == "completed":
+            completed_cases[test_case] = _build_batch_completed_record(
+                scenario=scenario,
+                result=results[test_case],
+            )
+            progress_path = write_batch_progress(
+                batch_id=batch_id,
+                case_order=case_order,
+                completed_cases=completed_cases,
+                skipped_cases=skipped_cases,
+                status="running",
+            )
+        elif results[test_case].get("status") == "terminated":
+            termination_path = write_batch_termination(
+                batch_id=batch_id,
+                scenario=scenario,
+                result=results[test_case],
+            )
+            progress_path = write_batch_progress(
+                batch_id=batch_id,
+                case_order=case_order,
+                completed_cases=completed_cases,
+                skipped_cases=skipped_cases,
+                status="terminated",
+                terminated_case=test_case,
+            )
+            print("Saved batch termination notice to %s.\n" % str(termination_path))
+            break
+        else:
+            skipped_cases[test_case] = _build_batch_skip_record(
+                scenario=scenario,
+                result=results[test_case],
+            )
+            skipped_cases_path = write_batch_skip_ledger(
+                batch_id,
+                skipped_cases,
+            )
+            progress_path = write_batch_progress(
+                batch_id=batch_id,
+                case_order=case_order,
+                completed_cases=completed_cases,
+                skipped_cases=skipped_cases,
+                status="running",
+            )
+            print("Saved skipped batch case ledger to %s.\n" % str(skipped_cases_path))
+    else:
+        progress_path = write_batch_progress(
+            batch_id=batch_id,
+            case_order=case_order,
+            completed_cases=completed_cases,
+            skipped_cases=skipped_cases,
+            status="completed",
+        )
+
+    return {
+        "status": "terminated"
+        if any(result.get("status") == "terminated" for result in results.values())
+        else "completed",
+        "generated_cases": summary,
+        "generated_cases_path": str(summary_path),
+        "skipped_cases_path": str(skipped_cases_path),
+        "progress_path": str(progress_path),
+        "termination_path": str(termination_path),
+        "results": results,
+    }
 
 
 def main(argv: List[str] | None = None) -> int:
@@ -609,10 +1388,20 @@ def main(argv: List[str] | None = None) -> int:
         run_oracle(args.case_or_config)
         return 0
 
-    run_scenario(
-        _resolve_scenario_config(args.case_or_config),
-        show_agent_views=not args.hide_agent_views,
-    )
+    config_path = _resolve_scenario_config(args.case_or_config)
+    raw_config = _read_json(config_path)
+    if isinstance(raw_config, dict) and is_batch_config(raw_config):
+        result = run_batch_config(
+            config_path,
+            show_agent_views=not args.hide_agent_views,
+        )
+        if result.get("status") == "terminated":
+            return 1
+    else:
+        run_scenario(
+            config_path,
+            show_agent_views=not args.hide_agent_views,
+        )
 
     debugpy.breakpoint()
     return 0

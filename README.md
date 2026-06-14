@@ -13,69 +13,83 @@ This repository now implements the paper-style shared multi-agent, multi-target 
 Run the entrypoint with a JSON scenario file:
 
 ```bash
-python main.py scenarios/paper_multi_agent_example.json
+python main.py scenarios/test6.json
 ```
+
+Shared MLLM, Bayes, and optimizer settings are read from
+`config/default_config.json`. Per-scenario output directories are inferred from
+the scenario filename, for example `scenarios/test6.json` writes to
+`mllm_raw_outputs/test6` and `mllm_debug_outputs/test6`.
 
 ## Scenario Schema
 
-The scenario file must contain:
+Single-test scenario files contain only scan, agent, and target definitions:
 
 ```json
 {
-  "scan_id": "17DRP5sb8fy",
+  "scan_id": "2azQ1b91cZZ",
   "agents": [
     {
       "id": "agent0",
-      "start_viewpoint_id": "10c252c90fa24ef3b698c6f54d984c5c",
+      "start_viewpoint_id": "3fb5a48d8a71413aacaa51f6bc569e59",
       "heading": 0.0,
       "elevation": 0.0
     }
   ],
   "targets": [
     {
-      "description": "green plant on the table",
-      "distance_threshold_m": 1.0
+      "target_id": "0",
+      "description": "the car brochure in the small storage room beyond the circular floor pattern across the formal living room"
     }
-  ],
+  ]
+}
+```
+
+The central config contains:
+
+```json
+{
   "mllm": {
-    "model_name": "meta-llama/Llama-4-Maverick-17B-128E-Instruct:cheapest",
-    "max_new_tokens": 160,
-    "base_url": "https://api.deepinfra.com/v1/openai",
-    "graph_base_url": "https://api.deepinfra.com/v1/openai",
-    "detection_base_url": "https://api.deepinfra.com/v1/openai",
-    "api_key_env": "DEEPINFRA_TOKEN",
-    "graph_api_key_env": "DEEPINFRA_TOKEN",
-    "detection_api_key_env": "DEEPINFRA_TOKEN",
-    "read_saved_raw_outputs": false,
-    "raw_output_dir": "mllm_raw_outputs",
-    "open_vocab_verification": {
-      "enabled": true,
-      "model_name": "google/owlv2-base-patch16-ensemble",
-      "score_threshold": 0.15,
-      "device": "cuda"
-    }
+    "detection_model_name": "google/gemma-4-31B-it:deepinfra",
+    "graph_model_name": "qwen3.5-plus",
+    "read_saved_raw_outputs": true,
+    "max_validation_retries": 4
   },
   "bayes": {
-    "eta_goal": 5.0,
-    "eta_exist": 5.0,
     "sigma_vv2": 4.0,
     "sigma_vz2": 9.0,
     "kappa_vv": 1.0,
     "kappa_vz": 1.0,
     "varrho": 0.75,
-    "omega_vz": 0.7,
     "eta_vz": 5.0,
     "epsilon": 1e-6
   },
   "optimizer": {
-    "goal_weight": 0.2222,
-    "dist_weight": 0.2222,
-    "arc_weight": 0.3333,
-    "node_weight": 0.1111,
-    "visit_weight": 0.1111
+    "goal_weight": 0.5,
+    "dist_weight": 0.2,
+    "arc_weight": 0.05,
+    "node_weight": 0.05,
+    "visit_weight": 0.2
   }
 }
 ```
+
+Batch scenario files contain `scans`, `agent_num_selections`, and
+`target_num_selections`, with optional `max_steps` applied to each generated
+case. Batch mode generates concrete cases grouped by scan id, writes
+`mllm_debug_outputs/<batch_name>/generated_cases.json`, and runs each generated
+case using the same central config. Agent starts and targets are sampled without
+replacement; the run fails if a requested count exceeds the available viewpoints
+or listed targets for a scan. When a generated case reaches `max_steps`, its
+logs and route summary are saved with `stop_reason: "max_steps"` and the batch
+runner continues to the next case. Batch cases that stop with incomplete status,
+including `max_steps` and `mllm_retry_exhausted`, are recorded incrementally in
+`mllm_debug_outputs/<batch_name>/skipped_cases.json`. If an API provider reports
+credit, balance, billing, or quota exhaustion, batch mode writes
+`batch_termination.json`, updates `batch_progress.json`, and stops. Re-running
+the same batch config resumes from the terminated case using the saved
+`generated_cases.json`; changing the batch config requires deleting the old
+generated batch output.
 
 ## Dependencies
 
@@ -85,16 +99,8 @@ SigLIP scoring requires:
 pip install torch transformers
 ```
 
-Open-vocabulary verification uses OWLv2 through Transformers. If
-`open_vocab_verification.device` is omitted, CUDA is used when available,
-otherwise CPU is used. The default `score_threshold` is
-`OPEN_VOCAB_SCORE_THRESHOLD` in `semantic_persistence/mllm_client.py`.
-Verification traces include each checked target's `score`, `score_threshold`,
-accepted/rejected flag, and boxes at or above the threshold.
-
-The MLLM client uses OpenAI-compatible APIs. `base_url` and `api_key_env`
-configure both detection and graph calls by default. `graph_base_url`,
-`detection_base_url`, `graph_api_key_env`, and `detection_api_key_env` can split
-the routers.
+The MLLM client uses OpenAI-compatible APIs. The runtime currently routes
+detection through Hugging Face (`HF_TOKEN`) and graph generation through
+DashScope (`DASHSCOPE_API_KEY`) in `main.py`.
 
 The optimizer requires `gurobipy` and a working Gurobi license.

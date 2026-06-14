@@ -63,7 +63,6 @@ def _write_step(
     target_found,
     hypothesis_nodes=None,
     detection=None,
-    open_vocab_verification=None,
     semantic=True,
     user_message=True,
 ):
@@ -92,12 +91,6 @@ def _write_step(
         raw_dir / ("detection_step_%s.json" % suffix),
         detection or {"detections": []},
     )
-    if open_vocab_verification is not None:
-        _write_json(
-            raw_dir / ("open_vocab_verification_step_%s.json" % suffix),
-            open_vocab_verification,
-        )
-
     if semantic:
         _write_json(
             raw_dir / ("semantic_step_%s.json" % suffix),
@@ -250,27 +243,12 @@ def test_load_visualization_step_with_all_raw_files(tmp_path):
             },
         ],
     }
-    open_vocab_verification = {
-        "step_index": 1,
-        "checks": [
-            {
-                "agent_id": "agent0",
-                "target_id": "0",
-                "description": "target zero",
-                "score": 0.2,
-                "score_threshold": 0.3,
-                "accepted": False,
-                "open_vocab_detections": [],
-            },
-        ],
-    }
     _write_step(
         tmp_path,
         "case",
         1,
         target_found={"0": False},
         detection=detection,
-        open_vocab_verification=open_vocab_verification,
     )
 
     steps = load_visualization_steps("case", project_root=tmp_path)
@@ -278,10 +256,17 @@ def test_load_visualization_step_with_all_raw_files(tmp_path):
     assert len(steps) == 1
     assert steps[0]["semantic"] == {"visible_region_nodes": []}
     assert steps[0]["detection"] == detection
-    assert steps[0]["open_vocab_verification"] == open_vocab_verification
-    assert steps[0]["files"]["open_vocab_verification"] == (
-        "mllm_raw_outputs/case/open_vocab_verification_step_0001.json"
-    )
+    assert set(steps[0]) == {
+        "instance_name",
+        "step_index",
+        "files",
+        "layout",
+        "hypothesis",
+        "semantic",
+        "detection",
+        "user_message",
+        "observation_images",
+    }
     assert steps[0]["user_message"] == "prompt text"
 
 
@@ -356,6 +341,27 @@ def test_load_instance_targets_reads_scenario_targets(tmp_path):
     _write_environment_case(tmp_path, "case", targets=targets)
 
     assert load_instance_targets("case", project_root=tmp_path) == targets
+
+
+def test_load_instance_targets_reads_generated_batch_case_metadata(tmp_path):
+    targets = [{"target_id": "0", "description": "target zero"}]
+    _write_json(
+        tmp_path / "mllm_debug_outputs" / "batch" / "generated_cases.json",
+        {
+            "batch_id": "batch",
+            "generated_case_count": 1,
+            "cases": {
+                "scan_case_0001": {
+                    "test_case": "scan_case_0001",
+                    "scan_id": "scan",
+                    "agents": [],
+                    "targets": targets,
+                }
+            },
+        },
+    )
+
+    assert load_instance_targets("scan_case_0001", project_root=tmp_path) == targets
 
 
 def test_load_nonterminal_step_without_semantic_still_crashes(tmp_path):

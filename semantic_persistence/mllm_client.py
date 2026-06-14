@@ -19,10 +19,6 @@ DETECTION_TEMPERATURE = 0.1
 DETECTION_TOP_P = 0.9
 DETECTION_TOP_K = 40
 DETECTION_PRESENCE_PENALTY = 0.0
-OPEN_VOCAB_SCORE_THRESHOLD = (
-    0.05  # the threshold for considering an open-vocab detection valid.
-)
-
 # for graph generation: still stable, but allows non-uniform probabilities
 GRAPH_TEMPERATURE = 0.7
 GRAPH_TOP_P = 0.8
@@ -47,6 +43,51 @@ class SigLIPRegionValidationError(RuntimeError):
     pass
 
 
+class MLLMRetryExhaustedError(RuntimeError):
+    def __init__(
+        self,
+        stage: str,
+        step_index: int,
+        attempts: int,
+        last_error: object,
+    ):
+        self.stage = str(stage)
+        self.step_index = int(step_index)
+        self.attempts = int(attempts)
+        self.last_error = str(last_error)
+        super().__init__(
+            "%s MLLM output failed validation after %s attempt(s) at step %s. "
+            "Last error: %s"
+            % (self.stage, self.attempts, self.step_index, self.last_error)
+        )
+
+
+class MLLMProviderCreditError(RuntimeError):
+    def __init__(
+        self,
+        stage: str,
+        router: str,
+        model: str,
+        status_code: object,
+        provider_code: object,
+        provider_type: object,
+        message: str,
+        step_index: int | None = None,
+    ):
+        self.stage = str(stage)
+        self.router = str(router)
+        self.model = str(model)
+        self.status_code = None if status_code is None else int(status_code)
+        self.provider_code = None if provider_code is None else str(provider_code)
+        self.provider_type = None if provider_type is None else str(provider_type)
+        self.message = str(message)
+        self.step_index = None if step_index is None else int(step_index)
+        super().__init__(
+            "%s MLLM provider credit failure for model %s: %s"
+            % (self.stage, self.model, self.message)
+        )
+
+
 class MLLMClient:
     def __init__(
         self,
@@ -63,7 +104,6 @@ class MLLMClient:
         raw_debug_dir: str = "mllm_debug_outputs",
         max_validation_retries: int = 2,
         max_request_timeout_retries: int = 1,
-        open_vocab_detector=None,
     ):
         self.graph_model_name = graph_model_name
         self.detection_model_name = detection_model_name
@@ -78,11 +118,9 @@ class MLLMClient:
         self.max_request_timeout_retries = max(0, int(max_request_timeout_retries))
         self.semantic_raw_output_index = 1
         self.found_target_trace = []
+        self.last_direct_detections = []
         self.graph_api_key_env = str(graph_api_key_env)
         self.detection_api_key_env = str(detection_api_key_env)
-        self.open_vocab_detector = open_vocab_detector
-        self.last_open_vocab_verification_trace = None
-
         self.graph_client = self._create_openai_client(
             base_url=self.graph_base_url,
             api_key_env=self.graph_api_key_env,
@@ -172,6 +210,80 @@ class MLLMClient:
         encoded = base64.b64encode(image_bytes).decode("ascii")
         return "data:image/jpeg;base64,%s" % encoded
 
+    @staticmethod
+    def _api_error_body(exc) -> Dict[str, object]:
+        body = getattr(exc, "body", None)
+        if isinstance(body, dict):
+            if isinstance(body.get("error"), dict):
+                return body["error"]
+            return body
+
+        response = getattr(exc, "response", None)
+        if response is not None:
+            try:
+                decoded = response.json()
+            except Exception:
+                decoded = None
+            if isinstance(decoded, dict):
+                if isinstance(decoded.get("error"), dict):
+                    return decoded["error"]
+                return decoded
+
+        return {}
+
+    @classmethod
+    def _provider_credit_error_from_exception(
+        cls,
+        exc,
+        stage: str,
+        router: str,
+        model: str,
+    ) -> MLLMProviderCreditError | None:
+        body = cls._api_error_body(exc)
+        status_code = getattr(exc, "status_code", None)
+        if status_code is None:
+            response = getattr(exc, "response", None)
+            status_code = getattr(response, "status_code", None)
+
+        provider_code = body.get("code")
+        provider_type = body.get("type")
+        message = str(body.get("message") or exc)
+        searchable = " ".join(
+            str(item).lower()
+            for item in (
+                provider_code,
+                provider_type,
+                message,
+            )
+            if item is not None
+        )
+        credit_tokens = (
+            "insufficient_quota",
+            "insufficient_balance",
+            "billing_hard_limit_reached",
+            "balance_not_enough",
+            "payment required",
+            "quota",
+            "balance",
+            "billing",
+            "credit",
+        )
+
+        if int(status_code or 0) != 402 and not any(
+            token in searchable for token in credit_tokens
+        ):
+            return None
+
+        return MLLMProviderCreditError(
+            stage=stage,
+            router=router,
+            model=model,
+            status_code=status_code,
+            provider_code=provider_code,
+            provider_type=provider_type,
+            message=message,
+        )
+
     def _request_completion(
         self,
         messages,
@@ -244,6 +356,15 @@ class MLLMClient:
             print()
 
         except BadRequestError as exc:
+            provider_credit_error = self._provider_credit_error_from_exception(
+                exc=exc,
+                stage=request_type,
+                router=router_name,
+                model=model_name,
+            )
+            if provider_credit_error is not None:
+                raise provider_credit_error from exc
+
             message = str(exc)
 
             if "chat_template_kwargs" in message or "enable_thinking" in message:
@@ -259,6 +380,17 @@ class MLLMClient:
                     % model_name
                 ) from exc
 
+            raise
+
+        except Exception as exc:
+            provider_credit_error = self._provider_credit_error_from_exception(
+                exc=exc,
+                stage=request_type,
+                router=router_name,
+                model=model_name,
+            )
+            if provider_credit_error is not None:
+                raise provider_credit_error from exc
             raise
 
         if request_type == "detection":
@@ -359,6 +491,15 @@ class MLLMClient:
             % (int(step_index), int(attempt_index)),
         )
 
+    def _detection_attempt_error_raw_output_path(
+        self, step_index: int, attempt_index: int
+    ) -> str:
+        return os.path.join(
+            getattr(self, "raw_output_dir", "mllm_raw_outputs"),
+            "detection_step_%04d_attempt_%02d_error.txt"
+            % (int(step_index), int(attempt_index)),
+        )
+
     def _user_message_raw_output_path(self, step_index: int) -> str:
         return os.path.join(
             getattr(self, "raw_output_dir", "mllm_raw_outputs"),
@@ -369,12 +510,6 @@ class MLLMClient:
         return os.path.join(
             getattr(self, "raw_output_dir", "mllm_raw_outputs"),
             "detection_step_%04d.json" % int(step_index),
-        )
-
-    def _open_vocab_verification_raw_output_path(self, step_index: int) -> str:
-        return os.path.join(
-            getattr(self, "raw_output_dir", "mllm_raw_outputs"),
-            "open_vocab_verification_step_%04d.json" % int(step_index),
         )
 
     def _observation_image_path(self, step_index: int, agent_id: str) -> str:
@@ -1042,6 +1177,7 @@ class MLLMClient:
                 {"role": "user", "content": user_content},
             ]
 
+            decoded = None
             try:
                 decoded = self._request_completion(
                     messages=messages,
@@ -1058,12 +1194,24 @@ class MLLMClient:
                 )
                 self._write_detection_raw_output(step_index, decoded)
                 return detections
+            except MLLMProviderCreditError as exc:
+                exc.step_index = int(step_index)
+                self.semantic_raw_output_index = step_index + 1
+                raise
             except Exception as exc:
                 last_error = exc
+                self._write_detection_attempt_error_raw_output(
+                    step_index=step_index,
+                    attempt_index=attempt_index,
+                    decoded=decoded if decoded is not None else str(exc),
+                )
                 if attempt_index >= max_validation_retries:
-                    raise ValueError(
-                        "Detection output failed validation after %s attempt(s). "
-                        "Last error: %s" % (max_validation_retries + 1, str(last_error))
+                    self.semantic_raw_output_index = step_index + 1
+                    raise MLLMRetryExhaustedError(
+                        stage="detection",
+                        step_index=step_index,
+                        attempts=max_validation_retries + 1,
+                        last_error=last_error,
                     ) from exc
                 print(
                     "Detection output validation failed on attempt %s of %s: %s"
@@ -1075,94 +1223,6 @@ class MLLMClient:
                 )
 
         raise RuntimeError("Unexpected detection retry loop exit.")
-
-    def _verify_detections_with_open_vocab(
-        self,
-        detections: List[Dict[str, object]],
-        agent_observations: List[Dict[str, object]],
-        targets: List[Dict[str, object]],
-        step_index: int,
-    ) -> List[Dict[str, object]]:
-        detector = self.open_vocab_detector
-        agent_observation_by_id = {
-            str(observation["agent_id"]): observation
-            for observation in agent_observations
-        }
-        target_description_by_id = {
-            str(target["target_id"]): str(target["description"]) for target in targets
-        }
-
-        verified_detections = []
-        trace = {
-            "step_index": int(step_index),
-            "checks": [],
-        }
-
-        for detection in detections:
-            agent_id = str(detection["agent_id"])
-            claimed_target_ids = [
-                str(target_id) for target_id in detection["found_target_indices"]
-            ]
-            target_center_xs = [
-                float(target_center_x)
-                for target_center_x in detection["target_center_xs"]
-            ]
-            text_queries = [
-                target_description_by_id[target_id] for target_id in claimed_target_ids
-            ]
-
-            open_vocab_results = detector.score_queries(
-                image=agent_observation_by_id[agent_id]["annotated_panorama"],
-                text_queries=text_queries,
-            )
-
-            results_by_query_index = {}
-            for result in open_vocab_results:
-                if "label_index" in result:
-                    query_index = int(result["label_index"])
-                else:
-                    query_index = text_queries.index(str(result["query"]))
-                results_by_query_index[query_index] = result
-
-            verified_target_ids = []
-            verified_target_center_xs = []
-
-            for query_index, target_id in enumerate(claimed_target_ids):
-                open_vocab_result = results_by_query_index[query_index]
-                open_vocab_matches = open_vocab_result["open_vocab_detections"]
-                score = float(open_vocab_result["score"])
-                score_threshold = float(open_vocab_result["score_threshold"])
-                accepted = score >= score_threshold
-
-                trace["checks"].append(
-                    {
-                        "agent_id": agent_id,
-                        "target_id": target_id,
-                        "description": target_description_by_id[target_id],
-                        "score": score,
-                        "score_threshold": score_threshold,
-                        "accepted": accepted,
-                        "open_vocab_detections": open_vocab_matches,
-                    }
-                )
-
-                if accepted:
-                    verified_target_ids.append(target_id)
-                    verified_target_center_xs.append(target_center_xs[query_index])
-
-            if verified_target_ids:
-                verified_detections.append(
-                    {
-                        "agent_id": agent_id,
-                        "found_target_indices": verified_target_ids,
-                        "target_center_xs": verified_target_center_xs,
-                    }
-                )
-
-        self.last_open_vocab_verification_trace = trace
-        self._write_open_vocab_verification_trace(step_index, trace)
-
-        return verified_detections
 
     def _build_instruction(
         self,
@@ -1829,13 +1889,6 @@ class MLLMClient:
         )
         # print the detect model name
         print("Detection model used: %s" % self.detection_model_name)
-        if self.open_vocab_detector is not None:
-            localized_detections = self._verify_detections_with_open_vocab(
-                detections=localized_detections,
-                agent_observations=agent_observations,
-                targets=active_detection_targets,
-                step_index=step_index,
-            )
         self.last_direct_detections = localized_detections
         newly_found_targets_by_id = self._found_targets_from_detections(
             localized_detections,
@@ -1967,6 +2020,10 @@ class MLLMClient:
                         request_type="graph",
                         thinking_mode=graph_thinking,
                     )
+                except MLLMProviderCreditError as exc:
+                    exc.step_index = int(step_index)
+                    self.semantic_raw_output_index = step_index + 1
+                    raise
                 except APITimeoutError:
                     if timeout_attempt_index >= max_request_timeout_retries:
                         raise
@@ -2047,10 +2104,11 @@ class MLLMClient:
 
                 if attempt_index >= max_validation_retries:
                     self.semantic_raw_output_index = step_index + 1
-                    raise ValueError(
-                        "MLLM output failed validation after %s full graph "
-                        "attempt(s). Last error: %s"
-                        % (max_validation_retries + 1, str(last_error))
+                    raise MLLMRetryExhaustedError(
+                        stage="graph",
+                        step_index=step_index,
+                        attempts=max_validation_retries + 1,
+                        last_error=last_error,
                     ) from exc
 
                 print(
@@ -2108,6 +2166,19 @@ class MLLMClient:
         ) as file_handle:
             file_handle.write(decoded)
 
+    def _write_detection_attempt_error_raw_output(
+        self, step_index: int, attempt_index: int, decoded: str
+    ) -> None:
+        raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
+        os.makedirs(raw_output_dir, exist_ok=True)
+
+        with open(
+            self._detection_attempt_error_raw_output_path(step_index, attempt_index),
+            "w",
+            encoding="utf-8",
+        ) as file_handle:
+            file_handle.write(decoded)
+
     def _write_user_message(self, step_index: int, message: str) -> None:
         raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
         os.makedirs(raw_output_dir, exist_ok=True)
@@ -2129,21 +2200,6 @@ class MLLMClient:
             encoding="utf-8",
         ) as file_handle:
             file_handle.write(decoded)
-
-    def _write_open_vocab_verification_trace(
-        self,
-        step_index: int,
-        trace: Dict[str, object],
-    ) -> None:
-        raw_output_dir = getattr(self, "raw_output_dir", "mllm_raw_outputs")
-        os.makedirs(raw_output_dir, exist_ok=True)
-
-        with open(
-            self._open_vocab_verification_raw_output_path(step_index),
-            "w",
-            encoding="utf-8",
-        ) as file_handle:
-            json.dump(trace, file_handle, indent=2, sort_keys=True)
 
     def _write_observation_image(
         self,
