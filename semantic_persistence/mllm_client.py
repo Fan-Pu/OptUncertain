@@ -1852,7 +1852,7 @@ class MLLMClient:
                 "Agent %s current viewpoint: %s"
                 % (observation["agent_id"], observation["current_viewpoint_index"])
             )
-
+        debugpy.breakpoint()
         image_content = []
         for image_index, observation in enumerate(agent_observations):
             image_content.append(
@@ -2753,7 +2753,7 @@ class MLLMClient:
         if semantic_payload_contract == "graph_mllm":
             required_top_level_keys = common_top_level_keys | {
                 "region_target_scores",
-                "viewpoint_target_scores"
+                "viewpoint_target_scores",
             }
         else:
             required_top_level_keys = common_top_level_keys | {
@@ -3164,8 +3164,7 @@ class MLLMClient:
             region_id = int(item["id"])
             if region_id not in all_region_ids:
                 raise ValueError(
-                    "region_target_scores id %s is not a known region id."
-                    % region_id
+                    "region_target_scores id %s is not a known region id." % region_id
                 )
             if region_id in returned_region_score_ids:
                 raise ValueError("Duplicated region_target_scores id %s." % region_id)
