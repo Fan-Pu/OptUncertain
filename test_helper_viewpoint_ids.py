@@ -1,6 +1,7 @@
 import sys
 import types
 import unittest
+from unittest import mock
 from unittest.mock import patch
 
 import numpy as np
@@ -48,6 +49,44 @@ class HelperViewpointIdsTest(unittest.TestCase):
         self.assertEqual(Helper.viewpoint_index_by_vp_label, {"vp-a": 0, "vp-b": 1})
         self.assertEqual(Helper.viewpoint_vp_label_by_index, {0: "vp-a", 1: "vp-b"})
 
+    def test_init_render_does_not_enable_depth(self):
+        class FakeSimulator:
+            def __init__(self):
+                self.calls = []
+
+            def setCameraResolution(self, *args):
+                self.calls.append(("setCameraResolution", args))
+
+            def setCameraVFOV(self, *args):
+                self.calls.append(("setCameraVFOV", args))
+
+            def setDepthEnabled(self, *args):
+                raise AssertionError("depth should not be enabled")
+
+            def setDiscretizedViewingAngles(self, *args):
+                self.calls.append(("setDiscretizedViewingAngles", args))
+
+            def setDatasetPath(self, *args):
+                self.calls.append(("setDatasetPath", args))
+
+            def setNavGraphPath(self, *args):
+                self.calls.append(("setNavGraphPath", args))
+
+            def setPreloadingEnabled(self, *args):
+                self.calls.append(("setPreloadingEnabled", args))
+
+            def setBatchSize(self, *args):
+                self.calls.append(("setBatchSize", args))
+
+            def setCacheSize(self, *args):
+                self.calls.append(("setCacheSize", args))
+
+        with mock.patch.object(Helper.MatterSim, "Simulator", FakeSimulator):
+            sim = Helper.init_render()
+
+        self.assertIsInstance(sim, FakeSimulator)
+        self.assertIn(("setDiscretizedViewingAngles", (False,)), sim.calls)
+
     def test_explore_world_prints_short_current_viewpoint_id(self):
         raw_viewpoint_id = "f6cbc0517fc14f129f5456e59dc66c76"
         Helper.viewpoint_index_by_vp_label[raw_viewpoint_id] = 50
@@ -57,7 +96,6 @@ class HelperViewpointIdsTest(unittest.TestCase):
             heading=0.0,
             navigableLocations=[types.SimpleNamespace(viewpointId=raw_viewpoint_id)],
             rgb=np.zeros((Helper.HEIGHT, Helper.WIDTH, 3), dtype=np.uint8),
-            depth=np.zeros((Helper.HEIGHT, Helper.WIDTH), dtype=np.float32),
         )
         sim = types.SimpleNamespace(
             makeAction=lambda *args, **kwargs: None,
@@ -65,11 +103,14 @@ class HelperViewpointIdsTest(unittest.TestCase):
         )
 
         with patch("builtins.print") as print_mock:
-            Helper.explore_world(sim)
+            with mock.patch.object(Helper.cv2, "imshow") as imshow_mock:
+                Helper.explore_world(sim)
 
         print_mock.assert_any_call(
-            "current vp: 50, elevation: 0.0 deg, heading: 0.0 deg"
+            "current vp id: 50, long id: f6cbc0517fc14f129f5456e59dc66c76, elevation: 0.0 deg, heading: 0.0 deg"
         )
+        imshow_mock.assert_called_once()
+        self.assertEqual(imshow_mock.call_args.args[0], "Python RGB")
 
 
 if __name__ == "__main__":

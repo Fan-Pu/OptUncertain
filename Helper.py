@@ -1,15 +1,9 @@
-from doctest import debug
 import json
 import os
-from pydoc import Helper
-from unittest import result
-import debugpy
 import numpy as np
 import cv2
 import math
 import MatterSim
-from collections import defaultdict
-import time
 
 WIDTH = 800
 HEIGHT = 600
@@ -25,8 +19,6 @@ HORIZON_LEN = 48
 # Each horizon scan rotates right by this many degrees (360 / HORIZON_LEN) for the next view, so smaller values mean finer-grained scans but more time spent rotating and rendering.
 DELTA_HEADING_DEG = 360 / HORIZON_LEN
 DELTA_HEADING_RAD = math.radians(DELTA_HEADING_DEG)
-pause_time = 0.15  # smooth rendering
-decision_pause = 1.5
 
 # for node type definition in the hypothesis graph
 TYPE_REGION = 0
@@ -34,20 +26,18 @@ TYPE_VP = 1
 
 viewpoint_index_by_vp_label = (
     {}
-)  # key: viewpoint_id (str), value: stable integer index for MLLM marker labels
+)  # key: viewpoint_id (str), value: stable integer index for exploration labels
 viewpoint_vp_label_by_index = (
     {}
-)  # key: stable integer index for MLLM marker labels, value: viewpoint_id (str)
+)  # key: stable integer index for exploration labels, value: viewpoint_id (str)
 
 
 def init_render():
     cv2.namedWindow("Python RGB")
-    cv2.namedWindow("Python Depth")
 
     sim = MatterSim.Simulator()
     sim.setCameraResolution(WIDTH, HEIGHT)
     sim.setCameraVFOV(VFOV)
-    sim.setDepthEnabled(True)
     sim.setDiscretizedViewingAngles(False)
 
     sim.setDatasetPath(os.path.join(MP_ROOT, "data/v1/scans"))
@@ -153,204 +143,7 @@ def render_sim_state(state, viewpoint_index_by_vp=None):
         viewpoint_index_by_vp=viewpoint_index_by_vp,
     )
     cv2.imshow("Python RGB", rgb)
-
-    depth = np.array(state.depth, copy=False)
-    cv2.imshow("Python Depth", depth)
     cv2.waitKey(1)
-
-
-def build_truncated_panorama(horizon_frames):
-    """
-    Convert a full set of overlapping horizon frames into a stitched 360 panorama
-    by keeping only the central strip that corresponds to one scan step.
-    """
-    strip_width = int(round(horizon_frames[0].shape[1] * DELTA_HEADING_RAD / HFOV))
-    center_x = horizon_frames[0].shape[1] // 2
-    start_x = center_x - strip_width // 2
-    end_x = start_x + strip_width
-    strips = [frame[:, start_x:end_x].copy() for frame in horizon_frames]
-    return np.concatenate(strips, axis=1)
-
-
-def horizon_scan_return(sim, viewpoint_index_by_vp=None):
-    """
-    Perform a full 360 horizon scan at the current viewpoint and return to the
-    exact starting heading at the end.
-
-    This function is intentionally "perception-only": it does NOT perform any
-    target detection. It only collects:
-      1) the locally observable moveable neighbors (from navigableLocations)
-      2) a list of raw RGB frames for the full horizon scan
-      3) a list of annotated RGB frames with visible `vp-N` markers
-      4) stitched raw and annotated panoramas built from the scan
-      5) the heading (radians) associated with each frame
-
-    Args:
-        sim: initialized MatterSim.Simulator with an active episode.
-
-    Returns:
-        best_heading_for_vp: dict mapping each reachable neighboring viewpoint ID
-            to the best heading (radians) that faces it during the horizon scan.
-        start_state: the initial simulator state before performing any rotations.
-        horizon_rgb_frames: list of raw RGB frames (numpy arrays) captured during the scan.
-        horizon_mllm_frames: list of RGB frames with stable viewpoint markers.
-        horizon_rgb_panorama: raw stitched panorama built from horizon_rgb_frames.
-        horizon_mllm_panorama: annotated stitched panorama built from horizon_mllm_frames.
-        horizon_headings: list of headings (radians) aligned with horizon_rgb_frames.
-        horizon_depths: list of depth maps (numpy arrays) captured during the scan.
-        observation_context: dict containing: current viewpoint id/index, list of visible viewpoints with their ids and indices, and list of visible viewpoint indices for each frame in the horizon scan.
-    """
-    start_state = sim.getState()[0]
-
-    best_heading_for_vp = {}
-    best_score_for_vp = defaultdict(lambda: 1e18)
-
-    horizon_rgb_frames = []
-    horizon_mllm_frames = []
-    horizon_headings = []
-    horizon_depths = []
-    frame_visible_viewpoint_indices = []
-    visible_viewpoints_by_index = {}
-
-    for horizon_idx in range(HORIZON_LEN):
-        state = sim.getState()[0]
-        locations = state.navigableLocations
-        cur_heading = float(state.heading)
-
-        raw_rgb = np.array(state.rgb, copy=True)
-        annotated_rgb, visible_viewpoints = annotate_rgb_with_viewpoints(
-            raw_rgb,
-            locations,
-            viewpoint_index_by_vp=viewpoint_index_by_vp,
-        )
-
-        horizon_rgb_frames.append(raw_rgb)
-        horizon_mllm_frames.append(annotated_rgb)
-        horizon_headings.append(cur_heading)
-        horizon_depths.append(np.array(state.depth, copy=True))
-        frame_visible_viewpoint_indices.append(
-            [
-                int(item["viewpoint_index"])
-                for item in visible_viewpoints
-                if item.get("viewpoint_index") is not None
-            ]
-        )
-
-        for item in visible_viewpoints:
-            visible_viewpoints_by_index[int(item["viewpoint_index"])] = {
-                "viewpoint_id": str(item["viewpoint_id"]),
-                "viewpoint_index": int(item["viewpoint_index"]),
-                "distance": round(float(item["distance"]), 3),
-            }
-
-        # record best "in-front" heading for each neighbor
-        for loc in locations[1:]:
-            score = abs(loc.rel_heading) + 0.5 * abs(loc.rel_elevation)
-            if score < best_score_for_vp[loc.viewpointId]:
-                best_score_for_vp[loc.viewpointId] = score
-                best_heading_for_vp[loc.viewpointId] = cur_heading
-
-        # rotate right for next view (except after last)
-        if horizon_idx != HORIZON_LEN - 1:
-            sim.makeAction([0], [DELTA_HEADING_RAD], [0])
-
-    # rotate back to the exact starting heading
-    sim.makeAction([0], [DELTA_HEADING_RAD], [0])
-
-    current_vp_id = str(start_state.location.viewpointId)
-    current_viewpoint_index = None
-    if viewpoint_index_by_vp is not None:
-        current_viewpoint_index = viewpoint_index_by_vp.get(current_vp_id)
-
-    observation_context = {
-        "current_viewpoint_id": current_vp_id,
-        "current_viewpoint_index": current_viewpoint_index,
-        "visible_viewpoints": [
-            visible_viewpoints_by_index[idx]
-            for idx in sorted(visible_viewpoints_by_index.keys())
-        ],
-        "frame_visible_viewpoint_indices": frame_visible_viewpoint_indices,
-    }
-    horizon_rgb_panorama = build_truncated_panorama(horizon_rgb_frames)
-    horizon_mllm_panorama = build_truncated_panorama(horizon_mllm_frames)
-
-    return (
-        best_heading_for_vp,
-        start_state,
-        horizon_rgb_frames,
-        horizon_mllm_frames,
-        horizon_rgb_panorama,
-        horizon_mllm_panorama,
-        horizon_headings,
-        horizon_depths,
-        observation_context,
-    )
-
-
-def compute_rotation(current_heading_deg, target_heading_deg, step_size_deg):
-    """
-    Returns:
-        direction: -1 (counterclockwise) or 1 (clockwise)
-        steps: integer number of discrete rotation steps
-    """
-
-    if step_size_deg <= 0:
-        raise ValueError("step_size_deg must be positive")
-
-    # Normalize to [0, 360)
-    current_heading_deg %= 360.0
-    target_heading_deg %= 360.0
-
-    # Angular distance
-    clockwise_distance = (target_heading_deg - current_heading_deg) % 360.0
-    counterclockwise_distance = (current_heading_deg - target_heading_deg) % 360.0
-
-    # Choose shortest direction
-    if counterclockwise_distance <= clockwise_distance:
-        direction = -1  # left / counterclockwise
-        distance = counterclockwise_distance
-    else:
-        direction = 1  # right / clockwise
-        distance = clockwise_distance
-
-    # Number of discrete steps (closest integer)
-    steps = int(round(distance / step_size_deg))
-
-    return direction, steps
-
-
-def rotate_to_target_heading_mov2vp(sim, selected_heading, target_vp_id):
-    """
-    smoothly move to the selected heading and move to the target vp with rendering
-    """
-    start_state = sim.getState()[0]
-    start_heading = start_state.heading
-    direction, steps = compute_rotation(
-        math.degrees(start_heading),
-        math.degrees(selected_heading),
-        DELTA_HEADING_DEG,
-    )
-
-    for i in range(steps):
-        sim.makeAction([0], [direction * DELTA_HEADING_RAD], [0])
-        state = sim.getState()[0]  # current state
-        render_sim_state(state)
-        time.sleep(pause_time)
-
-    current_state = sim.getState()[0]
-    current_heading = current_state.heading
-    print(f"Selected_heading: {math.degrees(selected_heading):.2f} degrees")
-    print(f"Current heading: {math.degrees(current_heading):.2f} degrees")
-
-    # move to the target viewpoint (after rotation, it should be in the current navigableLocations)
-    if target_vp_id is not None:
-        locations = current_state.navigableLocations
-        location_id = [
-            i for i, x in enumerate(locations) if x.viewpointId == target_vp_id
-        ][0]
-        time.sleep(decision_pause)
-        sim.makeAction([location_id], [0], [0])
-        render_sim_state(sim.getState()[0])
 
 
 def explore_world(sim, location=0, heading=0, elevation=0):
@@ -366,6 +159,9 @@ def explore_world(sim, location=0, heading=0, elevation=0):
         locations = state.navigableLocations
         rgb = np.array(state.rgb, copy=False)
         current_vp_id = viewpoint_index_by_vp_label[str(state.location.viewpointId)]
+        navigable_vp_ids = [
+            viewpoint_index_by_vp_label[str(loc.viewpointId)] for loc in locations[1:]
+        ]
         print(
             f"current vp id: {current_vp_id}, long id: {state.location.viewpointId}, elevation: {math.degrees(state.elevation):.1f} deg, heading: {math.degrees(state.heading):.1f} deg"
         )
@@ -385,8 +181,6 @@ def explore_world(sim, location=0, heading=0, elevation=0):
             )
         cv2.imshow("Python RGB", rgb)
 
-        depth = np.array(state.depth, copy=False)
-        cv2.imshow("Python Depth", depth)
         k = cv2.waitKey(1)
         if k == -1:
             continue
@@ -406,58 +200,3 @@ def explore_world(sim, location=0, heading=0, elevation=0):
             heading = DELTA_HEADING_RAD
         elif k == 84 or k == ord("s"):
             elevation = -DELTA_HEADING_RAD
-
-
-def target_detection(
-    tgt: dict,
-    target_object: str,
-    target_heading,
-    target_rgb_image,
-    target_depth_image,
-    distance_threshold_m,
-    sim,
-):
-    """Process the MLLM output for target detection and distance estimation, and decide whether to terminate or continue exploring."""
-    if not bool(tgt["found"]):
-        return False
-
-    target_strip_index = int(tgt["strip_index"])
-    print(
-        f"Target '{target_object}' detected by MLLM in panorama strip "
-        f"{target_strip_index}."
-    )
-    depth_start_time = time.perf_counter()
-    distance_out = {"distance_m": 2.375}
-    # distance_out = mllm.estimate_target_distance(
-    #     rgb_image=target_rgb_image,
-    #     depth_image=target_depth_image,
-    #     target_object=target_object,
-    # )
-    depth_runtime = time.perf_counter() - depth_start_time
-    print(f"[MLLM distance] runtime: {depth_runtime:.2f} seconds")
-
-    distance_m = distance_out.get("distance_m")
-
-    if distance_m is not None:
-        print(
-            f"Target '{target_object}' distance estimate: {distance_m:.2f} m "
-            f"(threshold: {distance_threshold_m:.2f} m)."
-        )
-        if distance_m <= distance_threshold_m:
-            rotate_to_target_heading_mov2vp(sim, target_heading, None)
-            render_sim_state(
-                sim.getState()[0],
-                viewpoint_index_by_vp=viewpoint_index_by_vp_label,
-            )
-            debugpy.breakpoint()
-            return True
-        print(
-            f"[CONTINUE] Target detected but distance {distance_m:.2f} m exceeds "
-            f"threshold {distance_threshold_m:.2f} m."
-        )
-        return False
-
-    print(
-        f"[CONTINUE] Target '{target_object}' detected, but distance could not be estimated."
-    )
-    return False

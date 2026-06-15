@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-from io import StringIO
 import os
 import ssl
 import tempfile
@@ -22,13 +21,11 @@ FILETYPES = [
     "matterport_camera_intrinsics",
     "matterport_camera_poses",
     "matterport_color_images",
-    "matterport_depth_images",
     "matterport_hdr_images",
     "matterport_mesh",
     "matterport_skybox_images",
     "undistorted_camera_parameters",
     "undistorted_color_images",
-    "undistorted_depth_images",
     "undistorted_normal_images",
     "house_segmentations",
     "region_segmentations",
@@ -67,12 +64,8 @@ SSL_CTX = ssl.create_default_context(cafile=certifi.where())
 
 DOWNSIZED_WIDTH = 512
 DOWNSIZED_HEIGHT = 512
-SKYBOX_WIDTH = 1024
-SKYBOX_HEIGHT = 1024
 MATTERSIM_REQUIRED_TYPES = [
     "matterport_skybox_images",
-    "undistorted_camera_parameters",
-    "undistorted_depth_images",
 ]
 
 
@@ -188,149 +181,6 @@ def generate_rgb_skyboxes(scan_dir: str):
         assert cv2.imwrite(out_file, np.concatenate(ims, axis=1))
 
 
-def camera_parameters(scan_dir: str, scan_id: str):
-    import numpy as np
-    from numpy.linalg import inv
-
-    camera_file = os.path.join(
-        scan_dir, "undistorted_camera_parameters", scan_id + ".conf"
-    )
-    intrinsics = {}
-    extrinsics = {}
-    with open(camera_file) as f:
-        pos = -1
-        for line in f.readlines():
-            if "intrinsics_matrix" in line:
-                intr = line.split()
-                c = np.zeros((3, 3), np.double)
-                c[0, 0] = intr[1]
-                c[1, 1] = intr[5]
-                c[0, 2] = intr[3]
-                c[1, 2] = intr[6]
-                c[2, 2] = 1.0
-                pos = 0
-            elif pos >= 0 and pos < 6:
-                q = line.find(".jpg")
-                camera = line[q - 37 : q]
-                if pos == 0:
-                    intrinsics[camera[:-2]] = c
-                transform = np.loadtxt(StringIO(line.split("jpg ")[1])).reshape((4, 4))
-                extrinsics[camera] = (transform, inv(transform))
-                pos += 1
-    return intrinsics, extrinsics
-
-
-def z_to_euclid(k_inv, depth):
-    import numpy as np
-    from numpy.linalg import norm
-
-    assert len(depth.shape) == 2
-    h = depth.shape[0]
-    w = depth.shape[1]
-    y, x = np.indices((h, w))
-    homo_pixels = np.vstack((x.flatten(), y.flatten(), np.ones((x.size))))
-    rays = k_inv.dot(homo_pixels)
-    cos_theta = np.array([0, 0, 1]).dot(rays) / norm(rays, axis=0)
-    return depth / cos_theta.reshape(h, w)
-
-
-def intrinsic_matrix(width: int, height: int):
-    import numpy as np
-
-    k = np.zeros((3, 3), np.double)
-    k[0, 0] = width / 2
-    k[1, 1] = height / 2
-    k[0, 2] = width / 2
-    k[1, 2] = height / 2
-    k[2, 2] = 1.0
-    return k
-
-
-def generate_depth_skyboxes(scan_id: str, scan_dir: str):
-    import cv2
-    import numpy as np
-    from numpy.linalg import inv
-
-    skybox_dir = os.path.join(scan_dir, "matterport_skybox_images")
-    depth_dir = os.path.join(scan_dir, "undistorted_depth_images")
-    intrinsics, extrinsics = camera_parameters(scan_dir, scan_id)
-    k_skybox = intrinsic_matrix(SKYBOX_WIDTH, SKYBOX_HEIGHT)
-    pano_ids = sorted(set([item.split("_")[0] for item in intrinsics.keys()]))
-    skybox_transforms = [
-        np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.double),
-        np.eye(3, dtype=np.double),
-        np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]], dtype=np.double),
-        np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], dtype=np.double),
-        np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]], dtype=np.double),
-        np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]], dtype=np.double),
-    ]
-    print("Generating depth skyboxes for " + str(len(pano_ids)) + " panoramas ...")
-
-    for pano_id in pano_ids:
-        depth = {}
-        for camera in range(3):
-            k_inv = inv(intrinsics["%s_i%d" % (pano_id, camera)])
-            for angle in range(6):
-                name = "%d_%d" % (camera, angle)
-                depth_file = os.path.join(
-                    depth_dir, "%s_d%s.png" % (pano_id, name)
-                )
-                d_im = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
-                depth[name] = z_to_euclid(k_inv, d_im)
-
-        ims = []
-        for skybox_ix in range(6):
-            skybox_ctw, _ = extrinsics[pano_id + "_i1_5"]
-            skybox_ctw = skybox_ctw[:3, :3].dot(skybox_transforms[skybox_ix])
-            skybox_wtc = inv(skybox_ctw)
-            base_depth = np.zeros((SKYBOX_HEIGHT, SKYBOX_WIDTH), np.uint16)
-
-            for camera in range(3):
-                for angle in range(6):
-                    im_name = "%d_%d" % (camera, angle)
-                    k_im = intrinsics[pano_id + "_i" + im_name[0]]
-                    t_ctw, _ = extrinsics[pano_id + "_i" + im_name]
-                    r_ctw = t_ctw[:3, :3]
-                    z = np.array([0, 0, 1])
-                    if r_ctw.dot(z).dot(skybox_ctw.dot(z)) < 0:
-                        continue
-
-                    h = k_skybox.dot(skybox_wtc.dot(r_ctw.dot(inv(k_im))))
-                    flip = cv2.flip(depth[im_name], 1)
-                    warp = cv2.warpPerspective(
-                        flip,
-                        h,
-                        (SKYBOX_HEIGHT, SKYBOX_WIDTH),
-                        flags=cv2.INTER_NEAREST,
-                    )
-                    mask = cv2.warpPerspective(
-                        np.ones_like(flip),
-                        h,
-                        (SKYBOX_HEIGHT, SKYBOX_WIDTH),
-                        flags=cv2.INTER_LINEAR,
-                    )
-                    mask[warp == 0] = 0
-                    mask = cv2.erode(
-                        mask, np.ones((3, 3), np.uint8), iterations=1
-                    )
-                    locs = np.where(mask == 1)
-                    base_depth[locs[0], locs[1]] = warp[locs[0], locs[1]]
-
-            depth_small = cv2.resize(
-                cv2.flip(base_depth, 1),
-                (DOWNSIZED_WIDTH, DOWNSIZED_HEIGHT),
-                interpolation=cv2.INTER_NEAREST,
-            )
-            ims.append(depth_small)
-
-        out_file = os.path.join(
-            skybox_dir, pano_id + "_skybox_depth_small.png"
-        )
-        assert cv2.imwrite(out_file, np.concatenate(ims, axis=1)), (
-            "Could not write to " + out_file
-        )
-
-
 def prepare_mattersim_scan(scan_id: str, scan_dir: str, file_types):
     missing = [ft for ft in MATTERSIM_REQUIRED_TYPES if ft not in file_types]
     if missing:
@@ -342,7 +192,6 @@ def prepare_mattersim_scan(scan_id: str, scan_dir: str, file_types):
         extract_scan_zip(scan_id, scan_dir, file_type)
 
     generate_rgb_skyboxes(scan_dir)
-    generate_depth_skyboxes(scan_id, scan_dir)
     print("Prepared MatterSim files for scan " + scan_id)
 
 
@@ -389,7 +238,7 @@ def main():
     parser.add_argument(
         "--prepare_mattersim",
         action="store_true",
-        help="extract scan ZIPs and generate MatterSim *_skybox_small.jpg and *_skybox_depth_small.png files",
+        help="extract scan ZIPs and generate MatterSim *_skybox_small.jpg files",
     )
     args = parser.parse_args()
 
