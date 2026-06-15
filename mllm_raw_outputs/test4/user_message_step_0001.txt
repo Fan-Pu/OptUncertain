@@ -382,6 +382,7 @@ Strict allowed-id rule:
 - If a current viewpoint appears in viewpoint_node_assigns, that assigned region is its final region. current_viewpoints_reassignment for that same viewpoint must match that region exactly, or be omitted when it is not a true change from graph_summary.viewpoint_to_region.
 - Never assign a current viewpoint to region A in viewpoint_node_assigns and region B in current_viewpoints_reassignment.
 - viewpoint_target_scores is optional and incremental for the MLLM-updatable viewpoint ids below.
+- region_target_scores is optional and incremental for existing or newly proposed regions with no final assigned viewpoints.
 - Do not include current, grounded, or previously visited viewpoint ids in viewpoint_target_scores. Their target probabilities are detection-fixed at 0 for unfound targets.
 - Existing non-current graph viewpoint ids keep prior_raw_target_probs unless current observations justify changing a specific viewpoint-target value.
 - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_scores, even if that id appears in compact shared graph summary, region assigned_viewpoint_ids, or viewpoint_to_region.
@@ -745,14 +746,19 @@ Viewpoint target score-basis rule:
 
 Target probability rule:
 - viewpoint_target_scores raw_score values are raw target-location scores, not calibrated probabilities. The validator stores the repaired materialized values as raw_target_probs and normalizes target_probs per target across eligible viewpoint ids.
-- Region node target_probs are kept unchanged after graph update: existing regions keep prior values and newly proposed regions keep the values you provide.
+- Region target_scores values are raw target-location scores for type-(2) regions: semantic regions with no final assigned viewpoints. The validator stores the materialized raw values as raw_target_probs.
+- Type-(1) regions, meaning regions with any final assigned viewpoints, compute raw region target scores locally as the mean of normalized target_probs over assigned viewpoints.
+- Region target_probs are normalized per target across the union of type-(1) and type-(2) regions.
+- Existing type-(2) regions keep prior raw_target_probs unless region_target_scores changes a value. Newly proposed type-(2) regions use their region target_probs as initial raw scores unless region_target_scores overrides them.
+- If a region loses all assigned viewpoints in this step and becomes type-(2), provide region_target_scores for every active target_id.
 - Do not copy default values from the schema or examples.
-- For each active target_id, compare newly proposed regions and all eligible non-current viewpoint ids before assigning changed scores.
+- For each active target_id, compare all type-(2) regions and all eligible non-current viewpoint ids before assigning changed scores.
 - Assign higher scores to locations whose visible objects, room or area evidence, furniture, spatial context, and graph history better satisfy the constraints inferred from that active target description.
 - Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
 - Use different scores when evidence differs.
 - Equal scores are allowed only when the basis, assigned region, spatial context, and graph history are substantively indistinguishable.
 - For each active target_id, the sum of materialized raw scores across eligible viewpoint ids must be positive.
+- For each active target_id, the sum of materialized raw scores across all regions must be positive.
 
 All non-current visible neighboring viewpoint ids:
 [
@@ -802,10 +808,10 @@ Output shape example. It uses placeholder strings for score fields to avoid nume
       "id": 97,
       "label": "unseen hallway area beyond closed doorway",
       "target_probs": {
-        "0": "<score in (0, 1] justified by evidence>",
-        "1": "<score in (0, 1] justified by evidence>",
-        "2": "<score in (0, 1] justified by evidence>",
-        "3": "<score in (0, 1] justified by evidence>"
+        "0": "<score in [0, 1] justified by evidence>",
+        "1": "<score in [0, 1] justified by evidence>",
+        "2": "<score in [0, 1] justified by evidence>",
+        "3": "<score in [0, 1] justified by evidence>"
       }
     }
   ],
@@ -816,6 +822,17 @@ Output shape example. It uses placeholder strings for score fields to avoid nume
       "exist_prob": 0.6,
       "i": 9,
       "j": 97
+    }
+  ],
+  "region_target_scores": [
+    {
+      "id": 97,
+      "target_scores": {
+        "0": "<nonnegative raw score justified by region-level evidence>",
+        "1": "<nonnegative raw score justified by region-level evidence>",
+        "2": "<nonnegative raw score justified by region-level evidence>",
+        "3": "<nonnegative raw score justified by region-level evidence>"
+      }
     }
   ],
   "viewpoint_node_assigns": [
@@ -860,10 +877,10 @@ Output shape example. It uses placeholder strings for score fields to avoid nume
       "id": 95,
       "label": "bright kitchen area near dining table",
       "target_probs": {
-        "0": "<score in (0, 1] justified by evidence>",
-        "1": "<score in (0, 1] justified by evidence>",
-        "2": "<score in (0, 1] justified by evidence>",
-        "3": "<score in (0, 1] justified by evidence>"
+        "0": "<score in [0, 1] justified by evidence>",
+        "1": "<score in [0, 1] justified by evidence>",
+        "2": "<score in [0, 1] justified by evidence>",
+        "3": "<score in [0, 1] justified by evidence>"
       }
     },
     {
@@ -871,10 +888,10 @@ Output shape example. It uses placeholder strings for score fields to avoid nume
       "id": 96,
       "label": "adjacent hallway visible through doorway",
       "target_probs": {
-        "0": "<score in (0, 1] justified by evidence>",
-        "1": "<score in (0, 1] justified by evidence>",
-        "2": "<score in (0, 1] justified by evidence>",
-        "3": "<score in (0, 1] justified by evidence>"
+        "0": "<score in [0, 1] justified by evidence>",
+        "1": "<score in [0, 1] justified by evidence>",
+        "2": "<score in [0, 1] justified by evidence>",
+        "3": "<score in [0, 1] justified by evidence>"
       }
     }
   ]

@@ -1,12 +1,24 @@
 {
   "agent_current_vp_ids": {
     "agent0": 9,
-    "agent1": 14,
-    "agent2": 8,
+    "agent1": 0,
+    "agent2": 14,
     "agent3": 58,
-    "agent4": 10
+    "agent4": 28
   },
   "edges": [
+    {
+      "grounded": true,
+      "i": 0,
+      "j": 11,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 0,
+      "j": 48,
+      "type": "vv"
+    },
     {
       "grounded": true,
       "i": 2,
@@ -38,18 +50,6 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 5,
-      "j": 75,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 8,
-      "j": 19,
-      "type": "vv"
-    },
-    {
       "grounded": true,
       "i": 9,
       "j": 17,
@@ -77,18 +77,6 @@
       "grounded": true,
       "i": 9,
       "j": 92,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 10,
-      "j": 45,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 10,
-      "j": 65,
       "type": "vv"
     },
     {
@@ -214,6 +202,12 @@
     {
       "grounded": true,
       "i": 28,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 28,
       "j": 62,
       "type": "vv"
     },
@@ -225,38 +219,8 @@
     },
     {
       "grounded": true,
-      "i": 30,
-      "j": 33,
-      "type": "vv"
-    },
-    {
-      "grounded": false,
-      "i": 30,
-      "j": 86,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 33,
-      "j": 40,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
       "i": 33,
       "j": 80,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 33,
-      "j": 85,
-      "type": "vv"
-    },
-    {
-      "grounded": true,
-      "i": 33,
-      "j": 86,
       "type": "vv"
     },
     {
@@ -264,6 +228,30 @@
       "i": 36,
       "j": 68,
       "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 39,
+      "j": 69,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 39,
+      "j": 74,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 39,
+      "j": 85,
+      "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 39,
+      "j": 104,
+      "type": "vz"
     },
     {
       "grounded": true,
@@ -282,6 +270,12 @@
       "i": 57,
       "j": 62,
       "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 58,
+      "j": 105,
+      "type": "vz"
     },
     {
       "grounded": true,
@@ -309,18 +303,43 @@
     },
     {
       "grounded": true,
-      "i": 72,
-      "j": 80,
+      "i": 69,
+      "j": 74,
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 85,
-      "j": 86,
+      "grounded": true,
+      "i": 69,
+      "j": 85,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 69,
+      "j": 89,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 72,
+      "j": 80,
       "type": "vv"
     }
   ],
   "nodes": [
+    {
+      "connected_node_ids": [
+        11,
+        48
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 0,
+      "label": "163d61ac7edb43fb958c5d9e69ae11ad",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
     {
       "connected_node_ids": [
         8,
@@ -328,32 +347,36 @@
         69,
         74
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 2,
       "label": "1eae38cbbaf744f99de90c99d8c013f1",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        21,
-        75
+        21
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 5,
       "label": "a1e9eb0276cb4b0e8c568d7b8a9127ee",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        2,
-        19
+        2
       ],
-      "grounded": true,
+      "exist_prob": 1.0,
+      "grounded": false,
       "id": 8,
       "label": "5aef41e3b2994baa813ed2450f7b17c7",
-      "node_visit_times": 2,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -364,33 +387,38 @@
         66,
         92
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 9,
       "label": "3ecb492d5019411785bab293ff4f74ee",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        45,
-        65,
         93
       ],
-      "grounded": true,
+      "exist_prob": 1.0,
+      "grounded": false,
       "id": 10,
       "label": "aff833f86ff847a7bcf24bea207c91ad",
-      "node_visit_times": 1,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
+        0,
         68,
         80
       ],
-      "grounded": false,
+      "exist_prob": 1.0,
+      "grounded": true,
       "id": 11,
       "label": "f7ef3082a05c40659421f0a21731ae1b",
-      "node_visit_times": 0,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -398,9 +426,11 @@
         50,
         58
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 12,
       "label": "6c34dde402304953a9416e2781de607f",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
@@ -412,9 +442,11 @@
         40,
         85
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 14,
       "label": "55f38bb2e60d46f49803ff9fc3911b28",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
@@ -426,21 +458,24 @@
         75,
         82
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 17,
       "label": "76ba074e4b7a46feb3d829302db3bd2e",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        2,
-        8
+        2
       ],
-      "grounded": true,
+      "exist_prob": 1.0,
+      "grounded": false,
       "id": 19,
       "label": "ee260af3263a4eccb2922c2dcf1b4606",
-      "node_visit_times": 1,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -453,9 +488,11 @@
         75,
         92
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 21,
       "label": "7efbe13d514b4797b540aecffe79aa03",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
@@ -464,9 +501,11 @@
         68,
         80
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 22,
       "label": "64fdd371adc042558d30fa9bd00a00f5",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -476,56 +515,50 @@
         17,
         21
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 27,
       "label": "7cdc2565c773401289b95360da22e017",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
+        42,
         62,
         93
       ],
-      "grounded": false,
+      "exist_prob": 1.0,
+      "grounded": true,
       "id": 28,
       "label": "a8ae1f18502e4a6aa301af029f976f5f",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        33,
-        86
-      ],
-      "grounded": false,
-      "id": 30,
-      "label": "8e63389afc02448a9d0dd695bc50253a",
-      "node_visit_times": 0,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
         14,
-        30,
-        40,
-        80,
-        85,
-        86
+        80
       ],
-      "grounded": true,
+      "exist_prob": 1.0,
+      "grounded": false,
       "id": 33,
       "label": "7d1e000e54d942168b24155d12cd265b",
-      "node_visit_times": 1,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
         68
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 36,
       "label": "cc896d0984cc4661bff9087a0df6967c",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -533,40 +566,63 @@
       "connected_node_ids": [
         14
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 38,
       "label": "eb8781b9756346c9b97ae6d5e43b6d13",
-      "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        14
-      ],
-      "grounded": false,
-      "id": 39,
-      "label": "1407cf2da95e4f73951798295db82ab6",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
         14,
-        33
+        69,
+        74,
+        85,
+        104
       ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 39,
+      "label": "1407cf2da95e4f73951798295db82ab6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        14
+      ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 40,
       "label": "42524ad2f3f44645a1dc3bd8486560cf",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        10
+        28
       ],
+      "exist_prob": 1.0,
       "grounded": false,
-      "id": 45,
-      "label": "55e5280eea474acfb993bf68a193bb25",
+      "id": 42,
+      "label": "57e88eaa7e2f49258f247aa79bd2368c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        0
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 48,
+      "label": "817aaa8a1f7b4d93b4e3c4f765cf46aa",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -576,9 +632,11 @@
         58,
         76
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 50,
       "label": "1239dba1b6234964b420a56d82d79d7a",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
@@ -586,20 +644,25 @@
       "connected_node_ids": [
         62
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 57,
       "label": "54e13e385fac4638b050f5c73095ecdb",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
         12,
-        50
+        50,
+        105
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 58,
       "label": "159bf39081724055a73e686a6577096b",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 2,
       "type": "viewpoint"
     },
@@ -609,20 +672,12 @@
         57,
         67
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 62,
       "label": "f6cbc0517fc14f129f5456e59dc66c76",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [
-        10
-      ],
-      "grounded": false,
-      "id": 65,
-      "label": "f6af6b4247ea4353b90f8bce6e05f58a",
-      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -630,9 +685,11 @@
         9,
         21
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 66,
       "label": "dbec0f4e228c44cda1f991905404541c",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -641,9 +698,11 @@
         62,
         93
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 67,
       "label": "8f183f5d34d544e5a4d04bc8f28f10e8",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
@@ -655,20 +714,28 @@
         72,
         80
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 68,
       "label": "67dd134230034fc18ab8c30abd9af183",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        2
+        2,
+        39,
+        74,
+        85,
+        89
       ],
-      "grounded": false,
+      "exist_prob": 1.0,
+      "grounded": true,
       "id": 69,
       "label": "a6c8016b0fa94ebaa51c2808c6fec8ba",
-      "node_visit_times": 0,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -676,31 +743,38 @@
         68,
         80
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 72,
       "label": "c3c0a1a738a749a7a986d64c872b7671",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        2
+        2,
+        39,
+        69
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 74,
       "label": "d0df0bc30e9a4f13a6fdbebb9cdd1964",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        5,
         17,
         21
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 75,
       "label": "4f07d9e99e084876b0765220888d2545",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -708,9 +782,11 @@
       "connected_node_ids": [
         50
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 76,
       "label": "6a3fba49106e4a9fb40cd0bf47dd4d46",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -722,9 +798,11 @@
         68,
         72
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 80,
       "label": "20f6b7fcb5254024aacdd907da2eb315",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
@@ -732,33 +810,37 @@
       "connected_node_ids": [
         17
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 82,
       "label": "73f8049b6198422aa5f2edfc71fe423b",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
         14,
-        33,
-        86
+        39,
+        69
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 85,
       "label": "deb99671679648e28ccf7d622051ab46",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
       "connected_node_ids": [
-        30,
-        33,
-        85
+        69
       ],
+      "exist_prob": 1.0,
       "grounded": false,
-      "id": 86,
-      "label": "0d3a3b42009441e2a02200423049d804",
+      "id": 89,
+      "label": "a3b6871652f240f583142a78463d5665",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -767,9 +849,11 @@
         9,
         21
       ],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 92,
       "label": "f4d601b86e624ad2a8d77280f36c7872",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
     },
@@ -779,42 +863,89 @@
         28,
         67
       ],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 93,
       "label": "416df61743e24e828609f0698df3f51b",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
-        9,
-        17
+        17,
+        21,
+        75
       ],
       "connected_node_ids": [],
+      "exist_prob": 1.0,
       "grounded": true,
       "id": 95,
-      "label": "master bedroom area with bed and windows",
+      "label": "bedroom area with bed and nightstands",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        75,
+        36,
         82
       ],
       "connected_node_ids": [],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 96,
-      "label": "hallway corridor connecting rooms",
+      "label": "hallway area with wooden flooring connecting rooms",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
-      "assigned_viewpoint_ids": [],
+      "assigned_viewpoint_ids": [
+        9,
+        27,
+        40
+      ],
       "connected_node_ids": [],
-      "grounded": false,
+      "exist_prob": 1.0,
+      "grounded": true,
       "id": 97,
-      "label": "bathroom area with sink and cabinets",
+      "label": "kitchen area with cabinets and appliances",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        22,
+        39,
+        68,
+        69,
+        72,
+        74,
+        89
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 98,
+      "label": "living room area with fireplace and seating",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        11,
+        80,
+        85
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 99,
+      "label": "dining area with table and chairs near kitchen",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
@@ -822,47 +953,14 @@
       "assigned_viewpoint_ids": [
         2,
         8,
-        11,
-        19,
-        22,
-        36,
-        68,
-        69,
-        72,
-        74,
-        80
+        19
       ],
       "connected_node_ids": [],
+      "exist_prob": 1.0,
       "grounded": true,
-      "id": 98,
-      "label": "living room area with fireplace and large windows",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 99,
-      "label": "dining area with table and chairs near kitchen",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [],
-      "grounded": false,
       "id": 100,
-      "label": "kitchen area with counters and appliances",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 101,
-      "label": "outdoor patio area with seating and columns",
+      "label": "outdoor patio area with covered seating",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
@@ -870,12 +968,15 @@
       "assigned_viewpoint_ids": [
         12,
         50,
+        58,
         76
       ],
       "connected_node_ids": [],
+      "exist_prob": 1.0,
       "grounded": true,
-      "id": 102,
-      "label": "staircase landing area with railings",
+      "id": 101,
+      "label": "staircase area with railing and steps",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
@@ -888,20 +989,11 @@
         93
       ],
       "connected_node_ids": [],
+      "exist_prob": 1.0,
       "grounded": true,
-      "id": 103,
+      "id": 102,
       "label": "recreation room area with pool table and bar",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        27
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 104,
-      "label": "kitchen area with dark cabinets and granite countertops",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
@@ -910,132 +1002,82 @@
         33
       ],
       "connected_node_ids": [],
-      "grounded": true,
-      "id": 105,
-      "label": "dining area with table and chairs near kitchen",
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 103,
+      "label": "hallway area with dark wood columns and entry door",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [],
-      "connected_node_ids": [],
+      "connected_node_ids": [
+        39
+      ],
+      "exist_prob": 1.0,
       "grounded": false,
-      "id": 106,
-      "label": "outdoor patio area with seating and columns",
+      "id": 104,
+      "label": "outdoor patio area visible through sliding glass doors",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
-      "assigned_viewpoint_ids": [
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [
         58
       ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 107,
-      "label": "hallway corridor connecting rooms near staircase",
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 105,
+      "label": "upper hallway area overlooking living room from second floor",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
+        0,
         5,
-        21,
+        10,
+        14,
         66,
         92
       ],
       "connected_node_ids": [],
+      "exist_prob": 1.0,
       "grounded": true,
+      "id": 106,
+      "label": "entry and transition hallway area connecting multiple rooms",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        48
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 107,
+      "label": "outdoor patio area with stone columns and covered seating",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        38,
+        42
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
       "id": 108,
-      "label": "master bedroom area with bed and windows near bathroom",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        40
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 109,
-      "label": "dining area with table and chairs near kitchen",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        30,
-        39,
-        86
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 110,
-      "label": "living room area with large windows and seating",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        85
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 111,
-      "label": "distant dining area with chandelier",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        10
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 112,
-      "label": "hallway corridor leading from recreation room",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        14,
-        38
-      ],
-      "connected_node_ids": [],
-      "grounded": true,
-      "id": 113,
-      "label": "dining area with large table and kitchen access",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 114,
-      "label": "hallway corridor connecting dining to living areas",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        45
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 115,
-      "label": "hallway leading from recreation room with artwork",
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        65
-      ],
-      "connected_node_ids": [],
-      "grounded": false,
-      "id": 116,
-      "label": "upper hallway near staircase landing",
+      "label": "lower hallway area connecting recreation room to other spaces",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     }
@@ -1043,118 +1085,110 @@
   "observation_step": 4,
   "region_to_viewpoints": {
     "95": [
-      9,
-      17
+      17,
+      21,
+      75
     ],
     "96": [
-      75,
+      36,
       82
     ],
+    "97": [
+      9,
+      27,
+      40
+    ],
     "98": [
-      2,
-      8,
-      11,
-      19,
       22,
-      36,
+      39,
       68,
       69,
       72,
       74,
-      80
+      89
     ],
-    "102": [
+    "99": [
+      11,
+      80,
+      85
+    ],
+    "100": [
+      2,
+      8,
+      19
+    ],
+    "101": [
       12,
       50,
+      58,
       76
     ],
-    "103": [
+    "102": [
       28,
       57,
       62,
       67,
       93
     ],
-    "104": [
-      27
-    ],
-    "105": [
+    "103": [
       33
     ],
-    "107": [
-      58
-    ],
-    "108": [
+    "106": [
+      0,
       5,
-      21,
+      10,
+      14,
       66,
       92
     ],
-    "109": [
-      40
+    "107": [
+      48
     ],
-    "110": [
-      30,
-      39,
-      86
-    ],
-    "111": [
-      85
-    ],
-    "112": [
-      10
-    ],
-    "113": [
-      14,
-      38
-    ],
-    "115": [
-      45
-    ],
-    "116": [
-      65
+    "108": [
+      38,
+      42
     ]
   },
   "viewpoint_to_region": {
-    "2": 98,
-    "5": 108,
-    "8": 98,
-    "9": 95,
-    "10": 112,
-    "11": 98,
-    "12": 102,
-    "14": 113,
+    "0": 106,
+    "2": 100,
+    "5": 106,
+    "8": 100,
+    "9": 97,
+    "10": 106,
+    "11": 99,
+    "12": 101,
+    "14": 106,
     "17": 95,
-    "19": 98,
-    "21": 108,
+    "19": 100,
+    "21": 95,
     "22": 98,
-    "27": 104,
-    "28": 103,
-    "30": 110,
-    "33": 105,
-    "36": 98,
-    "38": 113,
-    "39": 110,
-    "40": 109,
-    "45": 115,
-    "50": 102,
-    "57": 103,
-    "58": 107,
-    "62": 103,
-    "65": 116,
-    "66": 108,
-    "67": 103,
+    "27": 97,
+    "28": 102,
+    "33": 103,
+    "36": 96,
+    "38": 108,
+    "39": 98,
+    "40": 97,
+    "42": 108,
+    "48": 107,
+    "50": 101,
+    "57": 102,
+    "58": 101,
+    "62": 102,
+    "66": 106,
+    "67": 102,
     "68": 98,
     "69": 98,
     "72": 98,
     "74": 98,
-    "75": 96,
-    "76": 102,
-    "80": 98,
+    "75": 95,
+    "76": 101,
+    "80": 99,
     "82": 96,
-    "85": 111,
-    "86": 110,
-    "92": 108,
-    "93": 103
+    "85": 99,
+    "89": 98,
+    "92": 106,
+    "93": 102
   }
 }

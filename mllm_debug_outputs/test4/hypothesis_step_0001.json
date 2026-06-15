@@ -1,12 +1,9 @@
 {
   "bayes_config": {
     "epsilon": 1e-06,
-    "eta_exist": 5.0,
-    "eta_goal": 5.0,
     "eta_vz": 5.0,
     "kappa_vv": 1.0,
     "kappa_vz": 1.0,
-    "omega_vz": 0.7,
     "sigma_vv2": 4.0,
     "sigma_vz2": 9.0,
     "varrho": 0.75
@@ -60,16 +57,6 @@
       "grounded": true,
       "i": 9,
       "j": 17,
-      "type": "vv"
-    },
-    {
-      "cond_exist_prob": 0.9999688665425583,
-      "distance_mean": 2.713668763304359,
-      "distance_var": 0.4199919312435643,
-      "exist_prob": 0.9999688665425583,
-      "grounded": false,
-      "i": 9,
-      "j": 21,
       "type": "vv"
     },
     {
@@ -229,6 +216,7 @@
       "grounded": true,
       "id": 2,
       "label": "1eae38cbbaf744f99de90c99d8c013f1",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "raw_target_probs": {
         "0": 0.0,
@@ -250,24 +238,25 @@
       "grounded": false,
       "id": 8,
       "label": "5aef41e3b2994baa813ed2450f7b17c7",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.4
+        "0": 0.21052631578947367,
+        "1": 0.05,
+        "2": 0.20277777777777775,
+        "3": 0.3
       },
       "target_probs": {
-        "0": 0.014492753623188413,
-        "1": 0.031249999999999997,
-        "2": 0.01724137931034483,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.028571428571428564,
+        "2": 0.039374325782092774,
+        "3": 0.034883720930232565
       },
       "target_score_basis": {
-        "0": "outdoor patio viewpoint, unlikely bathroom target location",
-        "1": "outdoor patio viewpoint, unlikely office target location",
-        "2": "outdoor patio viewpoint, unlikely kitchen target location",
-        "3": "outdoor patio viewpoint visible from living area, moderate bedroom proximity"
+        "0": "Outdoor patio viewpoint, unlikely to contain bathroom towels",
+        "1": "Outdoor patio viewpoint, unlikely to contain office laptop",
+        "2": "Outdoor patio viewpoint, unlikely to contain kitchen apple",
+        "3": "Outdoor patio viewpoint, possible bedroom access but not direct"
       },
       "type": "viewpoint"
     },
@@ -276,24 +265,25 @@
       "grounded": false,
       "id": 9,
       "label": "3ecb492d5019411785bab293ff4f74ee",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
-        "1": 0.1,
-        "2": 0.1,
+        "0": 0.21052631578947367,
+        "1": 0.05,
+        "2": 0.20277777777777775,
         "3": 0.8
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.01724137931034483,
-        "3": 0.08695652173913039
+        "0": 0.04479283314669655,
+        "1": 0.028571428571428564,
+        "2": 0.039374325782092774,
+        "3": 0.09302325581395351
       },
       "target_score_basis": {
-        "0": "bedroom adjacent viewpoint, possible bathroom connection",
-        "1": "bedroom adjacent viewpoint, unlikely office location",
-        "2": "bedroom adjacent viewpoint, unlikely kitchen location",
-        "3": "bedroom adjacent viewpoint, high probability for bedroom target"
+        "0": "Bedroom viewpoint marker visible, possible bathroom adjacency for towels",
+        "1": "Bedroom viewpoint, unlikely to contain office laptop",
+        "2": "Bedroom viewpoint, unlikely to contain kitchen apple",
+        "3": "Bedroom viewpoint marker in bedroom area, high likelihood for helmet target"
       },
       "type": "viewpoint"
     },
@@ -302,24 +292,25 @@
       "grounded": false,
       "id": 11,
       "label": "f7ef3082a05c40659421f0a21731ae1b",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
-        "1": 0.3,
-        "2": 0.3,
-        "3": 0.2
+        "0": 0.21052631578947367,
+        "1": 0.1,
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.09374999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.021739130434782598
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "entryway viewpoint, possible hallway to bathroom",
-        "1": "entryway viewpoint, possible office nearby",
-        "2": "entryway viewpoint, possible kitchen connection",
-        "3": "entryway viewpoint, lower bedroom probability"
+        "0": "Entryway viewpoint, unlikely to contain bathroom towels",
+        "1": "Entryway viewpoint, unlikely to contain office laptop",
+        "2": "Entryway viewpoint, possible kitchen access",
+        "3": "Entryway viewpoint, unlikely to contain bedroom helmet"
       },
       "type": "viewpoint"
     },
@@ -328,24 +319,25 @@
       "grounded": false,
       "id": 12,
       "label": "6c34dde402304953a9416e2781de607f",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
+        "0": 0.21052631578947367,
         "1": 0.1,
-        "2": 0.3,
-        "3": 0.4
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "staircase viewpoint overlooking living area, possible bathroom access",
-        "1": "staircase viewpoint, unlikely office location",
-        "2": "staircase viewpoint, possible kitchen visibility",
-        "3": "staircase viewpoint near living area, moderate bedroom proximity"
+        "0": "Staircase/living area viewpoint, unlikely to contain bathroom towels",
+        "1": "Staircase/living area viewpoint, unlikely to contain office laptop",
+        "2": "Staircase/living area viewpoint, possible kitchen visibility",
+        "3": "Staircase/living area viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -354,6 +346,7 @@
       "grounded": true,
       "id": 17,
       "label": "76ba074e4b7a46feb3d829302db3bd2e",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "raw_target_probs": {
         "0": 0.0,
@@ -375,24 +368,25 @@
       "grounded": false,
       "id": 19,
       "label": "ee260af3263a4eccb2922c2dcf1b4606",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.4
+        "0": 0.21052631578947367,
+        "1": 0.05,
+        "2": 0.20277777777777775,
+        "3": 0.3
       },
       "target_probs": {
-        "0": 0.014492753623188413,
-        "1": 0.031249999999999997,
-        "2": 0.01724137931034483,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.028571428571428564,
+        "2": 0.039374325782092774,
+        "3": 0.034883720930232565
       },
       "target_score_basis": {
-        "0": "outdoor patio viewpoint, unlikely bathroom location",
-        "1": "outdoor patio viewpoint, unlikely office location",
-        "2": "outdoor patio viewpoint, unlikely kitchen location",
-        "3": "outdoor patio connected to living area, moderate bedroom proximity"
+        "0": "Outdoor patio viewpoint, unlikely to contain bathroom towels",
+        "1": "Outdoor patio viewpoint, unlikely to contain office laptop",
+        "2": "Outdoor patio viewpoint, unlikely to contain kitchen apple",
+        "3": "Outdoor patio viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -401,24 +395,25 @@
       "grounded": false,
       "id": 21,
       "label": "7efbe13d514b4797b540aecffe79aa03",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.6,
-        "1": 0.1,
-        "2": 0.1,
+        "0": 0.21052631578947367,
+        "1": 0.05,
+        "2": 0.20277777777777775,
         "3": 0.8
       },
       "target_probs": {
-        "0": 0.08695652173913047,
-        "1": 0.031249999999999997,
-        "2": 0.01724137931034483,
-        "3": 0.08695652173913039
+        "0": 0.04479283314669655,
+        "1": 0.028571428571428564,
+        "2": 0.039374325782092774,
+        "3": 0.09302325581395351
       },
       "target_score_basis": {
-        "0": "bedroom interior viewpoint, possible ensuite bathroom",
-        "1": "bedroom interior viewpoint, unlikely office location",
-        "2": "bedroom interior viewpoint, unlikely kitchen location",
-        "3": "bedroom interior viewpoint, high probability for bedroom target"
+        "0": "Bedroom viewpoint marker in bedroom area, possible bathroom adjacency",
+        "1": "Bedroom viewpoint, unlikely to contain office laptop",
+        "2": "Bedroom viewpoint, unlikely to contain kitchen apple",
+        "3": "Bedroom viewpoint marker in bedroom area, high likelihood for helmet"
       },
       "type": "viewpoint"
     },
@@ -427,24 +422,25 @@
       "grounded": false,
       "id": 22,
       "label": "64fdd371adc042558d30fa9bd00a00f5",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
+        "0": 0.21052631578947367,
         "1": 0.1,
-        "2": 0.4,
-        "3": 0.4
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.06896551724137932,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "living room viewpoint, possible bathroom access",
-        "1": "living room viewpoint, unlikely office location",
-        "2": "living room viewpoint, possible kitchen connection",
-        "3": "living room viewpoint, moderate bedroom proximity"
+        "0": "Living room viewpoint, unlikely to contain bathroom towels",
+        "1": "Living room viewpoint, unlikely to contain office laptop",
+        "2": "Living room viewpoint, possible kitchen visibility",
+        "3": "Living room viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -453,24 +449,25 @@
       "grounded": false,
       "id": 27,
       "label": "7cdc2565c773401289b95360da22e017",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.9,
+        "0": 0.7,
         "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
+        "2": 0.8,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.1304347826086957,
-        "1": 0.031249999999999997,
-        "2": 0.01724137931034483,
-        "3": 0.0760869565217391
+        "0": 0.14893617021276603,
+        "1": 0.05714285714285713,
+        "2": 0.15533980582524273,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "bathroom area viewpoint visible from bedroom, high bathroom probability",
-        "1": "bathroom area viewpoint, unlikely office location",
-        "2": "bathroom area viewpoint, unlikely kitchen location",
-        "3": "bathroom area viewpoint opposite bedroom per target description"
+        "0": "Kitchen viewpoint marker visible, high likelihood for bathroom towels on dryer",
+        "1": "Kitchen viewpoint, unlikely to contain office laptop",
+        "2": "Kitchen viewpoint marker in kitchen area, high likelihood for apple on stand",
+        "3": "Kitchen viewpoint, unlikely to contain bedroom helmet"
       },
       "type": "viewpoint"
     },
@@ -479,24 +476,25 @@
       "grounded": false,
       "id": 28,
       "label": "a8ae1f18502e4a6aa301af029f976f5f",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
+        "0": 0.21052631578947367,
         "1": 0.1,
-        "2": 0.3,
-        "3": 0.4
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "recreation room viewpoint, possible bathroom access",
-        "1": "recreation room viewpoint, unlikely office location",
-        "2": "recreation room viewpoint, possible kitchen nearby",
-        "3": "recreation room viewpoint, moderate bedroom proximity"
+        "0": "Recreation room viewpoint, unlikely to contain bathroom towels",
+        "1": "Recreation room viewpoint, unlikely to contain office laptop",
+        "2": "Recreation room viewpoint, unlikely to contain kitchen apple",
+        "3": "Recreation room viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -505,24 +503,25 @@
       "grounded": false,
       "id": 36,
       "label": "cc896d0984cc4661bff9087a0df6967c",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
-        "1": 0.3,
-        "2": 0.3,
-        "3": 0.4
+        "0": 0.21052631578947367,
+        "1": 0.1,
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.09374999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "hallway viewpoint connecting areas, possible bathroom access",
-        "1": "hallway viewpoint, possible office nearby",
-        "2": "hallway viewpoint, possible kitchen connection",
-        "3": "hallway viewpoint, moderate bedroom proximity"
+        "0": "Hallway viewpoint, possible bathroom access for towels",
+        "1": "Hallway viewpoint, unlikely to contain office laptop",
+        "2": "Hallway viewpoint, possible kitchen access",
+        "3": "Hallway viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -531,6 +530,7 @@
       "grounded": true,
       "id": 50,
       "label": "1239dba1b6234964b420a56d82d79d7a",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "raw_target_probs": {
         "0": 0.0,
@@ -552,24 +552,25 @@
       "grounded": false,
       "id": 57,
       "label": "54e13e385fac4638b050f5c73095ecdb",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
+        "0": 0.21052631578947367,
         "1": 0.1,
-        "2": 0.3,
-        "3": 0.4
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "living area viewpoint, possible bathroom access",
-        "1": "living area viewpoint, unlikely office location",
-        "2": "living area viewpoint, possible kitchen connection",
-        "3": "living area viewpoint, moderate bedroom proximity"
+        "0": "Living room viewpoint, unlikely to contain bathroom towels",
+        "1": "Living room viewpoint, unlikely to contain office laptop",
+        "2": "Living room viewpoint, unlikely to contain kitchen apple",
+        "3": "Living room viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -578,24 +579,25 @@
       "grounded": false,
       "id": 58,
       "label": "159bf39081724055a73e686a6577096b",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
-        "1": 0.3,
-        "2": 0.3,
-        "3": 0.4
+        "0": 0.21052631578947367,
+        "1": 0.1,
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.09374999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "hallway viewpoint near staircase, possible bathroom access",
-        "1": "hallway viewpoint, possible office nearby",
-        "2": "hallway viewpoint, possible kitchen connection",
-        "3": "hallway viewpoint, moderate bedroom proximity"
+        "0": "Staircase/hallway viewpoint, possible bathroom access",
+        "1": "Staircase/hallway viewpoint, unlikely to contain office laptop",
+        "2": "Staircase/hallway viewpoint, possible kitchen access",
+        "3": "Staircase/hallway viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -604,6 +606,7 @@
       "grounded": true,
       "id": 62,
       "label": "f6cbc0517fc14f129f5456e59dc66c76",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "raw_target_probs": {
         "0": 0.0,
@@ -625,24 +628,25 @@
       "grounded": false,
       "id": 67,
       "label": "8f183f5d34d544e5a4d04bc8f28f10e8",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
+        "0": 0.21052631578947367,
         "1": 0.1,
-        "2": 0.3,
-        "3": 0.4
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "recreation room viewpoint with bar, possible bathroom access",
-        "1": "recreation room viewpoint, unlikely office location",
-        "2": "recreation room viewpoint, possible kitchen nearby",
-        "3": "recreation room viewpoint, moderate bedroom proximity"
+        "0": "Recreation room viewpoint marker, unlikely to contain bathroom towels",
+        "1": "Recreation room viewpoint, unlikely to contain office laptop",
+        "2": "Recreation room viewpoint, unlikely to contain kitchen apple",
+        "3": "Recreation room viewpoint marker, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -651,6 +655,7 @@
       "grounded": true,
       "id": 68,
       "label": "67dd134230034fc18ab8c30abd9af183",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 1,
       "raw_target_probs": {
         "0": 0.0,
@@ -672,24 +677,25 @@
       "grounded": false,
       "id": 69,
       "label": "a6c8016b0fa94ebaa51c2808c6fec8ba",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
-        "1": 0.3,
-        "2": 0.4,
-        "3": 0.4
+        "0": 0.21052631578947367,
+        "1": 0.1,
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.09374999999999997,
-        "2": 0.06896551724137932,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "hallway viewpoint near living area, possible bathroom access",
-        "1": "hallway viewpoint, possible office nearby",
-        "2": "hallway viewpoint, possible kitchen connection",
-        "3": "hallway viewpoint, moderate bedroom proximity"
+        "0": "Hallway viewpoint, possible bathroom access",
+        "1": "Hallway viewpoint, unlikely to contain office laptop",
+        "2": "Hallway viewpoint, possible kitchen access",
+        "3": "Hallway viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -698,24 +704,25 @@
       "grounded": false,
       "id": 72,
       "label": "c3c0a1a738a749a7a986d64c872b7671",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
+        "0": 0.21052631578947367,
         "1": 0.1,
-        "2": 0.3,
-        "3": 0.4
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "living room viewpoint with piano, possible bathroom access",
-        "1": "living room viewpoint, unlikely office location",
-        "2": "living room viewpoint, possible kitchen connection",
-        "3": "living room viewpoint, moderate bedroom proximity"
+        "0": "Living room viewpoint, unlikely to contain bathroom towels",
+        "1": "Living room viewpoint, unlikely to contain office laptop",
+        "2": "Living room viewpoint, possible kitchen visibility",
+        "3": "Living room viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -724,24 +731,25 @@
       "grounded": false,
       "id": 74,
       "label": "d0df0bc30e9a4f13a6fdbebb9cdd1964",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
+        "0": 0.21052631578947367,
         "1": 0.1,
-        "2": 0.6,
-        "3": 0.4
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.10344827586206898,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "living room viewpoint near kitchen, possible bathroom access",
-        "1": "living room viewpoint, unlikely office location",
-        "2": "living room viewpoint near kitchen, higher kitchen target probability",
-        "3": "living room viewpoint, moderate bedroom proximity"
+        "0": "Living/dining area viewpoint, unlikely to contain bathroom towels",
+        "1": "Living/dining area viewpoint, unlikely to contain office laptop",
+        "2": "Living/dining area viewpoint, possible kitchen visibility",
+        "3": "Living/dining area viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -750,24 +758,25 @@
       "grounded": false,
       "id": 75,
       "label": "4f07d9e99e084876b0765220888d2545",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.7,
-        "1": 0.3,
-        "2": 0.3,
-        "3": 0.7
+        "0": 0.21052631578947367,
+        "1": 0.05,
+        "2": 0.20277777777777775,
+        "3": 0.8
       },
       "target_probs": {
-        "0": 0.10144927536231887,
-        "1": 0.09374999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.0760869565217391
+        "0": 0.04479283314669655,
+        "1": 0.028571428571428564,
+        "2": 0.039374325782092774,
+        "3": 0.09302325581395351
       },
       "target_score_basis": {
-        "0": "hallway viewpoint connecting bedroom and bathroom areas",
-        "1": "hallway viewpoint, possible office nearby",
-        "2": "hallway viewpoint, possible kitchen connection",
-        "3": "hallway viewpoint near bedroom, high bedroom target probability"
+        "0": "Bedroom viewpoint marker in bedroom area, possible bathroom adjacency",
+        "1": "Bedroom viewpoint, unlikely to contain office laptop",
+        "2": "Bedroom viewpoint, unlikely to contain kitchen apple",
+        "3": "Bedroom viewpoint marker in bedroom area, high likelihood for helmet"
       },
       "type": "viewpoint"
     },
@@ -776,24 +785,25 @@
       "grounded": false,
       "id": 76,
       "label": "6a3fba49106e4a9fb40cd0bf47dd4d46",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
+        "0": 0.21052631578947367,
         "1": 0.1,
-        "2": 0.3,
-        "3": 0.4
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "staircase landing viewpoint, possible bathroom access",
-        "1": "staircase landing viewpoint, unlikely office location",
-        "2": "staircase landing viewpoint, possible kitchen connection",
-        "3": "staircase landing viewpoint, moderate bedroom proximity"
+        "0": "Staircase/hallway viewpoint, possible bathroom access",
+        "1": "Staircase/hallway viewpoint, unlikely to contain office laptop",
+        "2": "Staircase/hallway viewpoint, possible kitchen access",
+        "3": "Staircase/hallway viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -802,24 +812,25 @@
       "grounded": false,
       "id": 80,
       "label": "20f6b7fcb5254024aacdd907da2eb315",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
+        "0": 0.21052631578947367,
         "1": 0.1,
-        "2": 0.6,
-        "3": 0.4
+        "2": 0.7,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.031249999999999997,
-        "2": 0.10344827586206898,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.13592233009708737,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "dining area viewpoint near kitchen, possible bathroom access",
-        "1": "dining area viewpoint, unlikely office location",
-        "2": "dining area viewpoint near kitchen, higher kitchen target probability",
-        "3": "dining area viewpoint, moderate bedroom proximity"
+        "0": "Dining/kitchen area viewpoint, possible bathroom access",
+        "1": "Dining/kitchen area viewpoint, unlikely to contain office laptop",
+        "2": "Dining/kitchen area viewpoint marker near kitchen, high likelihood for apple",
+        "3": "Dining/kitchen area viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
@@ -828,212 +839,241 @@
       "grounded": false,
       "id": 82,
       "label": "73f8049b6198422aa5f2edfc71fe423b",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.3,
-        "1": 0.3,
-        "2": 0.3,
-        "3": 0.4
+        "0": 0.21052631578947367,
+        "1": 0.1,
+        "2": 0.20277777777777775,
+        "3": 0.37333333333333335
       },
       "target_probs": {
-        "0": 0.04347826086956524,
-        "1": 0.09374999999999997,
-        "2": 0.05172413793103449,
-        "3": 0.043478260869565195
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_score_basis": {
-        "0": "hallway viewpoint connecting areas, possible bathroom access",
-        "1": "hallway viewpoint, possible office nearby",
-        "2": "hallway viewpoint, possible kitchen connection",
-        "3": "hallway viewpoint, moderate bedroom proximity"
+        "0": "Hallway viewpoint marker, possible bathroom access for towels",
+        "1": "Hallway viewpoint, unlikely to contain office laptop",
+        "2": "Hallway viewpoint, possible kitchen access",
+        "3": "Hallway viewpoint, possible bedroom access"
       },
       "type": "viewpoint"
     },
     {
+      "assigned_viewpoint_ids": [
+        17,
+        21,
+        75
+      ],
       "exist_prob": 1.0,
       "grounded": true,
       "id": 95,
-      "label": "master bedroom area with bed and windows",
+      "label": "bedroom area with bed and nightstands",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
+        "0": 0.029861888764464366,
+        "1": 0.019047619047619042,
+        "2": 0.026249550521395184,
+        "3": 0.06201550387596901
       },
       "target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
+        "0": 0.085515766969535,
+        "1": 0.05830903790087464,
+        "2": 0.07143905661300583,
+        "3": 0.1823154056517776
       },
       "target_score_basis": {},
       "type": "region"
     },
     {
+      "assigned_viewpoint_ids": [
+        36,
+        82
+      ],
       "exist_prob": 1.0,
       "grounded": false,
       "id": 96,
-      "label": "hallway corridor connecting rooms",
+      "label": "hallway area with wooden flooring connecting rooms",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.2,
-        "1": 0.2,
-        "2": 0.2,
-        "3": 0.4
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.039374325782092774,
+        "3": 0.04341085271317831
       },
       "target_probs": {
-        "0": 0.2,
-        "1": 0.2,
-        "2": 0.2,
-        "3": 0.4
+        "0": 0.1282736504543025,
+        "1": 0.17492711370262393,
+        "2": 0.10715858491950875,
+        "3": 0.12762078395624432
       },
       "target_score_basis": {},
       "type": "region"
     },
     {
+      "assigned_viewpoint_ids": [
+        9,
+        27
+      ],
       "exist_prob": 1.0,
       "grounded": false,
       "id": 97,
-      "label": "bathroom area with sink and cabinets",
+      "label": "kitchen area with cabinets and appliances",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.8,
-        "1": 0.1,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.09686450167973129,
+        "1": 0.042857142857142844,
+        "2": 0.09735706580366775,
+        "3": 0.06821705426356592
       },
       "target_probs": {
-        "0": 0.8,
-        "1": 0.1,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.2773917691074292,
+        "1": 0.13119533527696794,
+        "2": 0.2649606106571415,
+        "3": 0.20054694621695537
       },
       "target_score_basis": {},
       "type": "region"
     },
     {
+      "assigned_viewpoint_ids": [
+        22,
+        68,
+        69,
+        72,
+        74
+      ],
       "exist_prob": 1.0,
       "grounded": true,
       "id": 98,
-      "label": "living room area with fireplace and large windows",
+      "label": "living room area with fireplace and seating",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
+        "0": 0.03583426651735724,
+        "1": 0.0457142857142857,
+        "2": 0.03149946062567422,
+        "3": 0.034728682170542646
       },
       "target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
+        "0": 0.102618920363442,
+        "1": 0.13994169096209913,
+        "2": 0.08572686793560699,
+        "3": 0.10209662716499546
       },
       "target_score_basis": {},
       "type": "region"
     },
     {
+      "assigned_viewpoint_ids": [
+        11,
+        80
+      ],
       "exist_prob": 1.0,
       "grounded": false,
       "id": 99,
       "label": "dining area with table and chairs near kitchen",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.7,
-        "3": 0.1
+        "0": 0.04479283314669655,
+        "1": 0.05714285714285713,
+        "2": 0.08764832793959007,
+        "3": 0.04341085271317831
       },
       "target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.7,
-        "3": 0.1
+        "0": 0.1282736504543025,
+        "1": 0.17492711370262393,
+        "2": 0.23853794588246807,
+        "3": 0.12762078395624432
       },
       "target_score_basis": {},
       "type": "region"
     },
     {
+      "assigned_viewpoint_ids": [
+        2,
+        8,
+        19
+      ],
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 100,
-      "label": "kitchen area with counters and appliances",
+      "label": "outdoor patio area with covered seating",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.2,
-        "1": 0.1,
-        "2": 0.6,
-        "3": 0.1
+        "0": 0.029861888764464366,
+        "1": 0.019047619047619042,
+        "2": 0.026249550521395184,
+        "3": 0.023255813953488375
       },
       "target_probs": {
-        "0": 0.2,
-        "1": 0.1,
-        "2": 0.6,
-        "3": 0.1
+        "0": 0.085515766969535,
+        "1": 0.05830903790087464,
+        "2": 0.07143905661300583,
+        "3": 0.06836827711941658
       },
       "target_score_basis": {},
       "type": "region"
     },
     {
+      "assigned_viewpoint_ids": [
+        12,
+        50,
+        58,
+        76
+      ],
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 101,
-      "label": "outdoor patio area with seating and columns",
+      "label": "staircase area with railing and steps",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
+        "0": 0.03359462486002241,
+        "1": 0.042857142857142844,
+        "2": 0.029530744336569582,
+        "3": 0.032558139534883734
       },
       "target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
+        "0": 0.09620523784072688,
+        "1": 0.13119533527696794,
+        "2": 0.08036893868963156,
+        "3": 0.09571558796718324
       },
       "target_score_basis": {},
       "type": "region"
     },
     {
+      "assigned_viewpoint_ids": [
+        28,
+        57,
+        62,
+        67
+      ],
       "exist_prob": 1.0,
       "grounded": true,
       "id": 102,
-      "label": "staircase landing area with railings",
-      "node_visit_times": 0,
-      "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
-      },
-      "target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
-      },
-      "target_score_basis": {},
-      "type": "region"
-    },
-    {
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 103,
       "label": "recreation room area with pool table and bar",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
+        "0": 0.03359462486002241,
+        "1": 0.042857142857142844,
+        "2": 0.029530744336569582,
+        "3": 0.032558139534883734
       },
       "target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.1,
-        "3": 0.7
+        "0": 0.09620523784072688,
+        "1": 0.13119533527696794,
+        "2": 0.08036893868963156,
+        "3": 0.09571558796718324
       },
       "target_score_basis": {},
       "type": "region"
