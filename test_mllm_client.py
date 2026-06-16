@@ -1,0 +1,341 @@
+import copy
+
+import pytest
+
+from semantic_persistence.mllm_client import GraphValidationError, MLLMClient
+
+
+TARGETS = [
+    {"target_id": "2", "description": "small blue chair beside the bed"},
+    {"target_id": "3", "description": "white fist-print skateboard above the bed"},
+]
+
+
+def _client():
+    return MLLMClient(read_saved_raw_outputs=True)
+
+
+def _agent_observations():
+    return [
+        {
+            "agent_id": "agent0",
+            "current_viewpoint_index": 38,
+            "current_xy": [0.0, 0.0],
+            "visible_viewpoints": [
+                {
+                    "viewpoint_index": 11,
+                    "distance": 2.042,
+                    "xy": [1.0, 0.0],
+                }
+            ],
+        },
+        {
+            "agent_id": "agent1",
+            "current_viewpoint_index": 37,
+            "current_xy": [2.0, 0.0],
+            "visible_viewpoints": [],
+        },
+    ]
+
+
+def _graph_summary():
+    return {
+        "nodes": [
+            {
+                "id": 37,
+                "type": "viewpoint",
+                "grounded": False,
+                "node_visit_times": 0,
+                "raw_target_probs": {"2": 0.05, "3": 0.05},
+            },
+            {
+                "id": 38,
+                "type": "viewpoint",
+                "grounded": False,
+                "node_visit_times": 0,
+                "raw_target_probs": {"2": 0.1, "3": 0.1},
+            },
+            {
+                "id": 52,
+                "type": "region",
+                "label": "staircase area with concrete wall",
+                "assigned_viewpoint_ids": [38],
+                "raw_target_probs": {"2": 0.1, "3": 0.1},
+            },
+            {
+                "id": 55,
+                "type": "region",
+                "label": "outdoor dining area with red chairs",
+                "assigned_viewpoint_ids": [37],
+                "raw_target_probs": {"2": 0.05, "3": 0.05},
+            },
+            {
+                "id": 56,
+                "type": "region",
+                "label": "indoor hallway area near staircase",
+                "assigned_viewpoint_ids": [],
+                "raw_target_probs": {"2": 0.2, "3": 0.2},
+            },
+        ],
+        "edges": [],
+        "viewpoint_to_region": {"37": 55, "38": 52},
+    }
+
+
+def _valid_payload():
+    return {
+        "current_viewpoints_reassignment": [],
+        "visible_region_nodes": [],
+        "invisible_region_nodes": [],
+        "viewpoint_target_scores": [
+            {
+                "id": 11,
+                "target_scores": {
+                    "2": {
+                        "raw_score": 0.7,
+                        "evidence_strength": "medium",
+                        "basis": "marker is near the staircase leading to upstairs rooms",
+                    },
+                    "3": {
+                        "raw_score": 0.7,
+                        "evidence_strength": "medium",
+                        "basis": "marker is near the staircase leading to upstairs rooms",
+                    },
+                },
+            }
+        ],
+        "region_target_scores": [],
+        "viewpoint_node_assigns": [
+            {
+                "region_node_id": 52,
+                "assigned_viewpoint_node_indices": [11],
+            }
+        ],
+        "new_edges": [],
+        "edge_distance_variances": {
+            "viewpoint_viewpoint": 1.0,
+            "viewpoint_region": 4.0,
+        },
+    }
+
+
+def _validate(payload):
+    return _client()._validate_payload(
+        payload=copy.deepcopy(payload),
+        agent_observations=_agent_observations(),
+        targets=TARGETS,
+        graph_summary=_graph_summary(),
+        semantic_payload_contract="graph_mllm",
+    )
+
+
+def test_current_viewpoints_with_prior_regions_are_not_required_assignments():
+    contract_sets = MLLMClient._graph_mllm_contract_sets(
+        agent_observations=_agent_observations(),
+        graph_summary=_graph_summary(),
+    )
+
+    assert contract_sets["assignment_required_viewpoint_ids"] == {11}
+
+    validated = _validate(_valid_payload())
+
+    assert validated["current_viewpoints_reassignment"] == []
+    assert validated["viewpoint_node_assigns"] == [
+        {
+            "region_node_id": 52,
+            "assigned_viewpoint_node_indices": [11],
+        }
+    ]
+
+
+def test_region_target_scores_rejects_final_assigned_region():
+    payload = _valid_payload()
+    payload["region_target_scores"] = [
+        {"id": 52, "target_scores": {"2": 0.2, "3": 0.2}}
+    ]
+
+    with pytest.raises(GraphValidationError) as exc_info:
+        _validate(payload)
+
+    message = str(exc_info.value)
+    assert exc_info.value.category == "region target scores"
+    assert "Invalid region_target_scores contract" in message
+    assert "remove region_target_scores for regions with final assigned viewpoints [52]" in message
+
+
+def test_region_target_scores_required_when_prior_assigned_region_becomes_unassigned():
+    payload = _valid_payload()
+    payload["current_viewpoints_reassignment"] = [
+        {"viewpoint_id": 38, "new_assigned_region_id": 56}
+    ]
+    payload["viewpoint_node_assigns"] = [
+        {
+            "region_node_id": 56,
+            "assigned_viewpoint_node_indices": [11],
+        }
+    ]
+
+    with pytest.raises(GraphValidationError) as exc_info:
+        _validate(payload)
+
+    message = str(exc_info.value)
+    assert exc_info.value.category == "region target scores"
+    assert "Invalid region_target_scores contract" in message
+    assert (
+        "add complete region_target_scores for prior assigned regions that became "
+        "unassigned {52: ['2', '3']}"
+    ) in message
+
+
+def test_top_level_schema_feedback_includes_required_keys():
+    payload = _valid_payload()
+    del payload["new_edges"]
+
+    with pytest.raises(GraphValidationError) as exc_info:
+        _validate(payload)
+
+    error = exc_info.value
+    assert error.category == "top-level schema"
+    assert "new_edges" in error.details["required_top_level_keys"]
+    assert "Return exactly the required graph JSON top-level keys." in error.retry_guidance
+
+
+def test_region_node_feedback_reports_region_namespace():
+    payload = _valid_payload()
+    payload["visible_region_nodes"] = [
+        {
+            "id": 52,
+            "label": "nearby hallway area",
+            "exist_prob": 1.0,
+            "target_probs": {"2": 0.2, "3": 0.2},
+        }
+    ]
+
+    with pytest.raises(GraphValidationError) as exc_info:
+        _validate(payload)
+
+    error = exc_info.value
+    assert error.category == "region nodes"
+    assert 52 in error.details["graph_region_ids"]
+    assert "New region node ids must be unique" in error.retry_guidance[0]
+
+
+def test_viewpoint_target_score_feedback_reports_detection_fixed_ids():
+    payload = _valid_payload()
+    payload["viewpoint_target_scores"][0]["id"] = 38
+
+    with pytest.raises(GraphValidationError) as exc_info:
+        _validate(payload)
+
+    error = exc_info.value
+    assert error.category == "viewpoint target scores"
+    assert 38 in error.details["detection_fixed_viewpoint_ids"]
+    assert 11 in error.details["required_mllm_viewpoint_target_ids"]
+
+
+def test_zero_sum_viewpoint_target_feedback_includes_scores_and_basis():
+    payload = _valid_payload()
+    payload["viewpoint_target_scores"][0]["target_scores"]["2"]["raw_score"] = 0.0
+    payload["viewpoint_target_scores"][0]["target_scores"]["2"][
+        "evidence_strength"
+    ] = "high"
+    payload["viewpoint_target_scores"][0]["target_scores"]["2"][
+        "basis"
+    ] = "no bed is visible from this marker"
+
+    with pytest.raises(GraphValidationError) as exc_info:
+        _validate(payload)
+
+    error = exc_info.value
+    assert error.category == "viewpoint target scores"
+    assert error.details["zero_sum_target_id"] == "2"
+    assert error.details["zero_sum_target_description"] == (
+        "small blue chair beside the bed"
+    )
+    assert error.details["raw_scores_by_viewpoint"]["11"]["raw_score"] == 0.0
+    assert (
+        error.details["raw_scores_by_viewpoint"]["11"]["basis"]
+        == "no bed is visible from this marker"
+    )
+    assert any("positive raw_score" in item for item in error.retry_guidance)
+
+
+def test_assignment_feedback_reports_expected_and_returned_ids():
+    payload = _valid_payload()
+    payload["viewpoint_node_assigns"] = []
+
+    with pytest.raises(GraphValidationError) as exc_info:
+        _validate(payload)
+
+    error = exc_info.value
+    assert error.category == "assignments"
+    assert error.details["expected_assignment_viewpoint_ids"] == [11]
+    assert error.details["returned_assignment_viewpoint_ids"] == []
+    assert error.details["missing_assignment_viewpoint_ids"] == [11]
+
+
+def test_edge_feedback_reports_current_step_context():
+    payload = _valid_payload()
+    payload["new_edges"] = [
+        {
+            "i": 38,
+            "j": 11,
+            "edge_type": "VV",
+            "exist_prob": 0.8,
+            "dist": 2.0,
+        }
+    ]
+
+    with pytest.raises(GraphValidationError) as exc_info:
+        _validate(payload)
+
+    error = exc_info.value
+    assert error.category == "edges"
+    assert 38 in error.details["current_viewpoint_ids"]
+    assert 11 in error.details["visible_viewpoint_ids"]
+    assert any("Drop illegal optional new_edges" in item for item in error.retry_guidance)
+
+
+def test_numeric_key_type_feedback_preserves_original_message():
+    error = _client()._graph_validation_error_from_exception(
+        exc=ValueError("some.path must contain exactly ['a'], got ['b']."),
+        payload=_valid_payload(),
+        agent_observations=_agent_observations(),
+        targets=TARGETS,
+        graph_summary=_graph_summary(),
+        semantic_payload_contract="graph_mllm",
+    )
+
+    assert error.category == "numeric/key/type"
+    assert "some.path must contain exactly" in str(error)
+    assert "Fix the exact JSON path named in the error." in error.retry_guidance
+
+
+def test_retry_feedback_groups_and_deduplicates_structured_errors():
+    error = GraphValidationError(
+        category="assignments",
+        message="Returned assigned viewpoint ids [] do not match expected ids [11].",
+        details={
+            "expected_assignment_viewpoint_ids": [11],
+            "returned_assignment_viewpoint_ids": [],
+        },
+        retry_guidance=[
+            "Make viewpoint_node_assigns contain exactly the expected assignment viewpoint ids."
+        ],
+    )
+
+    retry_message = MLLMClient._build_validation_retry_user_message(
+        user_message="BASE PROMPT",
+        validation_errors=[error, error],
+        attempt_index=1,
+        max_validation_retries=2,
+    )
+
+    assert retry_message.startswith("BASE PROMPT")
+    assert retry_message.count("Returned assigned viewpoint ids []") == 1
+    assert "[assignments]" in retry_message
+    assert "expected_assignment_viewpoint_ids" in retry_message
+    assert (
+        "Make viewpoint_node_assigns contain exactly the expected assignment viewpoint ids."
+        in retry_message
+    )

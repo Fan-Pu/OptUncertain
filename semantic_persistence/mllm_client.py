@@ -4,6 +4,7 @@ import base64
 import io
 import json
 import os
+import re
 from textwrap import dedent
 import time
 from typing import TYPE_CHECKING, Dict, List, Optional
@@ -41,6 +42,32 @@ if TYPE_CHECKING:
 
 class SigLIPRegionValidationError(RuntimeError):
     pass
+
+
+class GraphValidationError(ValueError):
+    def __init__(
+        self,
+        category: str,
+        message: str,
+        details: Optional[Dict[str, object]] = None,
+        retry_guidance: Optional[List[str]] = None,
+    ):
+        self.category = str(category)
+        self.message = str(message)
+        self.details = dict(details or {})
+        self.retry_guidance = [str(item) for item in (retry_guidance or [])]
+        super().__init__(self._format_message())
+
+    def _format_message(self) -> str:
+        parts = ["[%s] %s" % (self.category, self.message)]
+        if self.details:
+            parts.append(
+                "Details: %s"
+                % json.dumps(self.details, sort_keys=True, default=str)
+            )
+        if self.retry_guidance:
+            parts.append("Retry guidance: %s" % " ".join(self.retry_guidance))
+        return "\n".join(parts)
 
 
 class MLLMRetryExhaustedError(RuntimeError):
@@ -519,20 +546,465 @@ class MLLMClient:
         )
 
     @staticmethod
+    def _required_semantic_top_level_keys(
+        semantic_payload_contract: str,
+    ) -> List[str]:
+        common_top_level_keys = {
+            "current_viewpoints_reassignment",
+            "visible_region_nodes",
+            "invisible_region_nodes",
+            "viewpoint_node_assigns",
+            "new_edges",
+            "edge_distance_variances",
+        }
+        if semantic_payload_contract == "graph_mllm":
+            required_top_level_keys = common_top_level_keys | {
+                "region_target_scores",
+                "viewpoint_target_scores",
+            }
+        else:
+            required_top_level_keys = common_top_level_keys | {
+                "viewpoint_target_probs",
+                "viewpoint_target_score_basis",
+            }
+        return sorted(required_top_level_keys)
+
+    @staticmethod
+    def _format_graph_validation_errors_for_retry(
+        validation_errors: List[object],
+    ) -> str:
+        if not validation_errors:
+            return "No validation error details were captured."
+
+        grouped_errors = {}
+        seen_error_keys = set()
+        for error in validation_errors:
+            if isinstance(error, GraphValidationError):
+                detail_key = json.dumps(error.details, sort_keys=True, default=str)
+                error_key = (
+                    error.category,
+                    error.message,
+                    detail_key,
+                    tuple(error.retry_guidance),
+                )
+                if error_key in seen_error_keys:
+                    continue
+                seen_error_keys.add(error_key)
+                grouped_errors.setdefault(error.category, []).append(error)
+            else:
+                error_text = str(error)
+                error_key = ("unstructured", error_text)
+                if error_key in seen_error_keys:
+                    continue
+                seen_error_keys.add(error_key)
+                grouped_errors.setdefault("unstructured", []).append(error_text)
+
+        sections = []
+        for category in sorted(grouped_errors):
+            sections.append("[%s]" % category)
+            for index, error in enumerate(grouped_errors[category], start=1):
+                if isinstance(error, GraphValidationError):
+                    sections.append("%d. %s" % (index, error.message))
+                    if error.details:
+                        sections.append(
+                            "   Details: %s"
+                            % json.dumps(
+                                error.details,
+                                sort_keys=True,
+                                default=str,
+                            )
+                        )
+                    if error.retry_guidance:
+                        sections.append("   Corrective guidance:")
+                        for guidance in error.retry_guidance:
+                            sections.append("   - %s" % guidance)
+                else:
+                    sections.append("%d. %s" % (index, error))
+        return "\n".join(sections)
+
+    @staticmethod
+    def _payload_region_ids(payload: Dict[str, object]) -> List[int]:
+        region_ids = set()
+        for key in ("visible_region_nodes", "invisible_region_nodes"):
+            for region in payload.get(key, []):
+                if isinstance(region, dict) and "id" in region:
+                    region_ids.add(int(region["id"]))
+        return sorted(region_ids)
+
+    @staticmethod
+    def _graph_region_ids(graph_summary: Optional[Dict[str, object]]) -> List[int]:
+        if graph_summary is None:
+            return []
+        return sorted(
+            int(node["id"])
+            for node in graph_summary.get("nodes", [])
+            if isinstance(node, dict) and node.get("type") == "region"
+        )
+
+    @staticmethod
+    def _returned_assignment_viewpoint_ids(payload: Dict[str, object]) -> List[int]:
+        viewpoint_ids = set()
+        for item in payload.get("viewpoint_node_assigns", []):
+            if not isinstance(item, dict):
+                continue
+            for viewpoint_id in item.get("assigned_viewpoint_node_indices", []):
+                viewpoint_ids.add(int(viewpoint_id))
+        return sorted(viewpoint_ids)
+
+    @staticmethod
+    def _returned_viewpoint_target_ids(
+        payload: Dict[str, object],
+        semantic_payload_contract: str,
+    ) -> List[int]:
+        key = (
+            "viewpoint_target_scores"
+            if semantic_payload_contract == "graph_mllm"
+            else "viewpoint_target_probs"
+        )
+        return sorted(
+            int(item["id"])
+            for item in payload.get(key, [])
+            if isinstance(item, dict) and "id" in item
+        )
+
+    @staticmethod
+    def _viewpoint_target_score_details(
+        payload: Dict[str, object],
+        graph_summary: Optional[Dict[str, object]],
+        required_viewpoint_ids: List[int],
+        target_id: str,
+        semantic_payload_contract: str,
+    ) -> Dict[str, object]:
+        raw_scores_by_viewpoint = {
+            int(viewpoint_id): {"raw_score": None}
+            for viewpoint_id in required_viewpoint_ids
+        }
+        if graph_summary is not None:
+            for node in graph_summary.get("nodes", []):
+                if not isinstance(node, dict) or node.get("type") != "viewpoint":
+                    continue
+                viewpoint_id = int(node["id"])
+                if viewpoint_id not in raw_scores_by_viewpoint:
+                    continue
+                raw_target_probs = node.get("raw_target_probs", {}) or {}
+                if str(target_id) in raw_target_probs:
+                    raw_scores_by_viewpoint[viewpoint_id]["raw_score"] = float(
+                        raw_target_probs[str(target_id)]
+                    )
+                    raw_scores_by_viewpoint[viewpoint_id]["source"] = "prior"
+
+        if semantic_payload_contract == "graph_mllm":
+            for item in payload.get("viewpoint_target_scores", []):
+                if not isinstance(item, dict) or "id" not in item:
+                    continue
+                viewpoint_id = int(item["id"])
+                if viewpoint_id not in raw_scores_by_viewpoint:
+                    continue
+                target_scores = item.get("target_scores", {})
+                if not isinstance(target_scores, dict) or str(target_id) not in target_scores:
+                    continue
+                score_record = target_scores[str(target_id)]
+                if not isinstance(score_record, dict):
+                    continue
+                raw_scores_by_viewpoint[viewpoint_id] = {
+                    "raw_score": score_record.get("raw_score"),
+                    "evidence_strength": score_record.get("evidence_strength"),
+                    "basis": score_record.get("basis"),
+                    "source": "returned",
+                }
+        else:
+            basis_by_viewpoint = {}
+            for item in payload.get("viewpoint_target_score_basis", []):
+                if not isinstance(item, dict) or "id" not in item:
+                    continue
+                score_basis = item.get("score_basis", {})
+                if isinstance(score_basis, dict) and str(target_id) in score_basis:
+                    basis_by_viewpoint[int(item["id"])] = score_basis[str(target_id)]
+
+            for item in payload.get("viewpoint_target_probs", []):
+                if not isinstance(item, dict) or "id" not in item:
+                    continue
+                viewpoint_id = int(item["id"])
+                if viewpoint_id not in raw_scores_by_viewpoint:
+                    continue
+                source_key = (
+                    "raw_target_probs"
+                    if "raw_target_probs" in item
+                    else "target_probs"
+                )
+                target_probs = item.get(source_key, {})
+                if not isinstance(target_probs, dict) or str(target_id) not in target_probs:
+                    continue
+                raw_scores_by_viewpoint[viewpoint_id] = {
+                    "raw_score": target_probs[str(target_id)],
+                    "basis": basis_by_viewpoint.get(viewpoint_id),
+                    "source": "returned",
+                }
+
+        return {
+            str(viewpoint_id): raw_scores_by_viewpoint[viewpoint_id]
+            for viewpoint_id in sorted(raw_scores_by_viewpoint)
+        }
+
+    def _graph_validation_error_from_exception(
+        self,
+        exc: Exception,
+        payload: Dict[str, object],
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph_summary: Optional[Dict[str, object]],
+        semantic_payload_contract: str,
+    ) -> GraphValidationError:
+        message = str(exc)
+        target_ids = [str(target["target_id"]) for target in targets]
+        target_descriptions = {
+            str(target["target_id"]): str(target.get("description", ""))
+            for target in targets
+        }
+        contract_sets = MLLMClient._graph_mllm_contract_sets(
+            agent_observations=agent_observations,
+            graph_summary=graph_summary,
+        )
+        region_start_id = int(len(Helper.viewpoint_vp_label_by_index))
+        required_top_level_keys = MLLMClient._required_semantic_top_level_keys(
+            semantic_payload_contract
+        )
+        base_details = {
+            "error_type": exc.__class__.__name__,
+            "semantic_payload_contract": semantic_payload_contract,
+            "target_ids": target_ids,
+        }
+
+        if (
+            "top-level keys" in message
+            or message == "payload must be a dictionary."
+        ):
+            category = "top-level schema"
+            details = dict(base_details)
+            details.update(
+                {
+                    "required_top_level_keys": required_top_level_keys,
+                    "returned_top_level_keys": (
+                        sorted(payload) if isinstance(payload, dict) else None
+                    ),
+                }
+            )
+            guidance = [
+                "Return exactly the required graph JSON top-level keys.",
+                "Remove extra top-level keys and add every missing required top-level key.",
+            ]
+            return GraphValidationError(category, message, details, guidance)
+
+        viewpoint_tokens = (
+            "viewpoint_target_scores",
+            "viewpoint_target_probs",
+            "viewpoint_target_score_basis",
+            "MLLM-updatable",
+            "evidence_strength",
+            "raw_score",
+        )
+        assignment_tokens = (
+            "viewpoint_node_assigns",
+            "assigned viewpoint",
+            "assignment group",
+            "current_viewpoints_reassignment",
+            "Current viewpoint",
+            "current viewpoint",
+            "Derived current region",
+        )
+        region_score_tokens = (
+            "region_target_scores",
+            "Region target probabilities",
+            "changed from assigned to unassigned",
+        )
+        edge_tokens = (
+            "new_edges",
+            "edge_distance_variances",
+            "edge_type",
+            "VV edge",
+            "VZ edge",
+            "self-edge",
+        )
+        region_node_tokens = (
+            "visible_region_nodes",
+            "invisible_region_nodes",
+            "region id",
+            "Region ids",
+            "region ids",
+            "Graph summary contains region ids",
+            "target_probs keys",
+            "exist_prob",
+            "label",
+        )
+
+        if any(token in message for token in viewpoint_tokens):
+            category = "viewpoint target scores"
+            required_ids = sorted(contract_sets["required_mllm_viewpoint_prob_ids"])
+            details = dict(base_details)
+            details.update(
+                {
+                    "required_mllm_viewpoint_target_ids": required_ids,
+                    "returned_viewpoint_target_ids": MLLMClient._returned_viewpoint_target_ids(
+                        payload,
+                        semantic_payload_contract,
+                    ),
+                    "detection_fixed_viewpoint_ids": sorted(
+                        contract_sets["detection_fixed_viewpoint_ids"]
+                    ),
+                }
+            )
+            guidance = [
+                "Use viewpoint_target_scores only for eligible MLLM-updatable viewpoint ids.",
+                "Remove current, grounded, and previously visited detection-fixed viewpoint ids from viewpoint_target_scores.",
+                "Each returned viewpoint-target score must contain exactly raw_score, evidence_strength, and basis.",
+                "Use active target ids only, nonnegative raw_score values, and evidence_strength exactly one of low, medium, or high.",
+            ]
+            zero_sum_match = re.search(
+                r"MLLM-updatable viewpoint_target_probs for target ([^ ]+) sum to ([^ .]+)",
+                message,
+            )
+            if zero_sum_match:
+                target_id = str(zero_sum_match.group(1))
+                details.update(
+                    {
+                        "zero_sum_target_id": target_id,
+                        "zero_sum_target_description": target_descriptions.get(
+                            target_id
+                        ),
+                        "raw_scores_by_viewpoint": MLLMClient._viewpoint_target_score_details(
+                            payload=payload,
+                            graph_summary=graph_summary,
+                            required_viewpoint_ids=required_ids,
+                            target_id=target_id,
+                            semantic_payload_contract=semantic_payload_contract,
+                        ),
+                    }
+                )
+                guidance.append(
+                    "For the zero-sum target, rescore that target across all eligible viewpoints and give at least one eligible viewpoint a positive raw_score."
+                )
+                guidance.append(
+                    "Do not assign 0.0 to every candidate only because none is a perfect match; use partial cues such as level, room/area, adjacency, marker location, and graph context for relative positive mass."
+                )
+            return GraphValidationError(category, message, details, guidance)
+
+        if any(token in message for token in region_score_tokens):
+            category = "region target scores"
+            details = dict(base_details)
+            details.update(
+                {
+                    "payload_region_ids": MLLMClient._payload_region_ids(payload),
+                    "graph_region_ids": MLLMClient._graph_region_ids(graph_summary),
+                    "region_start_id": region_start_id,
+                }
+            )
+            guidance = [
+                "Remove region_target_scores for regions with final assigned viewpoints.",
+                "For prior assigned regions that became unassigned, add complete region_target_scores for every active target_id.",
+                "Use region_target_scores only for known type-(2) regions with no final assigned viewpoints.",
+                "For region zero-sum failures, assign positive raw target score mass to at least one known region for that target.",
+            ]
+            return GraphValidationError(category, message, details, guidance)
+
+        if any(token in message for token in edge_tokens):
+            category = "edges"
+            details = dict(base_details)
+            details.update(
+                {
+                    "current_step_viewpoint_ids": sorted(
+                        contract_sets["current_viewpoint_ids"]
+                        | contract_sets["visible_viewpoint_ids"]
+                    ),
+                    "current_viewpoint_ids": sorted(
+                        contract_sets["current_viewpoint_ids"]
+                    ),
+                    "visible_viewpoint_ids": sorted(
+                        contract_sets["visible_viewpoint_ids"]
+                    ),
+                    "payload_region_ids": MLLMClient._payload_region_ids(payload),
+                    "graph_region_ids": MLLMClient._graph_region_ids(graph_summary),
+                    "region_start_id": region_start_id,
+                }
+            )
+            guidance = [
+                "Drop illegal optional new_edges unless a legal replacement is directly supported.",
+                "VV edges must connect two non-current ungrounded and unvisited current-step viewpoint nodes.",
+                "VZ edges must connect exactly one current-step viewpoint id and one region id, and must not connect a viewpoint to its assigned region.",
+                "Do not connect VZ edges to regions that already have assigned viewpoints.",
+            ]
+            return GraphValidationError(category, message, details, guidance)
+
+        if any(token in message for token in assignment_tokens):
+            category = "assignments"
+            expected_ids = sorted(contract_sets["assignment_required_viewpoint_ids"])
+            returned_ids = MLLMClient._returned_assignment_viewpoint_ids(payload)
+            details = dict(base_details)
+            details.update(
+                {
+                    "expected_assignment_viewpoint_ids": expected_ids,
+                    "returned_assignment_viewpoint_ids": returned_ids,
+                    "missing_assignment_viewpoint_ids": sorted(
+                        set(expected_ids) - set(returned_ids)
+                    ),
+                    "extra_assignment_viewpoint_ids": sorted(
+                        set(returned_ids) - set(expected_ids)
+                    ),
+                    "current_viewpoint_ids": sorted(
+                        contract_sets["current_viewpoint_ids"]
+                    ),
+                    "visible_viewpoint_ids": sorted(
+                        contract_sets["visible_viewpoint_ids"]
+                    ),
+                }
+            )
+            guidance = [
+                "Make viewpoint_node_assigns contain exactly the expected assignment viewpoint ids.",
+                "Remove ids outside the expected assignment list and add missing expected ids.",
+                "Use current_viewpoints_reassignment only for true current-viewpoint region changes from graph_summary.",
+                "If a current viewpoint appears in both assignment fields, both fields must name the same final region.",
+            ]
+            return GraphValidationError(category, message, details, guidance)
+
+        if any(token in message for token in region_node_tokens):
+            category = "region nodes"
+            details = dict(base_details)
+            details.update(
+                {
+                    "payload_region_ids": MLLMClient._payload_region_ids(payload),
+                    "graph_region_ids": MLLMClient._graph_region_ids(graph_summary),
+                    "region_start_id": region_start_id,
+                }
+            )
+            guidance = [
+                "New region node ids must be unique and greater than or equal to region_start_id.",
+                "Do not re-emit existing graph_summary regions in visible_region_nodes or invisible_region_nodes.",
+                "Each region node must contain exactly id, label, exist_prob, and target_probs.",
+                "Region target_probs must contain every active target_id with values in [0, 1].",
+                "Region labels must be nonempty area labels and must not mention agent ids.",
+            ]
+            return GraphValidationError(category, message, details, guidance)
+
+        category = "numeric/key/type"
+        details = dict(base_details)
+        details.update({"required_top_level_keys": required_top_level_keys})
+        guidance = [
+            "Fix the exact JSON path named in the error.",
+            "Use the exact required key set for that object.",
+            "Use numeric values in the required range for probabilities, distances, variances, and raw scores.",
+        ]
+        return GraphValidationError(category, message, details, guidance)
+
+    @staticmethod
     def _build_validation_retry_user_message(
         user_message: str,
-        validation_errors: List[str],
+        validation_errors: List[object],
         attempt_index: int,
         max_validation_retries: int,
     ) -> str:
         """Append accumulated validation feedback to the original user message."""
-        if not validation_errors:
-            error_list = "No validation error details were captured."
-        else:
-            error_list = "\n".join(
-                "%d. %s" % (index + 1, error)
-                for index, error in enumerate(validation_errors)
-            )
+        error_list = MLLMClient._format_graph_validation_errors_for_retry(
+            validation_errors
+        )
 
         feedback = dedent("""
             Validation feedback for retry {attempt_index} of {max_validation_retries}:
@@ -546,10 +1018,13 @@ class MLLMClient:
             Keep the same schema and all original rules.
             Fix all listed validation errors at the same time.
 
-            If an error mentions a new MLLM-updatable viewpoint is missing target scores, add exactly those target_scores to viewpoint_target_scores.
-            If an error mentions invalid evidence_strength, use exactly one of: low, medium, high.
-            If an error mentions expected assigned viewpoint ids, use exactly that expected id list for viewpoint_node_assigns.
-            Do not include viewpoint ids outside the expected assigned viewpoint id list.
+            Category-specific correction rules:
+            - Top-level schema: return exactly the required graph schema keys.
+            - Region nodes: fix ids, labels, existence probabilities, and complete active target_probs.
+            - Viewpoint target scores: use only eligible MLLM-updatable ids, valid target ids, nonnegative raw_score, evidence_strength in low/medium/high, and nonempty basis.
+            - Assignments: use exactly the expected assigned viewpoint id list for viewpoint_node_assigns.
+            - Region target scores: remove scores for regions with final assigned viewpoints and add complete scores for every active target_id on prior assigned regions that became unassigned.
+            - Edges: drop illegal optional new_edges unless a legal replacement is directly supported by the panorama and graph context.
             """).strip()
 
         return (
@@ -943,38 +1418,50 @@ class MLLMClient:
 
         graph_viewpoint_node_ids = set()
         graph_viewpoint_status_by_id = {}
+        graph_viewpoint_to_region = {}
 
         if graph_summary is not None:
+            if isinstance(graph_summary.get("viewpoint_to_region"), dict):
+                for viewpoint_id_raw, region_id_raw in graph_summary[
+                    "viewpoint_to_region"
+                ].items():
+                    graph_viewpoint_to_region[int(viewpoint_id_raw)] = int(
+                        region_id_raw
+                    )
+
             for node in graph_summary.get("nodes", []):
-                if node.get("type") != "viewpoint":
+                if not isinstance(node, dict):
                     continue
 
-                viewpoint_id = int(node["id"])
-                graph_viewpoint_node_ids.add(viewpoint_id)
-                graph_viewpoint_status_by_id[viewpoint_id] = {
-                    "prior_grounded": bool(node.get("grounded", 0)),
-                    "prior_visit_times": int(node.get("node_visit_times", 0)),
-                }
+                node_type = node.get("type")
+                if node_type == "viewpoint":
+                    viewpoint_id = int(node["id"])
+                    graph_viewpoint_node_ids.add(viewpoint_id)
+                    graph_viewpoint_status_by_id[viewpoint_id] = {
+                        "prior_grounded": bool(node.get("grounded", 0)),
+                        "prior_visit_times": int(node.get("node_visit_times", 0)),
+                    }
+                elif node_type == "region":
+                    region_id = int(node["id"])
+                    for viewpoint_id_raw in (
+                        node.get("assigned_viewpoint_ids", []) or []
+                    ):
+                        graph_viewpoint_to_region.setdefault(
+                            int(viewpoint_id_raw), region_id
+                        )
 
-        first_reached_current_viewpoint_ids = set()
-        for viewpoint_id in current_viewpoint_ids:
-            status = graph_viewpoint_status_by_id.get(viewpoint_id, {})
-            prior_grounded = bool(status.get("prior_grounded", False))
-            prior_visit_times = int(status.get("prior_visit_times", 0))
-
-            if (
-                viewpoint_id not in graph_viewpoint_node_ids
-                or not prior_grounded
-                or prior_visit_times <= 0
-            ):
-                first_reached_current_viewpoint_ids.add(viewpoint_id)
+        current_viewpoint_ids_without_prior_region = {
+            viewpoint_id
+            for viewpoint_id in current_viewpoint_ids
+            if viewpoint_id not in graph_viewpoint_to_region
+        }
 
         new_visible_neighbor_assignment_viewpoint_ids = (
             visible_viewpoint_ids - current_viewpoint_ids - graph_viewpoint_node_ids
         )
         assignment_required_viewpoint_ids = (
             new_visible_neighbor_assignment_viewpoint_ids
-            | first_reached_current_viewpoint_ids
+            | current_viewpoint_ids_without_prior_region
         )
 
         detection_fixed_viewpoint_ids = set(current_viewpoint_ids)
@@ -1264,9 +1751,14 @@ class MLLMClient:
             if not isinstance(node, dict):
                 continue
             if node.get("type") == "region":
-                graph_region_label_by_id_for_prompt[int(node["id"])] = str(
+                region_id = int(node["id"])
+                graph_region_label_by_id_for_prompt[region_id] = str(
                     node.get("label", "")
                 ).strip()
+                for viewpoint_id_raw in node.get("assigned_viewpoint_ids", []) or []:
+                    graph_viewpoint_to_region_for_prompt.setdefault(
+                        int(viewpoint_id_raw), region_id
+                    )
 
         region_start_id = int(len(Helper.viewpoint_vp_label_by_index))
 
@@ -1388,28 +1880,15 @@ class MLLMClient:
             - graph_viewpoint_node_ids_for_prompt
         )
 
-        first_reached_current_viewpoint_ids_for_prompt = sorted(
+        current_viewpoint_ids_without_prior_region_for_prompt = sorted(
             viewpoint_id
             for viewpoint_id in current_viewpoint_ids_for_prompt
-            if (
-                viewpoint_id not in graph_viewpoint_node_ids_for_prompt
-                or not bool(
-                    graph_viewpoint_status_by_id_for_prompt.get(viewpoint_id, {}).get(
-                        "prior_grounded", False
-                    )
-                )
-                or int(
-                    graph_viewpoint_status_by_id_for_prompt.get(viewpoint_id, {}).get(
-                        "prior_visit_times", 0
-                    )
-                )
-                <= 0
-            )
+            if viewpoint_id not in graph_viewpoint_to_region_for_prompt
         )
 
         assignment_required_viewpoint_ids_for_prompt = sorted(
             set(new_visible_neighbor_assignment_viewpoint_ids_for_prompt)
-            | set(first_reached_current_viewpoint_ids_for_prompt)
+            | set(current_viewpoint_ids_without_prior_region_for_prompt)
         )
 
         assignment_not_required_current_step_viewpoint_ids_for_prompt = sorted(
@@ -1703,7 +2182,7 @@ class MLLMClient:
 
                 These ids include:
                 - visible neighboring viewpoints that appear in the current observation but do not already exist as viewpoint nodes in graph_summary;
-                - current agent viewpoints that are physically reached for the first time.
+                - current agent viewpoints with no prior graph_summary.viewpoint_to_region assignment.
 
                 Current-step viewpoint ids not requiring region assignment in this step:
                 {assignment_not_required_current_step_viewpoint_ids_json}
@@ -1852,7 +2331,6 @@ class MLLMClient:
                 "Agent %s current viewpoint: %s"
                 % (observation["agent_id"], observation["current_viewpoint_index"])
             )
-        debugpy.breakpoint()
         image_content = []
         for image_index, observation in enumerate(agent_observations):
             image_content.append(
@@ -1907,8 +2385,8 @@ class MLLMClient:
                     )
             print()
 
-        # if step_index >= 2:
-        #     debugpy.breakpoint()
+        if step_index >= 25:
+            debugpy.breakpoint()
 
         # debugpy.breakpoint()
 
@@ -1943,7 +2421,7 @@ class MLLMClient:
         )
 
         max_validation_retries = getattr(self, "max_validation_retries", 0)
-        validation_errors: List[str] = []
+        validation_errors: List[object] = []
 
         # read local raw output if enabled, otherwise request MLLM completion directly
         if getattr(self, "read_saved_raw_outputs", False):
@@ -2095,7 +2573,7 @@ class MLLMClient:
 
             except Exception as exc:
                 last_error = exc
-                validation_errors.append(str(exc))
+                validation_errors.append(exc)
                 self._write_semantic_attempt_error_raw_output(
                     step_index=step_index,
                     attempt_index=attempt_index,
@@ -2403,22 +2881,15 @@ class MLLMClient:
                             int(viewpoint_id_raw), node_id
                         )
 
-        first_reached_current_viewpoint_ids = set()
-        for viewpoint_id in current_viewpoint_ids:
-            status = graph_viewpoint_status_by_id.get(viewpoint_id, {})
-            prior_grounded = bool(status.get("prior_grounded", False))
-            prior_visit_times = int(status.get("prior_visit_times", 0))
-
-            if (
-                viewpoint_id not in graph_viewpoint_node_ids
-                or not prior_grounded
-                or prior_visit_times <= 0
-            ):
-                first_reached_current_viewpoint_ids.add(viewpoint_id)
+        current_viewpoint_ids_without_prior_region = {
+            viewpoint_id
+            for viewpoint_id in current_viewpoint_ids
+            if viewpoint_id not in graph_viewpoint_to_region
+        }
 
         assignment_required_viewpoint_ids = (
             visible_viewpoint_ids - current_viewpoint_ids - graph_viewpoint_node_ids
-        ) | first_reached_current_viewpoint_ids
+        ) | current_viewpoint_ids_without_prior_region
 
         visible_region_nodes = payload["visible_region_nodes"]
         invisible_region_nodes = payload["invisible_region_nodes"]
@@ -2737,6 +3208,38 @@ class MLLMClient:
         scorer=None,
         semantic_payload_contract: str = "graph_mllm",
     ) -> Dict[str, object]:
+        try:
+            return self._validate_payload_impl(
+                payload=payload,
+                agent_observations=agent_observations,
+                targets=targets,
+                graph_summary=graph_summary,
+                scorer=scorer,
+                semantic_payload_contract=semantic_payload_contract,
+            )
+        except SigLIPRegionValidationError:
+            raise
+        except GraphValidationError:
+            raise
+        except (KeyError, TypeError, ValueError) as exc:
+            raise self._graph_validation_error_from_exception(
+                exc=exc,
+                payload=payload,
+                agent_observations=agent_observations,
+                targets=targets,
+                graph_summary=graph_summary,
+                semantic_payload_contract=semantic_payload_contract,
+            ) from exc
+
+    def _validate_payload_impl(
+        self,
+        payload: Dict[str, object],
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph_summary: Optional[Dict[str, object]] = None,
+        scorer=None,
+        semantic_payload_contract: str = "graph_mllm",
+    ) -> Dict[str, object]:
         if semantic_payload_contract not in {"graph_mllm", "saved_materialized"}:
             raise ValueError(
                 "Unknown semantic payload contract: %s" % semantic_payload_contract
@@ -2938,22 +3441,15 @@ class MLLMClient:
             visible_viewpoint_ids - current_viewpoint_ids - graph_viewpoint_node_ids
         )
 
-        first_reached_current_viewpoint_ids = set()
-        for viewpoint_id in current_viewpoint_ids:
-            status = graph_viewpoint_status_by_id.get(viewpoint_id, {})
-            prior_grounded = bool(status.get("prior_grounded", False))
-            prior_visit_times = int(status.get("prior_visit_times", 0))
-
-            if (
-                viewpoint_id not in graph_viewpoint_node_ids
-                or not prior_grounded
-                or prior_visit_times <= 0
-            ):
-                first_reached_current_viewpoint_ids.add(viewpoint_id)
+        current_viewpoint_ids_without_prior_region = {
+            viewpoint_id
+            for viewpoint_id in current_viewpoint_ids
+            if viewpoint_id not in graph_viewpoint_to_region
+        }
 
         assignment_required_viewpoint_ids = (
             new_visible_neighbor_assignment_viewpoint_ids
-            | first_reached_current_viewpoint_ids
+            | current_viewpoint_ids_without_prior_region
         )
 
         expected_assignment_viewpoint_ids = assignment_required_viewpoint_ids
@@ -3852,10 +4348,41 @@ class MLLMClient:
             for region_id in returned_region_score_ids
             if region_id not in type2_region_ids
         )
-        if invalid_region_score_ids:
+
+        missing_region_score_targets_by_id = {}
+        for region_id in sorted(all_region_ids):
+            assigned_viewpoint_ids = region_to_all_assigned_viewpoints.get(
+                region_id,
+                set(),
+            )
+            if assigned_viewpoint_ids:
+                continue
+
+            if region_id in prior_type1_region_ids:
+                missing_target_ids = [
+                    target_id
+                    for target_id in ordered_target_ids
+                    if target_id
+                    not in explicit_region_target_scores_by_id.get(region_id, {})
+                ]
+                if missing_target_ids:
+                    missing_region_score_targets_by_id[region_id] = missing_target_ids
+
+        if invalid_region_score_ids or missing_region_score_targets_by_id:
+            error_parts = []
+            if invalid_region_score_ids:
+                error_parts.append(
+                    "remove region_target_scores for regions with final assigned "
+                    "viewpoints %s" % invalid_region_score_ids
+                )
+            if missing_region_score_targets_by_id:
+                error_parts.append(
+                    "add complete region_target_scores for prior assigned regions "
+                    "that became unassigned %s" % missing_region_score_targets_by_id
+                )
             raise ValueError(
-                "region_target_scores ids %s refer to regions with assigned "
-                "viewpoints." % invalid_region_score_ids
+                "Invalid region_target_scores contract: %s."
+                % "; ".join(error_parts)
             )
 
         for region_id in sorted(all_region_ids):
@@ -3877,20 +4404,6 @@ class MLLMClient:
                         for viewpoint_id in assigned_viewpoint_ids
                     ) / float(len(assigned_viewpoint_ids))
                 continue
-
-            if region_id in prior_type1_region_ids:
-                missing_target_ids = [
-                    target_id
-                    for target_id in ordered_target_ids
-                    if target_id
-                    not in explicit_region_target_scores_by_id.get(region_id, {})
-                ]
-                if missing_target_ids:
-                    raise ValueError(
-                        "Region %s changed from assigned to unassigned and requires "
-                        "fresh region_target_scores for targets %s."
-                        % (region_id, missing_target_ids)
-                    )
 
         if all_region_ids:
             for target_id in ordered_target_ids:
