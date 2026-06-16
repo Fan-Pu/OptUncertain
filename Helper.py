@@ -16,6 +16,8 @@ HEIGHT = 600
 VFOV = math.radians(60)
 HFOV = VFOV * WIDTH / HEIGHT
 TEXT_COLOR = [230, 40, 40]
+VIEWPOINT_MARKER_FONT_SCALE = 2.0
+VIEWPOINT_MARKER_THICKNESS = 3
 MP_ROOT = "/root/mount/Matterport3DSimulator"
 HORIZON_LEN = 48 * 4
 DELTA_HEADING_DEG = 360 / HORIZON_LEN
@@ -37,7 +39,6 @@ def init_render(batch_size=1, enable_render=False):
     sim = MatterSim.Simulator()
     sim.setCameraResolution(WIDTH, HEIGHT)
     sim.setCameraVFOV(VFOV)
-    sim.setDepthEnabled(True)
     sim.setDiscretizedViewingAngles(False)
     sim.setDatasetPath(os.path.join(MP_ROOT, "data/v1/scans"))
     sim.setNavGraphPath(os.path.join(MP_ROOT, "connectivity"))
@@ -66,6 +67,83 @@ def build_viewpoint_index(scan_id):
 
 def simulator_frame_to_rgb(frame):
     return cv2.cvtColor(np.array(frame, copy=True), cv2.COLOR_BGR2RGB)
+
+
+def _viewpoint_index_for_location(location, fallback_index, viewpoint_index_by_vp):
+    viewpoint_index = fallback_index
+    if (
+        viewpoint_index_by_vp is not None
+        and location.viewpointId in viewpoint_index_by_vp
+    ):
+        viewpoint_index = int(viewpoint_index_by_vp[location.viewpointId])
+    return viewpoint_index
+
+
+def _viewpoint_record_from_location(location, viewpoint_index):
+    return {
+        "viewpoint_id": str(location.viewpointId),
+        "viewpoint_index": int(viewpoint_index),
+        "distance": float(location.rel_distance),
+        "xy": [float(location.x), float(location.y)],
+    }
+
+
+def _viewpoint_marker_text_size(marker_text):
+    return cv2.getTextSize(
+        str(marker_text),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        VIEWPOINT_MARKER_FONT_SCALE,
+        VIEWPOINT_MARKER_THICKNESS,
+    )
+
+
+def _constrain_marker_origin(
+    x_coord,
+    y_coord,
+    text_width,
+    text_height,
+    baseline,
+    image_width,
+    image_height,
+):
+    x_coord = int(round(x_coord))
+    y_coord = int(round(y_coord))
+    x_coord = min(max(x_coord, 0), image_width - int(text_width))
+    y_coord = min(max(y_coord, int(text_height)), image_height - int(baseline))
+    return x_coord, y_coord
+
+
+def _draw_viewpoint_marker(rgb_image, viewpoint_index, x_coord, y_coord):
+    marker_text = str(viewpoint_index)
+    cv2.putText(
+        rgb_image,
+        marker_text,
+        (int(x_coord), int(y_coord)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        VIEWPOINT_MARKER_FONT_SCALE,
+        TEXT_COLOR,
+        thickness=VIEWPOINT_MARKER_THICKNESS,
+    )
+
+
+def _viewpoint_marker_candidate(
+    location,
+    viewpoint_index,
+    current_heading,
+    horizon_index,
+):
+    candidate = _viewpoint_record_from_location(location, viewpoint_index)
+    candidate.update(
+        {
+            "heading": (float(current_heading) + float(location.rel_heading))
+            % (2.0 * math.pi),
+            "elevation": float(location.rel_elevation),
+            "rel_heading": float(location.rel_heading),
+            "rel_elevation": float(location.rel_elevation),
+            "horizon_index": int(horizon_index),
+        }
+    )
+    return candidate
 
 
 def execute_individual_rotations(
@@ -128,48 +206,35 @@ def annotate_rgb_with_viewpoints(rgb, locations, viewpoint_index_by_vp=None):
     visible_viewpoints = []
 
     for fallback_index, location in enumerate(locations[1:], start=1):
-        viewpoint_index = fallback_index
-        if (
-            viewpoint_index_by_vp is not None
-            and location.viewpointId in viewpoint_index_by_vp
-        ):
-            viewpoint_index = int(viewpoint_index_by_vp[location.viewpointId])
+        viewpoint_index = _viewpoint_index_for_location(
+            location,
+            fallback_index,
+            viewpoint_index_by_vp,
+        )
 
         x_coord = int(image_width / 2 + location.rel_heading / HFOV * image_width)
         y_coord = int(image_height / 2 - location.rel_elevation / VFOV * image_height)
         marker_text = str(viewpoint_index)
-        font_scale = 2.0
-        thickness = 3
         (text_width, text_height), baseline = cv2.getTextSize(
             marker_text,
             cv2.FONT_HERSHEY_SIMPLEX,
-            font_scale,
-            thickness,
+            VIEWPOINT_MARKER_FONT_SCALE,
+            VIEWPOINT_MARKER_THICKNESS,
         )
-        if (
+        if not (
             x_coord < 0
             or x_coord + text_width > image_width
             or y_coord - text_height < 0
             or y_coord + baseline > image_height
         ):
-            continue
-
-        cv2.putText(
-            annotated_rgb,
-            marker_text,
-            (x_coord, y_coord),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            font_scale,
-            TEXT_COLOR,
-            thickness=thickness,
-        )
+            _draw_viewpoint_marker(
+                annotated_rgb,
+                viewpoint_index,
+                x_coord,
+                y_coord,
+            )
         visible_viewpoints.append(
-            {
-                "viewpoint_id": str(location.viewpointId),
-                "viewpoint_index": int(viewpoint_index),
-                "distance": float(location.rel_distance),
-                "xy": [float(location.x), float(location.y)],
-            }
+            _viewpoint_record_from_location(location, viewpoint_index)
         )
 
     return annotated_rgb, visible_viewpoints
@@ -271,6 +336,76 @@ def build_truncated_panorama(horizon_frames, add_guides=False):
     return panorama
 
 
+def _select_viewpoint_marker_candidates(marker_candidates):
+    candidates_by_viewpoint = {}
+    for candidate in marker_candidates:
+        viewpoint_index = int(candidate["viewpoint_index"])
+        best_candidate = candidates_by_viewpoint.get(viewpoint_index)
+        if best_candidate is None:
+            candidates_by_viewpoint[viewpoint_index] = candidate
+            continue
+
+        candidate_key = (
+            abs(float(candidate["rel_heading"])),
+            abs(float(candidate["rel_elevation"])),
+            int(candidate["horizon_index"]),
+        )
+        best_key = (
+            abs(float(best_candidate["rel_heading"])),
+            abs(float(best_candidate["rel_elevation"])),
+            int(best_candidate["horizon_index"]),
+        )
+        if candidate_key < best_key:
+            candidates_by_viewpoint[viewpoint_index] = candidate
+
+    return [
+        candidates_by_viewpoint[viewpoint_index]
+        for viewpoint_index in sorted(candidates_by_viewpoint)
+    ]
+
+
+def _panorama_marker_origin(candidate, panorama_width, panorama_height, strip_width):
+    marker_text = str(candidate["viewpoint_index"])
+    (text_width, text_height), baseline = _viewpoint_marker_text_size(marker_text)
+    continuous_index = (
+        float(candidate["horizon_index"])
+        + float(candidate["rel_heading"]) / DELTA_HEADING_RAD
+    )
+    x_coord = ((continuous_index + 0.5) * float(strip_width)) % float(panorama_width)
+    y_coord = panorama_height / 2 - float(candidate["rel_elevation"]) / VFOV * panorama_height
+    return _constrain_marker_origin(
+        x_coord=x_coord,
+        y_coord=y_coord,
+        text_width=text_width,
+        text_height=text_height,
+        baseline=baseline,
+        image_width=panorama_width,
+        image_height=panorama_height,
+    )
+
+
+def build_annotated_panorama(horizon_rgb_frames, marker_candidates):
+    panorama = build_truncated_panorama(horizon_rgb_frames, add_guides=True)
+    strip_width = int(round(horizon_rgb_frames[0].shape[1] * DELTA_HEADING_RAD / HFOV))
+    panorama_height, panorama_width = panorama.shape[:2]
+
+    for candidate in _select_viewpoint_marker_candidates(marker_candidates):
+        x_coord, y_coord = _panorama_marker_origin(
+            candidate=candidate,
+            panorama_width=panorama_width,
+            panorama_height=panorama_height,
+            strip_width=strip_width,
+        )
+        _draw_viewpoint_marker(
+            panorama,
+            int(candidate["viewpoint_index"]),
+            x_coord,
+            y_coord,
+        )
+
+    return panorama
+
+
 def _scan_state_to_observation(
     agent_id,
     start_state,
@@ -279,7 +414,7 @@ def _scan_state_to_observation(
     horizon_rgb_frames,
     horizon_mllm_frames,
     horizon_headings,
-    horizon_depths,
+    viewpoint_marker_candidates,
     frame_visible_viewpoint_indices,
     visible_viewpoints_by_index,
     viewpoint_index_by_vp,
@@ -308,12 +443,10 @@ def _scan_state_to_observation(
         "horizon_rgb_frames": horizon_rgb_frames,
         "horizon_mllm_frames": horizon_mllm_frames,
         "horizon_headings": horizon_headings,
-        "horizon_depths": horizon_depths,
         "raw_panorama": build_truncated_panorama(horizon_rgb_frames),
-        "depth_panorama": build_truncated_panorama(horizon_depths),
-        "annotated_panorama": build_truncated_panorama(
-            horizon_mllm_frames,
-            add_guides=True,
+        "annotated_panorama": build_annotated_panorama(
+            horizon_rgb_frames,
+            viewpoint_marker_candidates,
         ),
     }
 
@@ -328,7 +461,7 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         "horizon_rgb_frames": [],
         "horizon_mllm_frames": [],
         "horizon_headings": [],
-        "horizon_depths": [],
+        "viewpoint_marker_candidates": [],
         "frame_visible_viewpoint_indices": [],
         "visible_viewpoints_by_index": {},
     }
@@ -345,7 +478,6 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         record["horizon_rgb_frames"].append(raw_rgb)
         record["horizon_mllm_frames"].append(annotated_rgb)
         record["horizon_headings"].append(float(state.heading))
-        record["horizon_depths"].append(np.array(state.depth, copy=True))
         record["frame_visible_viewpoint_indices"].append(
             [
                 int(item["viewpoint_index"])
@@ -368,7 +500,20 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
             }
 
         current_heading = float(state.heading)
-        for location in state.navigableLocations[1:]:
+        for fallback_index, location in enumerate(state.navigableLocations[1:], start=1):
+            viewpoint_index = _viewpoint_index_for_location(
+                location,
+                fallback_index,
+                viewpoint_index_by_vp,
+            )
+            record["viewpoint_marker_candidates"].append(
+                _viewpoint_marker_candidate(
+                    location=location,
+                    viewpoint_index=viewpoint_index,
+                    current_heading=current_heading,
+                    horizon_index=horizon_index,
+                )
+            )
             score = abs(location.rel_heading) + 0.5 * abs(location.rel_elevation)
             if score < record["best_score_for_vp"][location.viewpointId]:
                 record["best_score_for_vp"][location.viewpointId] = score
@@ -395,7 +540,7 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         horizon_rgb_frames=record["horizon_rgb_frames"],
         horizon_mllm_frames=record["horizon_mllm_frames"],
         horizon_headings=record["horizon_headings"],
-        horizon_depths=record["horizon_depths"],
+        viewpoint_marker_candidates=record["viewpoint_marker_candidates"],
         frame_visible_viewpoint_indices=record["frame_visible_viewpoint_indices"],
         visible_viewpoints_by_index=record["visible_viewpoints_by_index"],
         viewpoint_index_by_vp=viewpoint_index_by_vp,

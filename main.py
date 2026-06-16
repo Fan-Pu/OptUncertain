@@ -2,7 +2,9 @@
 import copy
 from datetime import datetime, timezone
 import hashlib
+import heapq
 import json
+import math
 from pathlib import Path
 import random
 import sys
@@ -22,6 +24,7 @@ from optimizer_route_logger import write_optimizer_route_log
 CENTRAL_CONFIG_SECTIONS = ("mllm", "bayes", "optimizer")
 DEFAULT_CONFIG_PATH = Path("config") / "default_config.json"
 DEBUGPY_LISTENING = False
+BATCH_GENERATION_VERSION = 2
 
 
 def _read_json(path: str | Path) -> object:
@@ -215,9 +218,81 @@ def _available_viewpoint_ids(scan_id: str, project_root: Path) -> List[str]:
     ]
 
 
+def _shortest_path_distances_by_node(environment_graph) -> Dict[int, Dict[int, float]]:
+    adjacency = {node_id: [] for node_id in environment_graph.viewpoint_id_by_index}
+    for edge_id, distance in environment_graph.edge_distances.items():
+        source_id, target_id = edge_id
+        adjacency[source_id].append((target_id, float(distance)))
+        adjacency[target_id].append((source_id, float(distance)))
+
+    distances_by_source = {}
+    for source_id in sorted(adjacency):
+        distances = {source_id: 0.0}
+        queue = [(0.0, source_id)]
+        while queue:
+            distance, node_id = heapq.heappop(queue)
+            if distance != distances[node_id]:
+                continue
+            for neighbor_id, edge_distance in adjacency[node_id]:
+                next_distance = distance + edge_distance
+                if (
+                    neighbor_id not in distances
+                    or next_distance < distances[neighbor_id]
+                ):
+                    distances[neighbor_id] = next_distance
+                    heapq.heappush(queue, (next_distance, neighbor_id))
+        distances_by_source[source_id] = distances
+
+    return distances_by_source
+
+
+def _select_spread_viewpoint_ids(
+    environment_graph,
+    agent_number: int,
+    random_source: random.Random,
+) -> List[str]:
+    node_ids = sorted(environment_graph.viewpoint_id_by_index)
+    if int(agent_number) > len(node_ids):
+        raise ValueError(
+            "Requested %s agents but only %s viewpoints exist."
+            % (int(agent_number), len(node_ids))
+        )
+
+    distances_by_node = _shortest_path_distances_by_node(environment_graph)
+    selected_node_ids = [random_source.choice(node_ids)]
+    remaining_node_ids = set(node_ids) - set(selected_node_ids)
+
+    while len(selected_node_ids) < int(agent_number):
+        scored_candidates = []
+        for node_id in remaining_node_ids:
+            min_distance = min(
+                distances_by_node[selected_id].get(node_id, math.inf)
+                for selected_id in selected_node_ids
+            )
+            scored_candidates.append((min_distance, node_id))
+
+        best_min_distance = max(score for score, _ in scored_candidates)
+        tied_node_ids = sorted(
+            node_id
+            for score, node_id in scored_candidates
+            if score == best_min_distance
+        )
+        next_node_id = random_source.choice(tied_node_ids)
+        selected_node_ids.append(next_node_id)
+        remaining_node_ids.remove(next_node_id)
+
+    return [
+        environment_graph.viewpoint_id_by_index[node_id]
+        for node_id in selected_node_ids
+    ]
+
+
 def _batch_config_hash(batch_config: Dict[str, object]) -> str:
     encoded = json.dumps(
-        batch_config,
+        {
+            "batch_generation_version": BATCH_GENERATION_VERSION,
+            "batch_config": batch_config,
+        },
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
@@ -255,7 +330,14 @@ def generate_batch_scenarios(
     for scan in batch_config["scans"]:
         scan_id = str(scan["scan_id"])
         scan_targets = _normalize_targets(list(scan["targets"]))
-        viewpoint_ids = _available_viewpoint_ids(scan_id=scan_id, project_root=root)
+        environment_graph = load_environment_graph(
+            scan_id=scan_id,
+            connectivity_dir=root / "connectivity",
+        )
+        viewpoint_ids = [
+            environment_graph.viewpoint_id_by_index[node_id]
+            for node_id in sorted(environment_graph.viewpoint_id_by_index)
+        ]
         case_index_for_scan = 1
 
         for agent_number, agent_selection_index in agent_requests:
@@ -276,9 +358,10 @@ def generate_batch_scenarios(
                 case_id = "%s_case_%04d" % (scan_id, case_index_for_scan)
                 case_index_for_scan += 1
 
-                selected_viewpoint_ids = random_source.sample(
-                    viewpoint_ids,
-                    agent_number,
+                selected_viewpoint_ids = _select_spread_viewpoint_ids(
+                    environment_graph=environment_graph,
+                    agent_number=agent_number,
+                    random_source=random_source,
                 )
                 selected_targets = random_source.sample(scan_targets, target_number)
                 agents = [
