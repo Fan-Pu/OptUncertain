@@ -541,10 +541,10 @@ class _TargetDirectedLeafBeatsWeakFrontierGraph:
         self.observation_step = 0
         self.nodes = {
             1: _FakeNode(1, True, 1.0, {"target": 0.0}, {"target": 0.0}),
-            2: _FakeNode(1, True, 1.0, {"target": 0.01}, {"target": 4.0}),
-            3: _FakeNode(1, True, 1.0, {"target": 0.99}, {"target": 0.1}),
-            4: _FakeNode(1, True, 1.0, {"target": 0.99}, {"target": 0.1}),
-            5: _FakeNode(1, True, 1.0, {"target": 0.99}, {"target": 0.1}),
+            2: _FakeNode(1, False, 1.0, {"target": 0.01}, {"target": 4.0}),
+            3: _FakeNode(1, False, 1.0, {"target": 0.99}, {"target": 0.1}),
+            4: _FakeNode(1, False, 1.0, {"target": 0.99}, {"target": 0.1}),
+            5: _FakeNode(1, False, 1.0, {"target": 0.99}, {"target": 0.1}),
         }
         self.edges = {
             (1, 2): _FakeEdge(1, 2, 5.0, 1.0),
@@ -561,8 +561,8 @@ class _TargetDirectedRawVsNormalizedGraph:
         self.observation_step = 0
         self.nodes = {
             1: _FakeNode(1, True, 1.0, {"target": 0.0}, {"target": 0.0}),
-            2: _FakeNode(1, True, 1.0, {"target": 0.01}, {"target": 3.0}),
-            3: _FakeNode(1, True, 1.0, {"target": 0.99}, {"target": 0.2}),
+            2: _FakeNode(1, False, 1.0, {"target": 0.01}, {"target": 3.0}),
+            3: _FakeNode(1, False, 1.0, {"target": 0.99}, {"target": 0.2}),
         }
         self.edges = {
             (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
@@ -595,14 +595,14 @@ class _TwoAgentTwoTargetDirectedGraph:
             ),
             3: _FakeNode(
                 1,
-                True,
+                False,
                 1.0,
                 {"target0": 0.9, "target1": 0.1},
                 {"target0": 4.0, "target1": 0.1},
             ),
             4: _FakeNode(
                 1,
-                True,
+                False,
                 1.0,
                 {"target0": 0.1, "target1": 0.9},
                 {"target0": 0.1, "target1": 4.0},
@@ -613,6 +613,64 @@ class _TwoAgentTwoTargetDirectedGraph:
             (1, 4): _FakeEdge(1, 4, 1.0, 1.0),
             (2, 3): _FakeEdge(2, 3, 1.0, 1.0),
             (2, 4): _FakeEdge(2, 4, 0.1, 1.0),
+        }
+
+
+class _TargetDirectedVisitedTransitGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}, {"target": 0.0}),
+            2: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target": 0.0},
+                {"target": 10.0},
+                node_visit_times=4,
+            ),
+            3: _FakeNode(1, False, 1.0, {"target": 0.2}, {"target": 1.0}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
+            (2, 3): _FakeEdge(2, 3, 1.0, 1.0),
+        }
+
+
+class _TargetDirectedCurrentHighRawGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}, {"target": 8.0}),
+            2: _FakeNode(1, False, 1.0, {"target": 0.2}, {"target": 1.0}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
+        }
+
+
+class _TargetDirectedNoPositiveEligibleEndpointGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}, {"target": 8.0}),
+            2: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target": 0.0},
+                {"target": 7.0},
+                node_visit_times=2,
+            ),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
         }
 
 
@@ -990,6 +1048,59 @@ class MultiAgentOptimizerTest(unittest.TestCase):
 
         self.assertEqual(result["agent_paths"]["agent0"]["route_node_ids"], [1, 2])
         self.assertEqual(result["target_assignments"][0]["node_id"], 2)
+
+    def test_target_directed_visited_high_raw_endpoint_loses_to_unvisited(self):
+        optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_TargetDirectedVisitedTransitGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(
+            result["target_assignments"],
+            [{"target_id": "target", "node_id": 3, "agent_id": "agent0"}],
+        )
+
+    def test_target_directed_current_high_raw_viewpoint_cannot_be_endpoint(self):
+        optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_TargetDirectedCurrentHighRawGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(
+            result["target_assignments"],
+            [{"target_id": "target", "node_id": 2, "agent_id": "agent0"}],
+        )
+
+    def test_target_directed_visited_viewpoint_can_remain_transit_node(self):
+        optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_TargetDirectedVisitedTransitGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["route_node_ids"], [1, 2, 3])
+        self.assertNotIn(
+            {"target_id": "target", "node_id": 2, "agent_id": "agent0"},
+            result["target_assignments"],
+        )
+
+    def test_target_directed_fails_without_positive_eligible_endpoint(self):
+        optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "no positive eligible endpoint for unfound target target",
+        ):
+            optimizer.solve(
+                hypothesis_graph=_TargetDirectedNoPositiveEligibleEndpointGraph(),
+                agent_current_vp_ids={"agent0": 1},
+                target_found_flags={"target": False},
+            )
 
     def test_oracle_exact_coverage_assigns_target_to_lower_distance_agent(self):
         optimizer = RollingHorizonOptimizer(ORACLE_EXACT_COVERAGE_CONFIG)

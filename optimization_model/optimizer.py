@@ -77,11 +77,26 @@ class RollingHorizonOptimizer:
             ]
             for agent_id in agent_ids
         }
-        reward_node_ids_by_agent = {
-            agent_id: [int(agent_current_vp_ids[agent_id])]
-            + candidate_node_ids_by_agent[agent_id]
-            for agent_id in agent_ids
-        }
+        current_viewpoint_ids = {int(value) for value in agent_current_vp_ids.values()}
+        if self.target_directed_mode:
+            reward_node_ids_by_agent = {
+                agent_id: [
+                    node_id
+                    for node_id in candidate_node_ids_by_agent[agent_id]
+                    if self._is_target_directed_reward_endpoint(
+                        hypothesis_graph=hypothesis_graph,
+                        node_id=node_id,
+                        current_viewpoint_ids=current_viewpoint_ids,
+                    )
+                ]
+                for agent_id in agent_ids
+            }
+        else:
+            reward_node_ids_by_agent = {
+                agent_id: [int(agent_current_vp_ids[agent_id])]
+                + candidate_node_ids_by_agent[agent_id]
+                for agent_id in agent_ids
+            }
         for agent_id in agent_ids:
             if not candidate_node_ids_by_agent[agent_id]:
                 if self.allow_inactive_agents:
@@ -161,6 +176,14 @@ class RollingHorizonOptimizer:
                 target_id: target_score_source.get(target_id, 0.0)
                 for target_id in target_ids
             }
+
+        if self.target_directed_mode:
+            self._validate_target_directed_reward_endpoints(
+                active_target_ids=active_target_ids,
+                agent_ids=agent_ids,
+                reward_node_ids_by_agent=reward_node_ids_by_agent,
+                node_reward=node_reward,
+            )
 
         for agent_id in agent_ids:
             start_node_id = int(agent_current_vp_ids[agent_id])
@@ -732,6 +755,59 @@ class RollingHorizonOptimizer:
         print("  binary variables: %s" % binary_count)
         print("  continuous variables: %s" % continuous_count)
         print("  integer variables: %s" % integer_count)
+
+    def _is_target_directed_reward_endpoint(
+        self,
+        hypothesis_graph,
+        node_id: int,
+        current_viewpoint_ids: set[int],
+    ) -> bool:
+        node = hypothesis_graph.nodes[node_id]
+        if node.type == TYPE_VP:
+            return (
+                int(node_id) not in current_viewpoint_ids
+                and not bool(node.grounded)
+                and int(node.node_visit_times) == 0
+            )
+        if node.type == TYPE_REGION:
+            return not bool(
+                getattr(hypothesis_graph, "region_to_viewpoints", {}).get(node_id)
+            )
+        raise ValueError("Unknown graph node type %s for node %s." % (node.type, node_id))
+
+    def _validate_target_directed_reward_endpoints(
+        self,
+        active_target_ids: List[str],
+        agent_ids: List[str],
+        reward_node_ids_by_agent: Dict[str, List[int]],
+        node_reward: Dict[int, Dict[str, float]],
+    ) -> None:
+        for target_id in active_target_ids:
+            positive_endpoint_records = [
+                {
+                    "agent_id": str(agent_id),
+                    "node_id": int(node_id),
+                    "reward": float(node_reward[node_id][target_id]),
+                }
+                for agent_id in agent_ids
+                for node_id in reward_node_ids_by_agent[agent_id]
+                if float(node_reward[node_id][target_id]) > 0.0
+            ]
+            if positive_endpoint_records:
+                continue
+
+            eligible_endpoint_ids = sorted(
+                {
+                    int(node_id)
+                    for agent_id in agent_ids
+                    for node_id in reward_node_ids_by_agent[agent_id]
+                }
+            )
+            raise RuntimeError(
+                "Target-directed mode has no positive eligible endpoint for "
+                "unfound target %s. Eligible endpoint ids: %s."
+                % (target_id, eligible_endpoint_ids)
+            )
 
     def _normalized_expression(
         self, expression, lower_bound: float, upper_bound: float

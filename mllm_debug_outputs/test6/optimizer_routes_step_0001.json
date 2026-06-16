@@ -1,54 +1,44 @@
 {
   "target_assignments": [
     {
-      "target_id": "0",
-      "node_id": 36,
-      "agent_id": "agent0"
-    },
-    {
-      "target_id": "1",
-      "node_id": 37,
-      "agent_id": "agent1"
-    },
-    {
       "target_id": "2",
-      "node_id": 53,
+      "node_id": 54,
       "agent_id": "agent0"
     },
     {
       "target_id": "3",
-      "node_id": 53,
-      "agent_id": "agent0"
+      "node_id": 54,
+      "agent_id": "agent1"
     }
   ],
   "agents": [
     {
       "agent_id": "agent0",
       "route_node_ids": [
-        40,
+        17,
         36,
-        53
+        54
       ],
       "objective_terms": {
         "raw": {
-          "goal": 2.45,
-          "distance": 2.41,
-          "arc_nonexistence": 0.09999999999999998,
-          "node_nonexistence": 0.09999999999999998,
+          "goal": 0.9,
+          "distance": 5.138,
+          "arc_nonexistence": 0.19999999999999996,
+          "node_nonexistence": 0.30000000000000004,
           "revisit": 0.0
         },
         "normalized_contribution": {
-          "goal": 0.8448275862068967,
-          "distance": 0.01877619707995076,
-          "arc_nonexistence": 0.019607843137254895,
-          "node_nonexistence": 0.5,
+          "goal": 0.5,
+          "distance": 0.032331953131882654,
+          "arc_nonexistence": 0.029411764705882353,
+          "node_nonexistence": 0.25000000000000006,
           "revisit": 0.0
         },
         "weighted_contribution": {
-          "goal": 0.3801724137931035,
-          "distance": -0.0031919535035916293,
-          "arc_nonexistence": -0.0009803921568627449,
-          "node_nonexistence": -0.015,
+          "goal": 0.225,
+          "distance": -0.005496432032420052,
+          "arc_nonexistence": -0.0014705882352941176,
+          "node_nonexistence": -0.0075000000000000015,
           "revisit": -0.0
         }
       }
@@ -56,30 +46,32 @@
     {
       "agent_id": "agent1",
       "route_node_ids": [
-        29,
-        37
+        5,
+        17,
+        36,
+        54
       ],
       "objective_terms": {
         "raw": {
-          "goal": 0.25,
-          "distance": 3.262,
-          "arc_nonexistence": 0.0,
-          "node_nonexistence": 0.0,
-          "revisit": 0.0
+          "goal": 0.9,
+          "distance": 8.974,
+          "arc_nonexistence": 0.19999999999999996,
+          "node_nonexistence": 0.30000000000000004,
+          "revisit": 1.0
         },
         "normalized_contribution": {
-          "goal": 0.08620689655172414,
-          "distance": 0.02541408915966779,
-          "arc_nonexistence": 0.0,
-          "node_nonexistence": 0.0,
-          "revisit": 0.0
+          "goal": 0.5,
+          "distance": 0.056470795524623384,
+          "arc_nonexistence": 0.029411764705882353,
+          "node_nonexistence": 0.25000000000000006,
+          "revisit": 0.5
         },
         "weighted_contribution": {
-          "goal": 0.03879310344827586,
-          "distance": -0.004320395157143525,
-          "arc_nonexistence": -0.0,
-          "node_nonexistence": -0.0,
-          "revisit": -0.0
+          "goal": 0.225,
+          "distance": -0.009600035239185976,
+          "arc_nonexistence": -0.0014705882352941176,
+          "node_nonexistence": -0.0075000000000000015,
+          "revisit": -0.15
         }
       }
     }

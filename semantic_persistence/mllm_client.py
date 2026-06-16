@@ -239,6 +239,31 @@ class MLLMClient:
         return "data:image/jpeg;base64,%s" % encoded
 
     @staticmethod
+    def _format_completion_usage(usage) -> str:
+        prompt_tokens_details = usage.prompt_tokens_details
+        cached_tokens = (
+            0 if prompt_tokens_details is None else prompt_tokens_details.cached_tokens
+        )
+        return (
+            "CompletionUsage("
+            "completion_tokens=%s, "
+            "prompt_tokens=%s, "
+            "total_tokens=%s, "
+            "completion_tokens_details=%s, "
+            "prompt_tokens_details=%s, "
+            "cached_tokens=%s"
+            ")"
+            % (
+                usage.completion_tokens,
+                usage.prompt_tokens,
+                usage.total_tokens,
+                usage.completion_tokens_details,
+                prompt_tokens_details,
+                cached_tokens,
+            )
+        )
+
+    @staticmethod
     def _api_error_body(exc) -> Dict[str, object]:
         body = getattr(exc, "body", None)
         if isinstance(body, dict):
@@ -378,7 +403,7 @@ class MLLMClient:
         try:
             completion = client.chat.completions.create(**request_kwargs)
 
-            print("usage:", completion.usage)
+            print("usage:", self._format_completion_usage(completion.usage))
             print("model:", completion.model)
             print("finish_reason:", completion.choices[0].finish_reason)
             print()
@@ -1676,9 +1701,8 @@ class MLLMClient:
     ) -> tuple[List[Dict[str, object]], List[Dict[str, object]]]:
         image_content = []
         image_records = []
-        image_index = 0
 
-        for observation in agent_observations:
+        for image_index, observation in enumerate(agent_observations):
             agent_id = str(observation["agent_id"])
             current_viewpoint_index = int(observation["current_viewpoint_index"])
             raw_panorama = observation["raw_panorama"]
@@ -1716,7 +1740,6 @@ class MLLMClient:
                     },
                 ]
             )
-            image_index += 1
 
         return image_content, image_records
 
@@ -2356,6 +2379,7 @@ class MLLMClient:
                 - You may output viewpoint_target_scores items only for ids in this list.
                 - Omit an id or target_id when its prior_raw_target_probs value should remain unchanged.
                 - For an eligible viewpoint where has_prior_raw_target_probs is false, output all active target_ids for that viewpoint.
+                - Score target presence and search value at the candidate viewpoint, not route utility through that viewpoint.
                 - Score the target likelihood at the candidate viewpoint, not only at the current camera location.
                 - For each candidate viewpoint, use its red marker location when visible, nearby visible objects, assigned semantic region, xy distance, visible_viewpoints[].distance, prior_raw_target_probs, and compact graph summary.
                 - Compare eligible viewpoint ids against each other for each active target_id before assigning changed scores.
@@ -2368,6 +2392,8 @@ class MLLMClient:
                 - evidence_strength must be exactly one of: low, medium, high.
                 - For each target, derive the relevant object identity, visual attributes, support surfaces, nearby objects, floor or level cues, room or area cues, and relative-location cues from the active target description.
                 - Make floor, level, room, support-object, and relative-location cue matches visible in basis. If a candidate is scored high because it is upstairs, near stairs, in a bedroom-like area, or on a route toward the target-bearing area, state that cue.
+                - Do not give high target raw_score to stairs, landings, or hallway viewpoints merely because they lead toward the target area.
+                - Put route-only upstairs or bedroom cues on unassigned target-bearing regions or unvisited candidate viewpoints, not on already searched stair or landing viewpoints.
                 - Give much lower raw_score values to candidates whose area contradicts explicit target-location text, even when they contain salient unrelated objects. Do not let weak normalized filler locations outrank a candidate or type-(2) region whose layout cues better match the target text.
                 - For each returned viewpoint-target pair, fill basis with one short clue explaining why raw_score and evidence_strength follow from the target text, visible evidence, red-marker location, assigned semantic region, spatial context, and graph history.
                 - basis must be a non-empty string.
@@ -2524,7 +2550,7 @@ class MLLMClient:
                     )
             print()
 
-        if step_index >= 2:
+        if step_index >= 15:
             debugpy.breakpoint()
 
         # debugpy.breakpoint()

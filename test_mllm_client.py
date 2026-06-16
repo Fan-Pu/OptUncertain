@@ -1,6 +1,7 @@
 import copy
 import base64
 import io
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -11,6 +12,7 @@ from semantic_persistence.mllm_client import (
     GraphValidationError,
     MLLMClient,
 )
+from semantic_persistence.hypothesis_graph import HypothesisGraph
 
 
 TARGETS = [
@@ -86,6 +88,43 @@ def _decode_image_url(image_url):
     data_url = image_url["url"]
     encoded = data_url.split(",", 1)[1]
     return np.array(Image.open(io.BytesIO(base64.b64decode(encoded))).convert("RGB"))
+
+
+def test_completion_usage_formatter_reports_cached_tokens_without_estimated_cost():
+    usage = SimpleNamespace(
+        completion_tokens=6,
+        prompt_tokens=1875,
+        total_tokens=1881,
+        completion_tokens_details=None,
+        prompt_tokens_details=SimpleNamespace(cached_tokens=1024),
+        estimated_cost=0.00024602999999999995,
+    )
+
+    formatted = MLLMClient._format_completion_usage(usage)
+
+    assert "estimated_cost" not in formatted
+    assert formatted == (
+        "CompletionUsage(completion_tokens=6, prompt_tokens=1875, "
+        "total_tokens=1881, completion_tokens_details=None, "
+        "prompt_tokens_details=namespace(cached_tokens=1024), "
+        "cached_tokens=1024)"
+    )
+
+
+def test_completion_usage_formatter_defaults_cached_tokens_to_zero():
+    usage = SimpleNamespace(
+        completion_tokens=6,
+        prompt_tokens=1875,
+        total_tokens=1881,
+        completion_tokens_details=None,
+        prompt_tokens_details=None,
+        estimated_cost=0.00024602999999999995,
+    )
+
+    formatted = MLLMClient._format_completion_usage(usage)
+
+    assert "estimated_cost" not in formatted
+    assert formatted.endswith("cached_tokens=0)")
 
 
 def _graph_summary():
@@ -350,7 +389,9 @@ def test_detection_image_content_uses_raw_panorama_not_annotated(tmp_path):
     assert records[0]["image_role"] == "full_raw_panorama"
     assert full_image[:, :, 0].mean() > 180
     assert full_image[:, :, 2].mean() < 60
-    assert (tmp_path / "detection_input_step_0001_agent_agent0_full_raw_panorama.jpg").exists()
+    assert (
+        tmp_path / "detection_input_step_0001_agent_agent0_full_raw_panorama.jpg"
+    ).exists()
 
 
 def test_detection_image_content_sends_one_image_per_agent(tmp_path):
@@ -375,6 +416,32 @@ def test_detection_image_content_sends_one_image_per_agent(tmp_path):
     assert [record["agent_id"] for record in records] == ["agent0", "agent1"]
     assert all(record["image_role"] == "full_raw_panorama" for record in records)
     assert all(record["x_range"] == [0.0, 1.0] for record in records)
+
+
+def test_detection_uses_raw_and_graph_uses_annotated_panorama(tmp_path):
+    client = MLLMClient(
+        read_saved_raw_outputs=True,
+        raw_debug_dir=str(tmp_path),
+    )
+    detection_content, records = client._build_detection_image_content(
+        agent_observations=_image_agent_observations(),
+        step_index=1,
+    )
+    graph_content = client._build_graph_image_content(
+        agent_observations=_image_agent_observations(),
+        step_index=1,
+    )
+
+    assert len(records) == 1
+    assert records[0]["image_role"] == "full_raw_panorama"
+    detection_image = _decode_image_url(detection_content[1]["image_url"])
+    graph_image = _decode_image_url(graph_content[1]["image_url"])
+    assert detection_image[:, :, 0].mean() > 180
+    assert graph_image[:, :, 2].mean() > 180
+    assert (
+        detection_content[1]["image_url"]["url"]
+        != graph_content[1]["image_url"]["url"]
+    )
 
 
 def test_detection_images_are_resized_to_request_budget(tmp_path):
@@ -414,6 +481,53 @@ def test_graph_prompt_includes_multi_elevation_panorama_rules():
     assert "Vertical position is camera pitch/elevation evidence" in prompt_text
     assert "not a different physical location" in prompt_text
     assert "upper and lower pitch/elevation evidence" in prompt_text
+
+
+def test_graph_prompt_warns_target_scores_are_not_route_utility():
+    system_message, user_message = _client()._build_instruction(
+        agent_observations=_agent_observations(),
+        targets=TARGETS,
+        graph_summary=_graph_summary(),
+    )
+    prompt_text = system_message + "\n" + user_message
+
+    assert "not route utility" in prompt_text
+    assert "Do not give high target raw_score to stairs, landings" in prompt_text
+    assert "unassigned target-bearing regions or unvisited candidate viewpoints" in prompt_text
+
+
+def test_detection_fixed_viewpoint_raw_and_normalized_probs_zeroed():
+    graph = HypothesisGraph(targets=TARGETS)
+    graph.add_or_update_node(
+        node_id=38,
+        label="visited stair viewpoint",
+        node_type=1,
+        exist_prob=1.0,
+        grounded=True,
+        target_probs={"2": 0.7, "3": 0.7},
+        raw_target_probs={"2": 9.0, "3": 9.0},
+        node_visit_times=2,
+    )
+    graph.add_or_update_node(
+        node_id=11,
+        label="unvisited upstairs candidate",
+        node_type=1,
+        exist_prob=1.0,
+        grounded=False,
+        target_probs={"2": 0.3, "3": 0.3},
+        raw_target_probs={"2": 1.0, "3": 1.0},
+        node_visit_times=0,
+    )
+
+    graph._apply_mllm_viewpoint_target_probabilities(
+        viewpoint_initial_probs={11: {"2": 1.0, "3": 1.0}},
+        current_viewpoint_ids={38},
+    )
+
+    assert graph.nodes[38].target_probs["2"] == 0.0
+    assert graph.nodes[38].target_probs["3"] == 0.0
+    assert graph.nodes[38].raw_target_probs["2"] == 0.0
+    assert graph.nodes[38].raw_target_probs["3"] == 0.0
 
 
 def test_viewpoint_target_score_feedback_reports_detection_fixed_ids():

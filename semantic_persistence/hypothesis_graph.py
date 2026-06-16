@@ -768,6 +768,9 @@ class HypothesisGraph:
         # If a region already has this viewpoint assigned, grounding the viewpoint
         # should also ground that region.
         self._refresh_region_grounding()
+        self._zero_detection_fixed_viewpoint_target_probs(
+            current_viewpoint_ids=set(self.agent_current_vp_ids.values()),
+        )
         self._apply_region_target_probabilities(
             region_target_scores={},
             previous_type1_region_ids=set(),
@@ -1256,10 +1259,11 @@ class HypothesisGraph:
             if node_id not in detection_fixed_viewpoint_node_ids
         ]
 
-        for target_id in self._active_target_ids():
-            for node_id in detection_fixed_viewpoint_node_ids:
-                self.nodes[node_id].target_probs[target_id] = 0.0
+        self._zero_detection_fixed_viewpoint_target_probs(
+            current_viewpoint_ids=current_viewpoint_ids,
+        )
 
+        for target_id in self._active_target_ids():
             if not eligible_viewpoint_node_ids:
                 continue
 
@@ -1277,6 +1281,24 @@ class HypothesisGraph:
                 self.nodes[node_id].target_probs[target_id] = (
                     float(viewpoint_initial_probs[node_id][target_id]) / raw_total
                 )
+
+    def _zero_detection_fixed_viewpoint_target_probs(
+        self,
+        current_viewpoint_ids: Set[int],
+    ) -> None:
+        current_viewpoint_ids = {int(node_id) for node_id in current_viewpoint_ids}
+        for node_id, node in self.nodes.items():
+            if node.type != TYPE_VP:
+                continue
+            if (
+                int(node_id) not in current_viewpoint_ids
+                and not bool(node.grounded)
+                and int(node.node_visit_times) <= 0
+            ):
+                continue
+            for target_id in self._active_target_ids():
+                node.target_probs[target_id] = 0.0
+                node.raw_target_probs[target_id] = 0.0
 
     def _apply_region_target_probabilities(
         self,
