@@ -21,6 +21,26 @@
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 2.66,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 0,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.803,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 0,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 2.291,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -141,12 +161,62 @@
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 2.118,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 13,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.33,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 13,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 3.054,
       "distance_var": 0.0,
       "exist_prob": 1.0,
       "grounded": true,
       "i": 14,
       "j": 36,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.986,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 15,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.909,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 15,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.448,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 15,
+      "j": 33,
       "type": "vv"
     },
     {
@@ -191,6 +261,16 @@
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 2.246,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 1.387,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -220,16 +300,6 @@
       "type": "vv"
     },
     {
-      "cond_exist_prob": 0.9759199093502247,
-      "distance_mean": 2.2886005831601928,
-      "distance_var": 0.8454886974199147,
-      "exist_prob": 0.6831439365451573,
-      "grounded": false,
-      "i": 36,
-      "j": 54,
-      "type": "vz"
-    },
-    {
       "cond_exist_prob": 1.0,
       "distance_mean": 2.061,
       "distance_var": 0.0,
@@ -243,22 +313,22 @@
   "nodes": [
     {
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 0,
       "label": "f1b191033043441987b8ebf1bb55002c",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
+      "node_visit_times": 2,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.0,
+        "3": 0.0
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.0,
+        "3": 0.0
       },
       "target_score_basis": {
-        "2": "Upper hallway area with curved concrete wall and staircase access; target requires upstairs bedroom location, this is a transition space leading to upper floor but not the bedroom itself.",
-        "3": "Same as target 2: upper hallway/landing area provides route to upstairs bedroom but is not the target room containing bed and skateboard."
+        "2": "Viewpoint 0 is located in the staircase and upper-level landing area (region 52), matching the 'upstairs bedroom' target cue; red marker visible near stairs suggests proximity to bedroom zones.",
+        "3": "Viewpoint 0 is in the upstairs landing area (region 52), consistent with 'upstairs bedroom' target; visual cues of stair access support potential bedroom adjacency."
       },
       "type": "viewpoint"
     },
@@ -288,17 +358,14 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.02,
+        "3": 0.02
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.010101010101010102,
+        "3": 0.010101010101010102
       },
-      "target_score_basis": {
-        "2": "Ground floor living area visible at far left of agent1 panorama; contradicts explicit upstairs bedroom requirement for both targets.",
-        "3": "Ground floor living area with sofa and large windows; explicitly contradicts upstairs bedroom cue in target descriptions."
-      },
+      "target_score_basis": {},
       "type": "viewpoint"
     },
     {
@@ -307,7 +374,7 @@
       "id": 11,
       "label": "68e4c4477aa442cbbb9a9f1e54b9b831",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 1,
+      "node_visit_times": 2,
       "raw_target_probs": {
         "2": 0.0,
         "3": 0.0
@@ -317,8 +384,29 @@
         "3": 0.0
       },
       "target_score_basis": {
-        "2": "Viewpoint 11 is located upstairs in the hallway area visible at the top of the staircase, matching the 'upstairs bedroom' target location cue for both targets.",
-        "3": "Viewpoint 11 is located upstairs in the hallway area visible at the top of the staircase, matching the 'upstairs bedroom' target location cue for both targets."
+        "2": "Viewpoint 11 is located on the staircase/upper landing area (region 52), which directly matches the 'upstairs bedroom' target cue for targets 2 and 3. The red marker is positioned on the stairs leading up, indicating proximity to the target-bearing floor.",
+        "3": "Viewpoint 11 is located on the staircase/upper landing area (region 52), which directly matches the 'upstairs bedroom' target cue for targets 2 and 3. The red marker is positioned on the stairs leading up, indicating proximity to the target-bearing floor."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 13,
+      "label": "4ea1cfa67ec145b39f90056a02a43d9f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.85,
+        "3": 0.85
+      },
+      "target_probs": {
+        "2": 0.4292929292929293,
+        "3": 0.4292929292929293
+      },
+      "target_score_basis": {
+        "2": "Viewpoint 13 is located in a bedroom (visible bed at 315 deg), matching the 'upstairs bedroom' target constraint; higher score than hallway viewpoints.",
+        "3": "Viewpoint 13 is located in a bedroom (visible bed at 315 deg), matching the 'upstairs bedroom' target constraint; higher score than hallway viewpoints."
       },
       "type": "viewpoint"
     },
@@ -330,16 +418,34 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.03,
+        "3": 0.03
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.015151515151515152,
+        "3": 0.015151515151515152
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 15,
+      "label": "1c2209fa44fc48c7b7ce7981bafc4ccf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "3": 0.0
       },
       "target_score_basis": {
-        "2": "Hallway area beyond dining space on ground floor; no upstairs or bedroom cues visible, contradicts target location requirements.",
-        "3": "Ground floor hallway beyond dining area; lacks upstairs bedroom evidence required by target descriptions."
+        "2": "Upper-level hallway location consistent with upstairs bedroom target cues; visible marker suggests proximity to potential bedroom areas.",
+        "3": "Upper-level hallway location consistent with upstairs bedroom target cues; visible marker suggests proximity to potential bedroom areas."
       },
       "type": "viewpoint"
     },
@@ -363,23 +469,38 @@
     },
     {
       "exist_prob": 1.0,
+      "grounded": true,
+      "id": 18,
+      "label": "c20f944e9c434804944b0c1251247202",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "3": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 19,
       "label": "2bc3dc4bf7cc4489a8cbcbed9d7d6b25",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.02,
+        "3": 0.02
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.010101010101010102,
+        "3": 0.010101010101010102
       },
-      "target_score_basis": {
-        "2": "Ground floor living area with sofa and large windows; visible from agent0 but on wrong floor for upstairs bedroom targets.",
-        "3": "Living area on ground floor level; contradicts explicit upstairs bedroom location cue in both target descriptions."
-      },
+      "target_score_basis": {},
       "type": "viewpoint"
     },
     {
@@ -390,16 +511,34 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.02,
+        "3": 0.02
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.010101010101010102,
+        "3": 0.010101010101010102
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 22,
+      "label": "b5b07238f2f94494b5d16390855584cb",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.45,
+        "3": 0.45
+      },
+      "target_probs": {
+        "2": 0.2272727272727273,
+        "3": 0.2272727272727273
       },
       "target_score_basis": {
-        "2": "Hallway area beyond dining space on ground floor; no visual evidence of upstairs or bedroom features.",
-        "3": "Ground floor hallway region; lacks stairs-up or bedroom cues required by target text."
+        "2": "Viewpoint 22 is in upper hallway extension (region 54), adjacent to bedroom areas; moderate probability as potential route to upstairs bedroom.",
+        "3": "Viewpoint 22 is in upper hallway extension (region 54), adjacent to bedroom areas; moderate probability as potential route to upstairs bedroom."
       },
       "type": "viewpoint"
     },
@@ -411,17 +550,14 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.01,
+        "3": 0.01
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.005050505050505051,
+        "3": 0.005050505050505051
       },
-      "target_score_basis": {
-        "2": "Ground floor living area adjacent to dining; contradicts upstairs bedroom requirement for targets 2 and 3.",
-        "3": "Living room area on ground level; no upstairs or bedroom visual cues present."
-      },
+      "target_score_basis": {},
       "type": "viewpoint"
     },
     {
@@ -432,16 +568,34 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.02,
+        "3": 0.02
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.010101010101010102,
+        "3": 0.010101010101010102
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "595ef74c51bb4448ae709297121d4c10",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.4,
+        "3": 0.4
+      },
+      "target_probs": {
+        "2": 0.20202020202020204,
+        "3": 0.20202020202020204
       },
       "target_score_basis": {
-        "2": "Hallway area beyond dining space on ground floor; distant from staircase and upstairs areas.",
-        "3": "Ground floor hallway; no upstairs bedroom evidence, contradicts target location constraints."
+        "2": "Viewpoint 33 is in upper hallway extension (region 54), visible from current viewpoints; moderate probability as it connects to bedroom areas.",
+        "3": "Viewpoint 33 is in upper hallway extension (region 54), visible from current viewpoints; moderate probability as it connects to bedroom areas."
       },
       "type": "viewpoint"
     },
@@ -453,17 +607,14 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.03,
+        "3": 0.03
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.015151515151515152,
+        "3": 0.015151515151515152
       },
-      "target_score_basis": {
-        "2": "Hallway area beyond dining space on ground floor; far from upstairs bedroom target location.",
-        "3": "Ground floor hallway region; lacks any upstairs or bedroom visual indicators."
-      },
+      "target_score_basis": {},
       "type": "viewpoint"
     },
     {
@@ -472,7 +623,7 @@
       "id": 36,
       "label": "a33fe858085149e8908942d0bf98767f",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 5,
+      "node_visit_times": 2,
       "raw_target_probs": {
         "2": 0.0,
         "3": 0.0
@@ -482,8 +633,8 @@
         "3": 0.0
       },
       "target_score_basis": {
-        "2": "Staircase base area, high probability as direct route to upstairs bedroom",
-        "3": "Staircase base area, high probability as direct route to upstairs bedroom"
+        "2": "Stair hall base with visible staircase going up, strong route cue to upstairs bedroom",
+        "3": "Stair hall base with visible staircase going up, strong route cue to upstairs bedroom"
       },
       "type": "viewpoint"
     },
@@ -493,7 +644,7 @@
       "id": 38,
       "label": "96490c4da78240058d1f76a07ed95c9d",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 5,
+      "node_visit_times": 2,
       "raw_target_probs": {
         "2": 0.0,
         "3": 0.0
@@ -503,8 +654,8 @@
         "3": 0.0
       },
       "target_score_basis": {
-        "2": "Staircase viewpoint providing direct access to upper floor; strong route cue to upstairs bedroom",
-        "3": "Staircase viewpoint providing direct access to upper floor; strong route cue to upstairs bedroom"
+        "2": "Staircase viewpoint providing direct access to upper floor; strong upstairs cue matches explicit target floor constraint for upstairs bedroom",
+        "3": "Staircase viewpoint providing direct access to upper floor; strong upstairs cue matches explicit target floor constraint for upstairs bedroom"
       },
       "type": "viewpoint"
     },
@@ -516,17 +667,14 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.05,
+        "3": 0.05
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.025252525252525256,
+        "3": 0.025252525252525256
       },
-      "target_score_basis": {
-        "2": "Ground floor living area visible near current viewpoint 38; red marker shows living room furniture, contradicts upstairs bedroom requirement.",
-        "3": "Living area on ground floor with sofa and windows; explicitly wrong floor for upstairs bedroom targets."
-      },
+      "target_score_basis": {},
       "type": "viewpoint"
     },
     {
@@ -537,17 +685,14 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.02,
+        "3": 0.02
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.010101010101010102,
+        "3": 0.010101010101010102
       },
-      "target_score_basis": {
-        "2": "Hallway area beyond dining space on ground floor; no upstairs or bedroom cues visible.",
-        "3": "Ground floor hallway; contradicts explicit upstairs bedroom location in target descriptions."
-      },
+      "target_score_basis": {},
       "type": "viewpoint"
     },
     {
@@ -558,17 +703,14 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.02,
+        "3": 0.02
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.010101010101010102,
+        "3": 0.010101010101010102
       },
-      "target_score_basis": {
-        "2": "Hallway area beyond dining space on ground floor; distant from staircase and upstairs areas.",
-        "3": "Ground floor hallway region; lacks upstairs bedroom evidence required by targets."
-      },
+      "target_score_basis": {},
       "type": "viewpoint"
     },
     {
@@ -579,85 +721,36 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.039166666666666676,
-        "3": 0.039166666666666676
+        "2": 0.04,
+        "3": 0.04
       },
       "target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
+        "2": 0.020202020202020204,
+        "3": 0.020202020202020204
       },
-      "target_score_basis": {
-        "2": "Ground floor living area visible at far right of agent1 panorama; contradicts upstairs bedroom requirement.",
-        "3": "Living room area on ground level with large windows; explicitly wrong floor for upstairs bedroom targets."
-      },
+      "target_score_basis": {},
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
+        5,
         6,
+        17,
         19,
         23,
+        36,
+        38,
         40,
         48
       ],
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 50,
-      "label": "ground floor living area with sofa and large windows",
+      "label": "open-plan living and stair hall area with curved sofa and staircase",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
-      "raw_target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
-      },
-      "target_probs": {
-        "2": 0.07246376811594203,
-        "3": 0.07246376811594203
-      },
-      "target_score_basis": {},
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        5,
-        17
-      ],
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 51,
-      "label": "dining area with glass table near staircase",
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "raw_target_probs": {
-        "2": 0.0,
-        "3": 0.0
-      },
-      "target_probs": {
-        "2": 0.0,
-        "3": 0.0
-      },
-      "target_score_basis": {},
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        36,
-        38
-      ],
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 52,
-      "label": "staircase and landing area leading to upper floor",
-      "latent_exist_prob": 0.9,
-      "node_visit_times": 0,
-      "raw_target_probs": {
-        "2": 0.0,
-        "3": 0.0
-      },
-      "target_probs": {
-        "2": 0.0,
-        "3": 0.0
-      },
+      "raw_target_probs": {},
+      "target_probs": {},
       "target_score_basis": {},
       "type": "region"
     },
@@ -670,81 +763,63 @@
         43,
         46
       ],
-      "exist_prob": 0.8,
+      "exist_prob": 1.0,
       "grounded": false,
-      "id": 53,
-      "label": "hallway area beyond dining space",
-      "latent_exist_prob": 0.8,
+      "id": 51,
+      "label": "dining and kitchen corridor area with glass table and counters",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
-      "raw_target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
-      },
-      "target_probs": {
-        "2": 0.07246376811594203,
-        "3": 0.07246376811594203
-      },
-      "target_score_basis": {},
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "exist_prob": 0.7,
-      "grounded": false,
-      "id": 54,
-      "label": "upstairs bedroom area accessible via staircase",
-      "latent_exist_prob": 0.7,
-      "node_visit_times": 0,
-      "raw_target_probs": {
-        "2": 0.9,
-        "3": 0.9
-      },
-      "target_probs": {
-        "2": 0.782608695652174,
-        "3": 0.782608695652174
-      },
+      "raw_target_probs": {},
+      "target_probs": {},
       "target_score_basis": {},
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
+        0,
         11
       ],
       "exist_prob": 1.0,
       "grounded": true,
-      "id": 55,
-      "label": "upstairs hallway area visible at top of staircase",
+      "id": 52,
+      "label": "staircase and upper-level landing area with curved wooden handrail",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
-      "raw_target_probs": {
-        "2": 0.0,
-        "3": 0.0
-      },
-      "target_probs": {
-        "2": 0.0,
-        "3": 0.0
-      },
+      "raw_target_probs": {},
+      "target_probs": {},
       "target_score_basis": {},
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        0
+        15,
+        18
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "upper hallway area with art gallery wall and concrete partition",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        13,
+        22,
+        33
       ],
       "exist_prob": 1.0,
       "grounded": false,
-      "id": 56,
-      "label": "upper hallway area with curved concrete wall and staircase access",
+      "id": 54,
+      "label": "upper hallway extension area with art gallery wall and concrete partition",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
-      "raw_target_probs": {
-        "2": 0.08333333333333333,
-        "3": 0.08333333333333333
-      },
-      "target_probs": {
-        "2": 0.07246376811594203,
-        "3": 0.07246376811594203
-      },
+      "raw_target_probs": {},
+      "target_probs": {},
       "target_score_basis": {},
       "type": "region"
     }

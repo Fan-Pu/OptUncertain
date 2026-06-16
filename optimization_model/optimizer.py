@@ -160,10 +160,9 @@ class RollingHorizonOptimizer:
         }
 
         node_reward = {}
-        region_to_viewpoints = getattr(hypothesis_graph, "region_to_viewpoints", {})
         for node_id in all_node_ids:
             node = hypothesis_graph.nodes[node_id]
-            if node.type == TYPE_REGION and region_to_viewpoints.get(node_id):
+            if node.type == TYPE_REGION:
                 node_reward[node_id] = {target_id: 0.0 for target_id in target_ids}
                 continue
             target_score_source = (
@@ -770,9 +769,7 @@ class RollingHorizonOptimizer:
                 and int(node.node_visit_times) == 0
             )
         if node.type == TYPE_REGION:
-            return not bool(
-                getattr(hypothesis_graph, "region_to_viewpoints", {}).get(node_id)
-            )
+            return False
         raise ValueError("Unknown graph node type %s for node %s." % (node.type, node_id))
 
     def _validate_target_directed_reward_endpoints(

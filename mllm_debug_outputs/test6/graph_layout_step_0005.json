@@ -1,13 +1,25 @@
 {
   "agent_current_vp_ids": {
-    "agent0": 38,
-    "agent1": 36
+    "agent0": 0,
+    "agent1": 11
   },
   "edges": [
     {
       "grounded": true,
       "i": 0,
       "j": 11,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 0,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 0,
+      "j": 18,
       "type": "vv"
     },
     {
@@ -131,12 +143,6 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 36,
-      "j": 54,
-      "type": "vz"
-    },
-    {
       "grounded": true,
       "i": 38,
       "j": 40,
@@ -146,14 +152,16 @@
   "nodes": [
     {
       "connected_node_ids": [
-        11
+        11,
+        15,
+        18
       ],
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 0,
       "label": "f1b191033043441987b8ebf1bb55002c",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
+      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -199,7 +207,7 @@
       "id": 11,
       "label": "68e4c4477aa442cbbb9a9f1e54b9b831",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 1,
+      "node_visit_times": 2,
       "type": "viewpoint"
     },
     {
@@ -211,6 +219,18 @@
       "grounded": false,
       "id": 14,
       "label": "c9b7a323a72141628f0c48aa7eb3430e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        0
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "1c2209fa44fc48c7b7ce7981bafc4ccf",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "viewpoint"
@@ -230,6 +250,18 @@
       "label": "20cebd99bcf84b1c83bc9b6abbd78102",
       "latent_exist_prob": 1.0,
       "node_visit_times": 2,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        0
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "c20f944e9c434804944b0c1251247202",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
       "type": "viewpoint"
     },
     {
@@ -300,15 +332,14 @@
         17,
         38,
         40,
-        48,
-        54
+        48
       ],
       "exist_prob": 1.0,
       "grounded": true,
       "id": 36,
       "label": "a33fe858085149e8908942d0bf98767f",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 3,
+      "node_visit_times": 2,
       "type": "viewpoint"
     },
     {
@@ -322,7 +353,7 @@
       "id": 38,
       "label": "96490c4da78240058d1f76a07ed95c9d",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 3,
+      "node_visit_times": 2,
       "type": "viewpoint"
     },
     {
@@ -378,46 +409,22 @@
     },
     {
       "assigned_viewpoint_ids": [
+        5,
         6,
+        17,
         19,
         23,
+        36,
+        38,
         40,
         48
       ],
       "connected_node_ids": [],
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 50,
-      "label": "ground floor living area with sofa and large windows",
+      "label": "open-plan living and stair hall area with curved sofa and staircase",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        5,
-        17
-      ],
-      "connected_node_ids": [],
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 51,
-      "label": "dining area with glass table near staircase",
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        36,
-        38
-      ],
-      "connected_node_ids": [],
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 52,
-      "label": "staircase and landing area leading to upper floor",
-      "latent_exist_prob": 0.9,
       "node_visit_times": 0,
       "type": "region"
     },
@@ -431,49 +438,38 @@
         46
       ],
       "connected_node_ids": [],
-      "exist_prob": 0.8,
-      "grounded": false,
-      "id": 53,
-      "label": "hallway area beyond dining space",
-      "latent_exist_prob": 0.8,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [
-        36
-      ],
-      "exist_prob": 0.7,
-      "grounded": false,
-      "id": 54,
-      "label": "upstairs bedroom area accessible via staircase",
-      "latent_exist_prob": 0.7,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        11
-      ],
-      "connected_node_ids": [],
       "exist_prob": 1.0,
-      "grounded": true,
-      "id": 55,
-      "label": "upstairs hallway area visible at top of staircase",
+      "grounded": false,
+      "id": 51,
+      "label": "dining and kitchen corridor area with glass table and counters",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        0
+        0,
+        11
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 52,
+      "label": "staircase and upper-level landing area with curved wooden handrail",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        15,
+        18
       ],
       "connected_node_ids": [],
       "exist_prob": 1.0,
       "grounded": false,
-      "id": 56,
-      "label": "upper hallway area with curved concrete wall and staircase access",
+      "id": 53,
+      "label": "upper hallway area with art gallery wall and concrete partition",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
@@ -482,21 +478,17 @@
   "observation_step": 5,
   "region_to_viewpoints": {
     "50": [
+      5,
       6,
+      17,
       19,
       23,
+      36,
+      38,
       40,
       48
     ],
     "51": [
-      5,
-      17
-    ],
-    "52": [
-      36,
-      38
-    ],
-    "53": [
       14,
       21,
       27,
@@ -504,30 +496,34 @@
       43,
       46
     ],
-    "55": [
+    "52": [
+      0,
       11
     ],
-    "56": [
-      0
+    "53": [
+      15,
+      18
     ]
   },
   "viewpoint_to_region": {
-    "0": 56,
-    "5": 51,
+    "0": 52,
+    "5": 50,
     "6": 50,
-    "11": 55,
-    "14": 53,
-    "17": 51,
+    "11": 52,
+    "14": 51,
+    "15": 53,
+    "17": 50,
+    "18": 53,
     "19": 50,
-    "21": 53,
+    "21": 51,
     "23": 50,
-    "27": 53,
-    "35": 53,
-    "36": 52,
-    "38": 52,
+    "27": 51,
+    "35": 51,
+    "36": 50,
+    "38": 50,
     "40": 50,
-    "43": 53,
-    "46": 53,
+    "43": 51,
+    "46": 51,
     "48": 50
   }
 }

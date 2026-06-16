@@ -279,29 +279,6 @@ class _RegionVisitGraph:
         }
 
 
-class _VZConditionalEdgeGraph:
-    def __init__(self):
-        self.target_ids = ["target"]
-        self.target_id_to_description = {"target": "target"}
-        self.observation_step = 0
-        self.nodes = {
-            1: _FakeNode(1, True, 1.0, {"target": 0.0}),
-            2: _FakeNode(1, True, 1.0, {"target": 0.1}),
-            3: _FakeNode(0, False, 0.2, {"target": 1.0}),
-        }
-        self.edges = {
-            (1, 2): _FakeEdge(1, 2, 0.0, 1.0, grounded=True),
-            (2, 3): _FakeEdge(
-                2,
-                3,
-                0.0,
-                0.14,
-                grounded=False,
-                cond_exist_prob=0.7,
-            ),
-        }
-
-
 class _UngroundedViewpointAndRegionRewardGraph:
     def __init__(self):
         self.target_ids = ["target"]
@@ -314,7 +291,7 @@ class _UngroundedViewpointAndRegionRewardGraph:
         }
         self.edges = {
             (1, 2): _FakeEdge(1, 2, 0.0, 1.0),
-            (2, 3): _FakeEdge(2, 3, 0.0, 1.0),
+            (2, 3): _FakeEdge(2, 3, 1.0, 1.0),
         }
 
 
@@ -674,6 +651,23 @@ class _TargetDirectedNoPositiveEligibleEndpointGraph:
         }
 
 
+class _TargetDirectedRegionOnlyRewardGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.region_to_viewpoints = {}
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}, {"target": 0.0}),
+            2: _FakeNode(1, False, 1.0, {"target": 0.0}, {"target": 0.0}),
+            3: _FakeNode(0, False, 1.0, {"target": 1.0}, {"target": 10.0}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
+            (2, 3): _FakeEdge(2, 3, 1.0, 1.0),
+        }
+
+
 class MultiAgentOptimizerTest(unittest.TestCase):
     def _objective_bounds_for_graph(
         self,
@@ -726,10 +720,9 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             for node_id in all_node_ids
         }
         node_reward = {}
-        region_to_viewpoints = getattr(graph, "region_to_viewpoints", {})
         for node_id in all_node_ids:
             node = graph.nodes[node_id]
-            if node.type == 0 and region_to_viewpoints.get(node_id):
+            if node.type == 0:
                 node_reward[node_id] = {target_id: 0.0 for target_id in target_ids}
                 continue
             node_reward[node_id] = {
@@ -1102,6 +1095,19 @@ class MultiAgentOptimizerTest(unittest.TestCase):
                 target_found_flags={"target": False},
             )
 
+    def test_target_directed_region_reward_cannot_satisfy_endpoint(self):
+        optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "no positive eligible endpoint for unfound target target",
+        ):
+            optimizer.solve(
+                hypothesis_graph=_TargetDirectedRegionOnlyRewardGraph(),
+                agent_current_vp_ids={"agent0": 1},
+                target_found_flags={"target": False},
+            )
+
     def test_oracle_exact_coverage_assigns_target_to_lower_distance_agent(self):
         optimizer = RollingHorizonOptimizer(ORACLE_EXACT_COVERAGE_CONFIG)
         result = optimizer.solve(
@@ -1156,7 +1162,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
             bounds,
             (
                 0.9,
-                1.7000000000000002,
+                0.9,
                 2.0,
                 9.0,
                 0.0,
@@ -1201,22 +1207,7 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertEqual(bounds[8], 0.0)
         self.assertEqual(bounds[9], 0.0)
 
-    def test_vz_arc_uncertainty_uses_conditional_edge_existence(self):
-        result = RollingHorizonOptimizer(GOAL_ONLY_OPTIMIZER_CONFIG).solve(
-            hypothesis_graph=_VZConditionalEdgeGraph(),
-            agent_current_vp_ids={"agent0": 1},
-            target_found_flags={"target": False},
-        )
-
-        self.assertEqual(
-            result["agent_paths"]["agent0"]["planned_path_node_ids"],
-            [2, 3],
-        )
-        raw_terms = result["agent_paths"]["agent0"]["objective_terms"]["raw"]
-        self.assertAlmostEqual(raw_terms["arc_nonexistence"], 0.3)
-        self.assertAlmostEqual(raw_terms["node_nonexistence"], 0.8)
-
-    def test_ungrounded_nodes_use_raw_target_probability(self):
+    def test_unassigned_region_target_probability_has_zero_reward(self):
         result = RollingHorizonOptimizer(OPTIMIZER_CONFIG).solve(
             hypothesis_graph=_UngroundedViewpointAndRegionRewardGraph(),
             agent_current_vp_ids={"agent0": 1},
@@ -1225,11 +1216,11 @@ class MultiAgentOptimizerTest(unittest.TestCase):
 
         self.assertEqual(
             result["agent_paths"]["agent0"]["planned_path_node_ids"],
-            [2, 3],
+            [2],
         )
         self.assertAlmostEqual(
             result["agent_paths"]["agent0"]["objective_terms"]["raw"]["goal"],
-            1.0,
+            0.5,
         )
 
     def test_assigned_region_target_probability_has_zero_reward(self):

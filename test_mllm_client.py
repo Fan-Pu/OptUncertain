@@ -175,7 +175,6 @@ def _valid_payload():
     return {
         "current_viewpoints_reassignment": [],
         "visible_region_nodes": [],
-        "invisible_region_nodes": [],
         "viewpoint_target_scores": [
             {
                 "id": 11,
@@ -193,7 +192,6 @@ def _valid_payload():
                 },
             }
         ],
-        "region_target_scores": [],
         "viewpoint_node_assigns": [
             {
                 "region_node_id": 52,
@@ -203,7 +201,6 @@ def _valid_payload():
         "new_edges": [],
         "edge_distance_variances": {
             "viewpoint_viewpoint": 1.0,
-            "viewpoint_region": 4.0,
         },
     }
 
@@ -237,43 +234,124 @@ def test_current_viewpoints_with_prior_regions_are_not_required_assignments():
     ]
 
 
-def test_region_target_scores_rejects_final_assigned_region():
+def test_legacy_region_target_scores_are_pruned():
     payload = _valid_payload()
     payload["region_target_scores"] = [
         {"id": 52, "target_scores": {"2": 0.2, "3": 0.2}}
     ]
 
-    with pytest.raises(GraphValidationError) as exc_info:
-        _validate(payload)
+    validated = _validate(payload)
 
-    message = str(exc_info.value)
-    assert exc_info.value.category == "region target scores"
-    assert "Invalid region_target_scores contract" in message
-    assert "remove region_target_scores for regions with final assigned viewpoints [52]" in message
+    assert "region_target_scores" not in validated
 
 
-def test_region_target_scores_required_when_prior_assigned_region_becomes_unassigned():
+def test_unassigned_visible_region_is_pruned():
     payload = _valid_payload()
-    payload["current_viewpoints_reassignment"] = [
-        {"viewpoint_id": 38, "new_assigned_region_id": 56}
-    ]
-    payload["viewpoint_node_assigns"] = [
+    payload["visible_region_nodes"] = [
         {
-            "region_node_id": 56,
-            "assigned_viewpoint_node_indices": [11],
+            "id": 57,
+            "label": "unassigned upstairs bedroom area",
+            "exist_prob": 0.7,
+            "target_probs": {"2": 0.9, "3": 0.9},
         }
     ]
 
-    with pytest.raises(GraphValidationError) as exc_info:
-        _validate(payload)
+    validated = _validate(payload)
 
-    message = str(exc_info.value)
-    assert exc_info.value.category == "region target scores"
-    assert "Invalid region_target_scores contract" in message
-    assert (
-        "add complete region_target_scores for prior assigned regions that became "
-        "unassigned {52: ['2', '3']}"
-    ) in message
+    assert validated["visible_region_nodes"] == []
+
+
+def test_legacy_invisible_regions_and_vz_edges_are_pruned():
+    payload = _valid_payload()
+    payload["invisible_region_nodes"] = [
+        {
+            "id": 58,
+            "label": "unseen upstairs bedroom area",
+            "exist_prob": 0.7,
+            "target_probs": {"2": 0.9, "3": 0.9},
+        }
+    ]
+    payload["new_edges"] = [
+        {"i": 11, "j": 58, "edge_type": "VZ", "exist_prob": 0.6, "dist": 2.5}
+    ]
+
+    validated = _validate(payload)
+
+    assert "invisible_region_nodes" not in validated
+    assert validated["new_edges"] == []
+
+
+def test_assigned_visible_region_keeps_only_id_and_label():
+    payload = _valid_payload()
+    payload["visible_region_nodes"] = [
+        {
+            "id": 57,
+            "label": "upper hallway area",
+            "exist_prob": 0.7,
+            "target_probs": {"2": 0.9, "3": 0.9},
+        }
+    ]
+    payload["viewpoint_node_assigns"] = [
+        {"region_node_id": 57, "assigned_viewpoint_node_indices": [11]}
+    ]
+
+    validated = _validate(payload)
+
+    assert validated["visible_region_nodes"] == [
+        {"id": 57, "label": "upper hallway area"}
+    ]
+    assert validated["viewpoint_node_assigns"] == [
+        {"region_node_id": 57, "assigned_viewpoint_node_indices": [11]}
+    ]
+
+
+def test_hypothesis_graph_removes_unassigned_regions_and_vz_edges():
+    graph = HypothesisGraph(targets=TARGETS)
+    graph.add_or_update_node(
+        node_id=11,
+        label="upstairs viewpoint",
+        node_type=1,
+        exist_prob=1.0,
+        grounded=False,
+        target_probs={"2": 0.4, "3": 0.4},
+    )
+    graph.add_or_update_node(
+        node_id=57,
+        label="assigned upstairs hallway",
+        node_type=0,
+        exist_prob=1.0,
+        grounded=False,
+        target_probs={"2": 0.9, "3": 0.9},
+        raw_target_probs={"2": 9.0, "3": 9.0},
+    )
+    graph.add_or_update_node(
+        node_id=58,
+        label="orphan upstairs bedroom",
+        node_type=0,
+        exist_prob=0.7,
+        grounded=False,
+        target_probs={"2": 0.9, "3": 0.9},
+        raw_target_probs={"2": 9.0, "3": 9.0},
+    )
+    graph._set_viewpoint_region(11, 57)
+    graph.add_or_update_edge(
+        source_node_id=11,
+        target_node_id=58,
+        distance_mean=2.0,
+        distance_var=1.0,
+        cond_exist_prob=0.5,
+        exist_prob=0.5,
+        grounded=False,
+    )
+
+    graph._remove_unassigned_regions()
+    graph._clear_region_target_probabilities()
+
+    assert 57 in graph.nodes
+    assert 58 not in graph.nodes
+    assert tuple(sorted((11, 58))) not in graph.edges
+    assert graph.nodes[57].target_probs == {}
+    assert graph.nodes[57].raw_target_probs == {}
 
 
 def test_top_level_schema_feedback_includes_required_keys():
@@ -287,6 +365,14 @@ def test_top_level_schema_feedback_includes_required_keys():
     assert error.category == "top-level schema"
     assert "new_edges" in error.details["required_top_level_keys"]
     assert "Return exactly the required graph JSON top-level keys." in error.retry_guidance
+
+
+def test_graph_schema_does_not_require_removed_region_fields():
+    keys = MLLMClient._required_semantic_top_level_keys("graph_mllm")
+
+    assert "visible_region_nodes" in keys
+    assert "region_target_scores" not in keys
+    assert "invisible_region_nodes" not in keys
 
 
 def test_region_node_feedback_reports_region_namespace():
@@ -493,7 +579,12 @@ def test_graph_prompt_warns_target_scores_are_not_route_utility():
 
     assert "not route utility" in prompt_text
     assert "Do not give high target raw_score to stairs, landings" in prompt_text
-    assert "unassigned target-bearing regions or unvisited candidate viewpoints" in prompt_text
+    assert "unvisited concrete candidate viewpoints" in prompt_text
+    assert "Regions are semantic grouping nodes only" in prompt_text
+    assert "region_target_scores" not in prompt_text
+    assert "invisible_region_nodes" not in prompt_text
+    assert "VZ" not in prompt_text
+    assert "type-(2)" not in prompt_text
 
 
 def test_detection_fixed_viewpoint_raw_and_normalized_probs_zeroed():

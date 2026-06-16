@@ -266,7 +266,7 @@ Strict allowed-id rule:
 - If a current viewpoint appears in viewpoint_node_assigns, that assigned region is its final region. current_viewpoints_reassignment for that same viewpoint must match that region exactly, or be omitted when it is not a true change from graph_summary.viewpoint_to_region.
 - Never assign a current viewpoint to region A in viewpoint_node_assigns and region B in current_viewpoints_reassignment.
 - viewpoint_target_scores is optional and incremental for the MLLM-updatable viewpoint ids below.
-- region_target_scores is optional and incremental for existing or newly proposed regions with no final assigned viewpoints.
+- Return only the schema keys shown in the output example.
 - Do not include current, grounded, or previously visited viewpoint ids in viewpoint_target_scores. Their target probabilities are detection-fixed at 0 for unfound targets.
 - Existing non-current graph viewpoint ids keep prior_raw_target_probs unless current observations justify changing a specific viewpoint-target value.
 - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_scores, even if that id appears in compact shared graph summary, region assigned_viewpoint_ids, or viewpoint_to_region.
@@ -464,21 +464,17 @@ Viewpoint target score-basis rule:
 - For each target, derive the relevant object identity, visual attributes, support surfaces, nearby objects, floor or level cues, room or area cues, and relative-location cues from the active target description.
 - Make floor, level, room, support-object, and relative-location cue matches visible in basis. If a candidate is scored high because it is upstairs, near stairs, in a bedroom-like area, or on a route toward the target-bearing area, state that cue.
 - Do not give high target raw_score to stairs, landings, or hallway viewpoints merely because they lead toward the target area.
-- Put route-only upstairs or bedroom cues on unassigned target-bearing regions or unvisited candidate viewpoints, not on already searched stair or landing viewpoints.
-- Give much lower raw_score values to candidates whose area contradicts explicit target-location text, even when they contain salient unrelated objects. Do not let weak normalized filler locations outrank a candidate or type-(2) region whose layout cues better match the target text.
+- Put route-only upstairs or bedroom cues on unvisited concrete candidate viewpoints, not on already searched stair or landing viewpoints.
+- Give much lower raw_score values to candidates whose area contradicts explicit target-location text, even when they contain salient unrelated objects. Do not let weak normalized filler locations outrank a candidate viewpoint whose layout cues better match the target text.
 - For each returned viewpoint-target pair, fill basis with one short clue explaining why raw_score and evidence_strength follow from the target text, visible evidence, red-marker location, assigned semantic region, spatial context, and graph history.
 - basis must be a non-empty string.
 - Do not use fixed object-room associations or hardcoded target-specific mappings. Only use constraints implied by the active target text and current graph/visual evidence.
 
 Target probability rule:
 - viewpoint_target_scores raw_score values are raw target-location scores, not calibrated probabilities. The validator stores the repaired materialized values as raw_target_probs and normalizes target_probs per target across eligible viewpoint ids.
-- Region target_scores values are raw target-location scores for type-(2) regions: semantic regions with no final assigned viewpoints. The validator stores the materialized raw values as raw_target_probs.
-- Type-(1) regions, meaning regions with any final assigned viewpoints, compute raw region target scores locally as the mean of normalized target_probs over assigned viewpoints.
-- Region target_probs are normalized per target across the union of type-(1) and type-(2) regions.
-- Existing type-(2) regions keep prior raw_target_probs unless region_target_scores changes a value. Newly proposed type-(2) regions use their region target_probs as initial raw scores unless region_target_scores overrides them.
-- If a region loses all assigned viewpoints in this step and becomes type-(2), provide region_target_scores for every active target_id.
+- Regions are semantic grouping nodes only. They do not carry target_scores, target_probs, raw_target_probs, or existence probabilities from the MLLM.
 - Do not copy default values from the schema or examples.
-- For each active target_id, compare all type-(2) regions and all eligible non-current viewpoint ids before assigning changed scores.
+- For each active target_id, compare all eligible non-current viewpoint ids before assigning changed scores.
 - Assign higher scores to locations whose visible objects, room or area evidence, furniture, spatial context, and graph history better satisfy the constraints inferred from that active target description.
 - Assign especially strong raw score mass to matching target-bearing floor, room, support-object, relative-location, stair, landing, hallway, doorway, and route-continuation evidence when the target text contains those cues.
 - Assign much lower raw score mass to contradictory floors or room areas; for example, first-floor dining or patio evidence should not compete with upstairs-bedroom evidence for an explicitly upstairs-bedroom target.
@@ -486,7 +482,6 @@ Target probability rule:
 - Use different scores when evidence differs.
 - Equal scores are allowed only when the basis, assigned region, spatial context, and graph history are substantively indistinguishable.
 - For each active target_id, the sum of materialized raw scores across eligible viewpoint ids must be positive.
-- For each active target_id, the sum of materialized raw scores across all regions must be positive.
 
 All non-current visible neighboring viewpoint ids:
 [
@@ -513,43 +508,14 @@ Output shape example. It uses placeholder strings for score fields to avoid nume
 {
   "current_viewpoints_reassignment": [
     {
-      "new_assigned_region_id": 51,
+      "new_assigned_region_id": 50,
       "viewpoint_id": 17
     }
   ],
   "edge_distance_variances": {
-    "viewpoint_region": 4.0,
     "viewpoint_viewpoint": 1.0
   },
-  "invisible_region_nodes": [
-    {
-      "exist_prob": 0.6,
-      "id": 52,
-      "label": "unseen hallway area beyond closed doorway",
-      "target_probs": {
-        "2": "<score in [0, 1] justified by evidence>",
-        "3": "<score in [0, 1] justified by evidence>"
-      }
-    }
-  ],
-  "new_edges": [
-    {
-      "dist": 2.5,
-      "edge_type": "VZ",
-      "exist_prob": 0.6,
-      "i": 5,
-      "j": 52
-    }
-  ],
-  "region_target_scores": [
-    {
-      "id": 52,
-      "target_scores": {
-        "2": "<nonnegative raw score justified by region-level evidence>",
-        "3": "<nonnegative raw score justified by region-level evidence>"
-      }
-    }
-  ],
+  "new_edges": [],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
@@ -578,22 +544,8 @@ Output shape example. It uses placeholder strings for score fields to avoid nume
   ],
   "visible_region_nodes": [
     {
-      "exist_prob": 1.0,
       "id": 50,
-      "label": "bright kitchen area near dining table",
-      "target_probs": {
-        "2": "<score in [0, 1] justified by evidence>",
-        "3": "<score in [0, 1] justified by evidence>"
-      }
-    },
-    {
-      "exist_prob": 0.7,
-      "id": 51,
-      "label": "adjacent hallway visible through doorway",
-      "target_probs": {
-        "2": "<score in [0, 1] justified by evidence>",
-        "3": "<score in [0, 1] justified by evidence>"
-      }
+      "label": "bright kitchen area near dining table"
     }
   ]
 }
@@ -614,7 +566,6 @@ Current step request:
 - If a non-current visible neighboring viewpoint is close to the current viewpoint and no doorway, wall, corridor boundary, room boundary, or transition area separates them, prefer the current viewpoint's final region.
 - If a non-current visible neighboring viewpoint is farther away, or if its red marker is across a clear spatial boundary, assign it to the semantic region that physically contains that red marker.
 - Do not assign a non-current visible neighboring viewpoint to an adjacent area only because that area is visible in the panorama. Assign it to that adjacent area only when its red marker lies inside that area, or when distance and spatial context strongly support that assignment.
-- Propose invisible_region_nodes only for completely unseen areas inferred from layout cues.
-- Treat partially visible adjacent areas as visible_region_nodes, not invisible_region_nodes.
-- Propose only legal VV and VZ edges using the new_edges rules in Core rules.
+- Propose semantic regions only for areas that contain assigned current or visible viewpoint ids.
+- Propose only legal VV edges using the new_edges rules in Core rules.
 - Return compact JSON only.

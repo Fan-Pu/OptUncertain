@@ -87,12 +87,6 @@
       "i": 17,
       "j": 40,
       "type": "vv"
-    },
-    {
-      "grounded": false,
-      "i": 36,
-      "j": 54,
-      "type": "vz"
     }
   ],
   "nodes": [
@@ -220,8 +214,7 @@
     {
       "connected_node_ids": [
         5,
-        17,
-        54
+        17
       ],
       "exist_prob": 1.0,
       "grounded": false,
@@ -270,44 +263,20 @@
     },
     {
       "assigned_viewpoint_ids": [
+        5,
         6,
+        17,
         19,
         23,
+        36,
         40
       ],
       "connected_node_ids": [],
       "exist_prob": 1.0,
-      "grounded": false,
-      "id": 50,
-      "label": "ground floor living area with sofa and large windows",
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        5,
-        17
-      ],
-      "connected_node_ids": [],
-      "exist_prob": 1.0,
       "grounded": true,
-      "id": 51,
-      "label": "dining area with glass table near staircase",
+      "id": 50,
+      "label": "open-plan living and stair hall area with curved sofa and staircase",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        36
-      ],
-      "connected_node_ids": [],
-      "exist_prob": 0.9,
-      "grounded": false,
-      "id": 52,
-      "label": "staircase and landing area leading to upper floor",
-      "latent_exist_prob": 0.9,
       "node_visit_times": 0,
       "type": "region"
     },
@@ -321,24 +290,11 @@
         46
       ],
       "connected_node_ids": [],
-      "exist_prob": 0.8,
+      "exist_prob": 1.0,
       "grounded": false,
-      "id": 53,
-      "label": "hallway area beyond dining space",
-      "latent_exist_prob": 0.8,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [
-        36
-      ],
-      "exist_prob": 0.7,
-      "grounded": false,
-      "id": 54,
-      "label": "upstairs bedroom area accessible via staircase",
-      "latent_exist_prob": 0.7,
+      "id": 51,
+      "label": "dining and kitchen corridor area with glass table and counters",
+      "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     }
@@ -346,19 +302,15 @@
   "observation_step": 1,
   "region_to_viewpoints": {
     "50": [
+      5,
       6,
+      17,
       19,
       23,
+      36,
       40
     ],
     "51": [
-      5,
-      17
-    ],
-    "52": [
-      36
-    ],
-    "53": [
       14,
       21,
       27,
@@ -368,18 +320,18 @@
     ]
   },
   "viewpoint_to_region": {
-    "5": 51,
+    "5": 50,
     "6": 50,
-    "14": 53,
-    "17": 51,
+    "14": 51,
+    "17": 50,
     "19": 50,
-    "21": 53,
+    "21": 51,
     "23": 50,
-    "27": 53,
-    "35": 53,
-    "36": 52,
+    "27": 51,
+    "35": 51,
+    "36": 50,
     "40": 50,
-    "43": 53,
-    "46": 53
+    "43": 51,
+    "46": 51
   }
 }

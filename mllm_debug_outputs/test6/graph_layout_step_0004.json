@@ -131,12 +131,6 @@
       "type": "vv"
     },
     {
-      "grounded": false,
-      "i": 36,
-      "j": 54,
-      "type": "vz"
-    },
-    {
       "grounded": true,
       "i": 38,
       "j": 40,
@@ -300,8 +294,7 @@
         17,
         38,
         40,
-        48,
-        54
+        48
       ],
       "exist_prob": 1.0,
       "grounded": true,
@@ -378,46 +371,22 @@
     },
     {
       "assigned_viewpoint_ids": [
+        5,
         6,
+        17,
         19,
         23,
+        36,
+        38,
         40,
         48
       ],
       "connected_node_ids": [],
       "exist_prob": 1.0,
-      "grounded": false,
+      "grounded": true,
       "id": 50,
-      "label": "ground floor living area with sofa and large windows",
+      "label": "open-plan living and stair hall area with curved sofa and staircase",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        5,
-        17
-      ],
-      "connected_node_ids": [],
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 51,
-      "label": "dining area with glass table near staircase",
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        36,
-        38
-      ],
-      "connected_node_ids": [],
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 52,
-      "label": "staircase and landing area leading to upper floor",
-      "latent_exist_prob": 0.9,
       "node_visit_times": 0,
       "type": "region"
     },
@@ -431,49 +400,24 @@
         46
       ],
       "connected_node_ids": [],
-      "exist_prob": 0.8,
-      "grounded": false,
-      "id": 53,
-      "label": "hallway area beyond dining space",
-      "latent_exist_prob": 0.8,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "connected_node_ids": [
-        36
-      ],
-      "exist_prob": 0.7,
-      "grounded": false,
-      "id": 54,
-      "label": "upstairs bedroom area accessible via staircase",
-      "latent_exist_prob": 0.7,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        11
-      ],
-      "connected_node_ids": [],
       "exist_prob": 1.0,
-      "grounded": true,
-      "id": 55,
-      "label": "upstairs hallway area visible at top of staircase",
+      "grounded": false,
+      "id": 51,
+      "label": "dining and kitchen corridor area with glass table and counters",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        0
+        0,
+        11
       ],
       "connected_node_ids": [],
       "exist_prob": 1.0,
-      "grounded": false,
-      "id": 56,
-      "label": "upper hallway area with curved concrete wall and staircase access",
+      "grounded": true,
+      "id": 52,
+      "label": "staircase and upper-level landing area with curved wooden handrail",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
@@ -482,21 +426,17 @@
   "observation_step": 4,
   "region_to_viewpoints": {
     "50": [
+      5,
       6,
+      17,
       19,
       23,
+      36,
+      38,
       40,
       48
     ],
     "51": [
-      5,
-      17
-    ],
-    "52": [
-      36,
-      38
-    ],
-    "53": [
       14,
       21,
       27,
@@ -504,30 +444,28 @@
       43,
       46
     ],
-    "55": [
+    "52": [
+      0,
       11
-    ],
-    "56": [
-      0
     ]
   },
   "viewpoint_to_region": {
-    "0": 56,
-    "5": 51,
+    "0": 52,
+    "5": 50,
     "6": 50,
-    "11": 55,
-    "14": 53,
-    "17": 51,
+    "11": 52,
+    "14": 51,
+    "17": 50,
     "19": 50,
-    "21": 53,
+    "21": 51,
     "23": 50,
-    "27": 53,
-    "35": 53,
-    "36": 52,
-    "38": 52,
+    "27": 51,
+    "35": 51,
+    "36": 50,
+    "38": 50,
     "40": 50,
-    "43": 53,
-    "46": 53,
+    "43": 51,
+    "46": 51,
     "48": 50
   }
 }

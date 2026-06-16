@@ -13,8 +13,8 @@ Active target set:
 Compact shared graph summary:
 {
   "agent_current_vp_ids": {
-    "agent0": 38,
-    "agent1": 36
+    "agent0": 18,
+    "agent1": 15
   },
   "edges": [
     {
@@ -25,6 +25,26 @@ Compact shared graph summary:
       "grounded": 1,
       "i": 0,
       "j": 11,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.66,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 0,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.803,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 0,
+      "j": 18,
       "type": "vv"
     },
     {
@@ -149,12 +169,52 @@ Compact shared graph summary:
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 2.118,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 13,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 3.054,
       "distance_var": 0.0,
       "exist_prob": 1.0,
       "grounded": 1,
       "i": 14,
       "j": 36,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.986,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 15,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.909,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 15,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.448,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "i": 15,
+      "j": 33,
       "type": "vv"
     },
     {
@@ -228,16 +288,6 @@ Compact shared graph summary:
       "type": "vv"
     },
     {
-      "cond_exist_prob": 0.9657,
-      "distance_mean": 2.307,
-      "distance_var": 0.9733,
-      "exist_prob": 0.676,
-      "grounded": 0,
-      "i": 36,
-      "j": 54,
-      "type": "vz"
-    },
-    {
       "cond_exist_prob": 1.0,
       "distance_mean": 2.061,
       "distance_var": 0.0,
@@ -251,13 +301,13 @@ Compact shared graph summary:
   "nodes": [
     {
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 0,
       "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
+      "node_visit_times": 2,
       "raw_target_probs": {
-        "2": 0.5,
-        "3": 0.5
+        "2": 0.0,
+        "3": 0.0
       },
       "type": "viewpoint"
     },
@@ -290,10 +340,22 @@ Compact shared graph summary:
       "grounded": 1,
       "id": 11,
       "latent_exist_prob": 1.0,
-      "node_visit_times": 1,
+      "node_visit_times": 2,
       "raw_target_probs": {
         "2": 0.0,
         "3": 0.0
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 13,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.08,
+        "3": 0.08
       },
       "type": "viewpoint"
     },
@@ -312,6 +374,14 @@ Compact shared graph summary:
     {
       "exist_prob": 1.0,
       "grounded": 1,
+      "id": 15,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 1,
       "id": 17,
       "latent_exist_prob": 1.0,
       "node_visit_times": 2,
@@ -323,13 +393,21 @@ Compact shared graph summary:
     },
     {
       "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 18,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
       "grounded": 0,
       "id": 19,
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.05,
-        "3": 0.05
+        "2": 0.02,
+        "3": 0.02
       },
       "type": "viewpoint"
     },
@@ -340,8 +418,20 @@ Compact shared graph summary:
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.15,
-        "3": 0.15
+        "2": 0.02,
+        "3": 0.02
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 22,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.07,
+        "3": 0.07
       },
       "type": "viewpoint"
     },
@@ -349,6 +439,30 @@ Compact shared graph summary:
       "exist_prob": 1.0,
       "grounded": 0,
       "id": 23,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.01,
+        "3": 0.01
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 27,
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.02,
+        "3": 0.02
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": 0,
+      "id": 33,
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
@@ -360,24 +474,12 @@ Compact shared graph summary:
     {
       "exist_prob": 1.0,
       "grounded": 0,
-      "id": 27,
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "raw_target_probs": {
-        "2": 0.15,
-        "3": 0.15
-      },
-      "type": "viewpoint"
-    },
-    {
-      "exist_prob": 1.0,
-      "grounded": 0,
       "id": 35,
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.1,
-        "3": 0.1
+        "2": 0.03,
+        "3": 0.03
       },
       "type": "viewpoint"
     },
@@ -386,7 +488,11 @@ Compact shared graph summary:
       "grounded": 1,
       "id": 36,
       "latent_exist_prob": 1.0,
-      "node_visit_times": 4,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0
+      },
       "type": "viewpoint"
     },
     {
@@ -394,7 +500,11 @@ Compact shared graph summary:
       "grounded": 1,
       "id": 38,
       "latent_exist_prob": 1.0,
-      "node_visit_times": 4,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0
+      },
       "type": "viewpoint"
     },
     {
@@ -416,8 +526,8 @@ Compact shared graph summary:
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.15,
-        "3": 0.15
+        "2": 0.02,
+        "3": 0.02
       },
       "type": "viewpoint"
     },
@@ -428,8 +538,8 @@ Compact shared graph summary:
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.1,
-        "3": 0.1
+        "2": 0.02,
+        "3": 0.02
       },
       "type": "viewpoint"
     },
@@ -440,50 +550,28 @@ Compact shared graph summary:
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "2": 0.01,
-        "3": 0.01
+        "2": 0.04,
+        "3": 0.04
       },
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
+        5,
         6,
+        17,
         19,
         23,
+        36,
+        38,
         40,
         48
       ],
       "exist_prob": 1.0,
-      "grounded": 0,
+      "grounded": 1,
       "id": 50,
-      "label": "ground floor living area with sofa and large windows",
+      "label": "open-plan living and stair hall area with curved sofa and staircase",
       "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        5,
-        17
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 51,
-      "label": "dining area with glass table near staircase",
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        36,
-        38
-      ],
-      "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 52,
-      "label": "staircase and landing area leading to upper floor",
-      "latent_exist_prob": 0.9,
       "node_visit_times": 0,
       "type": "region"
     },
@@ -496,48 +584,50 @@ Compact shared graph summary:
         43,
         46
       ],
-      "exist_prob": 0.8,
-      "grounded": 0,
-      "id": 53,
-      "label": "hallway area beyond dining space",
-      "latent_exist_prob": 0.8,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [],
-      "exist_prob": 0.7,
-      "grounded": 0,
-      "id": 54,
-      "label": "upstairs bedroom area accessible via staircase",
-      "latent_exist_prob": 0.7,
-      "node_visit_times": 0,
-      "raw_target_probs": {
-        "2": 0.9,
-        "3": 0.9
-      },
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        11
-      ],
       "exist_prob": 1.0,
-      "grounded": 1,
-      "id": 55,
-      "label": "upstairs hallway area visible at top of staircase",
+      "grounded": 0,
+      "id": 51,
+      "label": "dining and kitchen corridor area with glass table and counters",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        0
+        0,
+        11
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 52,
+      "label": "staircase and upper-level landing area with curved wooden handrail",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        15,
+        18
+      ],
+      "exist_prob": 1.0,
+      "grounded": 1,
+      "id": 53,
+      "label": "upper hallway area with art gallery wall and concrete partition",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        13,
+        22,
+        33
       ],
       "exist_prob": 1.0,
       "grounded": 0,
-      "id": 56,
-      "label": "upper hallway area with curved concrete wall and staircase access",
+      "id": 54,
+      "label": "upper hallway extension area with art gallery wall and concrete partition",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
@@ -549,22 +639,27 @@ Compact shared graph summary:
     "3": false
   },
   "viewpoint_to_region": {
-    "0": 56,
-    "11": 55,
-    "14": 53,
-    "17": 51,
+    "0": 52,
+    "11": 52,
+    "13": 54,
+    "14": 51,
+    "15": 53,
+    "17": 50,
+    "18": 53,
     "19": 50,
-    "21": 53,
+    "21": 51,
+    "22": 54,
     "23": 50,
-    "27": 53,
-    "35": 53,
-    "36": 52,
-    "38": 52,
+    "27": 51,
+    "33": 54,
+    "35": 51,
+    "36": 50,
+    "38": 50,
     "40": 50,
-    "43": 53,
-    "46": 53,
+    "43": 51,
+    "46": 51,
     "48": 50,
-    "5": 51,
+    "5": 50,
     "6": 50
   }
 }
@@ -573,150 +668,138 @@ Per-agent observation context:
 [
   {
     "agent_id": "agent0",
-    "current_viewpoint_index": 38,
+    "current_viewpoint_index": 18,
     "current_xy": [
-      3.839430093765259,
-      -1.4551000595092773
+      9.349860191345215,
+      -1.0683499574661255
     ],
     "image_index": 0,
-    "prior_assigned_region_id": 52,
-    "prior_assigned_region_label": "staircase and landing area leading to upper floor",
+    "prior_assigned_region_id": 53,
+    "prior_assigned_region_label": "upper hallway area with art gallery wall and concrete partition",
     "prior_grounded": true,
-    "prior_visit_times": 4,
+    "prior_visit_times": 0,
     "visible_viewpoints": [
       {
-        "distance": 2.042,
-        "prior_assigned_region_id": 55,
-        "prior_assigned_region_label": "upstairs hallway area visible at top of staircase",
-        "prior_grounded": true,
-        "prior_visit_times": 1,
-        "viewpoint_index": 11,
-        "xy": [
-          5.567039966583252,
-          -1.5758899450302124
-        ]
-      },
-      {
-        "distance": 1.387,
+        "distance": 1.803,
         "prior_assigned_region_id": 52,
-        "prior_assigned_region_label": "staircase and landing area leading to upper floor",
+        "prior_assigned_region_label": "staircase and upper-level landing area with curved wooden handrail",
         "prior_grounded": true,
-        "prior_visit_times": 4,
-        "viewpoint_index": 36,
+        "prior_visit_times": 2,
+        "viewpoint_index": 0,
         "xy": [
-          2.5772600173950195,
-          -1.352020025253296
+          7.642819881439209,
+          -1.5204800367355347
         ]
       },
       {
-        "distance": 2.061,
-        "prior_assigned_region_id": 50,
-        "prior_assigned_region_label": "ground floor living area with sofa and large windows",
+        "distance": 1.33,
+        "prior_assigned_region_id": 54,
+        "prior_assigned_region_label": "upper hallway extension area with art gallery wall and concrete partition",
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 40,
+        "viewpoint_index": 13,
         "xy": [
-          1.927780032157898,
-          -1.988669991493225
+          9.535249710083008,
+          -2.3852899074554443
+        ]
+      },
+      {
+        "distance": 0.986,
+        "prior_assigned_region_id": 53,
+        "prior_assigned_region_label": "upper hallway area with art gallery wall and concrete partition",
+        "prior_grounded": true,
+        "prior_visit_times": 1,
+        "viewpoint_index": 15,
+        "xy": [
+          9.986869812011719,
+          -0.31559300422668457
+        ]
+      },
+      {
+        "distance": 2.246,
+        "prior_assigned_region_id": 54,
+        "prior_assigned_region_label": "upper hallway extension area with art gallery wall and concrete partition",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 33,
+        "xy": [
+          11.431599617004395,
+          -0.22439399361610413
         ]
       }
     ]
   },
   {
     "agent_id": "agent1",
-    "current_viewpoint_index": 36,
+    "current_viewpoint_index": 15,
     "current_xy": [
-      2.5772600173950195,
-      -1.352020025253296
+      9.986869812011719,
+      -0.31559300422668457
     ],
     "image_index": 1,
-    "prior_assigned_region_id": 52,
-    "prior_assigned_region_label": "staircase and landing area leading to upper floor",
+    "prior_assigned_region_id": 53,
+    "prior_assigned_region_label": "upper hallway area with art gallery wall and concrete partition",
     "prior_grounded": true,
-    "prior_visit_times": 4,
+    "prior_visit_times": 1,
     "visible_viewpoints": [
       {
-        "distance": 3.309,
-        "prior_assigned_region_id": 51,
-        "prior_assigned_region_label": "dining area with glass table near staircase",
-        "prior_grounded": true,
-        "prior_visit_times": 1,
-        "viewpoint_index": 5,
-        "xy": [
-          5.421289920806885,
-          -3.043220043182373
-        ]
-      },
-      {
-        "distance": 2.829,
-        "prior_assigned_region_id": 50,
-        "prior_assigned_region_label": "ground floor living area with sofa and large windows",
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 6,
-        "xy": [
-          0.10170599818229675,
-          0.016794400289654732
-        ]
-      },
-      {
-        "distance": 3.054,
-        "prior_assigned_region_id": 53,
-        "prior_assigned_region_label": "hallway area beyond dining space",
-        "prior_grounded": false,
-        "prior_visit_times": 0,
-        "viewpoint_index": 14,
-        "xy": [
-          3.4855799674987793,
-          -4.2677998542785645
-        ]
-      },
-      {
-        "distance": 2.638,
-        "prior_assigned_region_id": 51,
-        "prior_assigned_region_label": "dining area with glass table near staircase",
+        "distance": 2.66,
+        "prior_assigned_region_id": 52,
+        "prior_assigned_region_label": "staircase and upper-level landing area with curved wooden handrail",
         "prior_grounded": true,
         "prior_visit_times": 2,
-        "viewpoint_index": 17,
+        "viewpoint_index": 0,
         "xy": [
-          1.6659300327301025,
-          -3.827579975128174
+          7.642819881439209,
+          -1.5204800367355347
         ]
       },
       {
-        "distance": 1.387,
-        "prior_assigned_region_id": 52,
-        "prior_assigned_region_label": "staircase and landing area leading to upper floor",
+        "distance": 2.118,
+        "prior_assigned_region_id": 54,
+        "prior_assigned_region_label": "upper hallway extension area with art gallery wall and concrete partition",
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 13,
+        "xy": [
+          9.535249710083008,
+          -2.3852899074554443
+        ]
+      },
+      {
+        "distance": 0.986,
+        "prior_assigned_region_id": 53,
+        "prior_assigned_region_label": "upper hallway area with art gallery wall and concrete partition",
         "prior_grounded": true,
-        "prior_visit_times": 4,
-        "viewpoint_index": 38,
+        "prior_visit_times": 0,
+        "viewpoint_index": 18,
         "xy": [
-          3.839430093765259,
-          -1.4551000595092773
+          9.349860191345215,
+          -1.0683499574661255
         ]
       },
       {
-        "distance": 0.91,
-        "prior_assigned_region_id": 50,
-        "prior_assigned_region_label": "ground floor living area with sofa and large windows",
+        "distance": 2.909,
+        "prior_assigned_region_id": 54,
+        "prior_assigned_region_label": "upper hallway extension area with art gallery wall and concrete partition",
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 40,
+        "viewpoint_index": 22,
         "xy": [
-          1.927780032157898,
-          -1.988669991493225
+          7.077700138092041,
+          -0.28408101201057434
         ]
       },
       {
-        "distance": 4.69,
-        "prior_assigned_region_id": 50,
-        "prior_assigned_region_label": "ground floor living area with sofa and large windows",
+        "distance": 1.448,
+        "prior_assigned_region_id": 54,
+        "prior_assigned_region_label": "upper hallway extension area with art gallery wall and concrete partition",
         "prior_grounded": false,
         "prior_visit_times": 0,
-        "viewpoint_index": 48,
+        "viewpoint_index": 33,
         "xy": [
-          -1.8040800094604492,
-          -3.026099920272827
+          11.431599617004395,
+          -0.22439399361610413
         ]
       }
     ]
@@ -749,27 +832,24 @@ Strict allowed-id rule:
 - If a current viewpoint appears in viewpoint_node_assigns, that assigned region is its final region. current_viewpoints_reassignment for that same viewpoint must match that region exactly, or be omitted when it is not a true change from graph_summary.viewpoint_to_region.
 - Never assign a current viewpoint to region A in viewpoint_node_assigns and region B in current_viewpoints_reassignment.
 - viewpoint_target_scores is optional and incremental for the MLLM-updatable viewpoint ids below.
-- region_target_scores is optional and incremental for existing or newly proposed regions with no final assigned viewpoints.
+- Return only the schema keys shown in the output example.
 - Do not include current, grounded, or previously visited viewpoint ids in viewpoint_target_scores. Their target probabilities are detection-fixed at 0 for unfound targets.
 - Existing non-current graph viewpoint ids keep prior_raw_target_probs unless current observations justify changing a specific viewpoint-target value.
 - Do not include any other viewpoint id in viewpoint_node_assigns or viewpoint_target_scores, even if that id appears in compact shared graph summary, region assigned_viewpoint_ids, or viewpoint_to_region.
 - Compact graph summary assignments are historical context. Do not copy full old region assigned_viewpoint_ids into current-step assignments.
 - Region ids must be >= 50.
-- New region ids must start from 57.
+- New region ids must start from 55.
 - Existing region ids in the graph summary may be reused.
 - Never use a viewpoint id as a region id.
 
 Current-step allowed viewpoint ids:
 [
-  5,
-  6,
-  11,
-  14,
-  17,
-  36,
-  38,
-  40,
-  48
+  0,
+  13,
+  15,
+  18,
+  22,
+  33
 ]
 
 Viewpoint ids requiring region assignment in this step:
@@ -781,33 +861,30 @@ These ids include:
 
 Current-step viewpoint ids not requiring region assignment in this step:
 [
-  5,
-  6,
-  11,
-  14,
-  17,
-  36,
-  38,
-  40,
-  48
+  0,
+  13,
+  15,
+  18,
+  22,
+  33
 ]
 
 MLLM-updatable viewpoint target-probability context:
 [
   {
     "has_prior_raw_target_probs": true,
-    "id": 0,
-    "prior_raw_target_probs": {
-      "2": 0.5,
-      "3": 0.5
-    }
-  },
-  {
-    "has_prior_raw_target_probs": true,
     "id": 6,
     "prior_raw_target_probs": {
       "2": 0.02,
       "3": 0.02
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 13,
+    "prior_raw_target_probs": {
+      "2": 0.08,
+      "3": 0.08
     }
   },
   {
@@ -822,21 +899,45 @@ MLLM-updatable viewpoint target-probability context:
     "has_prior_raw_target_probs": true,
     "id": 19,
     "prior_raw_target_probs": {
-      "2": 0.05,
-      "3": 0.05
+      "2": 0.02,
+      "3": 0.02
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 21,
     "prior_raw_target_probs": {
-      "2": 0.15,
-      "3": 0.15
+      "2": 0.02,
+      "3": 0.02
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 22,
+    "prior_raw_target_probs": {
+      "2": 0.07,
+      "3": 0.07
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 23,
+    "prior_raw_target_probs": {
+      "2": 0.01,
+      "3": 0.01
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 27,
+    "prior_raw_target_probs": {
+      "2": 0.02,
+      "3": 0.02
+    }
+  },
+  {
+    "has_prior_raw_target_probs": true,
+    "id": 33,
     "prior_raw_target_probs": {
       "2": 0.05,
       "3": 0.05
@@ -844,18 +945,10 @@ MLLM-updatable viewpoint target-probability context:
   },
   {
     "has_prior_raw_target_probs": true,
-    "id": 27,
-    "prior_raw_target_probs": {
-      "2": 0.15,
-      "3": 0.15
-    }
-  },
-  {
-    "has_prior_raw_target_probs": true,
     "id": 35,
     "prior_raw_target_probs": {
-      "2": 0.1,
-      "3": 0.1
+      "2": 0.03,
+      "3": 0.03
     }
   },
   {
@@ -870,24 +963,24 @@ MLLM-updatable viewpoint target-probability context:
     "has_prior_raw_target_probs": true,
     "id": 43,
     "prior_raw_target_probs": {
-      "2": 0.15,
-      "3": 0.15
+      "2": 0.02,
+      "3": 0.02
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 46,
     "prior_raw_target_probs": {
-      "2": 0.1,
-      "3": 0.1
+      "2": 0.02,
+      "3": 0.02
     }
   },
   {
     "has_prior_raw_target_probs": true,
     "id": 48,
     "prior_raw_target_probs": {
-      "2": 0.01,
-      "3": 0.01
+      "2": 0.04,
+      "3": 0.04
     }
   }
 ]
@@ -895,10 +988,10 @@ MLLM-updatable viewpoint target-probability context:
 Eligible viewpoint_target_scores update ids:
 [
   {
-    "id": 0
+    "id": 6
   },
   {
-    "id": 6
+    "id": 13
   },
   {
     "id": 14
@@ -910,10 +1003,16 @@ Eligible viewpoint_target_scores update ids:
     "id": 21
   },
   {
+    "id": 22
+  },
+  {
     "id": 23
   },
   {
     "id": 27
+  },
+  {
+    "id": 33
   },
   {
     "id": 35
@@ -950,21 +1049,17 @@ Viewpoint target score-basis rule:
 - For each target, derive the relevant object identity, visual attributes, support surfaces, nearby objects, floor or level cues, room or area cues, and relative-location cues from the active target description.
 - Make floor, level, room, support-object, and relative-location cue matches visible in basis. If a candidate is scored high because it is upstairs, near stairs, in a bedroom-like area, or on a route toward the target-bearing area, state that cue.
 - Do not give high target raw_score to stairs, landings, or hallway viewpoints merely because they lead toward the target area.
-- Put route-only upstairs or bedroom cues on unassigned target-bearing regions or unvisited candidate viewpoints, not on already searched stair or landing viewpoints.
-- Give much lower raw_score values to candidates whose area contradicts explicit target-location text, even when they contain salient unrelated objects. Do not let weak normalized filler locations outrank a candidate or type-(2) region whose layout cues better match the target text.
+- Put route-only upstairs or bedroom cues on unvisited concrete candidate viewpoints, not on already searched stair or landing viewpoints.
+- Give much lower raw_score values to candidates whose area contradicts explicit target-location text, even when they contain salient unrelated objects. Do not let weak normalized filler locations outrank a candidate viewpoint whose layout cues better match the target text.
 - For each returned viewpoint-target pair, fill basis with one short clue explaining why raw_score and evidence_strength follow from the target text, visible evidence, red-marker location, assigned semantic region, spatial context, and graph history.
 - basis must be a non-empty string.
 - Do not use fixed object-room associations or hardcoded target-specific mappings. Only use constraints implied by the active target text and current graph/visual evidence.
 
 Target probability rule:
 - viewpoint_target_scores raw_score values are raw target-location scores, not calibrated probabilities. The validator stores the repaired materialized values as raw_target_probs and normalizes target_probs per target across eligible viewpoint ids.
-- Region target_scores values are raw target-location scores for type-(2) regions: semantic regions with no final assigned viewpoints. The validator stores the materialized raw values as raw_target_probs.
-- Type-(1) regions, meaning regions with any final assigned viewpoints, compute raw region target scores locally as the mean of normalized target_probs over assigned viewpoints.
-- Region target_probs are normalized per target across the union of type-(1) and type-(2) regions.
-- Existing type-(2) regions keep prior raw_target_probs unless region_target_scores changes a value. Newly proposed type-(2) regions use their region target_probs as initial raw scores unless region_target_scores overrides them.
-- If a region loses all assigned viewpoints in this step and becomes type-(2), provide region_target_scores for every active target_id.
+- Regions are semantic grouping nodes only. They do not carry target_scores, target_probs, raw_target_probs, or existence probabilities from the MLLM.
 - Do not copy default values from the schema or examples.
-- For each active target_id, compare all type-(2) regions and all eligible non-current viewpoint ids before assigning changed scores.
+- For each active target_id, compare all eligible non-current viewpoint ids before assigning changed scores.
 - Assign higher scores to locations whose visible objects, room or area evidence, furniture, spatial context, and graph history better satisfy the constraints inferred from that active target description.
 - Assign especially strong raw score mass to matching target-bearing floor, room, support-object, relative-location, stair, landing, hallway, doorway, and route-continuation evidence when the target text contains those cues.
 - Assign much lower raw score mass to contradictory floors or room areas; for example, first-floor dining or patio evidence should not compete with upstairs-bedroom evidence for an explicitly upstairs-bedroom target.
@@ -972,17 +1067,13 @@ Target probability rule:
 - Use different scores when evidence differs.
 - Equal scores are allowed only when the basis, assigned region, spatial context, and graph history are substantively indistinguishable.
 - For each active target_id, the sum of materialized raw scores across eligible viewpoint ids must be positive.
-- For each active target_id, the sum of materialized raw scores across all regions must be positive.
 
 All non-current visible neighboring viewpoint ids:
 [
-  5,
-  6,
-  11,
-  14,
-  17,
-  40,
-  48
+  0,
+  13,
+  22,
+  33
 ]
 
 Current-step interpretation note:
@@ -995,55 +1086,26 @@ Output shape example. It uses placeholder strings for score fields to avoid nume
 {
   "current_viewpoints_reassignment": [
     {
-      "new_assigned_region_id": 58,
-      "viewpoint_id": 38
+      "new_assigned_region_id": 55,
+      "viewpoint_id": 18
     }
   ],
   "edge_distance_variances": {
-    "viewpoint_region": 4.0,
     "viewpoint_viewpoint": 1.0
   },
-  "invisible_region_nodes": [
-    {
-      "exist_prob": 0.6,
-      "id": 59,
-      "label": "unseen hallway area beyond closed doorway",
-      "target_probs": {
-        "2": "<score in [0, 1] justified by evidence>",
-        "3": "<score in [0, 1] justified by evidence>"
-      }
-    }
-  ],
-  "new_edges": [
-    {
-      "dist": 2.5,
-      "edge_type": "VZ",
-      "exist_prob": 0.6,
-      "i": 11,
-      "j": 59
-    }
-  ],
-  "region_target_scores": [
-    {
-      "id": 59,
-      "target_scores": {
-        "2": "<nonnegative raw score justified by region-level evidence>",
-        "3": "<nonnegative raw score justified by region-level evidence>"
-      }
-    }
-  ],
+  "new_edges": [],
   "viewpoint_node_assigns": [
     {
       "assigned_viewpoint_node_indices": [
-        38,
-        11
+        18,
+        0
       ],
-      "region_node_id": 57
+      "region_node_id": 55
     }
   ],
   "viewpoint_target_scores": [
     {
-      "id": 11,
+      "id": 0,
       "target_scores": {
         "2": {
           "basis": "<short clue explaining why raw_score follows from target text and visual/graph context>",
@@ -1060,22 +1122,8 @@ Output shape example. It uses placeholder strings for score fields to avoid nume
   ],
   "visible_region_nodes": [
     {
-      "exist_prob": 1.0,
-      "id": 57,
-      "label": "bright kitchen area near dining table",
-      "target_probs": {
-        "2": "<score in [0, 1] justified by evidence>",
-        "3": "<score in [0, 1] justified by evidence>"
-      }
-    },
-    {
-      "exist_prob": 0.7,
-      "id": 58,
-      "label": "adjacent hallway visible through doorway",
-      "target_probs": {
-        "2": "<score in [0, 1] justified by evidence>",
-        "3": "<score in [0, 1] justified by evidence>"
-      }
+      "id": 55,
+      "label": "bright kitchen area near dining table"
     }
   ]
 }
@@ -1096,7 +1144,6 @@ Current step request:
 - If a non-current visible neighboring viewpoint is close to the current viewpoint and no doorway, wall, corridor boundary, room boundary, or transition area separates them, prefer the current viewpoint's final region.
 - If a non-current visible neighboring viewpoint is farther away, or if its red marker is across a clear spatial boundary, assign it to the semantic region that physically contains that red marker.
 - Do not assign a non-current visible neighboring viewpoint to an adjacent area only because that area is visible in the panorama. Assign it to that adjacent area only when its red marker lies inside that area, or when distance and spatial context strongly support that assignment.
-- Propose invisible_region_nodes only for completely unseen areas inferred from layout cues.
-- Treat partially visible adjacent areas as visible_region_nodes, not invisible_region_nodes.
-- Propose only legal VV and VZ edges using the new_edges rules in Core rules.
+- Propose semantic regions only for areas that contain assigned current or visible viewpoint ids.
+- Propose only legal VV edges using the new_edges rules in Core rules.
 - Return compact JSON only.
