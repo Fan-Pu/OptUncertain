@@ -1087,12 +1087,13 @@ class MLLMClient:
                 {agents_json}
 
                 Task:
-                Inspect each panorama image carefully. For each agent, find active targets that are directly visible and visually match the exact target descriptions.
+                Inspect each panorama image carefully. Each panorama is a smooth multi-elevation 360-degree view from the same agent viewpoint. The horizontal axis is heading and the vertical axis is camera pitch/elevation. Inspect the full vertical pitch range. For each agent, find active targets that are directly visible and visually match the exact target descriptions.
 
                 Detection rule:
                 - Report a target only when the exact target object itself is visible and recognizable.
                 - The visible object must match the target description at the object-type level, not only at a broad semantic level.
                 - Use all visible descriptive cues in the target description, including object type, color, size, shape, material, and location when available.
+                - Use upper and lower pitch/elevation evidence for high, low, wall-mounted, ceiling-adjacent, stair, landing, balcony, upstairs, and downstairs evidence.
                 - Do not report a visually similar, functionally related, or contextually related non-target object.
                 - Partly visible targets can be reported only if the visible part contains enough target-specific evidence.
                 - If multiple object identities are plausible for the same visible object, do not report it.
@@ -1122,7 +1123,8 @@ class MLLMClient:
                 }}
 
                 target_center_xs:
-                - Use the normalized horizontal center of the visible target in the full panorama.
+                - Use the normalized horizontal center of the visible target in the full panorama width.
+                - Ignore the target's vertical pitch position when computing target_center_xs; use only horizontal position.
                 - The value must be in [0.0, 1.0].
                 - The order must match found_target_indices.
                 """)
@@ -2146,8 +2148,10 @@ class MLLMClient:
                 Panorama direction note:
                 - The annotated panorama image may include vertical guide lines and degree labels such as 0 deg, 120 deg, and 240 deg.
                 - These degree labels indicate viewing direction along the horizontal panorama.
+                - The annotated panorama is a smooth multi-elevation view from the same physical viewpoint. Vertical position is camera pitch/elevation evidence from that viewpoint, not a different physical location.
                 - Areas that appear near the far left and far right edges may be close in viewing direction because the panorama wraps around.
                 - Use the degree labels only as directional cues in the panorama image. Use current_xy and visible_viewpoints[].xy for physical floor-plan distance.
+                - Use upper and lower pitch/elevation evidence when reasoning about stairs, upstairs/downstairs cues, balconies, landings, wall-mounted targets, ceiling-adjacent targets, and high or low support objects.
                 
                 Coordinate meaning note:
                 - current_xy is the 2D floor-plan coordinate of the current viewpoint, which is the panorama camera location.
@@ -2338,6 +2342,7 @@ class MLLMClient:
                 "Agent %s current viewpoint: %s"
                 % (observation["agent_id"], observation["current_viewpoint_index"])
             )
+        debugpy.breakpoint()
         image_content = []
         for image_index, observation in enumerate(agent_observations):
             image_content.append(
@@ -2392,7 +2397,7 @@ class MLLMClient:
                     )
             print()
 
-        if step_index >= 16:
+        if step_index >= 10:
             debugpy.breakpoint()
 
         # debugpy.breakpoint()

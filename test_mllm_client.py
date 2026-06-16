@@ -234,6 +234,31 @@ def test_graph_prompt_includes_target_location_cue_scoring_rules():
     assert "weak normalized filler locations" in prompt_text
 
 
+def test_detection_prompt_includes_multi_elevation_panorama_rules():
+    system_message, user_message = _client()._build_detection_instruction(
+        agent_observations=_agent_observations(),
+        targets=TARGETS,
+    )
+    prompt_text = system_message + "\n" + user_message
+
+    assert "smooth multi-elevation 360-degree view" in prompt_text
+    assert "vertical axis is camera pitch/elevation" in prompt_text
+    assert "Ignore the target's vertical pitch position" in prompt_text
+
+
+def test_graph_prompt_includes_multi_elevation_panorama_rules():
+    system_message, user_message = _client()._build_instruction(
+        agent_observations=_agent_observations(),
+        targets=TARGETS,
+        graph_summary=_graph_summary(),
+    )
+    prompt_text = system_message + "\n" + user_message
+
+    assert "Vertical position is camera pitch/elevation evidence" in prompt_text
+    assert "not a different physical location" in prompt_text
+    assert "upper and lower pitch/elevation evidence" in prompt_text
+
+
 def test_viewpoint_target_score_feedback_reports_detection_fixed_ids():
     payload = _valid_payload()
     payload["viewpoint_target_scores"][0]["id"] = 38
