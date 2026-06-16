@@ -1,8 +1,16 @@
 import copy
+import base64
+import io
 
+import numpy as np
 import pytest
+from PIL import Image
 
-from semantic_persistence.mllm_client import GraphValidationError, MLLMClient
+from semantic_persistence.mllm_client import (
+    DETECTION_IMAGE_MAX_WIDTH,
+    GraphValidationError,
+    MLLMClient,
+)
 
 
 TARGETS = [
@@ -36,6 +44,48 @@ def _agent_observations():
             "visible_viewpoints": [],
         },
     ]
+
+
+def _image_agent_observations():
+    raw_panorama = np.zeros((20, 100, 3), dtype=np.uint8)
+    raw_panorama[:, :] = [200, 10, 20]
+    annotated_panorama = np.zeros((20, 100, 3), dtype=np.uint8)
+    annotated_panorama[:, :] = [10, 20, 200]
+    return [
+        {
+            "agent_id": "agent0",
+            "current_viewpoint_index": 38,
+            "current_xy": [0.0, 0.0],
+            "horizon_headings": [0.0],
+            "raw_panorama": raw_panorama,
+            "annotated_panorama": annotated_panorama,
+            "visible_viewpoints": [],
+        }
+    ]
+
+
+def _large_image_agent_observations():
+    raw_panorama = np.zeros((1200, 3264, 3), dtype=np.uint8)
+    raw_panorama[:, :] = [200, 10, 20]
+    annotated_panorama = np.zeros((1200, 3264, 3), dtype=np.uint8)
+    annotated_panorama[:, :] = [10, 20, 200]
+    return [
+        {
+            "agent_id": "agent0",
+            "current_viewpoint_index": 38,
+            "current_xy": [0.0, 0.0],
+            "horizon_headings": [0.0],
+            "raw_panorama": raw_panorama,
+            "annotated_panorama": annotated_panorama,
+            "visible_viewpoints": [],
+        }
+    ]
+
+
+def _decode_image_url(image_url):
+    data_url = image_url["url"]
+    encoded = data_url.split(",", 1)[1]
+    return np.array(Image.open(io.BytesIO(base64.b64decode(encoded))).convert("RGB"))
 
 
 def _graph_summary():
@@ -244,6 +294,113 @@ def test_detection_prompt_includes_multi_elevation_panorama_rules():
     assert "smooth multi-elevation 360-degree view" in prompt_text
     assert "vertical axis is camera pitch/elevation" in prompt_text
     assert "Ignore the target's vertical pitch position" in prompt_text
+
+
+def test_detection_prompt_includes_single_raw_panorama_rules():
+    detection_image_records = [
+        {
+            "agent_id": "agent0",
+            "current_viewpoint_index": 38,
+            "image_index": 0,
+            "image_role": "full_raw_panorama",
+            "x_range": [0.0, 1.0],
+        }
+    ]
+
+    system_message, user_message = _client()._build_detection_instruction(
+        agent_observations=_agent_observations(),
+        targets=TARGETS,
+        detection_image_records=detection_image_records,
+    )
+    prompt_text = system_message + "\n" + user_message
+
+    assert "exactly one clean unannotated" in prompt_text
+    assert "full_raw_panorama" in prompt_text
+    assert "x_range" in prompt_text
+
+
+def test_detection_prompt_allows_small_context_confirmed_targets():
+    system_message, user_message = _client()._build_detection_instruction(
+        agent_observations=_agent_observations(),
+        targets=TARGETS,
+    )
+    prompt_text = system_message + "\n" + user_message
+
+    assert "strongest visual match" in prompt_text
+    assert "support-object and relative-location cues" in prompt_text
+    assert "small bust on a wooden cabinet near a patio window" in prompt_text
+    assert "could reasonably be a different object" not in prompt_text
+    assert "prefer false negative" not in prompt_text
+
+
+def test_detection_image_content_uses_raw_panorama_not_annotated(tmp_path):
+    client = MLLMClient(
+        read_saved_raw_outputs=True,
+        raw_debug_dir=str(tmp_path),
+    )
+    content, records = client._build_detection_image_content(
+        agent_observations=_image_agent_observations(),
+        step_index=1,
+    )
+
+    full_image = _decode_image_url(content[1]["image_url"])
+
+    assert len(records) == 1
+    assert len(content) == 2
+    assert records[0]["image_role"] == "full_raw_panorama"
+    assert full_image[:, :, 0].mean() > 180
+    assert full_image[:, :, 2].mean() < 60
+    assert (tmp_path / "detection_input_step_0001_agent_agent0_full_raw_panorama.jpg").exists()
+
+
+def test_detection_image_content_sends_one_image_per_agent(tmp_path):
+    client = MLLMClient(
+        read_saved_raw_outputs=True,
+        raw_debug_dir=str(tmp_path),
+    )
+    observations = _image_agent_observations() + [
+        {
+            **_image_agent_observations()[0],
+            "agent_id": "agent1",
+            "current_viewpoint_index": 37,
+        }
+    ]
+    content, records = client._build_detection_image_content(
+        agent_observations=observations,
+        step_index=1,
+    )
+
+    assert len(records) == len(observations)
+    assert len(content) == 2 * len(observations)
+    assert [record["agent_id"] for record in records] == ["agent0", "agent1"]
+    assert all(record["image_role"] == "full_raw_panorama" for record in records)
+    assert all(record["x_range"] == [0.0, 1.0] for record in records)
+
+
+def test_detection_images_are_resized_to_request_budget(tmp_path):
+    client = MLLMClient(
+        read_saved_raw_outputs=True,
+        raw_debug_dir=str(tmp_path),
+    )
+    content, records = client._build_detection_image_content(
+        agent_observations=_large_image_agent_observations(),
+        step_index=1,
+    )
+    decoded_images = [
+        _decode_image_url(content[item_index]["image_url"])
+        for item_index in range(1, len(content), 2)
+    ]
+
+    for decoded_image in decoded_images:
+        assert decoded_image.shape[1] <= DETECTION_IMAGE_MAX_WIDTH
+
+    assert len(records) == 1
+    assert len(decoded_images) == 1
+    assert decoded_images[0].shape[1] == DETECTION_IMAGE_MAX_WIDTH
+    assert (
+        abs(decoded_images[0].shape[1] / decoded_images[0].shape[0] - 3264 / 1200.0)
+        < 0.02
+    )
 
 
 def test_graph_prompt_includes_multi_elevation_panorama_rules():

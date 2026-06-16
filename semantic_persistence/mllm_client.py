@@ -32,6 +32,8 @@ REPETITION_PENALTY = 1.0
 DETECTION_MAX_NEW_TOKENS = 512
 GRAPH_MAX_NEW_TOKENS = 32768
 panorama_max_width_for_prompt = 1660
+DETECTION_IMAGE_MAX_WIDTH = 1980
+DETECTION_IMAGE_JPEG_QUALITY = 85
 
 detect_thinking = False
 graph_thinking = False
@@ -544,6 +546,22 @@ class MLLMClient:
             "observation_step_%04d_agent_%s.jpg" % (int(step_index), str(agent_id)),
         )
 
+    def _detection_input_image_path(
+        self,
+        step_index: int,
+        agent_id: str,
+        image_role: str,
+    ) -> str:
+        image_name = "detection_input_step_%04d_agent_%s_%s.jpg" % (
+            int(step_index),
+            str(agent_id),
+            str(image_role),
+        )
+        return os.path.join(
+            getattr(self, "raw_debug_dir", "mllm_debug_outputs"),
+            image_name,
+        )
+
     @staticmethod
     def _required_semantic_top_level_keys(
         semantic_payload_contract: str,
@@ -1041,6 +1059,7 @@ class MLLMClient:
         self,
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
+        detection_image_records: Optional[List[Dict[str, object]]] = None,
     ) -> tuple[str, str]:
         """Build a short prompt for direct visual target detection only."""
         target_records = sorted(
@@ -1054,17 +1073,22 @@ class MLLMClient:
             key=lambda item: item["target_id"],
         )
 
-        agent_records = [
-            {
-                "agent_id": str(observation["agent_id"]),
-                "image_index": image_index,
-                "current_viewpoint_index": int(observation["current_viewpoint_index"]),
-            }
-            for image_index, observation in enumerate(agent_observations)
-        ]
+        if detection_image_records is None:
+            detection_image_records = [
+                {
+                    "agent_id": str(observation["agent_id"]),
+                    "image_index": image_index,
+                    "image_role": "full_raw_panorama",
+                    "current_viewpoint_index": int(
+                        observation["current_viewpoint_index"]
+                    ),
+                    "x_range": [0.0, 1.0],
+                }
+                for image_index, observation in enumerate(agent_observations)
+            ]
 
         system_message = dedent("""
-            You are doing strict direct visual target detection from indoor panorama images.
+            You are doing direct visual target detection from indoor panorama images.
             Call report_target_detections exactly once with arguments matching the required detection schema.
             Do not output markdown, code fences, comments, text outside the tool call, extra top-level keys, trailing commas, or non-JSON booleans.
 
@@ -1072,10 +1096,10 @@ class MLLMClient:
             The target description may contain object type, color, size, shape, material, location, or context. Use all visible parts of the description when deciding whether the target is present.
 
             Do not report a visually similar or semantically related object as the target.
-            Do not report a target only because the room type or nearby objects suggest it may exist there.
-            If the visible evidence is not enough to distinguish the target from a similar non-target object, do not report it.
+            Do not report a target only because the room type or nearby objects suggest it may exist there, but use support-object and relative-location cues as supporting evidence when a candidate object is visible.
+            If a small or partially visible object is the strongest visual match for the target object and its described support/location cues, report it.
 
-            When uncertain, prefer false negative over false positive.
+            Do not invent detections, but report a target when the object identity is clear in the full raw panorama image.
         """).strip()
 
         user_message = (
@@ -1083,22 +1107,22 @@ class MLLMClient:
                 Active targets:
                 {targets_json}
 
-                Agent-image mapping:
-                {agents_json}
+                Detection image mapping:
+                {detection_images_json}
 
                 Task:
-                Inspect each panorama image carefully. Each panorama is a smooth multi-elevation 360-degree view from the same agent viewpoint. The horizontal axis is heading and the vertical axis is camera pitch/elevation. Inspect the full vertical pitch range. For each agent, find active targets that are directly visible and visually match the exact target descriptions.
+                Inspect each detection image carefully. Each agent has exactly one clean unannotated smooth multi-elevation 360-degree view from the same agent viewpoint. This raw panorama has no red viewpoint markers or heading guide labels. The horizontal axis is heading and the vertical axis is camera pitch/elevation. Inspect the full vertical pitch range. For each agent, find active targets that are directly visible and visually match the exact target descriptions.
 
                 Detection rule:
-                - Report a target only when the exact target object itself is visible and recognizable.
+                - Report a target when the target object itself is visible and recognizable enough to be the strongest visual match for the target description.
                 - The visible object must match the target description at the object-type level, not only at a broad semantic level.
                 - Use all visible descriptive cues in the target description, including object type, color, size, shape, material, and location when available.
+                - Use support-object and relative-location cues from the target description to confirm small objects; for example, a small bust on a wooden cabinet near a patio window should be reported when the bust-like object and that cabinet/window context are visible.
                 - Use upper and lower pitch/elevation evidence for high, low, wall-mounted, ceiling-adjacent, stair, landing, balcony, upstairs, and downstairs evidence.
                 - Do not report a visually similar, functionally related, or contextually related non-target object.
-                - Partly visible targets can be reported only if the visible part contains enough target-specific evidence.
-                - If multiple object identities are plausible for the same visible object, do not report it.
-                - If the object is absent, too blurry, too small, heavily occluded, or visually ambiguous, do not report it.
-                - When uncertain, prefer not reporting the target.
+                - Partly visible or small targets should be reported when the visible part plus its described support/location context makes the target identity more likely than nearby alternatives.
+                - If the object is absent, too blurry to identify at all, heavily occluded, or visually contradictory to the target description, do not report it.
+                - Do report small targets when the raw panorama makes the target-specific object identity clear.
 
                 Output rules:
                 - Call report_target_detections exactly once.
@@ -1109,7 +1133,7 @@ class MLLMClient:
                 - Each agent may appear at most once.
                 - Only use active target_ids from the list above.
                 - Do not include completed, unlisted, or not-found targets.
-                - Do not include an agent-target pair if the detected object could reasonably be a different object type than the target description.
+                - Do not include an agent-target pair if the strongest visual interpretation is a different object type than the target description.
 
                 Required JSON object:
                 {{
@@ -1131,7 +1155,11 @@ class MLLMClient:
             .strip()
             .format(
                 targets_json=json.dumps(target_records, indent=2, sort_keys=True),
-                agents_json=json.dumps(agent_records, indent=2, sort_keys=True),
+                detection_images_json=json.dumps(
+                    detection_image_records,
+                    indent=2,
+                    sort_keys=True,
+                ),
             )
         )
 
@@ -1608,17 +1636,141 @@ class MLLMClient:
             )
         )
 
+    @staticmethod
+    def _detection_image_text(record: Dict[str, object]) -> str:
+        return (
+            "Detection image index {image_index}. Agent {agent_id}. "
+            "Role {image_role}. Current viewpoint {current_viewpoint_index}. "
+            "Global normalized x_range {x_range}."
+        ).format(
+            image_index=record["image_index"],
+            agent_id=record["agent_id"],
+            image_role=record["image_role"],
+            current_viewpoint_index=record["current_viewpoint_index"],
+            x_range=json.dumps(record["x_range"]),
+        )
+
+    def _write_detection_input_image(
+        self,
+        step_index: int,
+        agent_id: str,
+        image_role: str,
+        image_bytes: bytes,
+    ) -> None:
+        raw_debug_dir = getattr(self, "raw_debug_dir")
+        os.makedirs(raw_debug_dir, exist_ok=True)
+        with open(
+            self._detection_input_image_path(
+                step_index=step_index,
+                agent_id=agent_id,
+                image_role=image_role,
+            ),
+            "wb",
+        ) as file_handle:
+            file_handle.write(image_bytes)
+
+    def _build_detection_image_content(
+        self,
+        agent_observations: List[Dict[str, object]],
+        step_index: int,
+    ) -> tuple[List[Dict[str, object]], List[Dict[str, object]]]:
+        image_content = []
+        image_records = []
+        image_index = 0
+
+        for observation in agent_observations:
+            agent_id = str(observation["agent_id"])
+            current_viewpoint_index = int(observation["current_viewpoint_index"])
+            raw_panorama = observation["raw_panorama"]
+
+            full_record = {
+                "agent_id": agent_id,
+                "current_viewpoint_index": current_viewpoint_index,
+                "image_index": image_index,
+                "image_role": "full_raw_panorama",
+                "x_range": [0.0, 1.0],
+            }
+            full_bytes = self._resize_panorama_array(
+                raw_panorama,
+                max_width=DETECTION_IMAGE_MAX_WIDTH,
+                jpeg_quality=DETECTION_IMAGE_JPEG_QUALITY,
+            )
+            self._write_detection_input_image(
+                step_index=step_index,
+                agent_id=agent_id,
+                image_role="full_raw_panorama",
+                image_bytes=full_bytes,
+            )
+            image_records.append(full_record)
+            image_content.extend(
+                [
+                    {
+                        "type": "text",
+                        "text": self._detection_image_text(full_record),
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": self._image_to_data_url(full_bytes),
+                        },
+                    },
+                ]
+            )
+            image_index += 1
+
+        return image_content, image_records
+
+    def _build_graph_image_content(
+        self,
+        agent_observations: List[Dict[str, object]],
+        step_index: int,
+    ) -> List[Dict[str, object]]:
+        image_content = []
+        for image_index, observation in enumerate(agent_observations):
+            graph_panorama_bytes = self._resize_panorama_array(
+                observation["annotated_panorama"],
+            )
+            self._write_observation_image(
+                step_index=step_index,
+                agent_id=str(observation["agent_id"]),
+                image_bytes=graph_panorama_bytes,
+            )
+            image_content.extend(
+                [
+                    {
+                        "type": "text",
+                        "text": (
+                            "Image index %s. Agent %s. Current viewpoint %s."
+                            % (
+                                image_index,
+                                observation["agent_id"],
+                                observation["current_viewpoint_index"],
+                            )
+                        ),
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": self._image_to_data_url(graph_panorama_bytes)
+                        },
+                    },
+                ]
+            )
+        return image_content
+
     def _detect_targets(
         self,
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         image_content: List[Dict[str, object]],
         step_index: int,
+        detection_image_records: Optional[List[Dict[str, object]]] = None,
     ) -> List[Dict[str, object]]:
         """Run a short detection-only MLLM call before graph generation."""
         system_message, user_message = self._build_detection_instruction(
             agent_observations=agent_observations,
             targets=targets,
+            detection_image_records=detection_image_records,
         )
 
         max_validation_retries = getattr(self, "max_validation_retries", 0)
@@ -2326,47 +2478,21 @@ class MLLMClient:
 
         step_index = getattr(self, "semantic_raw_output_index", 1)
 
-        # Resize panorama arrays once. The resized images are used by both the
-        # detection-only call and the graph-generation call.
-        for observation in agent_observations:
-            observation["annotated_panorama"] = self._resize_panorama_array(
-                observation["annotated_panorama"],
-            )
-            self._write_observation_image(
+        detection_image_content, detection_image_records = (
+            self._build_detection_image_content(
+                agent_observations=agent_observations,
                 step_index=step_index,
-                agent_id=str(observation["agent_id"]),
-                image_bytes=observation["annotated_panorama"],
             )
-            # print agent's current location
+        )
+        graph_image_content = self._build_graph_image_content(
+            agent_observations=agent_observations,
+            step_index=step_index,
+        )
+
+        for observation in agent_observations:
             print(
                 "Agent %s current viewpoint: %s"
                 % (observation["agent_id"], observation["current_viewpoint_index"])
-            )
-        # debugpy.breakpoint()
-        image_content = []
-        for image_index, observation in enumerate(agent_observations):
-            image_content.append(
-                {
-                    "type": "text",
-                    "text": (
-                        "Image index %s. Agent %s. Current viewpoint %s."
-                        % (
-                            image_index,
-                            observation["agent_id"],
-                            observation["current_viewpoint_index"],
-                        )
-                    ),
-                }
-            )
-            image_content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": self._image_to_data_url(
-                            observation["annotated_panorama"]
-                        )
-                    },
-                }
             )
 
         # Run detection before graph generation so found targets can be completed
@@ -2374,7 +2500,8 @@ class MLLMClient:
         localized_detections = self._detect_targets(
             agent_observations=agent_observations,
             targets=active_detection_targets,
-            image_content=image_content,
+            image_content=detection_image_content,
+            detection_image_records=detection_image_records,
             step_index=step_index,
         )
         # print the detect model name
@@ -2397,7 +2524,7 @@ class MLLMClient:
                     )
             print()
 
-        if step_index >= 10:
+        if step_index >= 2:
             debugpy.breakpoint()
 
         # debugpy.breakpoint()
@@ -2486,7 +2613,7 @@ class MLLMClient:
                 )
 
             user_content = [{"type": "text", "text": attempt_user_message}]
-            user_content.extend(image_content)
+            user_content.extend(graph_image_content)
 
             messages = [
                 {"role": "system", "content": system_message},
@@ -2711,6 +2838,9 @@ class MLLMClient:
     @staticmethod
     def _resize_panorama_array(
         image: np.ndarray,
+        max_width: int = panorama_max_width_for_prompt,
+        max_height: Optional[int] = None,
+        jpeg_quality: int = 100,
     ) -> bytes:
         """Resize and JPEG-compress a panorama image.
 
@@ -2721,12 +2851,17 @@ class MLLMClient:
 
         pil_image = Image.fromarray(image).convert("RGB")
 
-        if pil_image.width > panorama_max_width_for_prompt:
-            new_height = int(
-                pil_image.height * panorama_max_width_for_prompt / pil_image.width
-            )
+        scale = 1.0
+        if max_width is not None and pil_image.width > int(max_width):
+            scale = min(scale, float(max_width) / float(pil_image.width))
+        if max_height is not None and pil_image.height > int(max_height):
+            scale = min(scale, float(max_height) / float(pil_image.height))
+        if scale < 1.0:
             pil_image = pil_image.resize(
-                (panorama_max_width_for_prompt, new_height),
+                (
+                    int(round(pil_image.width * scale)),
+                    int(round(pil_image.height * scale)),
+                ),
                 Image.Resampling.LANCZOS,
             )
 
@@ -2734,7 +2869,7 @@ class MLLMClient:
         pil_image.save(
             buffer,
             format="JPEG",
-            quality=100,
+            quality=int(jpeg_quality),
             optimize=True,
         )
 

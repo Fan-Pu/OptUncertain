@@ -100,6 +100,16 @@
       "type": "vv"
     },
     {
+      "cond_exist_prob": 0.9,
+      "distance_mean": 1.5,
+      "distance_var": 3.5,
+      "exist_prob": 0.81,
+      "grounded": false,
+      "i": 36,
+      "j": 53,
+      "type": "vz"
+    },
+    {
       "cond_exist_prob": 1.0,
       "distance_mean": 2.061,
       "distance_var": 0.0,
@@ -108,6 +118,16 @@
       "i": 38,
       "j": 40,
       "type": "vv"
+    },
+    {
+      "cond_exist_prob": 0.85,
+      "distance_mean": 2.0,
+      "distance_var": 3.5,
+      "exist_prob": 0.765,
+      "grounded": false,
+      "i": 38,
+      "j": 53,
+      "type": "vz"
     },
     {
       "cond_exist_prob": 1.0,
@@ -129,22 +149,22 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.85,
-        "1": 0.1,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.8,
+        "1": 0.2,
+        "2": 0.07777777777777778,
+        "3": 0.07777777777777778
       },
       "target_probs": {
-        "0": 0.2982456140350877,
-        "1": 0.06060606060606062,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "0": 0.126984126984127,
+        "1": 0.09090909090909093,
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_score_basis": {
-        "0": "Dining table with glass surface visible in marker area; matches target description of flowers on glass dining table",
-        "1": "No wooden cabinet or patio window visible near marker location",
-        "2": "Ground floor area visible, not upstairs bedroom as required by target",
-        "3": "Ground floor area visible, not upstairs bedroom as required by target"
+        "0": "Visible dining table in background matches target description location",
+        "1": "No visible cabinet or patio window from this viewpoint marker location",
+        "2": "Downstairs location contradicts explicit upstairs bedroom requirement",
+        "3": "Downstairs location contradicts explicit upstairs bedroom requirement"
       },
       "type": "viewpoint"
     },
@@ -157,21 +177,21 @@
       "node_visit_times": 0,
       "raw_target_probs": {
         "0": 0.1,
-        "1": 0.3,
-        "2": 0.05,
-        "3": 0.05
+        "1": 0.15,
+        "2": 0.07777777777777778,
+        "3": 0.07777777777777778
       },
       "target_probs": {
-        "0": 0.03508771929824561,
-        "1": 0.18181818181818185,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "0": 0.015873015873015876,
+        "1": 0.06818181818181819,
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_score_basis": {
-        "0": "Outdoor patio area visible, no dining table present",
-        "1": "Patio window area visible but no wooden cabinet or bust observed",
-        "2": "Outdoor ground level area, not upstairs bedroom",
-        "3": "Outdoor ground level area, not upstairs bedroom"
+        "0": "Outdoor courtyard area unlikely to contain dining table with flowers",
+        "1": "No visible cabinet near patio window from this outdoor viewpoint",
+        "2": "Outdoor location contradicts explicit upstairs bedroom requirement",
+        "3": "Outdoor location contradicts explicit upstairs bedroom requirement"
       },
       "type": "viewpoint"
     },
@@ -183,22 +203,22 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.6,
-        "1": 0.1,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.85,
+        "1": 0.2,
+        "2": 0.07777777777777778,
+        "3": 0.07777777777777778
       },
       "target_probs": {
-        "0": 0.21052631578947367,
-        "1": 0.06060606060606062,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "0": 0.1349206349206349,
+        "1": 0.09090909090909093,
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_score_basis": {
-        "0": "Adjacent to dining area with glass table visible nearby",
-        "1": "No wooden cabinet or patio window features visible",
-        "2": "Ground floor living space, not upstairs bedroom",
-        "3": "Ground floor living space, not upstairs bedroom"
+        "0": "Close to dining area with glass table visible in panorama",
+        "1": "Interior location but no visible cabinet near patio window",
+        "2": "Downstairs location contradicts explicit upstairs bedroom requirement",
+        "3": "Downstairs location contradicts explicit upstairs bedroom requirement"
       },
       "type": "viewpoint"
     },
@@ -210,22 +230,22 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.15,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.5,
+        "1": 0.2,
+        "2": 0.07777777777777778,
+        "3": 0.07777777777777778
       },
       "target_probs": {
-        "0": 0.03508771929824561,
+        "0": 0.07936507936507936,
         "1": 0.09090909090909093,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_score_basis": {
-        "0": "Kitchen area with no dining table visible",
-        "1": "Kitchen cabinets visible but no wooden cabinet near patio window",
-        "2": "Ground floor kitchen area, not upstairs bedroom",
-        "3": "Ground floor kitchen area, not upstairs bedroom"
+        "0": "Kitchen area may have dining table but not clearly visible from marker",
+        "1": "No visible cabinet near patio window from kitchen viewpoint",
+        "2": "Downstairs kitchen contradicts explicit upstairs bedroom requirement",
+        "3": "Downstairs kitchen contradicts explicit upstairs bedroom requirement"
       },
       "type": "viewpoint"
     },
@@ -237,22 +257,22 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.15,
-        "1": 0.1,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.6,
+        "1": 0.25,
+        "2": 0.07777777777777778,
+        "3": 0.07777777777777778
       },
       "target_probs": {
-        "0": 0.05263157894736842,
-        "1": 0.06060606060606062,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "0": 0.09523809523809523,
+        "1": 0.11363636363636365,
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_score_basis": {
-        "0": "Living room area with no dining table visible",
-        "1": "Large windows visible but no wooden cabinet or bust",
-        "2": "Ground floor living area, not upstairs bedroom",
-        "3": "Ground floor living area, not upstairs bedroom"
+        "0": "Living area adjacent to dining space, possible view of table",
+        "1": "Large windows present but no visible cabinet with bust",
+        "2": "Downstairs living area contradicts explicit upstairs bedroom requirement",
+        "3": "Downstairs living area contradicts explicit upstairs bedroom requirement"
       },
       "type": "viewpoint"
     },
@@ -264,22 +284,22 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.25,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.55,
+        "1": 0.2,
+        "2": 0.07777777777777778,
+        "3": 0.07777777777777778
       },
       "target_probs": {
-        "0": 0.03508771929824561,
-        "1": 0.15151515151515155,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "0": 0.08730158730158731,
+        "1": 0.09090909090909093,
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_score_basis": {
-        "0": "Living room with large windows, no dining table visible",
-        "1": "Patio windows visible but no wooden cabinet or bust",
-        "2": "Ground floor living area, not upstairs bedroom",
-        "3": "Ground floor living area, not upstairs bedroom"
+        "0": "Living area with view toward dining space through open plan",
+        "1": "Windows visible but no cabinet with bust observed",
+        "2": "Downstairs location contradicts explicit upstairs bedroom requirement",
+        "3": "Downstairs location contradicts explicit upstairs bedroom requirement"
       },
       "type": "viewpoint"
     },
@@ -313,22 +333,22 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.1,
-        "2": 0.3,
-        "3": 0.3
+        "0": 0.65,
+        "1": 0.2,
+        "2": 0.7,
+        "3": 0.7
       },
       "target_probs": {
-        "0": 0.03508771929824561,
-        "1": 0.06060606060606062,
-        "2": 0.2068965517241379,
-        "3": 0.2068965517241379
+        "0": 0.10317460317460318,
+        "1": 0.09090909090909093,
+        "2": 0.3255813953488372,
+        "3": 0.3255813953488372
       },
       "target_score_basis": {
-        "0": "Staircase base area, no dining furniture visible",
-        "1": "Interior staircase area, no patio window or cabinet",
-        "2": "Ground floor staircase, potential route to upstairs but not bedroom itself",
-        "3": "Ground floor staircase, potential route to upstairs but not bedroom itself"
+        "0": "Near staircase base, dining area visible in background",
+        "1": "Interior location but no cabinet near patio window visible",
+        "2": "Staircase provides route to upstairs bedroom target area",
+        "3": "Staircase provides route to upstairs bedroom target area"
       },
       "type": "viewpoint"
     },
@@ -340,22 +360,22 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.5,
-        "1": 0.15,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.6,
+        "1": 0.25,
+        "2": 0.07777777777777778,
+        "3": 0.07777777777777778
       },
       "target_probs": {
-        "0": 0.17543859649122806,
-        "1": 0.09090909090909093,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "0": 0.09523809523809523,
+        "1": 0.11363636363636365,
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_score_basis": {
-        "0": "Outdoor patio dining area with table and chairs visible",
-        "1": "Patio area visible but no wooden cabinet or bust",
-        "2": "Ground floor outdoor area, not upstairs bedroom",
-        "3": "Ground floor outdoor area, not upstairs bedroom"
+        "0": "Outdoor patio dining area visible, may match flower target",
+        "1": "Patio area present but no visible cabinet with bust",
+        "2": "Outdoor location contradicts explicit upstairs bedroom requirement",
+        "3": "Outdoor location contradicts explicit upstairs bedroom requirement"
       },
       "type": "viewpoint"
     },
@@ -367,22 +387,22 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.15,
-        "1": 0.1,
-        "2": 0.7,
-        "3": 0.7
+        "0": 0.6,
+        "1": 0.15,
+        "2": 0.75,
+        "3": 0.75
       },
       "target_probs": {
-        "0": 0.05263157894736842,
-        "1": 0.06060606060606062,
-        "2": 0.4827586206896551,
-        "3": 0.4827586206896551
+        "0": 0.09523809523809523,
+        "1": 0.06818181818181819,
+        "2": 0.3488372093023256,
+        "3": 0.3488372093023256
       },
       "target_score_basis": {
-        "0": "Staircase area with upper level visible, no dining table",
-        "1": "Interior staircase, no patio window features",
-        "2": "Staircase leading upstairs, strong route cue to upstairs bedroom targets",
-        "3": "Staircase leading upstairs, strong route cue to upstairs bedroom targets"
+        "0": "On staircase, elevated position with view toward dining area",
+        "1": "Elevated position but no cabinet near patio window visible",
+        "2": "Staircase en route to upstairs bedroom target area",
+        "3": "Staircase en route to upstairs bedroom target area"
       },
       "type": "viewpoint"
     },
@@ -394,22 +414,22 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.15,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.55,
+        "1": 0.2,
+        "2": 0.07777777777777778,
+        "3": 0.07777777777777778
       },
       "target_probs": {
-        "0": 0.03508771929824561,
+        "0": 0.08730158730158731,
         "1": 0.09090909090909093,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_score_basis": {
-        "0": "Kitchen island area, no dining table with flowers visible",
-        "1": "Kitchen area with windows but no wooden cabinet or bust",
-        "2": "Ground floor kitchen, not upstairs bedroom",
-        "3": "Ground floor kitchen, not upstairs bedroom"
+        "0": "Kitchen island area, dining table may be nearby",
+        "1": "Kitchen area but no visible cabinet near patio window",
+        "2": "Downstairs kitchen contradicts explicit upstairs bedroom requirement",
+        "3": "Downstairs kitchen contradicts explicit upstairs bedroom requirement"
       },
       "type": "viewpoint"
     },
@@ -443,28 +463,29 @@
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.1,
-        "1": 0.15,
-        "2": 0.05,
-        "3": 0.05
+        "0": 0.5,
+        "1": 0.2,
+        "2": 0.07777777777777778,
+        "3": 0.07777777777777778
       },
       "target_probs": {
-        "0": 0.03508771929824561,
+        "0": 0.07936507936507936,
         "1": 0.09090909090909093,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_score_basis": {
-        "0": "Living room corner near windows, no dining table visible",
-        "1": "Window area visible but no wooden cabinet or bust",
-        "2": "Ground floor living area, not upstairs bedroom",
-        "3": "Ground floor living area, not upstairs bedroom"
+        "0": "Living area with view toward dining space in open plan",
+        "1": "Large windows present but no cabinet with bust visible",
+        "2": "Downstairs location contradicts explicit upstairs bedroom requirement",
+        "3": "Downstairs location contradicts explicit upstairs bedroom requirement"
       },
       "type": "viewpoint"
     },
     {
       "assigned_viewpoint_ids": [
-        6,
+        5,
+        14,
         17,
         19,
         36,
@@ -475,46 +496,45 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 50,
-      "label": "open plan living area with curved sofa and large windows",
+      "label": "open-plan living and dining area with stairs to upper level",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.03508771929824561,
-        "1": 0.0865800865800866,
-        "2": 0.11822660098522164,
-        "3": 0.11822660098522164
+        "0": 0.09027777777777779,
+        "1": 0.07954545454545457,
+        "2": 0.10691214470284237,
+        "3": 0.10691214470284237
       },
       "target_probs": {
-        "0": 0.1,
-        "1": 0.4020100502512563,
-        "2": 0.6620689655172413,
-        "3": 0.6620689655172413
+        "0": 0.2806909315237508,
+        "1": 0.1886792452830189,
+        "2": 0.09543855602329737,
+        "3": 0.09543855602329737
       },
       "target_score_basis": {},
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        5,
-        14
+        6
       ],
       "exist_prob": 1.0,
       "grounded": false,
       "id": 51,
-      "label": "dining area with glass table and transparent chairs",
+      "label": "outdoor patio area visible through large glass doors",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.2543859649122807,
-        "1": 0.06060606060606062,
-        "2": 0.034482758620689655,
-        "3": 0.034482758620689655
+        "0": 0.015873015873015876,
+        "1": 0.06818181818181819,
+        "2": 0.03617571059431525,
+        "3": 0.03617571059431525
       },
       "target_probs": {
-        "0": 0.7250000000000001,
-        "1": 0.2814070351758794,
-        "2": 0.1931034482758621,
-        "3": 0.1931034482758621
+        "0": 0.049352251696483655,
+        "1": 0.16172506738544476,
+        "2": 0.032293408684620266,
+        "3": 0.032293408684620266
       },
       "target_score_basis": {},
       "type": "region"
@@ -529,20 +549,66 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 52,
-      "label": "modern kitchen with grey cabinets and island counter",
+      "label": "modern kitchen area with island and dining table",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {
-        "0": 0.06140350877192982,
-        "1": 0.06818181818181819,
-        "2": 0.02586206896551724,
-        "3": 0.02586206896551724
+        "0": 0.06547619047619048,
+        "1": 0.07386363636363638,
+        "2": 0.027131782945736437,
+        "3": 0.027131782945736437
       },
       "target_probs": {
-        "0": 0.175,
-        "1": 0.31658291457286425,
-        "2": 0.14482758620689656,
-        "3": 0.14482758620689656
+        "0": 0.20357803824799506,
+        "1": 0.17520215633423183,
+        "2": 0.024220056513465198,
+        "3": 0.024220056513465198
+      },
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "exist_prob": 0.9,
+      "grounded": false,
+      "id": 53,
+      "label": "upstairs bedroom area accessible via visible staircase",
+      "latent_exist_prob": 0.9,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.9,
+        "3": 0.9
+      },
+      "target_probs": {
+        "0": 0.310919185687847,
+        "1": 0.2371967654986523,
+        "2": 0.8034138746323741,
+        "3": 0.8034138746323741
+      },
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "covered outdoor courtyard with green lawn",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.1,
+        "2": 0.05,
+        "3": 0.05
+      },
+      "target_probs": {
+        "0": 0.1554595928439235,
+        "1": 0.2371967654986523,
+        "2": 0.044634104146243005,
+        "3": 0.044634104146243005
       },
       "target_score_basis": {},
       "type": "region"

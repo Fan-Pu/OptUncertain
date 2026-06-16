@@ -59,10 +59,22 @@
       "type": "vv"
     },
     {
+      "grounded": false,
+      "i": 36,
+      "j": 53,
+      "type": "vz"
+    },
+    {
       "grounded": true,
       "i": 38,
       "j": 40,
       "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 38,
+      "j": 53,
+      "type": "vz"
     },
     {
       "grounded": true,
@@ -160,7 +172,8 @@
     },
     {
       "connected_node_ids": [
-        40
+        40,
+        53
       ],
       "exist_prob": 1.0,
       "grounded": false,
@@ -184,7 +197,8 @@
     },
     {
       "connected_node_ids": [
-        40
+        40,
+        53
       ],
       "exist_prob": 1.0,
       "grounded": false,
@@ -239,7 +253,8 @@
     },
     {
       "assigned_viewpoint_ids": [
-        6,
+        5,
+        14,
         17,
         19,
         36,
@@ -251,21 +266,20 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 50,
-      "label": "open plan living area with curved sofa and large windows",
+      "label": "open-plan living and dining area with stairs to upper level",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        5,
-        14
+        6
       ],
       "connected_node_ids": [],
       "exist_prob": 1.0,
       "grounded": false,
       "id": 51,
-      "label": "dining area with glass table and transparent chairs",
+      "label": "outdoor patio area visible through large glass doors",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
@@ -281,7 +295,32 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 52,
-      "label": "modern kitchen with grey cabinets and island counter",
+      "label": "modern kitchen area with island and dining table",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [
+        36,
+        38
+      ],
+      "exist_prob": 0.9,
+      "grounded": false,
+      "id": 53,
+      "label": "upstairs bedroom area accessible via visible staircase",
+      "latent_exist_prob": 0.9,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "covered outdoor courtyard with green lawn",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
@@ -290,7 +329,8 @@
   "observation_step": 1,
   "region_to_viewpoints": {
     "50": [
-      6,
+      5,
+      14,
       17,
       19,
       36,
@@ -299,8 +339,7 @@
       48
     ],
     "51": [
-      5,
-      14
+      6
     ],
     "52": [
       16,
@@ -310,9 +349,9 @@
     ]
   },
   "viewpoint_to_region": {
-    "5": 51,
-    "6": 50,
-    "14": 51,
+    "5": 50,
+    "6": 51,
+    "14": 50,
     "16": 52,
     "17": 50,
     "19": 50,
