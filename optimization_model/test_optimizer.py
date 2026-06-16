@@ -13,6 +13,7 @@ if os.path.isdir(GUROBI_PYTHON_LIB) and GUROBI_PYTHON_LIB not in sys.path:
 helper_stub = types.ModuleType("Helper")
 helper_stub.TYPE_REGION = 0
 helper_stub.TYPE_VP = 1
+helper_stub.viewpoint_vp_label_by_index = list(range(50))
 
 _original_helper = sys.modules.get("Helper")
 sys.modules["Helper"] = helper_stub
@@ -30,6 +31,7 @@ OPTIMIZER_CONFIG = {
     "arc_weight": 0.3333,
     "node_weight": 0.1111,
     "visit_weight": 0.1111,
+    "target_directed_mode": False,
 }
 
 UNIQUE_TARGET_REWARD_CONFIG = dict(OPTIMIZER_CONFIG, unique_target_reward=True)
@@ -51,6 +53,12 @@ GOAL_ONLY_OPTIMIZER_CONFIG = dict(
     node_weight=0.0,
     visit_weight=0.0,
 )
+TARGET_DIRECTED_OPTIMIZER_CONFIG = dict(
+    OPTIMIZER_CONFIG,
+    target_directed_mode=True,
+    target_directed_each_agent_when_possible=True,
+    target_directed_use_raw_target_probs=True,
+)
 
 
 def tearDownModule():
@@ -67,12 +75,14 @@ class _FakeNode:
         grounded,
         exist_prob,
         target_probs,
+        raw_target_probs=None,
         node_visit_times=0,
     ):
         self.type = node_type
         self.grounded = grounded
         self.exist_prob = exist_prob
         self.target_probs = dict(target_probs)
+        self.raw_target_probs = dict(raw_target_probs or target_probs)
         self.node_visit_times = node_visit_times
 
 
@@ -524,6 +534,88 @@ class _ZeroRewardAssignmentGraph:
         }
 
 
+class _TargetDirectedLeafBeatsWeakFrontierGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 0.01}, {"target": 4.0}),
+            3: _FakeNode(1, True, 1.0, {"target": 0.99}, {"target": 0.1}),
+            4: _FakeNode(1, True, 1.0, {"target": 0.99}, {"target": 0.1}),
+            5: _FakeNode(1, True, 1.0, {"target": 0.99}, {"target": 0.1}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 5.0, 1.0),
+            (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
+            (3, 4): _FakeEdge(3, 4, 0.1, 1.0),
+            (4, 5): _FakeEdge(4, 5, 0.1, 1.0),
+        }
+
+
+class _TargetDirectedRawVsNormalizedGraph:
+    def __init__(self):
+        self.target_ids = ["target"]
+        self.target_id_to_description = {"target": "target"}
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(1, True, 1.0, {"target": 0.0}, {"target": 0.0}),
+            2: _FakeNode(1, True, 1.0, {"target": 0.01}, {"target": 3.0}),
+            3: _FakeNode(1, True, 1.0, {"target": 0.99}, {"target": 0.2}),
+        }
+        self.edges = {
+            (1, 2): _FakeEdge(1, 2, 1.0, 1.0),
+            (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
+        }
+
+
+class _TwoAgentTwoTargetDirectedGraph:
+    def __init__(self):
+        self.target_ids = ["target0", "target1"]
+        self.target_id_to_description = {
+            "target0": "target0",
+            "target1": "target1",
+        }
+        self.observation_step = 0
+        self.nodes = {
+            1: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 0.0},
+                {"target0": 0.0, "target1": 0.0},
+            ),
+            2: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.0, "target1": 0.0},
+                {"target0": 0.0, "target1": 0.0},
+            ),
+            3: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.9, "target1": 0.1},
+                {"target0": 4.0, "target1": 0.1},
+            ),
+            4: _FakeNode(
+                1,
+                True,
+                1.0,
+                {"target0": 0.1, "target1": 0.9},
+                {"target0": 0.1, "target1": 4.0},
+            ),
+        }
+        self.edges = {
+            (1, 3): _FakeEdge(1, 3, 0.1, 1.0),
+            (1, 4): _FakeEdge(1, 4, 1.0, 1.0),
+            (2, 3): _FakeEdge(2, 3, 1.0, 1.0),
+            (2, 4): _FakeEdge(2, 4, 0.1, 1.0),
+        }
+
+
 class MultiAgentOptimizerTest(unittest.TestCase):
     def _objective_bounds_for_graph(
         self,
@@ -844,9 +936,60 @@ class MultiAgentOptimizerTest(unittest.TestCase):
     def test_default_mode_leaves_oracle_exact_coverage_flags_disabled(self):
         optimizer = RollingHorizonOptimizer(OPTIMIZER_CONFIG)
 
+        self.assertFalse(optimizer.target_directed_mode)
+        self.assertTrue(optimizer.target_directed_each_agent_when_possible)
         self.assertFalse(optimizer.unique_target_reward)
         self.assertFalse(optimizer.force_positive_target_assignment)
         self.assertFalse(optimizer.minimize_distance_after_targets)
+
+    def test_target_directed_mode_enables_unique_positive_raw_assignments(self):
+        optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
+
+        self.assertTrue(optimizer.target_directed_mode)
+        self.assertTrue(optimizer.unique_target_reward)
+        self.assertTrue(optimizer.force_positive_target_assignment)
+        self.assertTrue(optimizer.target_directed_use_raw_target_probs)
+
+    def test_target_directed_high_reward_leaf_beats_weak_frontier_chain(self):
+        optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_TargetDirectedLeafBeatsWeakFrontierGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["route_node_ids"], [1, 2])
+        self.assertEqual(
+            result["target_assignments"],
+            [{"target_id": "target", "node_id": 2, "agent_id": "agent0"}],
+        )
+
+    def test_target_directed_assigns_each_agent_when_targets_are_available(self):
+        optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_TwoAgentTwoTargetDirectedGraph(),
+            agent_current_vp_ids={"agent0": 1, "agent1": 2},
+            target_found_flags={"target0": False, "target1": False},
+        )
+
+        self.assertEqual(
+            sorted(
+                (assignment["agent_id"], assignment["node_id"], assignment["target_id"])
+                for assignment in result["target_assignments"]
+            ),
+            [("agent0", 3, "target0"), ("agent1", 4, "target1")],
+        )
+
+    def test_target_directed_uses_raw_probs_over_normalized_filler(self):
+        optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
+        result = optimizer.solve(
+            hypothesis_graph=_TargetDirectedRawVsNormalizedGraph(),
+            agent_current_vp_ids={"agent0": 1},
+            target_found_flags={"target": False},
+        )
+
+        self.assertEqual(result["agent_paths"]["agent0"]["route_node_ids"], [1, 2])
+        self.assertEqual(result["target_assignments"][0]["node_id"], 2)
 
     def test_oracle_exact_coverage_assigns_target_to_lower_distance_agent(self):
         optimizer = RollingHorizonOptimizer(ORACLE_EXACT_COVERAGE_CONFIG)

@@ -62,8 +62,7 @@ class GraphValidationError(ValueError):
         parts = ["[%s] %s" % (self.category, self.message)]
         if self.details:
             parts.append(
-                "Details: %s"
-                % json.dumps(self.details, sort_keys=True, default=str)
+                "Details: %s" % json.dumps(self.details, sort_keys=True, default=str)
             )
         if self.retry_guidance:
             parts.append("Retry guidance: %s" % " ".join(self.retry_guidance))
@@ -701,7 +700,10 @@ class MLLMClient:
                 if viewpoint_id not in raw_scores_by_viewpoint:
                     continue
                 target_scores = item.get("target_scores", {})
-                if not isinstance(target_scores, dict) or str(target_id) not in target_scores:
+                if (
+                    not isinstance(target_scores, dict)
+                    or str(target_id) not in target_scores
+                ):
                     continue
                 score_record = target_scores[str(target_id)]
                 if not isinstance(score_record, dict):
@@ -728,12 +730,13 @@ class MLLMClient:
                 if viewpoint_id not in raw_scores_by_viewpoint:
                     continue
                 source_key = (
-                    "raw_target_probs"
-                    if "raw_target_probs" in item
-                    else "target_probs"
+                    "raw_target_probs" if "raw_target_probs" in item else "target_probs"
                 )
                 target_probs = item.get(source_key, {})
-                if not isinstance(target_probs, dict) or str(target_id) not in target_probs:
+                if (
+                    not isinstance(target_probs, dict)
+                    or str(target_id) not in target_probs
+                ):
                     continue
                 raw_scores_by_viewpoint[viewpoint_id] = {
                     "raw_score": target_probs[str(target_id)],
@@ -775,10 +778,7 @@ class MLLMClient:
             "target_ids": target_ids,
         }
 
-        if (
-            "top-level keys" in message
-            or message == "payload must be a dictionary."
-        ):
+        if "top-level keys" in message or message == "payload must be a dictionary.":
             category = "top-level schema"
             details = dict(base_details)
             details.update(
@@ -2108,7 +2108,10 @@ class MLLMClient:
             - viewpoint_target_scores is incremental. Include only MLLM-updatable viewpoint-target values whose raw hypothesis score should change because of the current observations.
             - Each viewpoint_target_scores target entry must contain raw_score, evidence_strength, and basis. evidence_strength must be exactly low, medium, or high.
             - Returned raw_score values are raw nonnegative scores; they do not need to sum to 1 because the validator materializes unchanged prior raw scores, repairs any raw_score/evidence_strength order mismatch, and then normalizes per target.
-            - Before assigning target scores, parse each active target description into object identity, visible attributes, support surfaces, nearby objects, room or area cues, and relative-location cues. These constraints must come from the target text, not from fixed object-room mappings.
+            - Before assigning target scores, parse each active target description into object identity, visible attributes, support surfaces, nearby objects, floor or level cues, room or area cues, and relative-location cues. These constraints must come from the target text, not from fixed object-room mappings.
+            - Treat explicit floor, level, room, support-object, and relative-location cues as target-location constraints. A candidate viewpoint or type-(2) region that matches those cues, or is the clearest route toward such a matching area, must receive stronger raw target score mass than a visually salient candidate in a contradictory area.
+            - A location that contradicts an explicit target floor or room cue, such as first-floor space for an upstairs-bedroom target, must receive much lower raw_score for that target than matching upstairs, bedroom, stair, landing, hallway-to-bedroom, or other target-bearing candidates supported by visual or graph layout cues.
+            - When layout evidence supports an unseen target-bearing room or area, represent it as a type-(2) region and score it against the target cues. Do not invent unsupported regions or use a generic filler score when the graph context identifies a stronger target-bearing direction.
             - Use active target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when the evidence records are substantively indistinguishable.
             - viewpoint_target_scores must exclude current agent viewpoints and any viewpoint that has already been grounded or visited as a current viewpoint. These viewpoints are fixed by direct detection: if an unfound target was not detected there, its target probability at that viewpoint is 0 forever.
             - viewpoint_node_assigns must use region_node_id and assigned_viewpoint_node_indices. It is incremental and must include exactly the viewpoint ids requiring region assignment in this step. This set includes new visible neighboring viewpoints and first-reached current viewpoints. Do not include other current-step viewpoints. Other current-step viewpoints keep their previous graph_summary assignment unless a current viewpoint is explicitly listed in current_viewpoints_reassignment.
@@ -2207,7 +2210,9 @@ class MLLMClient:
                 Viewpoint target score-basis rule:
                 - Each returned viewpoint-target score must be an object with exactly raw_score, evidence_strength, and basis.
                 - evidence_strength must be exactly one of: low, medium, high.
-                - For each target, derive the relevant object identity, visual attributes, support surfaces, nearby objects, room or area cues, and relative-location cues from the active target description.
+                - For each target, derive the relevant object identity, visual attributes, support surfaces, nearby objects, floor or level cues, room or area cues, and relative-location cues from the active target description.
+                - Make floor, level, room, support-object, and relative-location cue matches visible in basis. If a candidate is scored high because it is upstairs, near stairs, in a bedroom-like area, or on a route toward the target-bearing area, state that cue.
+                - Give much lower raw_score values to candidates whose area contradicts explicit target-location text, even when they contain salient unrelated objects. Do not let weak normalized filler locations outrank a candidate or type-(2) region whose layout cues better match the target text.
                 - For each returned viewpoint-target pair, fill basis with one short clue explaining why raw_score and evidence_strength follow from the target text, visible evidence, red-marker location, assigned semantic region, spatial context, and graph history.
                 - basis must be a non-empty string.
                 - Do not use fixed object-room associations or hardcoded target-specific mappings. Only use constraints implied by the active target text and current graph/visual evidence.
@@ -2222,6 +2227,8 @@ class MLLMClient:
                 - Do not copy default values from the schema or examples.
                 - For each active target_id, compare all type-(2) regions and all eligible non-current viewpoint ids before assigning changed scores.
                 - Assign higher scores to locations whose visible objects, room or area evidence, furniture, spatial context, and graph history better satisfy the constraints inferred from that active target description.
+                - Assign especially strong raw score mass to matching target-bearing floor, room, support-object, relative-location, stair, landing, hallway, doorway, and route-continuation evidence when the target text contains those cues.
+                - Assign much lower raw score mass to contradictory floors or room areas; for example, first-floor dining or patio evidence should not compete with upstairs-bedroom evidence for an explicitly upstairs-bedroom target.
                 - Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
                 - Use different scores when evidence differs.
                 - Equal scores are allowed only when the basis, assigned region, spatial context, and graph history are substantively indistinguishable.
@@ -2385,7 +2392,7 @@ class MLLMClient:
                     )
             print()
 
-        if step_index >= 25:
+        if step_index >= 16:
             debugpy.breakpoint()
 
         # debugpy.breakpoint()
@@ -4381,8 +4388,7 @@ class MLLMClient:
                     "that became unassigned %s" % missing_region_score_targets_by_id
                 )
             raise ValueError(
-                "Invalid region_target_scores contract: %s."
-                % "; ".join(error_parts)
+                "Invalid region_target_scores contract: %s." % "; ".join(error_parts)
             )
 
         for region_id in sorted(all_region_ids):

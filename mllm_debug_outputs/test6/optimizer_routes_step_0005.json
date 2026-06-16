@@ -1,67 +1,74 @@
 {
-  "target_assignments": [],
+  "target_assignments": [
+    {
+      "target_id": "2",
+      "node_id": 26,
+      "agent_id": "agent1"
+    },
+    {
+      "target_id": "3",
+      "node_id": 38,
+      "agent_id": "agent0"
+    }
+  ],
   "agents": [
     {
       "agent_id": "agent0",
       "route_node_ids": [
-        21,
-        43
+        11,
+        38
       ],
       "objective_terms": {
         "raw": {
-          "goal": 0.26829268292682923,
-          "distance": 2.877,
+          "goal": 0.7,
+          "distance": 2.042,
           "arc_nonexistence": 0.0,
           "node_nonexistence": 0.0,
-          "revisit": 0.0
+          "revisit": 2.0
         },
         "normalized_contribution": {
-          "goal": 0.1341463414634146,
-          "distance": 0.011807097391111639,
+          "goal": 0.5,
+          "distance": 0.007200002820765061,
           "arc_nonexistence": 0.0,
           "node_nonexistence": 0.0,
-          "revisit": 0.0
+          "revisit": 0.1111111111111111
         },
         "weighted_contribution": {
-          "goal": 0.06036585365853656,
-          "distance": -0.0020072065564889787,
-          "arc_nonexistence": 0.0,
+          "goal": 0.225,
+          "distance": -0.0012240004795300605,
+          "arc_nonexistence": -0.0,
           "node_nonexistence": -0.0,
-          "revisit": -0.0
+          "revisit": -0.03333333333333333
         }
       }
     },
     {
       "agent_id": "agent1",
       "route_node_ids": [
-        16,
         45,
-        39,
-        35,
-        21,
-        43
+        26
       ],
       "objective_terms": {
         "raw": {
-          "goal": 0.3756097560975609,
-          "distance": 14.555,
+          "goal": 0.21666666666666667,
+          "distance": 1.176,
           "arc_nonexistence": 0.0,
           "node_nonexistence": 0.0,
-          "revisit": 2.0
+          "revisit": 1.0
         },
         "normalized_contribution": {
-          "goal": 0.1878048780487804,
-          "distance": 0.059733160419753184,
+          "goal": 0.15476190476190477,
+          "distance": 0.004146524641145794,
           "arc_nonexistence": 0.0,
           "node_nonexistence": 0.0,
-          "revisit": 0.1111111111111111
+          "revisit": 0.05555555555555555
         },
         "weighted_contribution": {
-          "goal": 0.08451219512195118,
-          "distance": -0.010154637271358041,
-          "arc_nonexistence": 0.0,
+          "goal": 0.06964285714285715,
+          "distance": -0.000704909188994785,
+          "arc_nonexistence": -0.0,
           "node_nonexistence": -0.0,
-          "revisit": -0.03333333333333333
+          "revisit": -0.016666666666666666
         }
       }
     }

@@ -59,10 +59,22 @@
       "type": "vv"
     },
     {
+      "grounded": false,
+      "i": 36,
+      "j": 56,
+      "type": "vz"
+    },
+    {
       "grounded": true,
       "i": 38,
       "j": 40,
       "type": "vv"
+    },
+    {
+      "grounded": false,
+      "i": 38,
+      "j": 56,
+      "type": "vz"
     },
     {
       "grounded": true,
@@ -160,7 +172,8 @@
     },
     {
       "connected_node_ids": [
-        40
+        40,
+        56
       ],
       "exist_prob": 1.0,
       "grounded": false,
@@ -184,7 +197,8 @@
     },
     {
       "connected_node_ids": [
-        40
+        40,
+        56
       ],
       "exist_prob": 1.0,
       "grounded": false,
@@ -250,36 +264,7 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 50,
-      "label": "open-plan living and dining area with large glass windows and concrete walls",
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        6,
-        37
-      ],
-      "connected_node_ids": [],
-      "exist_prob": 1.0,
-      "grounded": false,
-      "id": 51,
-      "label": "outdoor patio area visible through glass doors with green hedge wall",
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 0,
-      "type": "region"
-    },
-    {
-      "assigned_viewpoint_ids": [
-        16,
-        29,
-        39
-      ],
-      "connected_node_ids": [],
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 52,
-      "label": "modern kitchen area with island counter and stainless steel appliances",
+      "label": "main living area with large windows and modern furniture",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
@@ -290,11 +275,77 @@
         38
       ],
       "connected_node_ids": [],
-      "exist_prob": 0.9,
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "staircase area with concrete walls leading to upper floor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 52,
+      "label": "dining area adjacent to living space with glass table",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        16
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
       "grounded": false,
       "id": 53,
-      "label": "staircase area with metal steps leading to upper floor",
-      "latent_exist_prob": 0.9,
+      "label": "kitchen area with island and modern appliances",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "outdoor patio area visible through large windows",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        29,
+        37,
+        39
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 55,
+      "label": "exterior garden area with green lawn and stone walls",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [],
+      "connected_node_ids": [
+        36,
+        38
+      ],
+      "exist_prob": 0.8,
+      "grounded": false,
+      "id": 56,
+      "label": "upstairs bedroom area accessible via staircase",
+      "latent_exist_prob": 0.8,
       "node_visit_times": 0,
       "type": "region"
     }
@@ -310,31 +361,33 @@
       48
     ],
     "51": [
-      6,
-      37
-    ],
-    "52": [
-      16,
-      29,
-      39
-    ],
-    "53": [
       36,
       38
+    ],
+    "53": [
+      16
+    ],
+    "54": [
+      6
+    ],
+    "55": [
+      29,
+      37,
+      39
     ]
   },
   "viewpoint_to_region": {
     "5": 50,
-    "6": 51,
+    "6": 54,
     "14": 50,
-    "16": 52,
+    "16": 53,
     "17": 50,
     "19": 50,
-    "29": 52,
-    "36": 53,
-    "37": 51,
-    "38": 53,
-    "39": 52,
+    "29": 55,
+    "36": 51,
+    "37": 55,
+    "38": 51,
+    "39": 55,
     "40": 50,
     "48": 50
   }

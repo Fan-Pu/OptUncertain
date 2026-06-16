@@ -220,6 +220,20 @@ def test_region_node_feedback_reports_region_namespace():
     assert "New region node ids must be unique" in error.retry_guidance[0]
 
 
+def test_graph_prompt_includes_target_location_cue_scoring_rules():
+    system_message, user_message = _client()._build_instruction(
+        agent_observations=_agent_observations(),
+        targets=TARGETS,
+        graph_summary=_graph_summary(),
+    )
+    prompt_text = system_message + "\n" + user_message
+
+    assert "floor or level cues" in prompt_text
+    assert "contradicts an explicit target floor or room cue" in prompt_text
+    assert "target-bearing candidates" in prompt_text
+    assert "weak normalized filler locations" in prompt_text
+
+
 def test_viewpoint_target_score_feedback_reports_detection_fixed_ids():
     payload = _valid_payload()
     payload["viewpoint_target_scores"][0]["id"] = 38

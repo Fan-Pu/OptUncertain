@@ -18,14 +18,25 @@ class RollingHorizonOptimizer:
         self.node_weight = float(optimizer_config.get("node_weight"))
         self.visit_weight = float(optimizer_config.get("visit_weight"))
         # the above should sum to 1.0
+        self.target_directed_mode = bool(
+            optimizer_config.get("target_directed_mode", False)
+        )
+        self.target_directed_each_agent_when_possible = bool(
+            optimizer_config.get("target_directed_each_agent_when_possible", True)
+        )
+        self.target_directed_use_raw_target_probs = bool(
+            optimizer_config.get("target_directed_use_raw_target_probs", True)
+        )
         self.unique_target_reward = bool(
             optimizer_config.get("unique_target_reward", False)
+            or self.target_directed_mode
         )
         self.allow_inactive_agents = bool(
             optimizer_config.get("allow_inactive_agents", False)
         )
         self.force_positive_target_assignment = bool(
             optimizer_config.get("force_positive_target_assignment", False)
+            or self.target_directed_mode
         )
         self.minimize_distance_after_targets = bool(
             optimizer_config.get("minimize_distance_after_targets", False)
@@ -39,6 +50,9 @@ class RollingHorizonOptimizer:
     ) -> Dict[str, object]:
         agent_ids = list(agent_current_vp_ids)
         target_ids = list(hypothesis_graph.target_ids)
+        active_target_ids = [
+            target_id for target_id in target_ids if not target_found_flags[target_id]
+        ]
 
         if not agent_ids:
             raise RuntimeError("No active agents are available for optimization.")
@@ -137,8 +151,14 @@ class RollingHorizonOptimizer:
             if node.type == TYPE_REGION and region_to_viewpoints.get(node_id):
                 node_reward[node_id] = {target_id: 0.0 for target_id in target_ids}
                 continue
+            target_score_source = (
+                node.raw_target_probs
+                if self.target_directed_mode
+                and self.target_directed_use_raw_target_probs
+                else node.target_probs
+            )
             node_reward[node_id] = {
-                target_id: node.target_probs.get(target_id, 0.0)
+                target_id: target_score_source.get(target_id, 0.0)
                 for target_id in target_ids
             }
 
@@ -255,7 +275,7 @@ class RollingHorizonOptimizer:
         )
 
         objective_bounds = None
-        if self.minimize_distance_after_targets:
+        if self.minimize_distance_after_targets and not self.target_directed_mode:
             model.setObjective(dist_term, GRB.MINIMIZE)
         else:
             (
@@ -324,14 +344,38 @@ class RollingHorizonOptimizer:
                 visit_upper_bound,
             )
 
-            model.setObjective(
-                self.goal_weight * normalized_goal
-                - self.dist_weight * normalized_dist
-                - self.arc_weight * normalized_arc
-                - self.node_weight * normalized_node
-                - self.visit_weight * normalized_visit,
-                GRB.MAXIMIZE,
-            )
+            if self.target_directed_mode:
+                model.ModelSense = GRB.MAXIMIZE
+                model.setObjectiveN(
+                    goal_term,
+                    index=0,
+                    priority=2,
+                    weight=1.0,
+                    abstol=0.0,
+                    reltol=0.0,
+                    name="target_directed_reward",
+                )
+                model.setObjectiveN(
+                    -self.dist_weight * normalized_dist
+                    - self.arc_weight * normalized_arc
+                    - self.node_weight * normalized_node
+                    - self.visit_weight * normalized_visit,
+                    index=1,
+                    priority=1,
+                    weight=1.0,
+                    abstol=0.0,
+                    reltol=0.0,
+                    name="target_directed_route_cost",
+                )
+            else:
+                model.setObjective(
+                    self.goal_weight * normalized_goal
+                    - self.dist_weight * normalized_dist
+                    - self.arc_weight * normalized_arc
+                    - self.node_weight * normalized_node
+                    - self.visit_weight * normalized_visit,
+                    GRB.MAXIMIZE,
+                )
 
         for agent_id in agent_ids:
             start_node_id = int(agent_current_vp_ids[agent_id])
@@ -494,6 +538,39 @@ class RollingHorizonOptimizer:
                         target_assignment_sum == 1,
                         name="target_reward_unique_%s" % target_id,
                     )
+
+        if (
+            self.unique_target_reward
+            and self.target_directed_mode
+            and self.target_directed_each_agent_when_possible
+            and len(active_target_ids) >= len(agent_ids)
+        ):
+            agents_with_positive_target_candidates = [
+                agent_id
+                for agent_id in agent_ids
+                if any(
+                    node_reward[node_id][target_id] > 0.0
+                    for node_id in reward_node_ids_by_agent[agent_id]
+                    for target_id in active_target_ids
+                )
+            ]
+            if len(agents_with_positive_target_candidates) == len(agent_ids):
+                for agent_id in agent_ids:
+                    agent_target_assignment_sum = quicksum(
+                        target_reward_assignment[(target_id, node_id, agent_id)]
+                        for target_id in active_target_ids
+                        for node_id in reward_node_ids_by_agent[agent_id]
+                    )
+                    if self.allow_inactive_agents:
+                        model.addConstr(
+                            agent_target_assignment_sum >= agent_active[agent_id],
+                            name="target_directed_agent_assignment_%s" % agent_id,
+                        )
+                    else:
+                        model.addConstr(
+                            agent_target_assignment_sum >= 1,
+                            name="target_directed_agent_assignment_%s" % agent_id,
+                        )
 
         viewpoint_node_ids = [
             node_id
