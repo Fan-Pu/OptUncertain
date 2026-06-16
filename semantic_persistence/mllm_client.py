@@ -2342,7 +2342,7 @@ class MLLMClient:
                 "Agent %s current viewpoint: %s"
                 % (observation["agent_id"], observation["current_viewpoint_index"])
             )
-        debugpy.breakpoint()
+        # debugpy.breakpoint()
         image_content = []
         for image_index, observation in enumerate(agent_observations):
             image_content.append(

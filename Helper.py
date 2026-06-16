@@ -14,7 +14,7 @@ import numpy as np
 WIDTH = 800
 HEIGHT = 600
 VFOV = math.radians(60)
-HFOV = VFOV * WIDTH / HEIGHT
+HFOV = 2.0 * math.atan(math.tan(VFOV / 2.0) * WIDTH / HEIGHT)
 TEXT_COLOR = [230, 40, 40]
 VIEWPOINT_MARKER_FONT_SCALE = 2.0
 VIEWPOINT_MARKER_THICKNESS = 3
@@ -305,7 +305,13 @@ def render_sim_state(
 
 
 def _panorama_strip_width(frame):
-    return int(round(frame.shape[1] * DELTA_HEADING_RAD / HFOV))
+    return int(
+        round(
+            (frame.shape[1] - 1)
+            * math.tan(DELTA_HEADING_RAD / 2.0)
+            / math.tan(HFOV / 2.0)
+        )
+    )
 
 
 def _panorama_pitch_bounds():
@@ -414,7 +420,97 @@ def _camera_axes(heading, elevation):
     return forward, right, up
 
 
-def _project_elevation_rows_to_pitch_canvas(horizon_frame_rows):
+def _angle_difference(angles, reference_angles):
+    return (angles - reference_angles + math.pi) % (2.0 * math.pi) - math.pi
+
+
+def _default_heading_rows(horizon_frame_rows):
+    return [
+        [
+            float(horizon_index) * float(DELTA_HEADING_RAD)
+            for horizon_index in range(len(horizon_frames))
+        ]
+        for horizon_frames in horizon_frame_rows
+    ]
+
+
+def _default_elevation_rows(horizon_frame_rows):
+    return [
+        [
+            float(ELEVATION_BAND_RADS[elevation_band_index])
+            for _ in horizon_frames
+        ]
+        for elevation_band_index, horizon_frames in enumerate(horizon_frame_rows)
+    ]
+
+
+def _panorama_output_headings(heading_axis, panorama_width, strip_width):
+    panorama_positions = (
+        np.arange(panorama_width, dtype=np.float32) + 0.5
+    ) / float(strip_width)
+    frame_indices = np.floor(panorama_positions).astype(np.int32)
+    strip_fractions = panorama_positions - frame_indices.astype(np.float32)
+    heading_axis_array = np.asarray(heading_axis, dtype=np.float32)
+    return (
+        heading_axis_array[frame_indices]
+        + (strip_fractions - 0.5) * float(DELTA_HEADING_RAD)
+    )
+
+
+def _source_projection_maps(
+    target_headings,
+    target_pitches,
+    source_heading,
+    source_elevation,
+    source_width,
+    source_height,
+):
+    heading_delta = _angle_difference(target_headings, source_heading)
+    sin_pitch = np.sin(target_pitches)
+    cos_pitch = np.cos(target_pitches)
+    sin_elevation = np.sin(source_elevation)
+    cos_elevation = np.cos(source_elevation)
+    camera_x = cos_pitch * np.sin(heading_delta)
+    camera_y = (
+        sin_pitch * cos_elevation
+        - cos_pitch * sin_elevation * np.cos(heading_delta)
+    )
+    camera_z = (
+        sin_pitch * sin_elevation
+        + cos_pitch * cos_elevation * np.cos(heading_delta)
+    )
+    tan_half_hfov = math.tan(float(HFOV / 2.0))
+    tan_half_vfov = math.tan(float(VFOV / 2.0))
+    map_x = (
+        (camera_x / camera_z / tan_half_hfov + 1.0)
+        * 0.5
+        * float(source_width - 1)
+    ).astype(np.float32)
+    map_y = (
+        (1.0 - camera_y / camera_z / tan_half_vfov)
+        * 0.5
+        * float(source_height - 1)
+    ).astype(np.float32)
+    valid = (
+        (camera_z > 0.0)
+        & (map_x >= 0.0)
+        & (map_x <= float(source_width - 1))
+        & (map_y >= 0.0)
+        & (map_y <= float(source_height - 1))
+    )
+    return map_x, map_y, valid
+
+
+def _project_elevation_rows_to_pitch_canvas(
+    horizon_frame_rows,
+    heading_rows=None,
+    elevation_rows=None,
+):
+    if heading_rows is None:
+        heading_rows = _default_heading_rows(horizon_frame_rows)
+    if elevation_rows is None:
+        elevation_rows = _default_elevation_rows(horizon_frame_rows)
+
     source_height, source_width = horizon_frame_rows[0][0].shape[:2]
     horizon_frame_count = len(horizon_frame_rows[0])
     strip_width = _panorama_strip_width(horizon_frame_rows[0][0])
@@ -428,83 +524,78 @@ def _project_elevation_rows_to_pitch_canvas(horizon_frame_rows):
         * float(pitch_span)
         / float(output_height)
     )
-    output_headings = (
-        (np.arange(panorama_width, dtype=np.float32) + 0.5) / float(strip_width)
-        - 0.5
-    ) * float(DELTA_HEADING_RAD)
-    selected_horizon_by_x = (
-        np.floor(output_headings / float(DELTA_HEADING_RAD) + 0.5).astype(np.int32)
-        % horizon_frame_count
+    output_headings = _panorama_output_headings(
+        heading_rows[0],
+        panorama_width,
+        strip_width,
     )
-    source_headings_by_x = selected_horizon_by_x.astype(np.float32) * float(
-        DELTA_HEADING_RAD
-    )
+    selected_horizon_by_band = []
+    band_scores = []
+    output_pitch_grid = output_pitches[:, None]
 
-    band_elevations = np.asarray(ELEVATION_BAND_RADS, dtype=np.float32)
-    relative_band_pitch = output_pitches[:, None] - band_elevations[None, :]
-    valid_band = np.abs(relative_band_pitch) <= float(VFOV / 2.0)
-    band_scores = np.where(valid_band, np.cos(relative_band_pitch), -np.inf)
-    selected_band_by_y = np.argmax(band_scores, axis=1).astype(np.int32)
-    if np.any(~np.isfinite(np.max(band_scores, axis=1))):
-        raise RuntimeError("multi-elevation reprojection produced an uncovered pitch row")
+    for elevation_band_index in range(len(horizon_frame_rows)):
+        source_headings = np.asarray(
+            heading_rows[elevation_band_index],
+            dtype=np.float32,
+        )
+        source_elevations = np.asarray(
+            elevation_rows[elevation_band_index],
+            dtype=np.float32,
+        )
+        heading_deltas = _angle_difference(
+            output_headings[:, None],
+            source_headings[None, :],
+        )
+        horizon_indices = np.argmax(np.cos(heading_deltas), axis=1).astype(np.int32)
+        selected_horizon_by_band.append(horizon_indices)
 
-    tan_half_hfov = math.tan(float(HFOV / 2.0))
-    tan_half_vfov = math.tan(float(VFOV / 2.0))
+        col_indices = np.arange(panorama_width)
+        selected_heading_deltas = heading_deltas[col_indices, horizon_indices]
+        selected_source_elevations = source_elevations[horizon_indices]
+
+        source_elevation_grid = selected_source_elevations[None, :]
+        _, _, valid = _source_projection_maps(
+            output_headings[None, :],
+            output_pitch_grid,
+            source_headings[horizon_indices][None, :],
+            source_elevation_grid,
+            source_width,
+            source_height,
+        )
+        score = (
+            np.sin(output_pitch_grid) * np.sin(source_elevation_grid)
+            + np.cos(output_pitch_grid)
+            * np.cos(source_elevation_grid)
+            * np.cos(selected_heading_deltas[None, :])
+        )
+        band_scores.append(np.where(valid, score, -np.inf))
+
+    band_score_stack = np.stack(band_scores, axis=2)
+    best_scores = np.max(band_score_stack, axis=2)
+    if np.any(~np.isfinite(best_scores)):
+        raise RuntimeError("multi-elevation reprojection produced an uncovered ray")
+    selected_band_by_pixel = np.argmax(band_score_stack, axis=2).astype(np.int32)
     output = np.empty((output_height, panorama_width, 3), dtype=np.uint8)
 
-    for elevation_band_index, elevation in enumerate(ELEVATION_BAND_RADS):
-        rows = np.where(selected_band_by_y == elevation_band_index)[0]
-        if len(rows) == 0:
-            continue
-
+    target_pitch_grid = output_pitches[:, None]
+    for elevation_band_index in range(len(horizon_frame_rows)):
+        selected_horizon_by_x = selected_horizon_by_band[elevation_band_index]
         for horizon_index in range(horizon_frame_count):
             cols = np.where(selected_horizon_by_x == horizon_index)[0]
             if len(cols) == 0:
                 continue
 
             target_heading = output_headings[cols][None, :]
-            target_pitch = output_pitches[rows][:, None]
-            cos_pitch = np.cos(target_pitch)
-            ray_x = cos_pitch * np.sin(target_heading)
-            ray_y = np.sin(target_pitch)
-            ray_z = cos_pitch * np.cos(target_heading)
-
-            heading = float(source_headings_by_x[cols[0]])
-            forward, right, up = _camera_axes(heading, elevation)
-            camera_x = (
-                ray_x * right[0]
-                + ray_y * right[1]
-                + ray_z * right[2]
+            map_x, map_y, valid = _source_projection_maps(
+                target_heading,
+                target_pitch_grid,
+                float(heading_rows[elevation_band_index][horizon_index]),
+                float(elevation_rows[elevation_band_index][horizon_index]),
+                source_width,
+                source_height,
             )
-            camera_y = (
-                ray_x * up[0]
-                + ray_y * up[1]
-                + ray_z * up[2]
-            )
-            camera_z = (
-                ray_x * forward[0]
-                + ray_y * forward[1]
-                + ray_z * forward[2]
-            )
-
-            map_x = (
-                (camera_x / camera_z / tan_half_hfov + 1.0)
-                * 0.5
-                * float(source_width - 1)
-            ).astype(np.float32)
-            map_y = (
-                (1.0 - camera_y / camera_z / tan_half_vfov)
-                * 0.5
-                * float(source_height - 1)
-            ).astype(np.float32)
-
-            if (
-                np.any(camera_z <= 0.0)
-                or np.any(map_x < 0.0)
-                or np.any(map_x > float(source_width - 1))
-                or np.any(map_y < 0.0)
-                or np.any(map_y > float(source_height - 1))
-            ):
+            selected_mask = selected_band_by_pixel[:, cols] == elevation_band_index
+            if np.any(selected_mask & ~valid):
                 raise RuntimeError("multi-elevation reprojection selected an invalid source view")
 
             sampled = cv2.remap(
@@ -513,7 +604,9 @@ def _project_elevation_rows_to_pitch_canvas(horizon_frame_rows):
                 map_y,
                 interpolation=cv2.INTER_LINEAR,
             )
-            output[np.ix_(rows, cols)] = sampled
+            output_view = output[:, cols]
+            output_view[selected_mask] = sampled[selected_mask]
+            output[:, cols] = output_view
 
     return output
 
@@ -549,8 +642,17 @@ def _draw_smooth_panorama_guides(panorama, horizon_frame_count):
         )
 
 
-def build_multi_elevation_panorama(horizon_frame_rows, add_guides=False):
-    panorama = _project_elevation_rows_to_pitch_canvas(horizon_frame_rows)
+def build_multi_elevation_panorama(
+    horizon_frame_rows,
+    add_guides=False,
+    heading_rows=None,
+    elevation_rows=None,
+):
+    panorama = _project_elevation_rows_to_pitch_canvas(
+        horizon_frame_rows,
+        heading_rows=heading_rows,
+        elevation_rows=elevation_rows,
+    )
     if add_guides:
         _draw_smooth_panorama_guides(panorama, len(horizon_frame_rows[0]))
     return panorama
@@ -584,13 +686,31 @@ def _select_viewpoint_marker_candidates(marker_candidates):
     ]
 
 
-def _panorama_marker_origin(candidate, panorama_width, panorama_height, strip_width):
+def _panorama_marker_origin(
+    candidate,
+    panorama_width,
+    panorama_height,
+    strip_width,
+    heading_axis=None,
+):
     marker_text = str(candidate["viewpoint_index"])
     (text_width, text_height), baseline = _viewpoint_marker_text_size(marker_text)
-    continuous_index = (
-        float(candidate["horizon_index"])
-        + float(candidate["rel_heading"]) / DELTA_HEADING_RAD
-    )
+    if heading_axis is None:
+        continuous_index = (
+            float(candidate["horizon_index"])
+            + float(candidate["rel_heading"]) / DELTA_HEADING_RAD
+        )
+    else:
+        heading_axis_array = np.asarray(heading_axis, dtype=np.float32)
+        heading_delta_by_axis = _angle_difference(
+            float(candidate["heading"]),
+            heading_axis_array,
+        )
+        horizon_index = int(np.argmin(np.abs(heading_delta_by_axis)))
+        continuous_index = (
+            float(horizon_index)
+            + float(heading_delta_by_axis[horizon_index]) / DELTA_HEADING_RAD
+        )
     x_coord = ((continuous_index + 0.5) * float(strip_width)) % float(panorama_width)
     elevation_band_index = int(candidate.get("elevation_band_index", 0))
     absolute_pitch = (
@@ -609,10 +729,17 @@ def _panorama_marker_origin(candidate, panorama_width, panorama_height, strip_wi
     )
 
 
-def build_annotated_panorama(horizon_rgb_frame_rows, marker_candidates):
+def build_annotated_panorama(
+    horizon_rgb_frame_rows,
+    marker_candidates,
+    heading_rows=None,
+    elevation_rows=None,
+):
     panorama = build_multi_elevation_panorama(
         horizon_rgb_frame_rows,
         add_guides=True,
+        heading_rows=heading_rows,
+        elevation_rows=elevation_rows,
     )
     strip_width = _panorama_strip_width(horizon_rgb_frame_rows[0][0])
     panorama_height, panorama_width = panorama.shape[:2]
@@ -623,6 +750,7 @@ def build_annotated_panorama(horizon_rgb_frame_rows, marker_candidates):
             panorama_width=panorama_width,
             panorama_height=panorama_height,
             strip_width=strip_width,
+            heading_axis=heading_rows[0] if heading_rows is not None else None,
         )
         _draw_viewpoint_marker(
             panorama,
@@ -642,6 +770,8 @@ def _scan_state_to_observation(
     horizon_rgb_frames,
     horizon_mllm_frames,
     horizon_headings,
+    horizon_heading_rows,
+    horizon_elevation_rows,
     viewpoint_marker_candidates,
     frame_visible_viewpoint_indices,
     visible_viewpoints_by_index,
@@ -671,13 +801,21 @@ def _scan_state_to_observation(
         "horizon_rgb_frames": horizon_rgb_frames,
         "horizon_mllm_frames": horizon_mllm_frames,
         "horizon_headings": horizon_headings,
+        "horizon_heading_rows": horizon_heading_rows,
+        "horizon_elevation_rows": horizon_elevation_rows,
         "panorama_elevation_band_degs": [
             float(value) for value in ELEVATION_BAND_DEGS
         ],
-        "raw_panorama": build_multi_elevation_panorama(horizon_rgb_frames),
+        "raw_panorama": build_multi_elevation_panorama(
+            horizon_rgb_frames,
+            heading_rows=horizon_heading_rows,
+            elevation_rows=horizon_elevation_rows,
+        ),
         "annotated_panorama": build_annotated_panorama(
             horizon_rgb_frames,
             viewpoint_marker_candidates,
+            heading_rows=horizon_heading_rows,
+            elevation_rows=horizon_elevation_rows,
         ),
     }
 
@@ -693,6 +831,8 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         "horizon_rgb_frames": [],
         "horizon_mllm_frames": [],
         "horizon_headings": [],
+        "horizon_heading_rows": [],
+        "horizon_elevation_rows": [],
         "viewpoint_marker_candidates": [],
         "frame_visible_viewpoint_indices": [],
         "visible_viewpoints_by_index": {},
@@ -708,6 +848,8 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
 
         row_rgb_frames = []
         row_mllm_frames = []
+        row_headings = []
+        row_elevations = []
         row_visible_viewpoint_indices = []
 
         for horizon_index in range(HORIZON_LEN):
@@ -721,6 +863,8 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
 
             row_rgb_frames.append(raw_rgb)
             row_mllm_frames.append(annotated_rgb)
+            row_headings.append(float(state.heading))
+            row_elevations.append(float(state.elevation))
             if elevation_band_index == 0:
                 record["horizon_headings"].append(float(state.heading))
             row_visible_viewpoint_indices.append(
@@ -777,6 +921,8 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
 
         record["horizon_rgb_frames"].append(row_rgb_frames)
         record["horizon_mllm_frames"].append(row_mllm_frames)
+        record["horizon_heading_rows"].append(row_headings)
+        record["horizon_elevation_rows"].append(row_elevations)
         record["frame_visible_viewpoint_indices"].append(row_visible_viewpoint_indices)
 
         sim.makeAction(
@@ -800,6 +946,8 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         horizon_rgb_frames=record["horizon_rgb_frames"],
         horizon_mllm_frames=record["horizon_mllm_frames"],
         horizon_headings=record["horizon_headings"],
+        horizon_heading_rows=record["horizon_heading_rows"],
+        horizon_elevation_rows=record["horizon_elevation_rows"],
         viewpoint_marker_candidates=record["viewpoint_marker_candidates"],
         frame_visible_viewpoint_indices=record["frame_visible_viewpoint_indices"],
         visible_viewpoints_by_index=record["visible_viewpoints_by_index"],

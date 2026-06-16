@@ -40,11 +40,80 @@ def _frame_rows():
     ]
 
 
+def _frame_pose_rows():
+    heading_rows = [
+        [index * Helper.DELTA_HEADING_RAD for index in range(4)]
+        for _ in Helper.ELEVATION_BAND_RADS
+    ]
+    elevation_rows = [
+        [elevation for _ in range(4)]
+        for elevation in Helper.ELEVATION_BAND_RADS
+    ]
+    return heading_rows, elevation_rows
+
+
+def _analytic_frame(heading, elevation, height=100, width=800):
+    x_coords = np.arange(width, dtype=np.float32)[None, :]
+    y_coords = np.arange(height, dtype=np.float32)[:, None]
+    tan_half_hfov = math.tan(Helper.HFOV / 2.0)
+    tan_half_vfov = math.tan(Helper.VFOV / 2.0)
+    camera_x = (2.0 * x_coords / float(width - 1) - 1.0) * tan_half_hfov
+    camera_y = (1.0 - 2.0 * y_coords / float(height - 1)) * tan_half_vfov
+    camera_z = np.ones((height, width), dtype=np.float32)
+
+    forward, right, up = Helper._camera_axes(heading, elevation)
+    ray_x = (
+        camera_x * right[0]
+        + camera_y * up[0]
+        + camera_z * forward[0]
+    )
+    ray_y = (
+        camera_x * right[1]
+        + camera_y * up[1]
+        + camera_z * forward[1]
+    )
+    ray_z = (
+        camera_x * right[2]
+        + camera_y * up[2]
+        + camera_z * forward[2]
+    )
+
+    global_heading = np.mod(np.arctan2(ray_x, ray_z), 2.0 * math.pi)
+    horizontal_norm = np.sqrt(ray_x * ray_x + ray_z * ray_z)
+    global_pitch = np.arctan2(ray_y, horizontal_norm)
+    red = global_heading / (2.0 * math.pi) * 255.0
+    green = (global_pitch + math.pi / 2.0) / math.pi * 255.0
+    blue = np.zeros((height, width), dtype=np.float32)
+    return np.clip(np.stack([red, green, blue], axis=2), 0, 255).astype(np.uint8)
+
+
+def _analytic_frame_rows():
+    heading_rows, elevation_rows = _frame_pose_rows()
+    return [
+        [
+            _analytic_frame(
+                heading=heading,
+                elevation=elevation_rows[elevation_band_index][horizon_index],
+            )
+            for horizon_index, heading in enumerate(heading_row)
+        ]
+        for elevation_band_index, heading_row in enumerate(heading_rows)
+    ], heading_rows, elevation_rows
+
+
 def test_multi_elevation_panorama_projects_rows_to_smooth_pitch_canvas():
     rows = _frame_rows()
     panorama = Helper.build_multi_elevation_panorama(rows)
     strip_width = Helper._panorama_strip_width(rows[0][0])
+    expected_strip_width = int(
+        round(
+            (rows[0][0].shape[1] - 1)
+            * math.tan(Helper.DELTA_HEADING_RAD / 2.0)
+            / math.tan(Helper.HFOV / 2.0)
+        )
+    )
 
+    assert strip_width == expected_strip_width
     assert panorama.shape == (200, strip_width * 4, 3)
     assert panorama[10, 10, 0] > 180
     assert panorama[100, 10, 1] > 180
@@ -64,6 +133,24 @@ def test_multi_elevation_panorama_uses_single_source_in_overlap_regions():
     assert lower_middle_overlap[0] < 10
     assert lower_middle_overlap[1] < 10
     assert lower_middle_overlap[2] > 180
+
+
+def test_multi_elevation_panorama_keeps_yaw_boundaries_continuous():
+    rows, heading_rows, elevation_rows = _analytic_frame_rows()
+    panorama = Helper.build_multi_elevation_panorama(
+        rows,
+        heading_rows=heading_rows,
+        elevation_rows=elevation_rows,
+    )
+    strip_width = Helper._panorama_strip_width(rows[0][0])
+    center_y = panorama.shape[0] // 2
+
+    for boundary_x in (strip_width, 2 * strip_width, 3 * strip_width):
+        seam_delta = np.abs(
+            panorama[center_y, boundary_x - 1].astype(np.int16)
+            - panorama[center_y, boundary_x].astype(np.int16)
+        )
+        assert np.max(seam_delta) <= 4
 
 
 def test_smooth_multi_elevation_panorama_draws_heading_guides_and_pitch_labels():
