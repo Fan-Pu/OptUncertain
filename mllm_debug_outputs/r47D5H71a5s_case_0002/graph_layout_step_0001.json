@@ -1,0 +1,86 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 36
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 36,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 36,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        43,
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 36,
+      "label": "41fef0822d3f4b5581d3954dbcacad41",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 43,
+      "label": "82cb4105387a4ab5a09d82d7ff02a41c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "f45d421d04e34220b2aaf9246b6dcdd1",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        36,
+        43,
+        45
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "tiled hallway corridor with decorative lattice panels and white pebble planters",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "61": [
+      36,
+      43,
+      45
+    ]
+  },
+  "viewpoint_to_region": {
+    "36": 61,
+    "43": 61,
+    "45": 61
+  }
+}

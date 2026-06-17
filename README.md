@@ -57,11 +57,8 @@ The central config contains:
   },
   "bayes": {
     "sigma_vv2": 4.0,
-    "sigma_vz2": 9.0,
     "kappa_vv": 1.0,
-    "kappa_vz": 1.0,
     "varrho": 0.75,
-    "eta_vz": 5.0,
     "epsilon": 1e-6
   },
   "optimizer": {

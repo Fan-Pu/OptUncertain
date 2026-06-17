@@ -93,11 +93,8 @@ class HypothesisGraph:
     ):
         defaults = {
             "sigma_vv2": 4.0,
-            "sigma_vz2": 9.0,
             "kappa_vv": 1.0,
-            "kappa_vz": 1.0,
             "varrho": 0.75,
-            "eta_vz": 5.0,
             "epsilon": 1e-6,
         }
 
@@ -1298,22 +1295,6 @@ class HypothesisGraph:
             return 1
         return 0
 
-    def _vz_semantic_score(self, edge: GraphEdge, scorer) -> float:
-        viewpoint_id = (
-            edge.source_node_id
-            if self.nodes[edge.source_node_id].type == TYPE_VP
-            else edge.target_node_id
-        )
-        region_id = (
-            edge.source_node_id
-            if self.nodes[edge.source_node_id].type == TYPE_REGION
-            else edge.target_node_id
-        )
-        images = self.viewpoint_rgb_evidence.get(viewpoint_id, [])
-        if not images:
-            return 0.0
-        return float(scorer.score_images_text(images, self.nodes[region_id].label))
-
     def _update_edge_distance_posteriors(
         self,
         existing_edge_ids: Set[Tuple[int, int]],
@@ -1323,10 +1304,8 @@ class HypothesisGraph:
         scorer,
     ) -> None:
         epsilon = float(self.bayes_config["epsilon"])
-        sigma_vz2 = float(self.bayes_config["sigma_vz2"])
         sigma_vv2 = float(self.bayes_config["sigma_vv2"])
         kappa_vv = float(self.bayes_config["kappa_vv"])
-        kappa_vz = float(self.bayes_config["kappa_vz"])
         grounded_vv_edges = [
             edge
             for edge in self.edges.values()
@@ -1338,7 +1317,11 @@ class HypothesisGraph:
 
         for edge_id, edge in self.edges.items():
             edge_type = self._edge_type(edge)
-            if edge_type == "vv" and edge.grounded:
+            if edge_type != "vv":
+                raise ValueError(
+                    "Bayesian edge distance update only supports VV edges."
+                )
+            if edge.grounded:
                 edge.distance_var = 0.0
                 edge.cond_exist_prob = 1.0
                 edge.exist_prob = 1.0
@@ -1351,42 +1334,23 @@ class HypothesisGraph:
                 continue
 
             prior_mean = previous_distance_means.get(edge_id, edge.distance_mean)
-            prior_var = previous_distance_vars.get(
-                edge_id, sigma_vv2 if edge_type == "vv" else sigma_vz2
-            )
+            prior_var = previous_distance_vars.get(edge_id, sigma_vv2)
             prior_var = max(float(prior_var), epsilon)
 
-            if edge_type == "vv":
-                if grounded_vv_stats is None:
-                    edge.distance_mean = prior_mean
-                    edge.distance_var = prior_var
-                    edge.cond_exist_prob = previous_cond_exist_probs.get(
-                        edge_id, edge.cond_exist_prob
-                    )
-                    continue
-                empirical_mean, empirical_var = grounded_vv_stats
-                empirical_var = max(empirical_var, epsilon)
-                assignment_indicator = self._vp_assignment_indicator(
-                    edge.source_node_id, edge.target_node_id
+            if grounded_vv_stats is None:
+                edge.distance_mean = prior_mean
+                edge.distance_var = prior_var
+                edge.cond_exist_prob = previous_cond_exist_probs.get(
+                    edge_id, edge.cond_exist_prob
                 )
-                cue_mean = empirical_mean
-                cue_var = empirical_var / (1.0 + kappa_vv * assignment_indicator)
-            else:
-                viewpoint_id = (
-                    edge.source_node_id
-                    if self.nodes[edge.source_node_id].type == TYPE_VP
-                    else edge.target_node_id
-                )
-                if not self.viewpoint_rgb_evidence.get(viewpoint_id):
-                    edge.distance_mean = prior_mean
-                    edge.distance_var = prior_var
-                    edge.cond_exist_prob = previous_cond_exist_probs.get(
-                        edge_id, edge.cond_exist_prob
-                    )
-                    continue
-                semantic_score = self._vz_semantic_score(edge, scorer)
-                cue_mean = prior_mean * (1.0 - semantic_score)
-                cue_var = sigma_vz2 / (1.0 + kappa_vz * ((1.0 + semantic_score) / 2.0))
+                continue
+            empirical_mean, empirical_var = grounded_vv_stats
+            empirical_var = max(empirical_var, epsilon)
+            assignment_indicator = self._vp_assignment_indicator(
+                edge.source_node_id, edge.target_node_id
+            )
+            cue_mean = empirical_mean
+            cue_var = empirical_var / (1.0 + kappa_vv * assignment_indicator)
 
             cue_var = max(float(cue_var), epsilon)
 
@@ -1416,7 +1380,6 @@ class HypothesisGraph:
     ) -> None:
         epsilon = float(self.bayes_config["epsilon"])
         varrho = float(self.bayes_config["varrho"])
-        eta_vz = float(self.bayes_config["eta_vz"])
         grounded_vv_edges = [
             edge
             for edge in self.edges.values()
@@ -1428,7 +1391,11 @@ class HypothesisGraph:
 
         for edge_id, edge in self.edges.items():
             edge_type = self._edge_type(edge)
-            if edge_type == "vv" and edge.grounded:
+            if edge_type != "vv":
+                raise ValueError(
+                    "Bayesian edge existence update only supports VV edges."
+                )
+            if edge.grounded:
                 edge.cond_exist_prob = 1.0
                 edge.exist_prob = 1.0
                 edge.grounded = True
@@ -1444,28 +1411,23 @@ class HypothesisGraph:
                 edge.grounded = False
                 continue
 
-            if edge_type == "vv":
-                assignment_indicator = self._vp_assignment_indicator(
-                    edge.source_node_id, edge.target_node_id
+            assignment_indicator = self._vp_assignment_indicator(
+                edge.source_node_id, edge.target_node_id
+            )
+            edge_comp_score = math.log(varrho / (1.0 - varrho)) * (
+                2.0 * assignment_indicator - 1.0
+            )
+            if grounded_vv_stats is not None:
+                empirical_mean, empirical_var = grounded_vv_stats
+                empirical_var = max(empirical_var, epsilon)
+                prior_distance = previous_distance_means.get(
+                    edge_id, edge.distance_mean
                 )
-                edge_comp_score = math.log(varrho / (1.0 - varrho)) * (
-                    2.0 * assignment_indicator - 1.0
+                edge_comp_score -= ((prior_distance - empirical_mean) ** 2) / (
+                    2.0 * empirical_var
                 )
-                if grounded_vv_stats is not None:
-                    empirical_mean, empirical_var = grounded_vv_stats
-                    empirical_var = max(empirical_var, epsilon)
-                    prior_distance = previous_distance_means.get(
-                        edge_id, edge.distance_mean
-                    )
-                    edge_comp_score -= ((prior_distance - empirical_mean) ** 2) / (
-                        2.0 * empirical_var
-                    )
-                exist_likelihood = math.exp(0.5 * edge_comp_score)
-                non_exist_likelihood = math.exp(-0.5 * edge_comp_score)
-            else:
-                semantic_score = self._vz_semantic_score(edge, scorer)
-                exist_likelihood = math.exp(eta_vz * semantic_score)
-                non_exist_likelihood = math.exp(-eta_vz * semantic_score)
+            exist_likelihood = math.exp(0.5 * edge_comp_score)
+            non_exist_likelihood = math.exp(-0.5 * edge_comp_score)
 
             denominator = (
                 exist_likelihood * prior_cond_exist_prob

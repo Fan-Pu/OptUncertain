@@ -3,6 +3,7 @@ import copy
 from datetime import datetime, timezone
 import hashlib
 import heapq
+from itertools import combinations
 import json
 import math
 from pathlib import Path
@@ -11,6 +12,7 @@ import sys
 import time
 from typing import Dict, List, Tuple
 import debugpy
+from tqdm import tqdm
 
 import Helper
 from route_plotter import (
@@ -20,11 +22,10 @@ from route_plotter import (
 )
 from optimizer_route_logger import write_optimizer_route_log
 
-
 CENTRAL_CONFIG_SECTIONS = ("mllm", "bayes", "optimizer")
 DEFAULT_CONFIG_PATH = Path("config") / "default_config.json"
 DEBUGPY_LISTENING = False
-BATCH_GENERATION_VERSION = 2
+BATCH_GENERATION_VERSION = 3
 
 
 def _read_json(path: str | Path) -> object:
@@ -287,6 +288,26 @@ def _select_spread_viewpoint_ids(
     ]
 
 
+def _build_diverse_target_selections(
+    targets: List[Dict[str, object]],
+    target_number: int,
+    selection_count: int,
+    random_source: random.Random,
+) -> List[List[Dict[str, object]]]:
+    all_combinations = list(combinations(targets, int(target_number)))
+    selections = []
+
+    while len(selections) < int(selection_count):
+        deck = list(all_combinations)
+        random_source.shuffle(deck)
+        for target_combination in deck:
+            selections.append([copy.deepcopy(target) for target in target_combination])
+            if len(selections) >= int(selection_count):
+                break
+
+    return selections
+
+
 def _batch_config_hash(batch_config: Dict[str, object]) -> str:
     encoded = json.dumps(
         {
@@ -312,9 +333,7 @@ def generate_batch_scenarios(
     root = Path(project_root).resolve() if project_root is not None else _project_root()
     central_config = default_config or load_default_config(root)
     random_source = rng or random.Random()
-    max_steps = (
-        int(batch_config["max_steps"]) if "max_steps" in batch_config else None
-    )
+    max_steps = int(batch_config["max_steps"]) if "max_steps" in batch_config else None
 
     agent_requests = _selection_requests(
         list(batch_config["agent_num_selections"]),
@@ -338,6 +357,28 @@ def generate_batch_scenarios(
             environment_graph.viewpoint_id_by_index[node_id]
             for node_id in sorted(environment_graph.viewpoint_id_by_index)
         ]
+        target_selection_counts: Dict[int, int] = {}
+        for target_number, _ in target_requests:
+            if target_number > len(scan_targets):
+                raise ValueError(
+                    "Batch scan %s requested %s targets but only %s targets are "
+                    "defined." % (scan_id, target_number, len(scan_targets))
+                )
+            target_selection_counts[target_number] = target_selection_counts.get(
+                target_number, 0
+            ) + len(agent_requests)
+        target_selections_by_number = {
+            target_number: _build_diverse_target_selections(
+                targets=scan_targets,
+                target_number=target_number,
+                selection_count=selection_count,
+                random_source=random_source,
+            )
+            for target_number, selection_count in target_selection_counts.items()
+        }
+        target_selection_offsets = {
+            target_number: 0 for target_number in target_selection_counts
+        }
         case_index_for_scan = 1
 
         for agent_number, agent_selection_index in agent_requests:
@@ -348,13 +389,6 @@ def generate_batch_scenarios(
                 )
 
             for target_number, target_selection_index in target_requests:
-                if target_number > len(scan_targets):
-                    raise ValueError(
-                        "Batch scan %s requested %s targets but only %s targets are "
-                        "defined."
-                        % (scan_id, target_number, len(scan_targets))
-                    )
-
                 case_id = "%s_case_%04d" % (scan_id, case_index_for_scan)
                 case_index_for_scan += 1
 
@@ -363,7 +397,11 @@ def generate_batch_scenarios(
                     agent_number=agent_number,
                     random_source=random_source,
                 )
-                selected_targets = random_source.sample(scan_targets, target_number)
+                target_selection_offset = target_selection_offsets[target_number]
+                selected_targets = target_selections_by_number[target_number][
+                    target_selection_offset
+                ]
+                target_selection_offsets[target_number] = target_selection_offset + 1
                 agents = [
                     {
                         "id": "agent%s" % agent_index,
@@ -1348,11 +1386,21 @@ def run_batch_config(
         batch_id=batch_id,
         default_config=default_config,
     )
-    print("Using generated batch case summary at %s.\n" % str(summary_path))
 
     case_order = _case_order_from_batch_summary(summary)
     results = {}
     completed_cases, skipped_cases = _load_batch_resume_state(batch_id)
+    progress_bar = tqdm(
+        total=len(case_order),
+        initial=len(completed_cases) + len(skipped_cases),
+        unit="case",
+        file=sys.stdout,
+        bar_format=(
+            "{l_bar}{bar}| {n_fmt}/{total_fmt} {percentage:3.0f}% "
+            "elapsed {elapsed} ETA {remaining}"
+        ),
+    )
+    tqdm.write("Using generated batch case summary at %s.\n" % str(summary_path))
     skipped_cases_path = _batch_skip_ledger_path(batch_id)
     progress_path = write_batch_progress(
         batch_id=batch_id,
@@ -1366,13 +1414,13 @@ def run_batch_config(
     for scenario in scenarios:
         test_case = str(scenario["test_case"])
         if test_case in completed_cases:
-            print("Skipping previously completed batch case %s.\n" % test_case)
+            tqdm.write("Skipping previously completed batch case %s.\n" % test_case)
             continue
         if test_case in skipped_cases:
-            print("Skipping previously skipped batch case %s.\n" % test_case)
+            tqdm.write("Skipping previously skipped batch case %s.\n" % test_case)
             continue
 
-        print("Running generated batch case %s.\n" % test_case)
+        tqdm.write("Running generated batch case %s.\n" % test_case)
         results[test_case] = run_scenario(
             scenario,
             show_agent_views=show_agent_views,
@@ -1390,6 +1438,7 @@ def run_batch_config(
                 skipped_cases=skipped_cases,
                 status="running",
             )
+            progress_bar.update(1)
         elif results[test_case].get("status") == "terminated":
             termination_path = write_batch_termination(
                 batch_id=batch_id,
@@ -1404,7 +1453,10 @@ def run_batch_config(
                 status="terminated",
                 terminated_case=test_case,
             )
-            print("Saved batch termination notice to %s.\n" % str(termination_path))
+            progress_bar.update(1)
+            tqdm.write(
+                "Saved batch termination notice to %s.\n" % str(termination_path)
+            )
             break
         else:
             skipped_cases[test_case] = _build_batch_skip_record(
@@ -1422,7 +1474,10 @@ def run_batch_config(
                 skipped_cases=skipped_cases,
                 status="running",
             )
-            print("Saved skipped batch case ledger to %s.\n" % str(skipped_cases_path))
+            progress_bar.update(1)
+            tqdm.write(
+                "Saved skipped batch case ledger to %s.\n" % str(skipped_cases_path)
+            )
     else:
         progress_path = write_batch_progress(
             batch_id=batch_id,
@@ -1432,10 +1487,14 @@ def run_batch_config(
             status="completed",
         )
 
+    progress_bar.close()
+
     return {
-        "status": "terminated"
-        if any(result.get("status") == "terminated" for result in results.values())
-        else "completed",
+        "status": (
+            "terminated"
+            if any(result.get("status") == "terminated" for result in results.values())
+            else "completed"
+        ),
         "generated_cases": summary,
         "generated_cases_path": str(summary_path),
         "skipped_cases_path": str(skipped_cases_path),

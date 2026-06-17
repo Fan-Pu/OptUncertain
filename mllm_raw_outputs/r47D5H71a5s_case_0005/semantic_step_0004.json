@@ -1,0 +1,187 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        18
+      ],
+      "region_node_id": 63
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 2,
+      "raw_target_probs": {
+        "1": 0.15,
+        "2": 0.05,
+        "4": 0.05,
+        "5": 0.05,
+        "6": 0.1
+      },
+      "target_probs": {
+        "1": 0.2142857142857143,
+        "2": 0.12500000000000003,
+        "4": 0.1,
+        "5": 0.16666666666666669,
+        "6": 0.10526315789473684
+      }
+    },
+    {
+      "id": 4,
+      "raw_target_probs": {
+        "1": 0.05,
+        "2": 0.05,
+        "4": 0.1,
+        "5": 0.05,
+        "6": 0.05
+      },
+      "target_probs": {
+        "1": 0.07142857142857144,
+        "2": 0.12500000000000003,
+        "4": 0.2,
+        "5": 0.16666666666666669,
+        "6": 0.05263157894736842
+      }
+    },
+    {
+      "id": 5,
+      "raw_target_probs": {
+        "1": 0.05,
+        "2": 0.05,
+        "4": 0.1,
+        "5": 0.05,
+        "6": 0.05
+      },
+      "target_probs": {
+        "1": 0.07142857142857144,
+        "2": 0.12500000000000003,
+        "4": 0.2,
+        "5": 0.16666666666666669,
+        "6": 0.05263157894736842
+      }
+    },
+    {
+      "id": 18,
+      "raw_target_probs": {
+        "1": 0.35,
+        "2": 0.15,
+        "4": 0.05,
+        "5": 0.05,
+        "6": 0.65
+      },
+      "target_probs": {
+        "1": 0.5,
+        "2": 0.375,
+        "4": 0.1,
+        "5": 0.16666666666666669,
+        "6": 0.6842105263157895
+      }
+    },
+    {
+      "id": 24,
+      "raw_target_probs": {
+        "1": 0.05,
+        "2": 0.05,
+        "4": 0.1,
+        "5": 0.05,
+        "6": 0.05
+      },
+      "target_probs": {
+        "1": 0.07142857142857144,
+        "2": 0.12500000000000003,
+        "4": 0.2,
+        "5": 0.16666666666666669,
+        "6": 0.05263157894736842
+      }
+    },
+    {
+      "id": 33,
+      "raw_target_probs": {
+        "1": 0.05,
+        "2": 0.05,
+        "4": 0.1,
+        "5": 0.05,
+        "6": 0.05
+      },
+      "target_probs": {
+        "1": 0.07142857142857144,
+        "2": 0.12500000000000003,
+        "4": 0.2,
+        "5": 0.16666666666666669,
+        "6": 0.05263157894736842
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 2,
+      "score_basis": {
+        "1": "Target is a vase in a glass display cabinet; viewpoint 2 is in the hallway adjacent to the fitness room (region 62) where such cabinets are likely located, but no direct visual evidence.",
+        "2": "Target is a cushion on a wicker chair; no wicker furniture visible from viewpoint 2 marker location in hallway.",
+        "4": "Target is flowers between massage tables; viewpoint 2 is in hallway, not inside a treatment room with massage tables.",
+        "5": "Target is a kettle beside a water dispenser; no kitchen or utility area visible near viewpoint 2.",
+        "6": "Target is a statue beside an indoor pool; viewpoint 2 is in hallway, pool is visible from current viewpoint 54 but not directly accessible from viewpoint 2 without passing through fitness area."
+      }
+    },
+    {
+      "id": 4,
+      "score_basis": {
+        "1": "Viewpoint 4 is in spa hallway region 61; glass display cabinets are more likely in fitness area (region 62), not spa hallway.",
+        "2": "No wicker chair visible in spa hallway context for viewpoint 4.",
+        "4": "Target requires massage tables; viewpoint 4 is in hallway outside treatment rooms, not inside a room with tables.",
+        "5": "No kitchen or water dispenser evidence in spa hallway for viewpoint 4.",
+        "6": "Statue beside pool; pool is in fitness area (region 62), viewpoint 4 is in spa hallway (region 61), separated by distance."
+      }
+    },
+    {
+      "id": 5,
+      "score_basis": {
+        "1": "Viewpoint 5 is in spa hallway; glass display cabinet target is more associated with fitness equipment area.",
+        "2": "No wicker furniture visible in spa hallway context.",
+        "4": "Massage tables would be inside treatment rooms, viewpoint 5 is in hallway corridor.",
+        "5": "Kettle and water dispenser suggest kitchen/utility area, not spa hallway.",
+        "6": "Pool statue target is in fitness area, viewpoint 5 is in distant spa hallway."
+      }
+    },
+    {
+      "id": 18,
+      "score_basis": {
+        "1": "Viewpoint 18 is newly observed near fitness equipment area; glass display cabinet is plausible in this fitness zone based on current panorama showing exercise equipment.",
+        "2": "Wicker chair with cushion could be in relaxation area near fitness equipment; moderate plausibility.",
+        "4": "Massage tables are in treatment rooms, not in open fitness area where viewpoint 18 is located.",
+        "5": "Kettle and water dispenser suggest kitchen area, not fitness zone.",
+        "6": "Statue beside indoor pool; current panorama shows pool area nearby, viewpoint 18 is close to this pool zone based on xy coordinates and visible pool in panorama."
+      }
+    },
+    {
+      "id": 24,
+      "score_basis": {
+        "1": "Viewpoint 24 is in spa hallway; glass cabinet target is more likely in fitness area.",
+        "2": "No wicker chair evidence in spa hallway.",
+        "4": "Massage tables inside treatment rooms, viewpoint 24 is in hallway.",
+        "5": "No kitchen evidence in spa hallway.",
+        "6": "Pool statue is in fitness area, viewpoint 24 is in distant spa hallway."
+      }
+    },
+    {
+      "id": 33,
+      "score_basis": {
+        "1": "Viewpoint 33 is in spa hallway; glass cabinet target associated with fitness area.",
+        "2": "No wicker furniture in spa hallway context.",
+        "4": "Massage tables inside rooms, viewpoint 33 is in corridor.",
+        "5": "No kitchen or water dispenser in spa hallway.",
+        "6": "Pool statue in fitness area, viewpoint 33 is in distant spa hallway."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 63,
+      "label": "indoor pool area with tiled flooring and decorative wall panels adjacent to fitness equipment"
+    }
+  ]
+}

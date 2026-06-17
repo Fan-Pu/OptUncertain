@@ -1,0 +1,191 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.734,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.211,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.56,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 11,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.852,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 35,
+      "j": 40,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 3,
+      "label": "04dba6ce40274f9b80f8e18eb201d33b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.4
+      },
+      "target_probs": {
+        "1": 0.6666666666666666
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 3 marker visible through doorway into adjacent room with interior furniture; potential display cabinet location for decorative vase target."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "32ddd1485c98480f9a6ecd24ace5d49f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.2
+      },
+      "target_probs": {
+        "1": 0.3333333333333333
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 6 marker visible down hallway past current position; distant view of adjacent area with possible furniture but less direct evidence for glass cabinet."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 11,
+      "label": "b889bb15538844beb074db42bd8d9ed4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0
+      },
+      "target_probs": {
+        "1": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 35,
+      "label": "869e52d579cc4c9a85979d3e20eb2455",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0
+      },
+      "target_probs": {
+        "1": 0.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 35 is visible through a doorway into an adjacent room; no glass display cabinet or decorative vase with green plant stems is visible from this vantage point, and the area appears to be a transit space."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 40,
+      "label": "7798eee8ae4a4fc483da87e8e04b659c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0
+      },
+      "target_probs": {
+        "1": 0.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 40 is a visible neighboring viewpoint in the same dark, undefined space as current viewpoint 11. With no visual evidence of a glass display cabinet or decorative vase, and no specific room cues to support the target description, the likelihood remains low."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        11
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "dark undefined interior space with no distinct features",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        35,
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 62,
+      "label": "dimly lit bathroom area with floral wallpaper and peacock fan mural",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3,
+        6
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 64,
+      "label": "adjacent interior room or hallway area visible through right-side doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "target_found": {
+    "1": false
+  }
+}

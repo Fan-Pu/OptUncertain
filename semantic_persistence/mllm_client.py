@@ -2189,8 +2189,7 @@ class MLLMClient:
         prompt_graph_summary["nodes"] = [
             node
             for node in prompt_graph_summary.get("nodes", [])
-            if node.get("type") != "region"
-            or bool(node.get("assigned_viewpoint_ids"))
+            if node.get("type") != "region" or bool(node.get("assigned_viewpoint_ids"))
         ]
         prompt_node_ids = {int(node["id"]) for node in prompt_graph_summary["nodes"]}
         prompt_graph_summary["edges"] = [
@@ -2245,8 +2244,10 @@ class MLLMClient:
             - Each viewpoint_target_scores target entry must contain raw_score, evidence_strength, and basis. evidence_strength must be exactly low, medium, or high.
             - Returned raw_score values are raw nonnegative scores; they do not need to sum to 1 because the validator materializes unchanged prior raw scores, repairs any raw_score/evidence_strength order mismatch, and then normalizes per target.
             - Before assigning target scores, parse each active target description into object identity, visible attributes, support surfaces, nearby objects, floor or level cues, room or area cues, and relative-location cues. These constraints must come from the target text, not from fixed object-room mappings.
-            - Treat explicit floor, level, room, support-object, and relative-location cues as target-location constraints. A candidate viewpoint that matches those cues must receive stronger raw target score mass than a visually salient candidate in a contradictory area.
-            - A location that contradicts an explicit target floor or room cue, such as first-floor space for an upstairs-bedroom target, must receive much lower raw_score for that target than matching upstairs, bedroom, stair, landing, hallway-to-bedroom, or other target-bearing candidates supported by visual or graph layout cues.
+            - Treat explicit floor, level, room, support-object, nearby-object, visual-attribute, and relative-location cues as target-location constraints. A candidate viewpoint that matches those target-bearing cues must receive stronger raw target score mass than a visually salient candidate in a contradictory area.
+            - A location that contradicts an explicit target floor or room cue, such as first-floor space for an upstairs-bedroom target, must receive much lower raw_score for that target than candidates whose own viewpoint evidence matches the target-bearing floor, room, support surface, nearby object, visual attribute, or relative-location cues.
+            - Treat route-continuation evidence as navigation context, not target-presence evidence. Stairs, landings, hallways, and doorways indicate access, but they are not target-bearing evidence by themselves unless the target text identifies that access space as the target location.
+            - If an existing prior_raw_target_probs value is high but its current evidence is route-only, transit-only, near-stairs-only, or contradictory to explicit target-location constraints, lower that value instead of preserving it.
             - When layout evidence points toward a target-bearing area, express that value on concrete unvisited viewpoint candidates, not on abstract region nodes.
             - Use active target descriptions to make target-specific scores when evidence differs. Equal scores are allowed only when the evidence records are substantively indistinguishable.
             - viewpoint_target_scores must exclude current agent viewpoints and any viewpoint that has already been grounded or visited as a current viewpoint. These viewpoints are fixed by direct detection: if an unfound target was not detected there, its target probability at that viewpoint is 0 forever.
@@ -2348,9 +2349,9 @@ class MLLMClient:
                 - Each returned viewpoint-target score must be an object with exactly raw_score, evidence_strength, and basis.
                 - evidence_strength must be exactly one of: low, medium, high.
                 - For each target, derive the relevant object identity, visual attributes, support surfaces, nearby objects, floor or level cues, room or area cues, and relative-location cues from the active target description.
-                - Make floor, level, room, support-object, and relative-location cue matches visible in basis. If a candidate is scored high because it is upstairs, near stairs, in a bedroom-like area, or on a route toward the target-bearing area, state that cue.
-                - Do not give high target raw_score to stairs, landings, or hallway viewpoints merely because they lead toward the target area.
-                - Put route-only upstairs or bedroom cues on unvisited concrete candidate viewpoints, not on already searched stair or landing viewpoints.
+                - Make floor, level, room, support-object, nearby-object, visual-attribute, and relative-location cue matches visible in basis. If a candidate is scored high, basis must name target-bearing evidence at that viewpoint. Being near stairs, on a route, or in a generic transition space is insufficient for high evidence_strength.
+                - Do not give high target raw_score to stairs, landings, hallway, doorway, or transit viewpoints merely because they lead toward the target area.
+                - Route-only upstairs, stair, landing, hallway, doorway, or route-continuation cues may justify only low or medium scores unless the candidate viewpoint itself has target-bearing room, support-object, nearby-object, visual-attribute, or relative-location evidence.
                 - Give much lower raw_score values to candidates whose area contradicts explicit target-location text, even when they contain salient unrelated objects. Do not let weak normalized filler locations outrank a candidate viewpoint whose layout cues better match the target text.
                 - For each returned viewpoint-target pair, fill basis with one short clue explaining why raw_score and evidence_strength follow from the target text, visible evidence, red-marker location, assigned semantic region, spatial context, and graph history.
                 - basis must be a non-empty string.
@@ -2362,7 +2363,9 @@ class MLLMClient:
                 - Do not copy default values from the schema or examples.
                 - For each active target_id, compare all eligible non-current viewpoint ids before assigning changed scores.
                 - Assign higher scores to locations whose visible objects, room or area evidence, furniture, spatial context, and graph history better satisfy the constraints inferred from that active target description.
-                - Assign especially strong raw score mass to matching target-bearing floor, room, support-object, relative-location, stair, landing, hallway, doorway, and route-continuation evidence when the target text contains those cues.
+                - Assign especially strong raw score mass only to candidate viewpoints whose own evidence matches target-bearing floor, room, support-object, nearby-object, visual-attribute, or relative-location constraints.
+                - Treat stairs, landings, hallways, doorways, and route-continuation as access cues only. They must not receive high raw_score or outrank target-bearing room, support-object, nearby-object, visual-attribute, or relative-location candidates unless the target text itself identifies that access space as the target location.
+                - Re-score prior high raw values downward when their previous basis is route-only, transit-only, near-stairs-only, or contradictory to explicit target-location constraints.
                 - Assign much lower raw score mass to contradictory floors or room areas; for example, first-floor dining or patio evidence should not compete with upstairs-bedroom evidence for an explicitly upstairs-bedroom target.
                 - Do not repeatedly use default values such as 0.01, 0.05, 0.1, or 0.2.
                 - Use different scores when evidence differs.
@@ -2501,8 +2504,8 @@ class MLLMClient:
                     )
             print()
 
-        if step_index >= 25:
-            debugpy.breakpoint()
+        # if step_index >= 15:
+        #     debugpy.breakpoint()
 
         # debugpy.breakpoint()
 
@@ -4389,9 +4392,7 @@ class MLLMClient:
             if edge_type == "VZ":
                 continue
             if edge_type != "VV":
-                raise ValueError(
-                    "Invalid edge_type %s. Expected 'VV'." % edge_type
-                )
+                raise ValueError("Invalid edge_type %s. Expected 'VV'." % edge_type)
 
             validate_probability(edge["exist_prob"], "new_edges[].exist_prob")
             validate_positive_number(edge["dist"], "new_edges[].dist")

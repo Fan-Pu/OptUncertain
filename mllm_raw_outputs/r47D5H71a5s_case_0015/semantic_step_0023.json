@@ -1,0 +1,175 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_probs": [
+    {
+      "id": 8,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "4": 0.05,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.07692307692307693,
+        "1": 0.13333333333333333,
+        "2": 0.08695652173913045,
+        "4": 0.01694915254237288,
+        "5": 0.20000000000000004
+      }
+    },
+    {
+      "id": 9,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "4": 0.05,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.07692307692307693,
+        "1": 0.13333333333333333,
+        "2": 0.08695652173913045,
+        "4": 0.01694915254237288,
+        "5": 0.20000000000000004
+      }
+    },
+    {
+      "id": 16,
+      "raw_target_probs": {
+        "0": 0.3,
+        "1": 0.15,
+        "2": 0.25,
+        "4": 0.8,
+        "5": 0.05
+      },
+      "target_probs": {
+        "0": 0.23076923076923075,
+        "1": 0.19999999999999998,
+        "2": 0.2173913043478261,
+        "4": 0.2711864406779661,
+        "5": 0.10000000000000002
+      }
+    },
+    {
+      "id": 18,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "4": 0.4,
+        "5": 0.15
+      },
+      "target_probs": {
+        "0": 0.07692307692307693,
+        "1": 0.13333333333333333,
+        "2": 0.08695652173913045,
+        "4": 0.13559322033898305,
+        "5": 0.30000000000000004
+      }
+    },
+    {
+      "id": 40,
+      "raw_target_probs": {
+        "0": 0.35,
+        "1": 0.15,
+        "2": 0.3,
+        "4": 0.85,
+        "5": 0.05
+      },
+      "target_probs": {
+        "0": 0.2692307692307692,
+        "1": 0.19999999999999998,
+        "2": 0.2608695652173913,
+        "4": 0.28813559322033894,
+        "5": 0.10000000000000002
+      }
+    },
+    {
+      "id": 59,
+      "raw_target_probs": {
+        "0": 0.35,
+        "1": 0.15,
+        "2": 0.3,
+        "4": 0.8,
+        "5": 0.05
+      },
+      "target_probs": {
+        "0": 0.2692307692307692,
+        "1": 0.19999999999999998,
+        "2": 0.2608695652173913,
+        "4": 0.2711864406779661,
+        "5": 0.10000000000000002
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 8,
+      "score_basis": {
+        "0": "Corridor area with elevator/stair access; target requires bathroom sink. Route-only cue.",
+        "1": "Corridor/elevator area; target requires glass display cabinet. No supporting furniture visible.",
+        "2": "Transit corridor; target requires wicker chair. Area is for passage, not seating.",
+        "4": "Corridor near stairs; target requires massage tables. Contradicts explicit room cue.",
+        "5": "Hallway/Elevator zone; target requires counter/water dispenser. No kitchen cues."
+      }
+    },
+    {
+      "id": 9,
+      "score_basis": {
+        "0": "Corridor with staircase access; target requires bathroom sink. Route-only evidence.",
+        "1": "Staircase landing area; target requires display cabinet. No furniture match.",
+        "2": "Transit space near stairs; target requires wicker chair. Unlikely location.",
+        "4": "Stairwell/Corridor; target requires massage tables. Explicit room mismatch.",
+        "5": "Elevator/Stair hall; target requires kitchen counter. No appliance cues."
+      }
+    },
+    {
+      "id": 16,
+      "score_basis": {
+        "0": "Massage room area; target requires bathroom sink. Possible adjacent ensuite, but primary function is treatment.",
+        "1": "Treatment room; target requires display cabinet. Decorative plants present, but cabinet not confirmed.",
+        "2": "Spa room with lounge chairs; target requires wicker chair. Seating exists but material uncertain.",
+        "4": "Massage room with treatment tables and decorative plants. Strong match for 'between two massage tables' and 'white flowers'.",
+        "5": "Treatment area; target requires kettle/dispenser. Unlikely in massage zone."
+      }
+    },
+    {
+      "id": 18,
+      "score_basis": {
+        "0": "Corridor with tiled walls; target requires bathroom sink. Transit space only.",
+        "1": "Hallway; target requires display cabinet. No storage furniture visible.",
+        "2": "Tiled corridor; target requires wicker chair. No seating furniture.",
+        "4": "Corridor leading to spa rooms; target requires massage tables. Proximity helps, but tables not in this view.",
+        "5": "Service corridor; target requires water dispenser. Possible utility access, but low confidence."
+      }
+    },
+    {
+      "id": 40,
+      "score_basis": {
+        "0": "Massage room area; target requires bathroom sink. Likely ensuite connection.",
+        "1": "Treatment room; target requires glass cabinet. Decorative elements present.",
+        "2": "Spa room with seating; target requires wicker chair. Plausible location.",
+        "4": "Massage room with treatment tables. Direct match for 'between two massage tables' constraint.",
+        "5": "Therapy room; target requires kettle. Low probability in treatment zone."
+      }
+    },
+    {
+      "id": 59,
+      "score_basis": {
+        "0": "Massage room; target requires bathroom sink. Potential ensuite facility.",
+        "1": "Treatment area; target requires display cabinet. Unclear visibility.",
+        "2": "Spa room with chairs; target requires wicker chair. Good candidate.",
+        "4": "Massage room with tables and plants. Matches 'white flowers' and 'massage tables' constraints well.",
+        "5": "Therapy room; target requires kitchen appliances. Mismatched room type."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

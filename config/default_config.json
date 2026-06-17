@@ -3,15 +3,12 @@
     "detection_model_name": "google/gemma-4-31B-it:deepinfra",
     "graph_model_name": "qwen3.5-plus",
     "read_saved_raw_outputs": true,
-    "max_validation_retries": 4
+    "max_validation_retries": 6
   },
   "bayes": {
     "sigma_vv2": 4.0,
-    "sigma_vz2": 9.0,
     "kappa_vv": 1.0,
-    "kappa_vz": 0.75,
     "varrho": 0.7,
-    "eta_vz": 3.0,
     "epsilon": 1e-6
   },
   "optimizer": {
@@ -22,6 +19,6 @@
     "visit_weight": 0.3,
     "target_directed_mode": true,
     "target_directed_each_agent_when_possible": true,
-    "target_directed_use_raw_target_probs": true
+    "target_directed_use_raw_target_probs": false
   }
 }

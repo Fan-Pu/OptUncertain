@@ -1,0 +1,93 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        2,
+        54
+      ],
+      "region_node_id": 63
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 2,
+      "raw_target_probs": {
+        "1": 0.05,
+        "2": 0.3
+      },
+      "target_probs": {
+        "1": 0.22727272727272727,
+        "2": 0.6666666666666665
+      }
+    },
+    {
+      "id": 14,
+      "raw_target_probs": {
+        "1": 0.08,
+        "2": 0.02
+      },
+      "target_probs": {
+        "1": 0.3636363636363636,
+        "2": 0.04444444444444444
+      }
+    },
+    {
+      "id": 37,
+      "raw_target_probs": {
+        "1": 0.05,
+        "2": 0.03
+      },
+      "target_probs": {
+        "1": 0.22727272727272727,
+        "2": 0.06666666666666665
+      }
+    },
+    {
+      "id": 54,
+      "raw_target_probs": {
+        "1": 0.04,
+        "2": 0.1
+      },
+      "target_probs": {
+        "1": 0.1818181818181818,
+        "2": 0.2222222222222222
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 2,
+      "score_basis": {
+        "1": "Viewpoint 2 is in the spa lounge area (region 63) with daybeds and blue stripes; target 1 requires a glass display cabinet which is not visible here, but the area is adjacent to hallway 64 where such cabinets may exist.",
+        "2": "Viewpoint 2 shows wicker-style daybeds with cushions in the spa lounge; target 2 specifies a light blue cushion on a wicker chair, and blue accent stripes are visible in the region, making this a plausible candidate."
+      }
+    },
+    {
+      "id": 14,
+      "score_basis": {
+        "1": "Viewpoint 14 is in a wood-floored hallway leading to stairs; target 1 requires a glass display cabinet which is typically found in tiled hallway areas like region 64, not in wooden hallways. Lower score due to room mismatch.",
+        "2": "Viewpoint 14 is a transit hallway with no visible seating or wicker furniture; target 2 requires a wicker chair with cushion. Hallway context contradicts target-bearing evidence."
+      }
+    },
+    {
+      "id": 37,
+      "score_basis": {
+        "1": "Viewpoint 37 is in the indoor spa pool area (region 61) with tiled floors and lounge beds; no glass display cabinet visible. Target 1 is more likely in hallway 64. Low score due to lack of target-bearing objects.",
+        "2": "Viewpoint 37 shows lounge beds near pool area; target 2 requires wicker chair with light blue cushion. No wicker furniture visible in pool area. Low score."
+      }
+    },
+    {
+      "id": 54,
+      "score_basis": {
+        "1": "Viewpoint 54 is in the spa lounge/fitness area (region 63) with exercise equipment and daybeds; no glass display cabinet visible. Target 1 is unlikely here without cabinet evidence.",
+        "2": "Viewpoint 54 shows fitness area with daybeds; target 2 requires wicker chair with light blue cushion. Blue accents present in region 63, but no wicker chair clearly visible at this viewpoint marker."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}
