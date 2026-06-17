@@ -1,0 +1,210 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 44,
+    "agent1": 11,
+    "agent2": 58
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 11,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 19,
+      "j": 58,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 44,
+      "j": 47,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 44,
+      "j": 52,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 44,
+      "j": 55,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 11,
+      "label": "b889bb15538844beb074db42bd8d9ed4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        58
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "458b288354be4060a2e6cf582d959d0f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        11
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 40,
+      "label": "7798eee8ae4a4fc483da87e8e04b659c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        47,
+        52,
+        55
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "cc94b5dda437408a9a166fcdbafa2a48",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 47,
+      "label": "656ab180c21645e0a4cef70b95341e0a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 52,
+      "label": "49d8e71cc67d45f9863ca6d25a61a2fa",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "a0fbf9972e79491bbcbf4a6e7cf38d8a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        19
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 58,
+      "label": "5d943867a94a46e1a7d2a4d077855a57",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        44,
+        47,
+        52,
+        55
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "marble-tiled bathroom and spa area with wooden accents",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        11,
+        40
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 62,
+      "label": "bedroom with floral wallpaper and arched ceiling",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19,
+        58
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 63,
+      "label": "bedroom with dark patterned wallpaper and nature mural",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "61": [
+      44,
+      47,
+      52,
+      55
+    ],
+    "62": [
+      11,
+      40
+    ],
+    "63": [
+      19,
+      58
+    ]
+  },
+  "viewpoint_to_region": {
+    "11": 62,
+    "19": 63,
+    "40": 62,
+    "44": 61,
+    "47": 61,
+    "52": 61,
+    "55": 61,
+    "58": 63
+  }
+}

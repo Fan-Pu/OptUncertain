@@ -1,0 +1,224 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 48,
+    "agent1": 11,
+    "agent2": 58
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 9,
+      "j": 48,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 11,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 48,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 19,
+      "j": 58,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 23,
+      "j": 48,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        48
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 9,
+      "label": "dddeccce9b044629a9ffd5c61e8ea1cf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 11,
+      "label": "b889bb15538844beb074db42bd8d9ed4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        48
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "6be3b190af924e26916685a57f46b775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        58
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "458b288354be4060a2e6cf582d959d0f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        48
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 23,
+      "label": "498ad4add3424a4eaf28355ded64c622",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        11
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 40,
+      "label": "7798eee8ae4a4fc483da87e8e04b659c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9,
+        15,
+        23
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 48,
+      "label": "4e528d58657147978ac5c28a9168a870",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        19
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 58,
+      "label": "5d943867a94a46e1a7d2a4d077855a57",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        23,
+        48
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "main lobby and staircase area with reception desk",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        15
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "upper staircase landing area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        11,
+        40
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 63,
+      "label": "spa treatment room with floral wallpaper and massage beds",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19,
+        58
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 64,
+      "label": "bedroom with dark patterned wallpaper and nature murals",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "61": [
+      9,
+      23,
+      48
+    ],
+    "62": [
+      15
+    ],
+    "63": [
+      11,
+      40
+    ],
+    "64": [
+      19,
+      58
+    ]
+  },
+  "viewpoint_to_region": {
+    "9": 61,
+    "11": 63,
+    "15": 62,
+    "19": 64,
+    "23": 61,
+    "40": 63,
+    "48": 61,
+    "58": 64
+  }
+}

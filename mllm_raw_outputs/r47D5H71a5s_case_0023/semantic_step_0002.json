@@ -1,0 +1,127 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        2
+      ],
+      "region_node_id": 63
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        35
+      ],
+      "region_node_id": 64
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 2,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.02,
+        "5": 0.03,
+        "6": 0.01
+      },
+      "target_probs": {
+        "0": 0.05050505050505051,
+        "2": 0.18181818181818182,
+        "5": 0.10714285714285712,
+        "6": 0.06666666666666665
+      }
+    },
+    {
+      "id": 35,
+      "raw_target_probs": {
+        "0": 0.04,
+        "2": 0.02,
+        "5": 0.03,
+        "6": 0.01
+      },
+      "target_probs": {
+        "0": 0.04040404040404041,
+        "2": 0.18181818181818182,
+        "5": 0.10714285714285712,
+        "6": 0.06666666666666665
+      }
+    },
+    {
+      "id": 52,
+      "raw_target_probs": {
+        "0": 0.15,
+        "2": 0.05,
+        "5": 0.02,
+        "6": 0.08
+      },
+      "target_probs": {
+        "0": 0.15151515151515152,
+        "2": 0.4545454545454546,
+        "5": 0.07142857142857142,
+        "6": 0.5333333333333332
+      }
+    },
+    {
+      "id": 55,
+      "raw_target_probs": {
+        "0": 0.75,
+        "2": 0.02,
+        "5": 0.2,
+        "6": 0.05
+      },
+      "target_probs": {
+        "0": 0.7575757575757576,
+        "2": 0.18181818181818182,
+        "5": 0.7142857142857143,
+        "6": 0.3333333333333333
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 2,
+      "score_basis": {
+        "0": "Viewpoint 2 is in a hallway/transition area (visible through doorway from VP19) leading to the bedroom/spa zone; no bathroom sink evidence visible.",
+        "2": "Transition area with no wicker chair or cushion visible; low likelihood for lounge furniture target.",
+        "5": "Hallway/entry space lacks counter or water dispenser cues required for kettle target.",
+        "6": "No pool or statue visible from this hallway viewpoint; contradicts indoor pool cue."
+      }
+    },
+    {
+      "id": 35,
+      "score_basis": {
+        "0": "Viewpoint 35 appears to be a corridor or entry space adjacent to the floral bedroom; no bathroom fixtures visible.",
+        "2": "Corridor space with no visible seating or wicker furniture; low probability for cushion target.",
+        "5": "Entry/hallway area lacks kitchen counter or dispenser context for kettle target.",
+        "6": "No pool or water feature visible; contradicts target location constraints."
+      }
+    },
+    {
+      "id": 52,
+      "score_basis": {
+        "0": "Prior score reduced: VP52 is in spa/bathroom region but route-only evidence; no specific sink confirmation visible in current step context.",
+        "2": "Spa area may have seating but no wicker chair evidence confirmed; maintain low score.",
+        "5": "Bathroom/spa context does not match kitchen counter requirement for kettle.",
+        "6": "Indoor pool possible in spa zone but no statue evidence; slight increase over prior due to water proximity."
+      }
+    },
+    {
+      "id": 55,
+      "score_basis": {
+        "0": "VP55 is in marble-tiled bathroom area with visible sinks; strong match for hair dryer beside sink target.",
+        "2": "Bathroom setting unlikely for wicker chair cushion; maintain low score.",
+        "5": "Bathroom counter present but water dispenser not confirmed; moderate possibility.",
+        "6": "Spa area may contain pool features but no statue visible; low score maintained."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 64,
+      "label": "corridor with floral wallpaper connecting to bedroom areas"
+    }
+  ]
+}

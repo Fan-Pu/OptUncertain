@@ -818,6 +818,86 @@ def _max_steps_reached(step_index: int, max_steps: int | None) -> bool:
     return int(step_index) + 1 >= int(max_steps)
 
 
+def _target_directed_eligible_endpoint_ids(hypothesis_graph) -> List[int]:
+    current_viewpoint_ids = {
+        int(node_id) for node_id in hypothesis_graph.agent_current_vp_ids.values()
+    }
+    return [
+        int(node_id)
+        for node_id in sorted(hypothesis_graph.nodes)
+        if hypothesis_graph.nodes[node_id].type == Helper.TYPE_VP
+        and int(node_id) not in current_viewpoint_ids
+        and not bool(hypothesis_graph.nodes[node_id].grounded)
+        and int(hypothesis_graph.nodes[node_id].node_visit_times) == 0
+    ]
+
+
+def _target_directed_search_exhaustion_info(
+    hypothesis_graph,
+    target_found_flags: Dict[str, bool],
+) -> Dict[str, object] | None:
+    active_target_ids = [
+        str(target_id)
+        for target_id in hypothesis_graph.target_ids
+        if not bool(target_found_flags[str(target_id)])
+    ]
+    if not active_target_ids:
+        return None
+
+    eligible_endpoint_ids = _target_directed_eligible_endpoint_ids(hypothesis_graph)
+    if eligible_endpoint_ids:
+        return None
+
+    return {
+        "target_directed_search_exhausted_target_ids": active_target_ids,
+        "target_directed_eligible_endpoint_ids": eligible_endpoint_ids,
+    }
+
+
+def _target_directed_no_positive_reward_info(
+    hypothesis_graph,
+    target_found_flags: Dict[str, bool],
+    use_raw_target_probs: bool,
+) -> Dict[str, object] | None:
+    active_target_ids = [
+        str(target_id)
+        for target_id in hypothesis_graph.target_ids
+        if not bool(target_found_flags[str(target_id)])
+    ]
+    if not active_target_ids:
+        return None
+
+    eligible_endpoint_ids = _target_directed_eligible_endpoint_ids(hypothesis_graph)
+    if not eligible_endpoint_ids:
+        return None
+
+    reward_source_name = "raw_target_probs" if use_raw_target_probs else "target_probs"
+    no_positive_reward_target_ids = []
+    for target_id in active_target_ids:
+        has_positive_reward = any(
+            float(
+                getattr(hypothesis_graph.nodes[node_id], reward_source_name).get(
+                    target_id, 0.0
+                )
+            )
+            > 0.0
+            for node_id in eligible_endpoint_ids
+        )
+        if not has_positive_reward:
+            no_positive_reward_target_ids.append(target_id)
+
+    if not no_positive_reward_target_ids:
+        return None
+
+    return {
+        "target_directed_no_positive_reward_target_ids": (
+            no_positive_reward_target_ids
+        ),
+        "target_directed_eligible_endpoint_ids": eligible_endpoint_ids,
+        "target_directed_reward_source": reward_source_name,
+    }
+
+
 def _wait_for_debugger() -> None:
     global DEBUGPY_LISTENING
 
@@ -1084,6 +1164,64 @@ def run_scenario(
                 "route_summary": route_summary,
             }
 
+        if bool(getattr(optimizer, "target_directed_mode", False)):
+            search_exhaustion_info = _target_directed_search_exhaustion_info(
+                hypothesis_graph=hypothesis_graph,
+                target_found_flags=hypothesis_graph.target_found,
+            )
+            if search_exhaustion_info is not None:
+                route_summary = _write_mllm_route_summary(
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=hypothesis_graph.target_found,
+                    status="incomplete",
+                    stop_reason="target_directed_search_exhausted",
+                    steps_completed=debug_step_index + 1,
+                    max_steps=max_steps,
+                    extra_metadata=search_exhaustion_info,
+                )
+                return {
+                    "target_found": dict(hypothesis_graph.target_found),
+                    "status": "incomplete",
+                    "stop_reason": "target_directed_search_exhausted",
+                    "steps_completed": debug_step_index + 1,
+                    "max_steps": max_steps,
+                    "route_summary": route_summary,
+                    **search_exhaustion_info,
+                }
+
+            no_positive_reward_info = _target_directed_no_positive_reward_info(
+                hypothesis_graph=hypothesis_graph,
+                target_found_flags=hypothesis_graph.target_found,
+                use_raw_target_probs=optimizer.target_directed_use_raw_target_probs,
+            )
+            if no_positive_reward_info is not None:
+                route_summary = _write_mllm_route_summary(
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=hypothesis_graph.target_found,
+                    status="incomplete",
+                    stop_reason="target_directed_no_positive_reward_endpoint",
+                    steps_completed=debug_step_index + 1,
+                    max_steps=max_steps,
+                    extra_metadata=no_positive_reward_info,
+                )
+                return {
+                    "target_found": dict(hypothesis_graph.target_found),
+                    "status": "incomplete",
+                    "stop_reason": "target_directed_no_positive_reward_endpoint",
+                    "steps_completed": debug_step_index + 1,
+                    "max_steps": max_steps,
+                    "route_summary": route_summary,
+                    **no_positive_reward_info,
+                }
+
         optimization_result = optimizer.solve(
             hypothesis_graph=hypothesis_graph,
             agent_current_vp_ids=hypothesis_graph.agent_current_vp_ids,
@@ -1222,6 +1360,10 @@ def _build_batch_skip_record(
         "provider_code",
         "provider_type",
         "error",
+        "target_directed_search_exhausted_target_ids",
+        "target_directed_no_positive_reward_target_ids",
+        "target_directed_eligible_endpoint_ids",
+        "target_directed_reward_source",
     ):
         if key in result:
             record[key] = result[key]
