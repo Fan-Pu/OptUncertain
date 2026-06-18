@@ -1,0 +1,92 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 0.5
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        25
+      ],
+      "region_node_id": 51
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 25,
+      "raw_target_probs": {
+        "1": 0.6,
+        "3": 0.05
+      },
+      "target_probs": {
+        "1": 0.2857142857142857,
+        "3": 0.2777777777777778
+      }
+    },
+    {
+      "id": 27,
+      "raw_target_probs": {
+        "1": 0.2,
+        "3": 0.08
+      },
+      "target_probs": {
+        "1": 0.09523809523809523,
+        "3": 0.4444444444444445
+      }
+    },
+    {
+      "id": 35,
+      "raw_target_probs": {
+        "1": 0.85,
+        "3": 0.02
+      },
+      "target_probs": {
+        "1": 0.4047619047619047,
+        "3": 0.11111111111111112
+      }
+    },
+    {
+      "id": 39,
+      "raw_target_probs": {
+        "1": 0.45,
+        "3": 0.03
+      },
+      "target_probs": {
+        "1": 0.21428571428571427,
+        "3": 0.16666666666666666
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 25,
+      "score_basis": {
+        "1": "Viewpoint 25 is located in the outdoor patio area (red marker visible near glass doors leading to garden), which matches target 1's 'patio window' cue; wooden cabinet likely present in this semi-outdoor dining zone.",
+        "3": "Target 3 requires an office desk with monitor; viewpoint 25 shows outdoor patio furniture and glass tables, no office equipment visible."
+      }
+    },
+    {
+      "id": 27,
+      "score_basis": {
+        "1": "Viewpoint 27 is in indoor living area with sofa near glass doors; while it has windows, it lacks explicit patio context compared to viewpoint 25 or 35.",
+        "3": "Living area may contain side tables but no clear office desk or monitor visible from prior context; low probability for keyboard target."
+      }
+    },
+    {
+      "id": 35,
+      "score_basis": {
+        "1": "Viewpoint 35 is assigned to outdoor patio region (same as current viewpoint 37); high match for 'patio window' and 'wooden cabinet' cues based on region consistency.",
+        "3": "Outdoor patio area unlikely to contain office desk with monitor; target 3 requires indoor office setting."
+      }
+    },
+    {
+      "id": 39,
+      "score_basis": {
+        "1": "Viewpoint 39 is in outdoor patio region but farther from garden/dining set area; moderate match for patio window cue but less specific than viewpoint 35.",
+        "3": "Patio area does not support office desk hypothesis; no visual evidence of workspace in this outdoor zone."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

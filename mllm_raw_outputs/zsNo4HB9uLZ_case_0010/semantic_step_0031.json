@@ -1,0 +1,144 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 54,
+      "viewpoint_id": 13
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_probs": [
+    {
+      "id": 14,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.02,
+        "3": 0.85
+      },
+      "target_probs": {
+        "0": 0.10204081632653061,
+        "2": 0.13333333333333333,
+        "3": 0.30909090909090914
+      }
+    },
+    {
+      "id": 27,
+      "raw_target_probs": {
+        "0": 0.02,
+        "2": 0.02,
+        "3": 0.05
+      },
+      "target_probs": {
+        "0": 0.04081632653061225,
+        "2": 0.13333333333333333,
+        "3": 0.018181818181818184
+      }
+    },
+    {
+      "id": 28,
+      "raw_target_probs": {
+        "0": 0.02,
+        "2": 0.02,
+        "3": 0.05
+      },
+      "target_probs": {
+        "0": 0.04081632653061225,
+        "2": 0.13333333333333333,
+        "3": 0.018181818181818184
+      }
+    },
+    {
+      "id": 32,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.02,
+        "3": 0.9
+      },
+      "target_probs": {
+        "0": 0.10204081632653061,
+        "2": 0.13333333333333333,
+        "3": 0.3272727272727273
+      }
+    },
+    {
+      "id": 35,
+      "raw_target_probs": {
+        "0": 0.3,
+        "2": 0.05,
+        "3": 0.1
+      },
+      "target_probs": {
+        "0": 0.6122448979591837,
+        "2": 0.33333333333333337,
+        "3": 0.03636363636363637
+      }
+    },
+    {
+      "id": 38,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.02,
+        "3": 0.8
+      },
+      "target_probs": {
+        "0": 0.10204081632653061,
+        "2": 0.13333333333333333,
+        "3": 0.29090909090909095
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 14,
+      "score_basis": {
+        "0": "Target 0 requires a wooden desk below a map. Region 54 is a hallway entrance, unlikely to contain a desk/map setup compared to office/study areas.",
+        "2": "Target 2 requires a top shelf with a kitchen scale. Region 54 is a hallway, not a kitchen. Contradicts room cue.",
+        "3": "Viewpoint 14 is in region 54 (hallway entrance area). Target 3 is a black framed eye chart on the hallway wall. The assigned region matches the target's room cue (hallway)."
+      }
+    },
+    {
+      "id": 27,
+      "score_basis": {
+        "0": "Target 0 requires a wooden desk. Bathrooms typically do not have desks. Contradicts support object cue.",
+        "2": "Target 2 requires a kitchen scale on a shelf. Bathroom contradicts kitchen room cue.",
+        "3": "Viewpoint 27 is in region 59 (bathroom area). Target 3 is for a hallway wall. Bathroom contradicts hallway room cue."
+      }
+    },
+    {
+      "id": 28,
+      "score_basis": {
+        "0": "Target 0 requires a wooden desk. Bathrooms typically do not have desks.",
+        "2": "Target 2 requires a kitchen scale. Bathroom contradicts kitchen room cue.",
+        "3": "Viewpoint 28 is in region 59 (bathroom area). Target 3 is for a hallway wall. Bathroom contradicts hallway room cue."
+      }
+    },
+    {
+      "id": 32,
+      "score_basis": {
+        "0": "Hallway entrance unlikely to have a desk/map setup.",
+        "2": "Hallway entrance unlikely to have kitchen scale/shelf.",
+        "3": "Viewpoint 32 is in region 54 (hallway entrance area). Matches target 3's hallway room cue strongly."
+      }
+    },
+    {
+      "id": 35,
+      "score_basis": {
+        "0": "Living room may have desks, but 'wooden desk below map' is specific. No strong evidence either way, but less likely than dedicated study/office.",
+        "2": "Living room contradicts kitchen room cue for scale.",
+        "3": "Viewpoint 35 is in region 57 (living room area). Target 3 specifies hallway wall. Living room contradicts hallway cue."
+      }
+    },
+    {
+      "id": 38,
+      "score_basis": {
+        "0": "Hallway entrance unlikely to have desk/map.",
+        "2": "Hallway entrance unlikely to have kitchen scale.",
+        "3": "Viewpoint 38 is in region 54 (hallway entrance area). Matches target 3's hallway room cue."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

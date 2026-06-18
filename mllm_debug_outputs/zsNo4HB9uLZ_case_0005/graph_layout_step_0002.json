@@ -1,0 +1,218 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 15
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 0,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 0,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 4,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 12,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 12,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 19,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 41,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        15,
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 0,
+      "label": "213f4f2f0d204758bc51252aed60cf82",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 4,
+      "label": "0cf178fb23754cc0ac3b93398b112ddc",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        15,
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 12,
+      "label": "5e966f4bdbc849f4b2b200e2f8cc49a0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        0,
+        4,
+        12,
+        19,
+        22,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 15,
+      "label": "11bdfcf0a0984901a1d6f60fdd8ee4a6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "a80acc2328154455965a8be4133dee71",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        0,
+        12,
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 22,
+      "label": "94432dd9d465486b8acfb7013ffc3fca",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "e1f88263b98d46909c3e00e9250b6a4b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        12,
+        22
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bedroom area with blue walls and carpet flooring",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        15,
+        19,
+        41
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "hallway corridor with tiled flooring leading to kitchen",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        4
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "living area with dark grey wall and console table",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "region_to_viewpoints": {
+    "53": [
+      0,
+      12,
+      22
+    ],
+    "54": [
+      15,
+      19,
+      41
+    ],
+    "55": [
+      4
+    ]
+  },
+  "viewpoint_to_region": {
+    "0": 53,
+    "4": 55,
+    "12": 53,
+    "15": 54,
+    "19": 54,
+    "22": 53,
+    "41": 54
+  }
+}

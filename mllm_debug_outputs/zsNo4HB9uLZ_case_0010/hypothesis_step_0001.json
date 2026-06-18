@@ -1,0 +1,152 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.29,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.156,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 50,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 3,
+      "label": "1bfb89f3a44a419a9cf1fdc9d38a2800",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "5": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "5": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 40,
+      "label": "34c20d99605545a885983a9b004f27a2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.02,
+        "2": 0.03,
+        "3": 0.35,
+        "5": 0.04,
+        "6": 0.03
+      },
+      "target_probs": {
+        "0": 0.4545454545454546,
+        "1": 0.5,
+        "2": 0.09090909090909091,
+        "3": 0.5833333333333334,
+        "5": 0.10256410256410257,
+        "6": 0.16666666666666666
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 40 is in a hallway/transition area near the dining zone; no desk or map visible at marker location.",
+        "1": "No bedroom furniture or wall hooks visible at viewpoint 40 marker location.",
+        "2": "Viewpoint 40 is not in kitchen area; no shelves or cooking equipment visible.",
+        "3": "Viewpoint 40 is in a hallway with wall space; possible location for wall-mounted eye chart.",
+        "5": "Kitchen counter and stove not visible at viewpoint 40 marker location.",
+        "6": "No television or wall shelf visible at viewpoint 40 marker location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 50,
+      "label": "0753202108e24c0094f09c60b8f36127",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.06,
+        "1": 0.02,
+        "2": 0.3,
+        "3": 0.25,
+        "5": 0.35,
+        "6": 0.15
+      },
+      "target_probs": {
+        "0": 0.5454545454545454,
+        "1": 0.5,
+        "2": 0.9090909090909092,
+        "3": 0.4166666666666667,
+        "5": 0.8974358974358975,
+        "6": 0.8333333333333334
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 50 leads toward kitchen/dining but no wooden desk or map visible at marker.",
+        "1": "No bedroom or bathrobe hooks visible at viewpoint 50 marker location.",
+        "2": "Viewpoint 50 is closer to kitchen area; possible top shelf location for vintage scale.",
+        "3": "Hallway wall space visible near viewpoint 50; potential eye chart location.",
+        "5": "Viewpoint 50 is near kitchen counter area; possible cookbook location beside stove.",
+        "6": "Television area may be visible from viewpoint 50 direction; shelf ornament possible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3,
+        40,
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "open-plan dining and kitchen area with large windows and tiled floor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": false,
+    "3": false,
+    "4": true,
+    "5": false,
+    "6": false,
+    "7": true
+  }
+}

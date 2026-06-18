@@ -1,0 +1,93 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        16,
+        26,
+        45
+      ],
+      "region_node_id": 50
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        24
+      ],
+      "region_node_id": 51
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        1,
+        28
+      ],
+      "region_node_id": 52
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 16,
+      "raw_target_probs": {
+        "5": 0.05
+      },
+      "target_probs": {
+        "5": 0.3333333333333333
+      }
+    },
+    {
+      "id": 28,
+      "raw_target_probs": {
+        "5": 0.05
+      },
+      "target_probs": {
+        "5": 0.3333333333333333
+      }
+    },
+    {
+      "id": 45,
+      "raw_target_probs": {
+        "5": 0.05
+      },
+      "target_probs": {
+        "5": 0.3333333333333333
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 16,
+      "score_basis": {
+        "5": "Viewpoint 16 is located in the kitchen/living area on the ground floor, while the target is explicitly described as being in an upstairs bedroom; this location contradicts the floor cue."
+      }
+    },
+    {
+      "id": 28,
+      "score_basis": {
+        "5": "Viewpoint 28 is visible from a bathroom area (viewpoint 1), which is not an upstairs bedroom; no bed or bedroom furniture is visible at this marker location."
+      }
+    },
+    {
+      "id": 45,
+      "score_basis": {
+        "5": "Viewpoint 45 is in the kitchen/dining area on the ground floor, contradicting the explicit 'upstairs bedroom' constraint for the target."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 50,
+      "label": "modern kitchen and living area with large island and glass doors to patio"
+    },
+    {
+      "id": 51,
+      "label": "upstairs bedroom with wooden headboard wall and curved glass balcony overlooking water"
+    },
+    {
+      "id": 52,
+      "label": "bathroom area with dual sinks and curved louvered window wall"
+    }
+  ]
+}

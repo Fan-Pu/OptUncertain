@@ -1,0 +1,88 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        33
+      ],
+      "region_node_id": 56
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 33,
+      "raw_target_probs": {
+        "1": 0.8,
+        "4": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "1": 0.5095541401273885,
+        "4": 0.5,
+        "7": 0.3333333333333333
+      }
+    },
+    {
+      "id": 36,
+      "raw_target_probs": {
+        "1": 0.02,
+        "4": 0.02,
+        "7": 0.02
+      },
+      "target_probs": {
+        "1": 0.012738853503184712,
+        "4": 0.19999999999999998,
+        "7": 0.1333333333333333
+      }
+    },
+    {
+      "id": 41,
+      "raw_target_probs": {
+        "1": 0.75,
+        "4": 0.03,
+        "7": 0.08
+      },
+      "target_probs": {
+        "1": 0.47770700636942676,
+        "4": 0.3,
+        "7": 0.5333333333333332
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 33,
+      "score_basis": {
+        "1": "Viewpoint 33 is located in the bedroom area (region 56) where target 1 (bathrobe beside bed) is likely to be found; visual evidence shows bed and wall space.",
+        "4": "Target 4 is a candle in dining room by window; viewpoint 33 is in bedroom, not dining room, so low probability despite having a window.",
+        "7": "Target 7 is a vase on console table near entrance; viewpoint 33 is in bedroom interior, far from entrance area."
+      }
+    },
+    {
+      "id": 36,
+      "score_basis": {
+        "1": "Viewpoint 36 is in bathroom area (region 54); target 1 is bathrobe beside bed in bedroom, so low probability in bathroom.",
+        "4": "Target 4 is candle in dining room; viewpoint 36 is in bathroom, no dining room evidence visible.",
+        "7": "Target 7 is vase near entrance; viewpoint 36 is in bathroom, no entrance or console table evidence."
+      }
+    },
+    {
+      "id": 41,
+      "score_basis": {
+        "1": "Viewpoint 41 is in bedroom area (region 55) per graph summary; target 1 is bathrobe beside bed, strong match for bedroom location.",
+        "4": "Target 4 is candle in dining room; viewpoint 41 is in bedroom, not dining room.",
+        "7": "Target 7 is vase near entrance; viewpoint 41 is in bedroom interior, no entrance evidence."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 56,
+      "label": "bedroom area with bed and window visible from viewpoint 33"
+    }
+  ]
+}

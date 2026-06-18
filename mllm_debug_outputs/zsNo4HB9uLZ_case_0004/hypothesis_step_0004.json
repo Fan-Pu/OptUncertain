@@ -1,0 +1,246 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.254,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 23,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.303,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 30,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.623,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.496,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 21,
+      "j": 30,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.839,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 30,
+      "j": 32,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 6,
+      "label": "7d1391357299496cbb82840960d05a66",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 6 is in a bright tiled hallway/entry area; target 0 requires a wooden desk below a map, which is not visible here. Low score due to lack of target-bearing furniture.",
+        "2": "Target 2 is a red vintage kitchen scale on a top shelf. Viewpoint 6 shows a hallway with no kitchen shelves or red objects visible. Contradicts kitchen-specific cues.",
+        "5": "Target 5 is an open cookbook beside a stove. Viewpoint 6 is a hallway with no stove or counter visible. Route-only location, not target-bearing.",
+        "7": "Target 7 is a glass vase with reeds on a console table near the entrance. Viewpoint 6 is in the entry/hallway area but no console table or vase is visible. Slightly higher due to entrance proximity."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "487a4cc75db94e56aa4d1d35866736fc",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.02,
+        "2": 0.01,
+        "5": 0.01,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.2857142857142857,
+        "2": 0.19999999999999998,
+        "5": 0.07142857142857144,
+        "7": 0.10526315789473686
+      },
+      "target_score_basis": {
+        "0": "Target is a black vintage radio on a wooden desk below a map; current evidence at VP21 is route-only hallway with no desk/map visible.",
+        "2": "Target is a red kitchen scale on top shelf; VP21 shows hallway transit only, no kitchen shelving or red objects.",
+        "5": "Target is an open cookbook beside stove; VP21 lacks kitchen counter/stove evidence, only hallway passage.",
+        "7": "Target is glass vase with reeds on console near entrance; VP21 is interior hallway, no console table or entrance cues visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 23,
+      "label": "b5f873817a0b4b60b8447e96b0b4e955",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.03,
+        "2": 0.01,
+        "5": 0.01,
+        "7": 0.15
+      },
+      "target_probs": {
+        "0": 0.4285714285714285,
+        "2": 0.19999999999999998,
+        "5": 0.07142857142857144,
+        "7": 0.7894736842105264
+      },
+      "target_score_basis": {
+        "0": "VP23 marker in carpeted living/dining area; no wooden desk or map visible to support radio target.",
+        "2": "VP23 is living/dining space, not kitchen; no top shelves or red scale visible.",
+        "5": "VP23 lacks kitchen counter/stove; living area furniture does not match cookbook target constraints.",
+        "7": "VP23 shows seating area with tables; possible console table location but no clear vase/reeds visible yet."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 30,
+      "label": "65eefaf93e6249908e6389eb4eabf0f5",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 32,
+      "label": "6472b7993a6e440a9d0e12b560ff4616",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 32 is in hallway near entrance with wall art; no desk or map visible for radio target.",
+        "2": "Viewpoint 32 is hallway space, not kitchen; no shelves or kitchen context for scale target.",
+        "5": "Viewpoint 32 is entry hallway, not kitchen counter area; no stove or cookbook context.",
+        "7": "Viewpoint 32 is near entrance with wall decorations; plausible location for console table near entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 50,
+      "label": "0753202108e24c0094f09c60b8f36127",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.02,
+        "2": 0.03,
+        "5": 0.12,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.2857142857142857,
+        "2": 0.6,
+        "5": 0.8571428571428572,
+        "7": 0.10526315789473686
+      },
+      "target_score_basis": {
+        "0": "VP50 in dining/kitchen adjacent area; no wooden desk or map visible for radio target.",
+        "2": "VP50 near kitchen access but no top shelf or red scale visible from this angle.",
+        "5": "VP50 provides view toward kitchen area where stove/counter may be located; moderate potential for cookbook target.",
+        "7": "VP50 is dining/kitchen zone, not entrance; console table near entrance unlikely here."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        21,
+        23,
+        30,
+        32,
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bright tiled hallway and entry area with kitchen access",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 4,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "5": false,
+    "7": false
+  }
+}

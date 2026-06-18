@@ -1,0 +1,162 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.093,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.146,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.576,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 5,
+      "j": 36,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "6": 0.9
+      },
+      "target_probs": {
+        "6": 0.8571428571428571
+      },
+      "target_score_basis": {
+        "6": "Viewpoint 1 is located inside the bedroom area (Region 53) where the target 'black number 8 ornament on the wall shelf beside the television' is likely to be found. The red marker for VP 1 is clearly within the bedroom space visible in the panorama."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "6": 0.1
+      },
+      "target_probs": {
+        "6": 0.09523809523809523
+      },
+      "target_score_basis": {
+        "6": "Viewpoint 2 is located in the hallway/corridor area (Region 54), which is a transit space. While it provides access to the bedroom, it does not contain the specific furniture (TV, wall shelf) mentioned in the target description."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 5,
+      "label": "4c78adff490c4973aa3e09bfe14217aa",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "6": 0.05
+      },
+      "target_probs": {
+        "6": 0.047619047619047616
+      },
+      "target_score_basis": {
+        "6": "Viewpoint 5 is located in the bathroom area (Region 55), which is visually distinct from the bedroom and unlikely to contain a TV or wall shelf with ornaments as described in the target."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 36,
+      "label": "ead481533f834704bd489d3d44b6a03a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "6": 0.0
+      },
+      "target_probs": {
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bedroom area with bed and wall decorations",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "hallway corridor with tiled floor and doorways",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        5
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "bathroom area with sink and mirror",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "6": false
+  }
+}

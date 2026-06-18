@@ -1,0 +1,122 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 22
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 0,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 12,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 22,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 0,
+      "label": "213f4f2f0d204758bc51252aed60cf82",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 12,
+      "label": "5e966f4bdbc849f4b2b200e2f8cc49a0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "11bdfcf0a0984901a1d6f60fdd8ee4a6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        0,
+        12,
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 22,
+      "label": "94432dd9d465486b8acfb7013ffc3fca",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        12,
+        22
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bedroom area with blue walls and carpet flooring",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        15
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "hallway corridor with tiled flooring leading to kitchen",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "53": [
+      0,
+      12,
+      22
+    ],
+    "54": [
+      15
+    ]
+  },
+  "viewpoint_to_region": {
+    "0": 53,
+    "12": 53,
+    "15": 54,
+    "22": 53
+  }
+}

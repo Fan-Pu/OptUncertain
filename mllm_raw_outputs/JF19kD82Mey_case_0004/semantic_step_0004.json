@@ -1,0 +1,76 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_probs": [
+    {
+      "id": 8,
+      "raw_target_probs": {
+        "0": 0.35,
+        "2": 0.02,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.4666666666666666,
+        "2": 0.2857142857142857,
+        "7": 0.2857142857142857
+      }
+    },
+    {
+      "id": 31,
+      "raw_target_probs": {
+        "0": 0.35,
+        "2": 0.02,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.4666666666666666,
+        "2": 0.2857142857142857,
+        "7": 0.2857142857142857
+      }
+    },
+    {
+      "id": 34,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.03,
+        "7": 0.03
+      },
+      "target_probs": {
+        "0": 0.06666666666666667,
+        "2": 0.4285714285714285,
+        "7": 0.4285714285714285
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 8,
+      "score_basis": {
+        "0": "Viewpoint 8 is in the same bedroom region (50) as current viewpoint 42, which contains a bed and desk area consistent with a bedroom where decorative flowers might be placed on a surface.",
+        "2": "Bedroom region is unlikely to contain a built-in kitchen appliance nook for a coffee machine; target constraints contradict this location.",
+        "7": "Bedroom region lacks kitchen counter and stovetop evidence required by target description; contradicts explicit room cue."
+      }
+    },
+    {
+      "id": 31,
+      "score_basis": {
+        "0": "Viewpoint 31 is assigned to bedroom region 50, which may contain surfaces suitable for a vase with flowers; consistent with bedroom decor context.",
+        "2": "Bedroom area does not match kitchen appliance nook requirement; explicit room cue contradiction reduces likelihood.",
+        "7": "No kitchen counter or stovetop visible or implied in bedroom region; target constraints not satisfied."
+      }
+    },
+    {
+      "id": 34,
+      "score_basis": {
+        "0": "Bathroom region (51) with tiles and shower enclosure is inconsistent with dining table context required for flowers in vase on glass dining table.",
+        "2": "Bathroom area lacks built-in kitchen appliance nook; target requires kitchen-specific support structure not present here.",
+        "7": "Bathroom has sink but no stovetop or kitchen counter beside stovetop as required; explicit nearby-object constraint not met."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

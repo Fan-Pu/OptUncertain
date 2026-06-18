@@ -1,0 +1,210 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 7,
+    "agent1": 33,
+    "agent2": 45
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 7,
+      "j": 9,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 7,
+      "j": 51,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 18,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 25,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        33
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9,
+        51
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 7,
+      "label": "38342af67f5d4b73ad4cff4402f52d83",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        7
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 9,
+      "label": "faad06c7cb2b4a6f9220e7f6f87c800b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "f04ae8ebf8254168814bc669635b3775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "76c7a665d2b242bfa203e7f394b1353e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        18,
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "d48feeed33774f64adb093679b9fcebf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        7
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "38260e04f02546a6af3dcaf8689546a2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        7,
+        9,
+        51
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "master bedroom with dark accent wall and large windows",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        33
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "secondary bedroom with city-themed wall art and bay window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18,
+        25,
+        45
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 55,
+      "label": "open-plan living and dining area with modern kitchen",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "53": [
+      7,
+      9,
+      51
+    ],
+    "54": [
+      1,
+      33
+    ],
+    "55": [
+      18,
+      25,
+      45
+    ]
+  },
+  "viewpoint_to_region": {
+    "1": 54,
+    "7": 53,
+    "9": 53,
+    "18": 55,
+    "25": 55,
+    "33": 54,
+    "45": 55,
+    "51": 53
+  }
+}

@@ -1,0 +1,325 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.991,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.944,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.851,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.061,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 39,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.15,
+        "1": 0.02,
+        "2": 0.02,
+        "4": 0.02,
+        "5": 0.02,
+        "6": 0.12,
+        "7": 0.18
+      },
+      "target_probs": {
+        "0": 0.30612244897959184,
+        "1": 0.2857142857142857,
+        "2": 0.049999999999999996,
+        "4": 0.06666666666666667,
+        "5": 0.04444444444444444,
+        "6": 0.24,
+        "7": 0.6428571428571429
+      },
+      "target_score_basis": {
+        "0": "Viewpoint marker visible in hallway area near living room entrance; potential desk location nearby",
+        "1": "Hallway area not consistent with bedroom target location",
+        "2": "Hallway area not consistent with kitchen target location",
+        "4": "Hallway area not consistent with dining room window target location",
+        "5": "Hallway area not consistent with kitchen counter target location",
+        "6": "Viewpoint near living room area where television shelf might be located",
+        "7": "Viewpoint near entrance area where console table might be located"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.03,
+        "1": 0.02,
+        "2": 0.35,
+        "4": 0.15,
+        "5": 0.4,
+        "6": 0.02,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.061224489795918366,
+        "1": 0.2857142857142857,
+        "2": 0.8749999999999999,
+        "4": 0.5,
+        "5": 0.8888888888888888,
+        "6": 0.04,
+        "7": 0.07142857142857144
+      },
+      "target_score_basis": {
+        "0": "Viewpoint in kitchen area but no wooden desk visible",
+        "1": "Kitchen area not consistent with bedroom bathrobe target",
+        "2": "Kitchen area with shelves visible; potential match for vintage scale on top shelf",
+        "4": "Kitchen/dining area with windows visible; potential candle holder location",
+        "5": "Kitchen area with counter and stove visible; strong match for cookbook target",
+        "6": "Kitchen area not consistent with television shelf target",
+        "7": "Kitchen area not near entrance console table"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint in hallway near desk area; target requires wooden desk below map.",
+        "1": "Hallway location; no bed or wall hooks visible for bathrobe.",
+        "2": "Not a kitchen area; no top shelf or stove context.",
+        "4": "Not dining room; no window or candle holder visible.",
+        "5": "Not kitchen counter; no stove vicinity.",
+        "6": "No television or wall shelf visible in hallway.",
+        "7": "Hallway not near entrance console table."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "320c0ec6c0a343fea6227a2699d0eb7a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "5340c12f388446b589bf2c082c39bd5e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.01,
+        "1": 0.01,
+        "2": 0.01,
+        "4": 0.01,
+        "5": 0.01,
+        "6": 0.01,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.020408163265306124,
+        "1": 0.14285714285714285,
+        "2": 0.024999999999999998,
+        "4": 0.03333333333333333,
+        "5": 0.02222222222222222,
+        "6": 0.02,
+        "7": 0.1785714285714286
+      },
+      "target_score_basis": {
+        "0": "Bathroom area not consistent with desk target location",
+        "1": "Bathroom area not consistent with bedroom bathrobe target",
+        "2": "Bathroom area not consistent with kitchen scale target",
+        "4": "Bathroom area not consistent with dining room window target",
+        "5": "Bathroom area not consistent with kitchen counter target",
+        "6": "Bathroom area not consistent with television shelf target",
+        "7": "Bathroom area not near entrance console table"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "e1f88263b98d46909c3e00e9250b6a4b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.3,
+        "1": 0.02,
+        "2": 0.02,
+        "4": 0.12,
+        "5": 0.02,
+        "6": 0.35,
+        "7": 0.03
+      },
+      "target_probs": {
+        "0": 0.6122448979591837,
+        "1": 0.2857142857142857,
+        "2": 0.049999999999999996,
+        "4": 0.4,
+        "5": 0.04444444444444444,
+        "6": 0.7,
+        "7": 0.10714285714285715
+      },
+      "target_score_basis": {
+        "0": "Living room area with desk visible; potential match for vintage radio target",
+        "1": "Living room area not consistent with bedroom bathrobe target",
+        "2": "Living room area not consistent with kitchen scale target",
+        "4": "Living room area with windows visible; potential candle holder location",
+        "5": "Living room area not consistent with kitchen counter target",
+        "6": "Living room area with television and wall shelf visible; strong match for number 8 ornament",
+        "7": "Living room area not near entrance console table"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        20,
+        26,
+        31,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "hallway area with tiled floor and doorways",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "bathroom area with sink and newspaper-patterned wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": false,
+    "3": true,
+    "4": false,
+    "5": false,
+    "6": false,
+    "7": false
+  }
+}

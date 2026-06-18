@@ -1,0 +1,198 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.333,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 14,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.645,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.561,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.991,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 8,
+      "label": "de7a74588c2842e9ba391abb153a0257",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 8 is in a kitchen/pantry area with shelving; bathrobe target requires bedroom hooks, low likelihood here.",
+        "4": "Viewpoint 8 shows kitchen shelving and counters; candle target requires dining room window, partial match to dining adjacency.",
+        "6": "Viewpoint 8 has shelves but lacks television wall context; ornament target needs TV vicinity.",
+        "7": "Viewpoint 8 is deep in kitchen/storage, far from entrance console table context."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 14,
+      "label": "6416ac70316f44d1ae7ec5a3029b1703",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.05,
+        "4": 0.6,
+        "6": 0.1,
+        "7": 0.15
+      },
+      "target_probs": {
+        "1": 1.0,
+        "4": 1.0,
+        "6": 1.0,
+        "7": 1.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 14 marker is in a bright dining/living area visible through an opening; bathrobe target requires bedroom context with bed and wall hooks, making this location contradictory.",
+        "4": "Viewpoint 14 shows a dining-area space with windows and open layout consistent with 'dining room window' cue for the white candle target.",
+        "6": "No television or wall shelf visible near viewpoint 14 marker; area appears to be dining/living transition without specific ornament support cues.",
+        "7": "Viewpoint 14 is near an entrance/open area but lacks visible console table evidence; lower priority than dedicated entryway viewpoints."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "a80acc2328154455965a8be4133dee71",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        14,
+        19,
+        20,
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "kitchen and pantry area with dark shelving and white countertops",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "1": false,
+    "4": false,
+    "6": false,
+    "7": false
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.445,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 9,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.308,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.599,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.346,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.481,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 34,
+      "j": 42,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "84055072c9154370bc2a76c86daf011c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.02,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "2": 0.2857142857142857,
+        "7": 0.2857142857142857
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 8 is in the same bedroom region (50) as current viewpoint 31; dining table with flowers not visible here, low probability.",
+        "2": "Bedroom area does not match kitchen appliance nook target constraints; no kitchen evidence visible from marker 8.",
+        "7": "Bedroom area contradicts kitchen counter/stovetop target location cues; no kitchen surface visible near marker 8."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 9,
+      "label": "3e8f012538474392bf311dcec2e2153a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "6ca981e907be49749ed4aead19864515",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 31 is assigned to bedroom region 50, which may contain surfaces suitable for a vase with flowers; consistent with bedroom decor context.",
+        "2": "Bedroom area does not match kitchen appliance nook requirement; explicit room cue contradiction reduces likelihood.",
+        "7": "No kitchen counter or stovetop visible or implied in bedroom region; target constraints not satisfied."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 34,
+      "label": "e4a543521c44412e8f264d083ac5fc0c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.6666666666666666,
+        "2": 0.7142857142857143,
+        "7": 0.7142857142857143
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 42,
+      "label": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 3,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 42 appears to be in a hallway or transition space leading away from the bedroom; no dining table visible.",
+        "2": "Viewpoint 42 appears to be in a hallway or transition space; no kitchen appliances visible.",
+        "7": "Viewpoint 42 appears to be in a hallway or transition space; no kitchen counter or stovetop visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        9,
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "upstairs bedroom with white bedding and large window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        34,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 51,
+      "label": "bathroom area with white tiles, sink, and glass shower enclosure",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 7,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "4": true,
+    "7": false
+  }
+}

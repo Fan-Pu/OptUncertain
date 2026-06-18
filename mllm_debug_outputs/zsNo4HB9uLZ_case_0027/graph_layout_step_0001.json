@@ -1,0 +1,232 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 22,
+    "agent1": 17,
+    "agent2": 45
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 0,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 12,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 17,
+      "j": 27,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 18,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 25,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 0,
+      "label": "213f4f2f0d204758bc51252aed60cf82",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 12,
+      "label": "5e966f4bdbc849f4b2b200e2f8cc49a0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "11bdfcf0a0984901a1d6f60fdd8ee4a6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 17,
+      "label": "4c0aab63a4434cf4878e6f5b3ce9a70b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "f04ae8ebf8254168814bc669635b3775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        0,
+        12,
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 22,
+      "label": "94432dd9d465486b8acfb7013ffc3fca",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "76c7a665d2b242bfa203e7f394b1353e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        17
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "2c687aab96b7498b92023a4888c6e7ab",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        18,
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "d48feeed33774f64adb093679b9fcebf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        12,
+        15,
+        22
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bedroom with blue walls and carpet flooring",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        17,
+        27
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "bathroom with toilet and glass shower enclosure",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18,
+        25,
+        45
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 55,
+      "label": "open plan living and dining area with dark cabinetry",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "53": [
+      0,
+      12,
+      15,
+      22
+    ],
+    "54": [
+      17,
+      27
+    ],
+    "55": [
+      18,
+      25,
+      45
+    ]
+  },
+  "viewpoint_to_region": {
+    "0": 53,
+    "12": 53,
+    "15": 53,
+    "17": 54,
+    "18": 55,
+    "22": 53,
+    "25": 55,
+    "27": 54,
+    "45": 55
+  }
+}

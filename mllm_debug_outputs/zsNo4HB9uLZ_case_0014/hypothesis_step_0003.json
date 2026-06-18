@@ -1,0 +1,170 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.128,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 2,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.523,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.093,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.02,
+        "2": 0.01,
+        "6": 0.03,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.14285714285714288,
+        "2": 0.5,
+        "6": 0.375,
+        "7": 0.5
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 2 is located in the hallway (indicated by tiled floor and lack of bedroom furniture), which contradicts the target description requiring a wooden desk inside a room.",
+        "2": "Hallway location lacks kitchen context or shelving units described for the vintage scale.",
+        "6": "Hallway walls are bare except for a framed picture; no television or wall shelf visible at this marker location.",
+        "7": "Hallway entrance area does not show a console table; view looks down a corridor rather than at an entry foyer furniture piece."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Hallway viewpoint leading toward other areas; no desk or map visible but provides access to potential study areas.",
+        "2": "Hallway with no kitchen elements visible; low likelihood for kitchen scale target.",
+        "6": "Hallway with wall art but no television shelf visible; low likelihood for ornament target.",
+        "7": "Hallway possibly near entrance area; no console table visible but closer to potential entrance zone."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 36,
+      "label": "ead481533f834704bd489d3d44b6a03a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.12,
+        "2": 0.01,
+        "6": 0.05,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.8571428571428572,
+        "2": 0.5,
+        "6": 0.625,
+        "7": 0.5
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 36 is positioned at the bedroom doorway threshold looking into the hall; while close to the bedroom, the marker is on the transition boundary, reducing confidence for interior desk items compared to deeper viewpoints.",
+        "2": "Doorway location offers no visual evidence of kitchen shelves or scales.",
+        "6": "From the doorway angle, the television wall is occluded or distant; no number 8 ornament visible.",
+        "7": "Threshold viewpoint faces the hallway, away from any potential entrance console table that would be behind the camera or in a different foyer zone."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        2,
+        33,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bedroom area with bed and bedside tables",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "6": false,
+    "7": false
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 13
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 4,
+      "j": 44,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 13,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 13,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 13,
+      "j": 44,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 32,
+      "j": 44,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 44,
+      "j": 47,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 4,
+      "label": "66cb91d800e74042bf34287a76fd36ab",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        15,
+        18,
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 13,
+      "label": "4ea1cfa67ec145b39f90056a02a43d9f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 3,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        13
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "1c2209fa44fc48c7b7ce7981bafc4ccf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        13
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "c20f944e9c434804944b0c1251247202",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 32,
+      "label": "75d7eb848ea84a6dbb717dc231cf2dab",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        4,
+        13,
+        32,
+        47
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "8844f8fdc366462587b70fb7ede46242",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 47,
+      "label": "b98717151b7b49f59af95a9b7111a658",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        13,
+        15,
+        18
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "modern bathroom with tiled walls and glass shower",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        4,
+        32,
+        44,
+        47
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 51,
+      "label": "upstairs bedroom with bed and dark carpet",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 5,
+  "region_to_viewpoints": {
+    "50": [
+      13,
+      15,
+      18
+    ],
+    "51": [
+      4,
+      32,
+      44,
+      47
+    ]
+  },
+  "viewpoint_to_region": {
+    "4": 51,
+    "13": 50,
+    "15": 50,
+    "18": 50,
+    "32": 51,
+    "44": 51,
+    "47": 51
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_probs": [
+    {
+      "id": 17,
+      "raw_target_probs": {
+        "1": 0.05
+      },
+      "target_probs": {
+        "1": 0.14285714285714288
+      }
+    },
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "1": 0.01
+      },
+      "target_probs": {
+        "1": 0.028571428571428574
+      }
+    },
+    {
+      "id": 26,
+      "raw_target_probs": {
+        "1": 0.01
+      },
+      "target_probs": {
+        "1": 0.028571428571428574
+      }
+    },
+    {
+      "id": 32,
+      "raw_target_probs": {
+        "1": 0.15
+      },
+      "target_probs": {
+        "1": 0.4285714285714286
+      }
+    },
+    {
+      "id": 44,
+      "raw_target_probs": {
+        "1": 0.03
+      },
+      "target_probs": {
+        "1": 0.08571428571428572
+      }
+    },
+    {
+      "id": 45,
+      "raw_target_probs": {
+        "1": 0.03
+      },
+      "target_probs": {
+        "1": 0.08571428571428572
+      }
+    },
+    {
+      "id": 46,
+      "raw_target_probs": {
+        "1": 0.03
+      },
+      "target_probs": {
+        "1": 0.08571428571428572
+      }
+    },
+    {
+      "id": 50,
+      "raw_target_probs": {
+        "1": 0.04
+      },
+      "target_probs": {
+        "1": 0.1142857142857143
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 17,
+      "score_basis": {
+        "1": "Viewpoint 17 is in the bathroom area (region 59); while bathrooms may have hooks, the target specifies 'beside the bed' which contradicts bathroom location, so score is lowered from prior."
+      }
+    },
+    {
+      "id": 19,
+      "score_basis": {}
+    },
+    {
+      "id": 26,
+      "score_basis": {}
+    },
+    {
+      "id": 32,
+      "score_basis": {
+        "1": "Viewpoint 32 is in the interior hallway (region 57) which provides access to bedrooms; target is a bathrobe beside a bed, making bedroom-adjacent hallway viewpoints moderate candidates compared to bathroom or dining areas."
+      }
+    },
+    {
+      "id": 44,
+      "score_basis": {
+        "1": "Viewpoint 44 is in the dining and living area (region 55); this area lacks bed-adjacent context required for the bathrobe target, so score remains low."
+      }
+    },
+    {
+      "id": 45,
+      "score_basis": {
+        "1": "Viewpoint 45 is in the dining and living area (region 55); no bed or bedroom cues visible, contradicting target's 'beside the bed' constraint."
+      }
+    },
+    {
+      "id": 46,
+      "score_basis": {
+        "1": "Viewpoint 46 is in the dining and living area (region 55); distant from bedroom zones and lacks bed-adjacent support surface evidence."
+      }
+    },
+    {
+      "id": 50,
+      "score_basis": {
+        "1": "Viewpoint 50 is in the dining and living area (region 55); although unvisited, it lacks bedroom context and bed-adjacent wall hooks evidence required by target description."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

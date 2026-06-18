@@ -915,6 +915,7 @@ def run_scenario(
     config_or_scenario: str | Path | Dict[str, object],
     show_agent_views: bool = True,
     default_config: Dict[str, object] | None = None,
+    siglip_scorer=None,
 ) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
     from semantic_persistence import (
@@ -989,7 +990,7 @@ def run_scenario(
         ),
     )
 
-    scorer = SigLIPScorer()
+    scorer = siglip_scorer if siglip_scorer is not None else SigLIPScorer()
 
     all_targets_found = False
 
@@ -1514,6 +1515,8 @@ def run_batch_config(
     batch_config_path: str | Path,
     show_agent_views: bool = True,
 ) -> Dict[str, object]:
+    from semantic_persistence import SigLIPScorer
+
     path = Path(batch_config_path)
     batch_config = _read_json(path)
     if not isinstance(batch_config, dict):
@@ -1552,6 +1555,7 @@ def run_batch_config(
         status="running",
     )
     termination_path = _batch_termination_path(batch_id)
+    siglip_scorer = SigLIPScorer()
 
     for scenario in scenarios:
         test_case = str(scenario["test_case"])
@@ -1567,6 +1571,7 @@ def run_batch_config(
             scenario,
             show_agent_views=show_agent_views,
             default_config=default_config,
+            siglip_scorer=siglip_scorer,
         )
         if results[test_case].get("status") == "completed":
             completed_cases[test_case] = _build_batch_completed_record(

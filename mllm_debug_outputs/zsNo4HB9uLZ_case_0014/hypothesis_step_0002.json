@@ -1,0 +1,170 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.128,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 2,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.523,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.093,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.08,
+        "2": 0.03,
+        "6": 0.07,
+        "7": 0.04
+      },
+      "target_probs": {
+        "0": 0.3478260869565218,
+        "2": 0.6,
+        "6": 0.368421052631579,
+        "7": 0.4444444444444445
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 2 is in bedroom area (region 53), but target requires wooden desk below map; no such furniture visible from red marker location",
+        "2": "Target requires kitchen top shelf; viewpoint 2 is in bedroom area with no kitchen evidence",
+        "6": "Target requires wall shelf beside television; viewpoint 2 shows bedroom with bed and nightstands but no television visible",
+        "7": "Target requires console table near entrance; viewpoint 2 is deep in bedroom area away from entrance cues"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Hallway viewpoint leading toward other areas; no desk or map visible but provides access to potential study areas.",
+        "2": "Hallway with no kitchen elements visible; low likelihood for kitchen scale target.",
+        "6": "Hallway with wall art but no television shelf visible; low likelihood for ornament target.",
+        "7": "Hallway possibly near entrance area; no console table visible but closer to potential entrance zone."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 36,
+      "label": "ead481533f834704bd489d3d44b6a03a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.15,
+        "2": 0.02,
+        "6": 0.12,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.6521739130434783,
+        "2": 0.39999999999999997,
+        "6": 0.631578947368421,
+        "7": 0.5555555555555556
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 36 is in bedroom area (region 53); target requires wooden desk below map which may exist in bedroom but not confirmed from current view",
+        "2": "Target requires kitchen top shelf; viewpoint 36 is in bedroom area with no kitchen evidence",
+        "6": "Target requires wall shelf beside television; viewpoint 36 is in bedroom area where television may be present",
+        "7": "Target requires console table near entrance; viewpoint 36 is in bedroom area away from entrance"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        2,
+        33,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bedroom area with bed and bedside tables",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "6": false,
+    "7": false
+  }
+}

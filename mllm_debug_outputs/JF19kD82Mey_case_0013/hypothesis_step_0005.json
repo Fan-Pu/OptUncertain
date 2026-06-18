@@ -1,0 +1,376 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.981,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.807,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 29,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.009,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.007,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.7,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.176,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.95,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 27,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.262,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 29,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.805,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 29,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.887,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 35,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.727,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 37,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.853,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 39,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 16,
+      "label": "6be9623980e245ce80ced0bdb70db93c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 16 is indoors, but target 1 requires 'patio window' proximity; medium score as it's near the transition to outdoors.",
+        "3": "Viewpoint 16 is in a kitchen area, not an office; low probability for keyboard unless desk is visible (not confirmed)."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "d512f07e48aa4fe9a559a1a708ab3c02",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.6,
+        "3": 0.05
+      },
+      "target_probs": {
+        "1": 0.2857142857142857,
+        "3": 0.2777777777777778
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 25 is located in the outdoor patio area (red marker visible near glass doors leading to garden), which matches target 1's 'patio window' cue; wooden cabinet likely present in this semi-outdoor dining zone.",
+        "3": "Target 3 requires an office desk with monitor; viewpoint 25 shows outdoor patio furniture and glass tables, no office equipment visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 26,
+      "label": "16bcabb86c9546f89e60b1caf0fc0a13",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "a34ec23dd5284d8fbca553acefd49c03",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.2,
+        "3": 0.08
+      },
+      "target_probs": {
+        "1": 0.09523809523809523,
+        "3": 0.4444444444444445
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 27 is in indoor living area with sofa near glass doors; while it has windows, it lacks explicit patio context compared to viewpoint 25 or 35.",
+        "3": "Living area may contain side tables but no clear office desk or monitor visible from prior context; low probability for keyboard target."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 29,
+      "label": "856a21dd20ce41c3ac1c2a160cec9a0f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 29 is near the patio window area; target 1 is on a wooden cabinet near a patio window, making this location plausible.",
+        "3": "Viewpoint 29 is an outdoor patio area; target 3 is an office desk item, unlikely in this outdoor space."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "2dd65c204fd64835b8cd417df5aa4149",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.85,
+        "3": 0.02
+      },
+      "target_probs": {
+        "1": 0.4047619047619047,
+        "3": 0.11111111111111112
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 35 is assigned to outdoor patio region (same as current viewpoint 37); high match for 'patio window' and 'wooden cabinet' cues based on region consistency.",
+        "3": "Outdoor patio area unlikely to contain office desk with monitor; target 3 requires indoor office setting."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 37,
+      "label": "ff43ac7b797541b5a89ce2373de329a4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_score_basis": {
+        "1": "Patio area near glass doors could contain cabinet with bust",
+        "3": "No office desk or monitor visible in outdoor patio area"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "a0e680c2599e473c9d64183b65dac6b3",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.45,
+        "3": 0.03
+      },
+      "target_probs": {
+        "1": 0.21428571428571427,
+        "3": 0.16666666666666666
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 39 is in outdoor patio region but farther from garden/dining set area; moderate match for patio window cue but less specific than viewpoint 35.",
+        "3": "Patio area does not support office desk hypothesis; no visual evidence of workspace in this outdoor zone."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "219e774e6cf942a5af295147d7bf945e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "3": 0.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 45 marker is near cabinetry and appliances but lacks specific visual confirmation of bust or patio window proximity.",
+        "3": "Viewpoint 45 marker is near kitchen counters and appliances; office desk context not visually supported here."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        16,
+        26,
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "modern kitchen and dining area with curved island",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25,
+        29,
+        35,
+        37,
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 51,
+      "label": "outdoor patio and garden area with dining set",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 52,
+      "label": "indoor living area with sofa near glass doors",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 5,
+  "target_found": {
+    "0": true,
+    "1": false,
+    "2": true,
+    "3": false
+  }
+}

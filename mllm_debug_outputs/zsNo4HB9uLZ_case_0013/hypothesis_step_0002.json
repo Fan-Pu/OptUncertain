@@ -1,0 +1,124 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.071,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 24,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.829,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 24,
+      "j": 49,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "4": 0.02,
+        "6": 0.05
+      },
+      "target_probs": {
+        "0": 1.0,
+        "4": 1.0,
+        "6": 1.0
+      },
+      "target_score_basis": {
+        "0": "Target requires wooden desk and map; VP10 is in tiled hallway with console table but no visible map or vintage radio setup.",
+        "4": "Target requires dining room window and black holder; VP10 is in entry hallway with no dining furniture or window evidence.",
+        "6": "Target requires wall shelf beside television; VP10 shows artwork on walls but no television or shelf suitable for ornament."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 24,
+      "label": "b6ca0cc195da4688ba67fa53f0345b98",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 49,
+      "label": "935e0f6088a54fba87990835d1997d9a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 49 is near an entrance door with a console table; target 0 requires a wooden desk below a map, which is not seen here.",
+        "4": "Viewpoint 49 is an entryway with a slatted door; no dining room window or candle holder is visible.",
+        "6": "Viewpoint 49 shows an entry console with art, but lacks the television and specific shelf described for target 6."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        24,
+        49
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "tiled hallway and entry foyer with wood ceiling",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "4": false,
+    "6": false,
+    "7": true
+  }
+}

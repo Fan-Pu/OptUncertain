@@ -768,7 +768,6 @@ def _scan_state_to_observation(
     best_heading_for_vp,
     best_score_for_vp,
     horizon_rgb_frames,
-    horizon_mllm_frames,
     horizon_headings,
     horizon_heading_rows,
     horizon_elevation_rows,
@@ -798,8 +797,6 @@ def _scan_state_to_observation(
         "frame_visible_viewpoint_indices": frame_visible_viewpoint_indices,
         "best_heading_for_vp": dict(best_heading_for_vp),
         "best_score_for_vp": dict(best_score_for_vp),
-        "horizon_rgb_frames": horizon_rgb_frames,
-        "horizon_mllm_frames": horizon_mllm_frames,
         "horizon_headings": horizon_headings,
         "horizon_heading_rows": horizon_heading_rows,
         "horizon_elevation_rows": horizon_elevation_rows,
@@ -829,7 +826,6 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         "best_heading_for_vp": {},
         "best_score_for_vp": defaultdict(lambda: 1e18),
         "horizon_rgb_frames": [],
-        "horizon_mllm_frames": [],
         "horizon_headings": [],
         "horizon_heading_rows": [],
         "horizon_elevation_rows": [],
@@ -847,7 +843,6 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         )
 
         row_rgb_frames = []
-        row_mllm_frames = []
         row_headings = []
         row_elevations = []
         row_visible_viewpoint_indices = []
@@ -855,14 +850,13 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         for horizon_index in range(HORIZON_LEN):
             state = sim.getState()[0]
             raw_rgb = simulator_frame_to_rgb(state.rgb)
-            annotated_rgb, visible_viewpoints = annotate_rgb_with_viewpoints(
+            _, visible_viewpoints = annotate_rgb_with_viewpoints(
                 raw_rgb,
                 state.navigableLocations,
                 viewpoint_index_by_vp=viewpoint_index_by_vp,
             )
 
             row_rgb_frames.append(raw_rgb)
-            row_mllm_frames.append(annotated_rgb)
             row_headings.append(float(state.heading))
             row_elevations.append(float(state.elevation))
             if elevation_band_index == 0:
@@ -920,7 +914,6 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
                 )
 
         record["horizon_rgb_frames"].append(row_rgb_frames)
-        record["horizon_mllm_frames"].append(row_mllm_frames)
         record["horizon_heading_rows"].append(row_headings)
         record["horizon_elevation_rows"].append(row_elevations)
         record["frame_visible_viewpoint_indices"].append(row_visible_viewpoint_indices)
@@ -944,7 +937,6 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         best_heading_for_vp=record["best_heading_for_vp"],
         best_score_for_vp=record["best_score_for_vp"],
         horizon_rgb_frames=record["horizon_rgb_frames"],
-        horizon_mllm_frames=record["horizon_mllm_frames"],
         horizon_headings=record["horizon_headings"],
         horizon_heading_rows=record["horizon_heading_rows"],
         horizon_elevation_rows=record["horizon_elevation_rows"],

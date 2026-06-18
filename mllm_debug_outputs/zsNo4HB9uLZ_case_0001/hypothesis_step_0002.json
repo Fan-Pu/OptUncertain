@@ -1,0 +1,202 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.592,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 25,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.953,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.712,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.483,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 46,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.992,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.531,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 18,
+      "label": "f04ae8ebf8254168814bc669635b3775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0
+      },
+      "target_probs": {
+        "2": 0.0
+      },
+      "target_score_basis": {
+        "2": "Viewpoint 18 marker is located in the kitchen area visible through the doorway, matching the target object's likely location on a top shelf."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "76c7a665d2b242bfa203e7f394b1353e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.4
+      },
+      "target_probs": {
+        "2": 0.36363636363636365
+      },
+      "target_score_basis": {
+        "2": "Viewpoint 25 is in the living area with dark cabinetry visible nearby; kitchen scale likely on shelves in adjacent kitchen zone."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 43,
+      "label": "3493ecf114864afc99d568421c0b42f6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.2
+      },
+      "target_probs": {
+        "2": 0.18181818181818182
+      },
+      "target_score_basis": {
+        "2": "Viewpoint 43 is near hallway entrance to kitchen; no direct kitchen view but spatially close to target-bearing area."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "d48feeed33774f64adb093679b9fcebf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0
+      },
+      "target_probs": {
+        "2": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "84f05044aa1542a18b082255100f2c39",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.35
+      },
+      "target_probs": {
+        "2": 0.3181818181818181
+      },
+      "target_score_basis": {
+        "2": "Viewpoint 46 shows dining table and partial kitchen view; top shelf not visible but kitchen proximity supports moderate score."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 50,
+      "label": "0753202108e24c0094f09c60b8f36127",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.15
+      },
+      "target_probs": {
+        "2": 0.13636363636363635
+      },
+      "target_score_basis": {
+        "2": "Viewpoint 50 is in open area near kitchen entrance; wall art visible but no direct shelf or scale evidence."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18,
+        25,
+        43,
+        45,
+        46,
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "open plan living and kitchen area with dark cabinetry",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "2": false
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        5
+      ],
+      "region_node_id": 53
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 2,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.01,
+        "6": 0.02,
+        "7": 0.01
+      },
+      "target_probs": {
+        "0": 0.7142857142857143,
+        "2": 0.5,
+        "6": 0.6666666666666667,
+        "7": 0.25
+      }
+    },
+    {
+      "id": 5,
+      "raw_target_probs": {
+        "0": 0.02,
+        "2": 0.01,
+        "6": 0.01,
+        "7": 0.03
+      },
+      "target_probs": {
+        "0": 0.2857142857142857,
+        "2": 0.5,
+        "6": 0.33333333333333337,
+        "7": 0.75
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 2,
+      "score_basis": {
+        "0": "Target is a black vintage radio on a wooden desk; viewpoint 2 is in the bedroom area where desks are common, but no specific desk evidence visible.",
+        "2": "Target is a red kitchen scale on top shelf; viewpoint 2 is in bedroom area, not kitchen, contradicting target location cues.",
+        "6": "Target is a black number 8 ornament on wall shelf beside television; viewpoint 2 is in bedroom with no visible TV or wall shelf matching description.",
+        "7": "Target is a glass vase with green reeds on console table near entrance; viewpoint 2 is deep in bedroom, far from entrance cues."
+      }
+    },
+    {
+      "id": 5,
+      "score_basis": {
+        "0": "Viewpoint 5 marker is in bathroom area visible through doorway; bathrooms rarely contain wooden desks with radios, low compatibility.",
+        "2": "Viewpoint 5 is bathroom area; kitchen scale target requires kitchen context, strong contradiction.",
+        "6": "Viewpoint 5 is bathroom; no television or wall shelf for number 8 ornament visible or expected in this area.",
+        "7": "Viewpoint 5 is bathroom near entrance hallway; console tables sometimes near entrances but bathroom context reduces likelihood."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}
