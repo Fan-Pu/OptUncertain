@@ -1,7 +1,7 @@
 {
   "agent_current_vp_ids": {
     "agent0": 26,
-    "agent1": 24,
+    "agent1": 31,
     "agent2": 1
   },
   "edges": [
@@ -9,6 +9,12 @@
       "grounded": true,
       "i": 1,
       "j": 28,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 8,
+      "j": 31,
       "type": "vv"
     },
     {
@@ -21,6 +27,12 @@
       "grounded": true,
       "i": 26,
       "j": 45,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 31,
+      "j": 42,
       "type": "vv"
     }
   ],
@@ -39,6 +51,18 @@
     },
     {
       "connected_node_ids": [
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "84055072c9154370bc2a76c86daf011c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
         26
       ],
       "exist_prob": 1.0,
@@ -47,16 +71,6 @@
       "label": "6be9623980e245ce80ced0bdb70db93c",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
-      "type": "viewpoint"
-    },
-    {
-      "connected_node_ids": [],
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 24,
-      "label": "2ade9ff61be94782b425dd9f04d7847d",
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 1,
       "type": "viewpoint"
     },
     {
@@ -86,6 +100,31 @@
     },
     {
       "connected_node_ids": [
+        8,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "6ca981e907be49749ed4aead19864515",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 42,
+      "label": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
         26
       ],
       "exist_prob": 1.0,
@@ -106,20 +145,22 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 50,
-      "label": "modern kitchen and living area with large island and glass doors to patio",
+      "label": "modern kitchen and living area with island counter",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
     },
     {
       "assigned_viewpoint_ids": [
-        24
+        8,
+        31,
+        42
       ],
       "connected_node_ids": [],
       "exist_prob": 1.0,
       "grounded": true,
       "id": 51,
-      "label": "upstairs bedroom with wooden headboard wall and curved glass balcony overlooking water",
+      "label": "upstairs bedroom with white bedding and wall decorations",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
@@ -133,7 +174,7 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 52,
-      "label": "bathroom area with dual sinks and curved louvered window wall",
+      "label": "bathroom with dual sinks and heated towel racks",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "type": "region"
@@ -147,7 +188,9 @@
       45
     ],
     "51": [
-      24
+      8,
+      31,
+      42
     ],
     "52": [
       1,
@@ -156,10 +199,12 @@
   },
   "viewpoint_to_region": {
     "1": 52,
+    "8": 51,
     "16": 50,
-    "24": 51,
     "26": 50,
     "28": 52,
+    "31": 51,
+    "42": 51,
     "45": 50
   }
 }

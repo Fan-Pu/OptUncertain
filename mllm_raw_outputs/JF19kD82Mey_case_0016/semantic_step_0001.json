@@ -15,7 +15,9 @@
     },
     {
       "assigned_viewpoint_node_indices": [
-        24
+        8,
+        31,
+        42
       ],
       "region_node_id": 51
     },
@@ -29,12 +31,21 @@
   ],
   "viewpoint_target_probs": [
     {
+      "id": 8,
+      "raw_target_probs": {
+        "5": 0.9
+      },
+      "target_probs": {
+        "5": 0.4615384615384615
+      }
+    },
+    {
       "id": 16,
       "raw_target_probs": {
         "5": 0.05
       },
       "target_probs": {
-        "5": 0.3333333333333333
+        "5": 0.02564102564102564
       }
     },
     {
@@ -43,7 +54,16 @@
         "5": 0.05
       },
       "target_probs": {
-        "5": 0.3333333333333333
+        "5": 0.02564102564102564
+      }
+    },
+    {
+      "id": 42,
+      "raw_target_probs": {
+        "5": 0.9
+      },
+      "target_probs": {
+        "5": 0.4615384615384615
       }
     },
     {
@@ -52,42 +72,54 @@
         "5": 0.05
       },
       "target_probs": {
-        "5": 0.3333333333333333
+        "5": 0.02564102564102564
       }
     }
   ],
   "viewpoint_target_score_basis": [
     {
+      "id": 8,
+      "score_basis": {
+        "5": "Viewpoint is in upstairs bedroom with bed visible, matching target location cues"
+      }
+    },
+    {
       "id": 16,
       "score_basis": {
-        "5": "Viewpoint 16 is located in the kitchen/living area on the ground floor, while the target is explicitly described as being in an upstairs bedroom; this location contradicts the floor cue."
+        "5": "Viewpoint is in kitchen/living area, not an upstairs bedroom; contradicts target room cue"
       }
     },
     {
       "id": 28,
       "score_basis": {
-        "5": "Viewpoint 28 is visible from a bathroom area (viewpoint 1), which is not an upstairs bedroom; no bed or bedroom furniture is visible at this marker location."
+        "5": "Viewpoint is in bathroom, not an upstairs bedroom; contradicts target room cue"
+      }
+    },
+    {
+      "id": 42,
+      "score_basis": {
+        "5": "Viewpoint is in upstairs bedroom with bed visible, matching target location cues"
       }
     },
     {
       "id": 45,
       "score_basis": {
-        "5": "Viewpoint 45 is in the kitchen/dining area on the ground floor, contradicting the explicit 'upstairs bedroom' constraint for the target."
+        "5": "Viewpoint is in kitchen/living area, not an upstairs bedroom; contradicts target room cue"
       }
     }
   ],
   "visible_region_nodes": [
     {
       "id": 50,
-      "label": "modern kitchen and living area with large island and glass doors to patio"
+      "label": "modern kitchen and living area with island counter"
     },
     {
       "id": 51,
-      "label": "upstairs bedroom with wooden headboard wall and curved glass balcony overlooking water"
+      "label": "upstairs bedroom with white bedding and wall decorations"
     },
     {
       "id": 52,
-      "label": "bathroom area with dual sinks and curved louvered window wall"
+      "label": "bathroom with dual sinks and heated towel racks"
     }
   ]
 }

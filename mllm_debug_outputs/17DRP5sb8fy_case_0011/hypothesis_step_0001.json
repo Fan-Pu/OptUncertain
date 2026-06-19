@@ -1,0 +1,234 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.097,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 6,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.974,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 19,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.475,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.203,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 25,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.452,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 28,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 3,
+      "label": "558ba0761bf24428b9cf91e60333ea25",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "7": 0.0
+      },
+      "target_probs": {
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "00ebbf3782c64d74aaf7dd39cd561175",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "7": 0.05
+      },
+      "target_probs": {
+        "7": 0.09090909090909093
+      },
+      "target_score_basis": {
+        "7": "Bathroom vanity area with no dining table or glass surface visible; target requires dining table context."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "7": 0.05
+      },
+      "target_probs": {
+        "7": 0.09090909090909093
+      },
+      "target_score_basis": {
+        "7": "Hallway/entry transition space with bench and wall art; no dining furniture or glass table visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 22,
+      "label": "28db29e8c72c4a68bfdf5bb2b454443d",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "7": 0.02
+      },
+      "target_probs": {
+        "7": 0.03636363636363637
+      },
+      "target_score_basis": {
+        "7": "Behind closed door in bathroom area; no visibility of dining setup or glass table."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "7": 0.35
+      },
+      "target_probs": {
+        "7": 0.6363636363636364
+      },
+      "target_score_basis": {
+        "7": "View through doorway into adjacent room with dark flooring; partial visibility but no clear dining table confirmation."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 28,
+      "label": "1a41339ece1846eda6a924cdb4c417dd",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "7": 0.08
+      },
+      "target_probs": {
+        "7": 0.14545454545454548
+      },
+      "target_score_basis": {
+        "7": "Distant hallway view toward living area; no immediate dining table evidence at marker location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3,
+        6
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "bathroom area with vanity sink and mirror",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19,
+        28
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "entry hallway with bench and decorative wall art",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "enclosed bathroom space behind door",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 47,
+      "label": "adjacent room with dark flooring visible through doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "7": false
+  }
+}

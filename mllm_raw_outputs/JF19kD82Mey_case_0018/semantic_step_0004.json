@@ -1,0 +1,209 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        10,
+        34
+      ],
+      "region_node_id": 51
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        5,
+        21,
+        43
+      ],
+      "region_node_id": 53
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 5,
+      "raw_target_probs": {
+        "0": 0.8,
+        "4": 0.05
+      },
+      "target_probs": {
+        "0": 0.2622950819672132,
+        "4": 0.0273224043715847
+      }
+    },
+    {
+      "id": 10,
+      "raw_target_probs": {
+        "0": 0.1,
+        "4": 0.4
+      },
+      "target_probs": {
+        "0": 0.03278688524590165,
+        "4": 0.2185792349726776
+      }
+    },
+    {
+      "id": 21,
+      "raw_target_probs": {
+        "0": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "0": 0.016393442622950824,
+        "4": 0.0273224043715847
+      }
+    },
+    {
+      "id": 27,
+      "raw_target_probs": {
+        "0": 0.3,
+        "4": 0.02
+      },
+      "target_probs": {
+        "0": 0.09836065573770493,
+        "4": 0.01092896174863388
+      }
+    },
+    {
+      "id": 29,
+      "raw_target_probs": {
+        "0": 0.4,
+        "4": 0.02
+      },
+      "target_probs": {
+        "0": 0.1311475409836066,
+        "4": 0.01092896174863388
+      }
+    },
+    {
+      "id": 34,
+      "raw_target_probs": {
+        "0": 0.05,
+        "4": 0.35
+      },
+      "target_probs": {
+        "0": 0.016393442622950824,
+        "4": 0.1912568306010929
+      }
+    },
+    {
+      "id": 37,
+      "raw_target_probs": {
+        "0": 0.45,
+        "4": 0.02
+      },
+      "target_probs": {
+        "0": 0.1475409836065574,
+        "4": 0.01092896174863388
+      }
+    },
+    {
+      "id": 39,
+      "raw_target_probs": {
+        "0": 0.35,
+        "4": 0.02
+      },
+      "target_probs": {
+        "0": 0.11475409836065575,
+        "4": 0.01092896174863388
+      }
+    },
+    {
+      "id": 41,
+      "raw_target_probs": {
+        "0": 0.05,
+        "4": 0.85
+      },
+      "target_probs": {
+        "0": 0.016393442622950824,
+        "4": 0.46448087431693985
+      }
+    },
+    {
+      "id": 43,
+      "raw_target_probs": {
+        "0": 0.5,
+        "4": 0.05
+      },
+      "target_probs": {
+        "0": 0.16393442622950824,
+        "4": 0.0273224043715847
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 5,
+      "score_basis": {
+        "0": "Viewpoint 5 is in the dining area with a glass table visible nearby, matching target 0's 'glass dining table' cue",
+        "4": "Viewpoint 5 is on ground floor near stairs, not in upstairs bedroom; contradicts target 4's 'upstairs bedroom' constraint"
+      }
+    },
+    {
+      "id": 10,
+      "score_basis": {
+        "0": "Viewpoint 10 is in hallway/corridor area, no dining table visible; weak evidence for target 0",
+        "4": "Viewpoint 10 is in upstairs area near bedrooms, consistent with target 4's 'upstairs bedroom' location cue"
+      }
+    },
+    {
+      "id": 21,
+      "score_basis": {
+        "0": "Viewpoint 21 is outdoor patio area, no indoor dining table; contradicts target 0's indoor setting",
+        "4": "Viewpoint 21 is outdoor area, not upstairs bedroom; contradicts target 4's room constraint"
+      }
+    },
+    {
+      "id": 27,
+      "score_basis": {
+        "0": "Viewpoint 27 is outdoor patio with seating but no glass dining table visible; weaker evidence than viewpoint 5",
+        "4": "Viewpoint 27 is outdoor ground floor area, contradicts target 4's upstairs bedroom constraint"
+      }
+    },
+    {
+      "id": 29,
+      "score_basis": {
+        "0": "Viewpoint 29 is kitchen area near island, possible proximity to dining but no direct table evidence",
+        "4": "Viewpoint 29 is ground floor kitchen, contradicts target 4's upstairs bedroom constraint"
+      }
+    },
+    {
+      "id": 34,
+      "score_basis": {
+        "0": "Viewpoint 34 is bathroom area, no dining table; contradicts target 0's dining context",
+        "4": "Viewpoint 34 is upstairs bathroom adjacent to bedroom area, consistent with target 4's 'upstairs' floor cue"
+      }
+    },
+    {
+      "id": 37,
+      "score_basis": {
+        "0": "Viewpoint 37 is kitchen area with counter, possible proximity to dining area but no direct table view",
+        "4": "Viewpoint 37 is ground floor kitchen, contradicts target 4's upstairs bedroom constraint"
+      }
+    },
+    {
+      "id": 39,
+      "score_basis": {
+        "0": "Viewpoint 39 shows outdoor dining chairs but no glass table with flowers; partial match to dining context",
+        "4": "Viewpoint 39 is outdoor ground floor area, contradicts target 4's upstairs bedroom constraint"
+      }
+    },
+    {
+      "id": 41,
+      "score_basis": {
+        "0": "Viewpoint 41 is upstairs bedroom area, no dining table present; contradicts target 0's dining context",
+        "4": "Viewpoint 41 is in upstairs bedroom with bed area visible, strongly matches target 4's 'upstairs bedroom' and 'beside bed' cues"
+      }
+    },
+    {
+      "id": 43,
+      "score_basis": {
+        "0": "Viewpoint 43 is indoor transition area near dining space, possible proximity to dining table",
+        "4": "Viewpoint 43 is ground floor area, not upstairs bedroom; contradicts target 4's floor constraint"
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

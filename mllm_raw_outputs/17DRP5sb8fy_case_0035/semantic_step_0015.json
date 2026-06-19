@@ -1,0 +1,73 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        38
+      ],
+      "region_node_id": 58
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 33,
+      "raw_target_probs": {
+        "1": 0.92,
+        "2": 0.82,
+        "3": 0.02,
+        "5": 0.02
+      },
+      "target_probs": {
+        "1": 0.6715328467153284,
+        "2": 0.6721311475409836,
+        "3": 0.11764705882352942,
+        "5": 0.2857142857142857
+      }
+    },
+    {
+      "id": 38,
+      "raw_target_probs": {
+        "1": 0.45,
+        "2": 0.4,
+        "3": 0.15,
+        "5": 0.05
+      },
+      "target_probs": {
+        "1": 0.3284671532846715,
+        "2": 0.3278688524590164,
+        "3": 0.8823529411764707,
+        "5": 0.7142857142857143
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 33,
+      "score_basis": {
+        "1": "Viewpoint 33 is in a bathroom region (44) consistent with shower wall niche target; high prior score maintained due to semantic match.",
+        "2": "Viewpoint 33 is in a bathroom region (44) consistent with bathrobe hanging on bathroom wall; high prior score maintained due to semantic match.",
+        "3": "Viewpoint 33 is in a bathroom region, not kitchen; bottled water target unlikely here.",
+        "5": "Viewpoint 33 is in a bathroom region, not living area; throw pillow target unlikely here."
+      }
+    },
+    {
+      "id": 38,
+      "score_basis": {
+        "1": "Viewpoint 38 is unvisited and near bathroom region 44; possible proximity to shower niche but no direct evidence yet.",
+        "2": "Viewpoint 38 is unvisited and near bathroom region 44; possible proximity to bathrobe location but no direct evidence yet.",
+        "3": "Viewpoint 38 is near kitchen-dining boundary; bottled water could be on nearby shelf but less likely than kitchen core.",
+        "5": "Viewpoint 38 is in transition area; no armchair or living room cues visible for throw pillow target."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 58,
+      "label": "bathroom transition corridor with grid ceiling and shower access"
+    }
+  ]
+}

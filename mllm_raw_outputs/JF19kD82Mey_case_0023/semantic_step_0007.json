@@ -1,0 +1,95 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        33
+      ],
+      "region_node_id": 54
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 1,
+      "raw_target_probs": {
+        "4": 0.05
+      },
+      "target_probs": {
+        "4": 0.16666666666666666
+      }
+    },
+    {
+      "id": 10,
+      "raw_target_probs": {
+        "4": 0.08
+      },
+      "target_probs": {
+        "4": 0.2666666666666666
+      }
+    },
+    {
+      "id": 27,
+      "raw_target_probs": {
+        "4": 0.01
+      },
+      "target_probs": {
+        "4": 0.033333333333333326
+      }
+    },
+    {
+      "id": 33,
+      "raw_target_probs": {
+        "4": 0.15
+      },
+      "target_probs": {
+        "4": 0.4999999999999999
+      }
+    },
+    {
+      "id": 35,
+      "raw_target_probs": {
+        "4": 0.01
+      },
+      "target_probs": {
+        "4": 0.033333333333333326
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 1,
+      "score_basis": {
+        "4": "Viewpoint 1 is assigned to the upstairs bathroom (region 54). It is on the correct floor but represents a bathroom area, not the bedroom where the target is located. No bedroom furniture is visible. Score is lowered relative to bedroom candidates but kept non-zero due to floor consistency."
+      }
+    },
+    {
+      "id": 10,
+      "score_basis": {
+        "4": "Viewpoint 10 is in the upstairs hallway (region 51), adjacent to the bedroom. Similar to viewpoint 33, it is a transit space on the correct floor. It lacks direct target-bearing evidence (bed, chair) but provides access to the target room."
+      }
+    },
+    {
+      "id": 27,
+      "score_basis": {
+        "4": "Viewpoint 27 is in the ground floor kitchen (region 55). The target is explicitly 'upstairs'. This location contradicts the floor constraint. Score is minimized."
+      }
+    },
+    {
+      "id": 33,
+      "score_basis": {
+        "4": "Viewpoint 33 is located in an upstairs hallway adjacent to the bathroom (region 54) and bedroom (region 50). While it is on the correct floor for the target 'upstairs bedroom', it is a transit space without direct visual evidence of a bed or blue chair. Its proximity to the target-bearing regions warrants a low-to-medium score compared to more distant or contradictory locations."
+      }
+    },
+    {
+      "id": 35,
+      "score_basis": {
+        "4": "Viewpoint 35 is in the ground floor kitchen (region 55). Contradicts the 'upstairs' constraint of the target description. Score is minimized."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

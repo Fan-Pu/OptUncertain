@@ -1,0 +1,222 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 61,
+      "viewpoint_id": 17
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        23
+      ],
+      "region_node_id": 62
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 2,
+      "raw_target_probs": {
+        "3": 0.02
+      },
+      "target_probs": {
+        "3": 0.010928961748633878
+      }
+    },
+    {
+      "id": 6,
+      "raw_target_probs": {
+        "3": 0.05
+      },
+      "target_probs": {
+        "3": 0.027322404371584695
+      }
+    },
+    {
+      "id": 11,
+      "raw_target_probs": {
+        "3": 0.05
+      },
+      "target_probs": {
+        "3": 0.027322404371584695
+      }
+    },
+    {
+      "id": 12,
+      "raw_target_probs": {
+        "3": 0.03
+      },
+      "target_probs": {
+        "3": 0.016393442622950817
+      }
+    },
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "3": 0.02
+      },
+      "target_probs": {
+        "3": 0.010928961748633878
+      }
+    },
+    {
+      "id": 21,
+      "raw_target_probs": {
+        "3": 0.08
+      },
+      "target_probs": {
+        "3": 0.04371584699453551
+      }
+    },
+    {
+      "id": 23,
+      "raw_target_probs": {
+        "3": 0.05
+      },
+      "target_probs": {
+        "3": 0.027322404371584695
+      }
+    },
+    {
+      "id": 32,
+      "raw_target_probs": {
+        "3": 0.85
+      },
+      "target_probs": {
+        "3": 0.4644808743169398
+      }
+    },
+    {
+      "id": 38,
+      "raw_target_probs": {
+        "3": 0.02
+      },
+      "target_probs": {
+        "3": 0.010928961748633878
+      }
+    },
+    {
+      "id": 43,
+      "raw_target_probs": {
+        "3": 0.04
+      },
+      "target_probs": {
+        "3": 0.021857923497267756
+      }
+    },
+    {
+      "id": 46,
+      "raw_target_probs": {
+        "3": 0.05
+      },
+      "target_probs": {
+        "3": 0.027322404371584695
+      }
+    },
+    {
+      "id": 47,
+      "raw_target_probs": {
+        "3": 0.45
+      },
+      "target_probs": {
+        "3": 0.24590163934426226
+      }
+    },
+    {
+      "id": 48,
+      "raw_target_probs": {
+        "3": 0.1
+      },
+      "target_probs": {
+        "3": 0.05464480874316939
+      }
+    },
+    {
+      "id": 49,
+      "raw_target_probs": {
+        "3": 0.02
+      },
+      "target_probs": {
+        "3": 0.010928961748633878
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 2,
+      "score_basis": {}
+    },
+    {
+      "id": 6,
+      "score_basis": {}
+    },
+    {
+      "id": 11,
+      "score_basis": {}
+    },
+    {
+      "id": 12,
+      "score_basis": {}
+    },
+    {
+      "id": 19,
+      "score_basis": {}
+    },
+    {
+      "id": 21,
+      "score_basis": {}
+    },
+    {
+      "id": 23,
+      "score_basis": {
+        "3": "Viewpoint 23 is in a lower-level or exterior-adjacent zone (based on distance and visible outdoor cues from VP17), contradicting the 'upstairs' cue implied by other high-prob candidates; however, as an unvisited node with no prior data, it retains a low baseline score for exploration."
+      }
+    },
+    {
+      "id": 32,
+      "score_basis": {
+        "3": "Viewpoint 32 is inside an upstairs bedroom (Region 54) with a desk-like surface visible near the bed area in the panorama context; matches 'office desk' and 'upstairs' constraints strongly."
+      }
+    },
+    {
+      "id": 38,
+      "score_basis": {}
+    },
+    {
+      "id": 43,
+      "score_basis": {}
+    },
+    {
+      "id": 46,
+      "score_basis": {}
+    },
+    {
+      "id": 47,
+      "score_basis": {
+        "3": "Viewpoint 47 is in the same upstairs bedroom (Region 54) but further from the desk area shown in VP32 context; still a valid candidate for the target but less direct than VP32."
+      }
+    },
+    {
+      "id": 48,
+      "score_basis": {}
+    },
+    {
+      "id": 49,
+      "score_basis": {}
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 61,
+      "label": "open living area with curved sofa and staircase access"
+    },
+    {
+      "id": 62,
+      "label": "lower level entry or transition zone near outdoor patio"
+    }
+  ]
+}

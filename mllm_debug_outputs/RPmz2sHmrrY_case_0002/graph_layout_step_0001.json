@@ -1,0 +1,108 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 50
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 3,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 12,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 50,
+      "j": 56,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 3,
+      "label": "02aa36d91ebf4d3b987d54c601bd785a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 12,
+      "label": "d53b33e89133452899d757c2eebc5f18",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        3,
+        12,
+        56
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "f2746351955f4214aacbf50dd12673ba",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 56,
+      "label": "53db5931a8864b769bf57ddea79a812e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3,
+        12,
+        50,
+        56
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 59,
+      "label": "dark unlit interior area with multiple visible viewpoints",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "59": [
+      3,
+      12,
+      50,
+      56
+    ]
+  },
+  "viewpoint_to_region": {
+    "3": 59,
+    "12": 59,
+    "50": 59,
+    "56": 59
+  }
+}

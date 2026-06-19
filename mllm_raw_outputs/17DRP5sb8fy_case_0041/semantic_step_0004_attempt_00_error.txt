@@ -1,0 +1,101 @@
+{
+  "current_viewpoints_reassignment": [],
+  "visible_region_nodes": [
+    {
+      "id": 50,
+      "label": "bedroom area with large bed and decorative headboard"
+    },
+    {
+      "id": 51,
+      "label": "bathroom area with shower and vanity"
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 14,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint 14 is in a bedroom area (region 50) visible from agent1's current bathroom location. The target is a green patterned throw pillow on a brown armchair. While the bedroom contains seating, the specific armchair and pillow are not clearly visible from this vantage point, but the room type is plausible for such furniture.",
+          "evidence_strength": "low",
+          "raw_score": 0.15
+        }
+      }
+    },
+    {
+      "id": 20,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint 20 is in a bedroom area (region 50) visible from agent2's current location. Similar to viewpoint 14, it is a plausible location for an armchair with a throw pillow, but direct visual confirmation of the specific target objects is lacking from this distance.",
+          "evidence_strength": "low",
+          "raw_score": 0.15
+        }
+      }
+    },
+    {
+      "id": 23,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint 23 shows a lounge area with a sofa and coffee table within the bedroom suite (region 50). While there is seating, the target specifies a brown armchair with a green patterned pillow, which does not match the visible grey/white sectional sofa. Score is low due to object mismatch.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 33,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint 33 is inside a bathroom/shower area (region 51). Bathrooms typically do not contain armchairs with throw pillows. This location strongly contradicts the target description constraints regarding furniture type and room function.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 34,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint 34 is located in a hallway or transition space near the bedroom (region 50). Hallways generally lack armchairs. While adjacent to the bedroom, the viewpoint itself represents a transit zone, making target presence unlikely.",
+          "evidence_strength": "low",
+          "raw_score": 0.02
+        }
+      }
+    },
+    {
+      "id": 35,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint 35 is positioned in the bedroom area (region 50), near the bed. While bedrooms can contain armchairs, the immediate view focuses on the bed and windows. Without clear visibility of an armchair, the score remains low but higher than transit zones.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        }
+      }
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        14,
+        20,
+        35
+      ],
+      "region_node_id": 50
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        33
+      ],
+      "region_node_id": 51
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        34
+      ],
+      "region_node_id": 46
+    }
+  ],
+  "new_edges": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  }
+}

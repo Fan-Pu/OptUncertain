@@ -1,0 +1,184 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.735,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 4,
+      "j": 11,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.163,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 4,
+      "j": 17,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.729,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 17,
+      "j": 32,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 4,
+      "label": "3577de361e1a46b1be544d37731bfde6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 11,
+      "label": "6800f98e9e67463e9928a4253253bc2f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.35,
+        "2": 0.05,
+        "4": 0.05,
+        "5": 0.25
+      },
+      "target_probs": {
+        "0": 0.875,
+        "2": 0.3333333333333333,
+        "4": 0.5,
+        "5": 0.7575757575757576
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 11 is in the same bedroom area as current viewpoint 4, near the headboard region where a beige pillow would be located.",
+        "2": "No bathroom fixtures visible from viewpoint 11; this is a bedroom area, not suitable for bathrobe target.",
+        "4": "No toilet or bathroom fixtures visible from viewpoint 11; bedroom area contradicts toilet paper target location.",
+        "5": "Viewpoint 11 shows seating furniture in bedroom area; armchair with throw pillow is plausible in this space."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 17,
+      "label": "df211c2c55f94b87a717ce1469577456",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 17 marker is in the bedroom area near windows and bed zone, matching headboard proximity cue.",
+        "2": "Bedroom area visible but no bathroom walls or fixtures evident at this specific viewpoint marker.",
+        "4": "Bedroom location contradicts explicit bathroom requirement for toilet paper target.",
+        "5": "Bedroom area may contain seating but no armchair with green pillow directly visible at marker location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 32,
+      "label": "e34dcf54d26a4a95869cc8a0c01cd2be",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.1,
+        "4": 0.05,
+        "5": 0.08
+      },
+      "target_probs": {
+        "0": 0.12500000000000003,
+        "2": 0.6666666666666666,
+        "4": 0.5,
+        "5": 0.24242424242424243
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 32 is in hallway corridor area; pillows are typically in bedrooms, not hallways.",
+        "2": "Hallway area may lead to bathroom but no direct bathroom evidence at viewpoint 32 itself.",
+        "4": "Hallway corridor does not contain toilet fixtures; toilet paper requires bathroom location.",
+        "5": "Hallway area unlikely to contain armchair with throw pillow; seating furniture typically in rooms."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        4,
+        11,
+        17
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "curved beige sofa bedroom area with blue striped rug",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        32
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "narrow hallway corridor area with beige walls and dark baseboards",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "4": false,
+    "5": false
+  }
+}

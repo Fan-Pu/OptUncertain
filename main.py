@@ -215,7 +215,19 @@ def _available_viewpoint_ids(scan_id: str, project_root: Path) -> List[str]:
     )
     return [
         environment_graph.viewpoint_id_by_index[node_id]
+        for node_id in _navigable_start_node_ids(environment_graph)
+    ]
+
+
+def _navigable_start_node_ids(environment_graph) -> List[int]:
+    navigable_node_ids = set()
+    for source_id, target_id in environment_graph.edge_distances:
+        navigable_node_ids.add(int(source_id))
+        navigable_node_ids.add(int(target_id))
+    return [
+        node_id
         for node_id in sorted(environment_graph.viewpoint_id_by_index)
+        if node_id in navigable_node_ids
     ]
 
 
@@ -252,10 +264,10 @@ def _select_spread_viewpoint_ids(
     agent_number: int,
     random_source: random.Random,
 ) -> List[str]:
-    node_ids = sorted(environment_graph.viewpoint_id_by_index)
+    node_ids = _navigable_start_node_ids(environment_graph)
     if int(agent_number) > len(node_ids):
         raise ValueError(
-            "Requested %s agents but only %s viewpoints exist."
+            "Requested %s agents but only %s navigable start viewpoints exist."
             % (int(agent_number), len(node_ids))
         )
 

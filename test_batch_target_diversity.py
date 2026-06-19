@@ -1,5 +1,7 @@
 import random
 
+import pytest
+
 from route_plotter import EnvironmentGraph
 
 import main
@@ -31,6 +33,28 @@ def _line_graph(node_count):
         edge_distances={
             (node_index, node_index + 1): 1.0
             for node_index in range(node_count - 1)
+        },
+    )
+
+
+def _line_graph_with_isolated_node():
+    return EnvironmentGraph(
+        scan_id="scan",
+        viewpoint_id_by_index={
+            0: "vp0",
+            1: "vp1",
+            2: "vp2",
+            3: "isolated",
+        },
+        coords_by_node_id={
+            0: (0.0, 0.0),
+            1: (1.0, 0.0),
+            2: (2.0, 0.0),
+            3: (10.0, 0.0),
+        },
+        edge_distances={
+            (0, 1): 1.0,
+            (1, 2): 1.0,
         },
     )
 
@@ -135,3 +159,26 @@ def test_generate_batch_scenarios_diversifies_targets_across_agent_counts(
     assert all(case["target_number"] == 2 for case in generated_cases)
     assert all("target_selection_index" in case for case in generated_cases)
     assert all("targets" in case for case in generated_cases)
+
+
+def test_select_spread_viewpoint_ids_excludes_isolated_nodes():
+    selected_viewpoint_ids = main._select_spread_viewpoint_ids(
+        environment_graph=_line_graph_with_isolated_node(),
+        agent_number=3,
+        random_source=random.Random(1),
+    )
+
+    assert sorted(selected_viewpoint_ids) == ["vp0", "vp1", "vp2"]
+    assert "isolated" not in selected_viewpoint_ids
+
+
+def test_select_spread_viewpoint_ids_requires_navigable_start_capacity():
+    with pytest.raises(
+        ValueError,
+        match="Requested 4 agents but only 3 navigable start viewpoints exist.",
+    ):
+        main._select_spread_viewpoint_ids(
+            environment_graph=_line_graph_with_isolated_node(),
+            agent_number=4,
+            random_source=random.Random(1),
+        )

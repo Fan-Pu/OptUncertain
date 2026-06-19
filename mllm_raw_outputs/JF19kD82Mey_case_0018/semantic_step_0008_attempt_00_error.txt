@@ -1,0 +1,66 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 51,
+      "viewpoint_id": 7
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_scores": [
+    {
+      "id": 10,
+      "target_scores": {
+        "4": {
+          "basis": "Viewpoint 10 is located in the upstairs bedroom area (region 51) which matches the target description 'upstairs bedroom'. The red marker indicates a position near the bed area where a blue chair would likely be placed.",
+          "evidence_strength": "high",
+          "raw_score": 0.85
+        }
+      }
+    },
+    {
+      "id": 20,
+      "target_scores": {
+        "4": {
+          "basis": "Viewpoint 20 is clearly inside an upstairs bedroom with visible bed and large windows. This directly matches the target location constraint 'upstairs bedroom' and provides strong evidence for target presence.",
+          "evidence_strength": "high",
+          "raw_score": 0.9
+        }
+      }
+    },
+    {
+      "id": 13,
+      "target_scores": {
+        "4": {
+          "basis": "Viewpoint 13 is assigned to region 51 (upstairs bedroom area) and is spatially close to other bedroom viewpoints. While not showing direct bedroom furniture, its location supports potential target presence.",
+          "evidence_strength": "medium",
+          "raw_score": 0.4
+        }
+      }
+    },
+    {
+      "id": 0,
+      "target_scores": {
+        "4": {
+          "basis": "Viewpoint 0 is in the upstairs bedroom region 51 but appears to be in a transitional area. Lower score due to less direct bedroom evidence compared to viewpoints 10 and 20.",
+          "evidence_strength": "low",
+          "raw_score": 0.2
+        }
+      }
+    },
+    {
+      "id": 21,
+      "target_scores": {
+        "4": {
+          "basis": "Viewpoint 21 is in outdoor patio region 53, which contradicts the 'upstairs bedroom' target constraint. Significantly lower score due to location mismatch.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

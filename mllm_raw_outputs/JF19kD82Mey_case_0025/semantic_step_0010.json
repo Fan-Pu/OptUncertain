@@ -1,0 +1,201 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        5,
+        43
+      ],
+      "region_node_id": 52
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        12
+      ],
+      "region_node_id": 55
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        38
+      ],
+      "region_node_id": 57
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 5,
+      "raw_target_probs": {
+        "1": 0.4,
+        "3": 0.05,
+        "5": 0.02
+      },
+      "target_probs": {
+        "1": 0.37037037037037035,
+        "3": 0.10638297872340426,
+        "5": 0.024096385542168672
+      }
+    },
+    {
+      "id": 12,
+      "raw_target_probs": {
+        "1": 0.1,
+        "3": 0.15,
+        "5": 0.02
+      },
+      "target_probs": {
+        "1": 0.09259259259259259,
+        "3": 0.3191489361702127,
+        "5": 0.024096385542168672
+      }
+    },
+    {
+      "id": 15,
+      "raw_target_probs": {
+        "1": 0.01,
+        "3": 0.01,
+        "5": 0.01
+      },
+      "target_probs": {
+        "1": 0.009259259259259259,
+        "3": 0.02127659574468085,
+        "5": 0.012048192771084336
+      }
+    },
+    {
+      "id": 22,
+      "raw_target_probs": {
+        "1": 0.05,
+        "3": 0.05,
+        "5": 0.3
+      },
+      "target_probs": {
+        "1": 0.046296296296296294,
+        "3": 0.10638297872340426,
+        "5": 0.36144578313253006
+      }
+    },
+    {
+      "id": 33,
+      "raw_target_probs": {
+        "1": 0.02,
+        "3": 0.01,
+        "5": 0.2
+      },
+      "target_probs": {
+        "1": 0.018518518518518517,
+        "3": 0.02127659574468085,
+        "5": 0.24096385542168675
+      }
+    },
+    {
+      "id": 35,
+      "raw_target_probs": {
+        "1": 0.1,
+        "3": 0.1,
+        "5": 0.01
+      },
+      "target_probs": {
+        "1": 0.09259259259259259,
+        "3": 0.2127659574468085,
+        "5": 0.012048192771084336
+      }
+    },
+    {
+      "id": 38,
+      "raw_target_probs": {
+        "1": 0.05,
+        "3": 0.05,
+        "5": 0.25
+      },
+      "target_probs": {
+        "1": 0.046296296296296294,
+        "3": 0.10638297872340426,
+        "5": 0.3012048192771084
+      }
+    },
+    {
+      "id": 43,
+      "raw_target_probs": {
+        "1": 0.35,
+        "3": 0.05,
+        "5": 0.02
+      },
+      "target_probs": {
+        "1": 0.324074074074074,
+        "3": 0.10638297872340426,
+        "5": 0.024096385542168672
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 5,
+      "score_basis": {
+        "1": "Viewpoint 5 is in the open-plan living area near the patio window; target 1 requires a wooden cabinet near a patio window.",
+        "3": "Viewpoint 5 is in a living/dining transition area, not an office space with a desk and monitor required for target 3.",
+        "5": "Viewpoint 5 is on the ground floor living area; target 5 explicitly requires an upstairs bedroom location."
+      }
+    },
+    {
+      "id": 12,
+      "score_basis": {
+        "1": "Viewpoint 12 is located in the kitchen/dining transition area; no visible patio window or wooden cabinet matching target 1 constraints.",
+        "3": "Viewpoint 12 is near the kitchen island but lacks clear evidence of an office desk with monitor required for target 3.",
+        "5": "Viewpoint 12 is on the ground floor; target 5 requires an upstairs bedroom location."
+      }
+    },
+    {
+      "id": 15,
+      "score_basis": {
+        "1": "Viewpoint 15 is in a bathroom region; target 1 requires a wooden cabinet near a patio window, which contradicts bathroom setting.",
+        "3": "Viewpoint 15 is in a bathroom; target 3 requires an office desk with monitor, incompatible with bathroom environment.",
+        "5": "Viewpoint 15 is in a bathroom on unknown floor; target 5 requires upstairs bedroom, making this location contradictory."
+      }
+    },
+    {
+      "id": 22,
+      "score_basis": {
+        "1": "Viewpoint 22 is in the upstairs hallway/landing area; target 1 requires patio window access which is unlikely in hallway.",
+        "3": "Viewpoint 22 is in a hallway transition space; no office desk or monitor visible for target 3.",
+        "5": "Viewpoint 22 is in upstairs hallway near bedrooms; while not a bedroom itself, it is spatially close to potential upstairs bedroom locations for target 5."
+      }
+    },
+    {
+      "id": 33,
+      "score_basis": {
+        "1": "Viewpoint 33 is in upstairs hallway; target 1 requires patio window which is inconsistent with interior hallway location.",
+        "3": "Viewpoint 33 is in hallway without office furniture; target 3 requires desk and monitor setup.",
+        "5": "Viewpoint 33 is in upstairs hallway adjacent to bedroom areas; moderate proximity to potential upstairs bedroom locations for target 5."
+      }
+    },
+    {
+      "id": 35,
+      "score_basis": {
+        "1": "Viewpoint 35 is in kitchen/dining area; while indoor, no clear patio window or wooden cabinet visible for target 1.",
+        "3": "Viewpoint 35 is in kitchen area with counters but lacks specific office desk and monitor setup required for target 3.",
+        "5": "Viewpoint 35 is on ground floor kitchen area; target 5 explicitly requires upstairs bedroom location."
+      }
+    },
+    {
+      "id": 38,
+      "score_basis": {
+        "1": "Viewpoint 38 is in upstairs hallway near stairs; target 1 requires patio window access which is inconsistent with interior hallway.",
+        "3": "Viewpoint 38 is in hallway transition space without office furniture; target 3 requires desk and monitor.",
+        "5": "Viewpoint 38 is in upstairs hallway adjacent to bedroom areas; spatially close to potential upstairs bedroom locations for target 5."
+      }
+    },
+    {
+      "id": 43,
+      "score_basis": {
+        "1": "Viewpoint 43 is in living area near patio doors; potential match for target 1's patio window requirement though wooden cabinet not confirmed.",
+        "3": "Viewpoint 43 is in living area without visible office desk or monitor; target 3 requires specific office setup.",
+        "5": "Viewpoint 43 is on ground floor living area; target 5 requires upstairs bedroom location, making this contradictory."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

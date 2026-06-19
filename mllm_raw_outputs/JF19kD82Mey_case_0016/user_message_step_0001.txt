@@ -10,7 +10,7 @@ Compact shared graph summary:
 {
   "agent_current_vp_ids": {
     "agent0": 26,
-    "agent1": 24,
+    "agent1": 31,
     "agent2": 1
   },
   "edges": [],
@@ -65,17 +65,42 @@ Per-agent observation context:
   },
   {
     "agent_id": "agent1",
-    "current_viewpoint_index": 24,
+    "current_viewpoint_index": 31,
     "current_xy": [
-      -2.6815900802612305,
-      -1.437309980392456
+      12.975199699401855,
+      -6.968760013580322
     ],
     "image_index": 1,
     "prior_assigned_region_id": null,
     "prior_assigned_region_label": null,
     "prior_grounded": false,
     "prior_visit_times": 0,
-    "visible_viewpoints": []
+    "visible_viewpoints": [
+      {
+        "distance": 2.308,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 8,
+        "xy": [
+          14.951199531555176,
+          -5.77632999420166
+        ]
+      },
+      {
+        "distance": 4.346,
+        "prior_assigned_region_id": null,
+        "prior_assigned_region_label": null,
+        "prior_grounded": false,
+        "prior_visit_times": 0,
+        "viewpoint_index": 42,
+        "xy": [
+          12.863499641418457,
+          -2.6244099140167236
+        ]
+      }
+    ]
   },
   {
     "agent_id": "agent2",
@@ -145,20 +170,24 @@ Strict allowed-id rule:
 Current-step allowed viewpoint ids:
 [
   1,
+  8,
   16,
-  24,
   26,
   28,
+  31,
+  42,
   45
 ]
 
 Viewpoint ids requiring region assignment in this step:
 [
   1,
+  8,
   16,
-  24,
   26,
   28,
+  31,
+  42,
   45
 ]
 
@@ -171,6 +200,13 @@ Current-step viewpoint ids not requiring region assignment in this step:
 
 MLLM-updatable viewpoint target-probability context:
 [
+  {
+    "has_prior_raw_target_probs": false,
+    "id": 8,
+    "prior_raw_target_probs": {
+      "5": 0.0
+    }
+  },
   {
     "has_prior_raw_target_probs": false,
     "id": 16,
@@ -187,6 +223,13 @@ MLLM-updatable viewpoint target-probability context:
   },
   {
     "has_prior_raw_target_probs": false,
+    "id": 42,
+    "prior_raw_target_probs": {
+      "5": 0.0
+    }
+  },
+  {
+    "has_prior_raw_target_probs": false,
     "id": 45,
     "prior_raw_target_probs": {
       "5": 0.0
@@ -197,10 +240,16 @@ MLLM-updatable viewpoint target-probability context:
 Eligible viewpoint_target_scores update ids:
 [
   {
+    "id": 8
+  },
+  {
     "id": 16
   },
   {
     "id": 28
+  },
+  {
+    "id": 42
   },
   {
     "id": 45
@@ -248,8 +297,10 @@ Target probability rule:
 
 All non-current visible neighboring viewpoint ids:
 [
+  8,
   16,
   28,
+  42,
   45
 ]
 

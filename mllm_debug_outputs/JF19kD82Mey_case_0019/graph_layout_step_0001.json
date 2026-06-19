@@ -1,0 +1,232 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 38,
+    "agent1": 31,
+    "agent2": 1
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 28,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 8,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 11,
+      "j": 38,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 31,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 36,
+      "j": 38,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 38,
+      "j": 40,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        28
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "17d80d20c75b45e89949666e40f8df7e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "84055072c9154370bc2a76c86daf011c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        38
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 11,
+      "label": "68e4c4477aa442cbbb9a9f1e54b9b831",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 28,
+      "label": "8b29770bf446475b814d254d9b2670f6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        8,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "6ca981e907be49749ed4aead19864515",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        38
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 36,
+      "label": "a33fe858085149e8908942d0bf98767f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        11,
+        36,
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 38,
+      "label": "96490c4da78240058d1f76a07ed95c9d",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        38
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 40,
+      "label": "1d383b2f6a454cdbb4d942b127a12320",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 42,
+      "label": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        11,
+        36,
+        38,
+        40
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "open-plan living and dining area with spiral staircase",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        31,
+        42
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 51,
+      "label": "upstairs bedroom with curved projection wall display",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        28
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 52,
+      "label": "modern bathroom with dual sinks and louvered window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "50": [
+      11,
+      36,
+      38,
+      40
+    ],
+    "51": [
+      8,
+      31,
+      42
+    ],
+    "52": [
+      1,
+      28
+    ]
+  },
+  "viewpoint_to_region": {
+    "1": 52,
+    "8": 51,
+    "11": 50,
+    "28": 52,
+    "31": 51,
+    "36": 50,
+    "38": 50,
+    "40": 50,
+    "42": 51
+  }
+}

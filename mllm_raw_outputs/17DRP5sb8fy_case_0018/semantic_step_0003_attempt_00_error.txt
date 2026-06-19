@@ -1,0 +1,190 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "cond_exist_prob": 0.9,
+      "distance_mean": 1.2,
+      "distance_var": 1.0,
+      "exist_prob": 0.9,
+      "i": 5,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 0.85,
+      "distance_mean": 1.5,
+      "distance_var": 1.0,
+      "exist_prob": 0.85,
+      "i": 19,
+      "j": 25,
+      "type": "vv"
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        5,
+        36
+      ],
+      "region_node_id": 47
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        19,
+        25
+      ],
+      "region_node_id": 48
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        28
+      ],
+      "region_node_id": 46
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 5,
+      "target_scores": {
+        "1": {
+          "basis": "Viewpoint marker located in bathroom area with shower visible; matches toiletry bottles target constraints.",
+          "evidence_strength": "high",
+          "raw_score": 0.85
+        },
+        "3": {
+          "basis": "Bathroom location contradicts kitchen shelf constraint for bottled water.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 11,
+      "target_scores": {
+        "0": {
+          "basis": "Bedroom area with sofa and rug; pillow near headboard plausible but no direct bed view from marker.",
+          "evidence_strength": "medium",
+          "raw_score": 0.35
+        },
+        "5": {
+          "basis": "Bedroom seating area; throw pillow on armchair possible but armchair not clearly visible at marker.",
+          "evidence_strength": "low",
+          "raw_score": 0.15
+        }
+      }
+    },
+    {
+      "id": 19,
+      "target_scores": {
+        "0": {
+          "basis": "Hallway/entry transition space; no bedroom furniture or headboard visible for pillow target.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "3": {
+          "basis": "Transition area without kitchen shelving; contradicts kitchen shelf constraint.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "5": {
+          "basis": "No armchair or seating visible in hallway marker location.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 25,
+      "target_scores": {
+        "0": {
+          "basis": "Entry corridor near lounge; no bed or headboard evidence for pillow target.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "3": {
+          "basis": "Corridor space without kitchen shelves; contradicts target location constraints.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "5": {
+          "basis": "Near entertainment lounge but marker in corridor; no armchair visible at marker position.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        }
+      }
+    },
+    {
+      "id": 28,
+      "target_scores": {
+        "3": {
+          "basis": "Dining/living area adjacent to kitchen bar; bottled water on kitchen shelf plausible from nearby counter visibility.",
+          "evidence_strength": "medium",
+          "raw_score": 0.45
+        },
+        "5": {
+          "basis": "Living area with seating visible; armchair with throw pillow possible but not confirmed at marker.",
+          "evidence_strength": "low",
+          "raw_score": 0.15
+        }
+      }
+    },
+    {
+      "id": 32,
+      "target_scores": {
+        "0": {
+          "basis": "Bedroom area but prior high score reduced; no direct headboard/pillow evidence at this unvisited viewpoint.",
+          "evidence_strength": "low",
+          "raw_score": 0.15
+        },
+        "5": {
+          "basis": "Bedroom seating zone; armchair pillow possible but lower confidence without direct view.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        }
+      }
+    },
+    {
+      "id": 36,
+      "target_scores": {
+        "1": {
+          "basis": "Bathroom entrance area; shower niche for toiletry bottles highly probable based on room type.",
+          "evidence_strength": "high",
+          "raw_score": 0.8
+        },
+        "3": {
+          "basis": "Bathroom location contradicts kitchen shelf requirement for bottled water.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 40,
+      "target_scores": {
+        "0": {
+          "basis": "Entertainment lounge with tufted seating; pillow target requires bedroom headboard, not present here.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "5": {
+          "basis": "Lounge area with armchairs and pillows visible; green patterned throw pillow on brown armchair plausible.",
+          "evidence_strength": "medium",
+          "raw_score": 0.4
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 47,
+      "label": "bathroom area with shower and vanity near dining space"
+    },
+    {
+      "id": 48,
+      "label": "entry hallway corridor leading to entertainment lounge"
+    }
+  ]
+}

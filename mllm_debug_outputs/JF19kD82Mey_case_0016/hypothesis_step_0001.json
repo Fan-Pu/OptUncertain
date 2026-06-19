@@ -18,6 +18,16 @@
     },
     {
       "cond_exist_prob": 1.0,
+      "distance_mean": 2.308,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
       "distance_mean": 1.981,
       "distance_var": 0.0,
       "exist_prob": 1.0,
@@ -34,6 +44,16 @@
       "grounded": true,
       "i": 26,
       "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.346,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 42,
       "type": "vv"
     }
   ],
@@ -57,6 +77,24 @@
     {
       "exist_prob": 1.0,
       "grounded": false,
+      "id": 8,
+      "label": "84055072c9154370bc2a76c86daf011c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "5": 0.9
+      },
+      "target_probs": {
+        "5": 0.46153846153846156
+      },
+      "target_score_basis": {
+        "5": "Viewpoint is in upstairs bedroom with bed visible, matching target location cues"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
       "id": 16,
       "label": "6be9623980e245ce80ced0bdb70db93c",
       "latent_exist_prob": 1.0,
@@ -65,27 +103,11 @@
         "5": 0.05
       },
       "target_probs": {
-        "5": 0.3333333333333333
+        "5": 0.025641025641025644
       },
       "target_score_basis": {
-        "5": "Viewpoint 16 is located in the kitchen/living area on the ground floor, while the target is explicitly described as being in an upstairs bedroom; this location contradicts the floor cue."
+        "5": "Viewpoint is in kitchen/living area, not an upstairs bedroom; contradicts target room cue"
       },
-      "type": "viewpoint"
-    },
-    {
-      "exist_prob": 1.0,
-      "grounded": true,
-      "id": 24,
-      "label": "2ade9ff61be94782b425dd9f04d7847d",
-      "latent_exist_prob": 1.0,
-      "node_visit_times": 1,
-      "raw_target_probs": {
-        "5": 0.0
-      },
-      "target_probs": {
-        "5": 0.0
-      },
-      "target_score_basis": {},
       "type": "viewpoint"
     },
     {
@@ -115,10 +137,44 @@
         "5": 0.05
       },
       "target_probs": {
-        "5": 0.3333333333333333
+        "5": 0.025641025641025644
       },
       "target_score_basis": {
-        "5": "Viewpoint 28 is visible from a bathroom area (viewpoint 1), which is not an upstairs bedroom; no bed or bedroom furniture is visible at this marker location."
+        "5": "Viewpoint is in bathroom, not an upstairs bedroom; contradicts target room cue"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "6ca981e907be49749ed4aead19864515",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "5": 0.0
+      },
+      "target_probs": {
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 42,
+      "label": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "5": 0.9
+      },
+      "target_probs": {
+        "5": 0.46153846153846156
+      },
+      "target_score_basis": {
+        "5": "Viewpoint is in upstairs bedroom with bed visible, matching target location cues"
       },
       "type": "viewpoint"
     },
@@ -133,10 +189,10 @@
         "5": 0.05
       },
       "target_probs": {
-        "5": 0.3333333333333333
+        "5": 0.025641025641025644
       },
       "target_score_basis": {
-        "5": "Viewpoint 45 is in the kitchen/dining area on the ground floor, contradicting the explicit 'upstairs bedroom' constraint for the target."
+        "5": "Viewpoint is in kitchen/living area, not an upstairs bedroom; contradicts target room cue"
       },
       "type": "viewpoint"
     },
@@ -149,7 +205,7 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 50,
-      "label": "modern kitchen and living area with large island and glass doors to patio",
+      "label": "modern kitchen and living area with island counter",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {},
@@ -159,12 +215,14 @@
     },
     {
       "assigned_viewpoint_ids": [
-        24
+        8,
+        31,
+        42
       ],
       "exist_prob": 1.0,
       "grounded": true,
       "id": 51,
-      "label": "upstairs bedroom with wooden headboard wall and curved glass balcony overlooking water",
+      "label": "upstairs bedroom with white bedding and wall decorations",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {},
@@ -180,7 +238,7 @@
       "exist_prob": 1.0,
       "grounded": true,
       "id": 52,
-      "label": "bathroom area with dual sinks and curved louvered window wall",
+      "label": "bathroom with dual sinks and heated towel racks",
       "latent_exist_prob": 1.0,
       "node_visit_times": 0,
       "raw_target_probs": {},

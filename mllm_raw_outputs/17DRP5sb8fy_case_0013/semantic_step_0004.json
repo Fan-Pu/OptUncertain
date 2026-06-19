@@ -1,0 +1,117 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        3,
+        5,
+        37
+      ],
+      "region_node_id": 46
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 3,
+      "raw_target_probs": {
+        "3": 0.01,
+        "5": 0.01
+      },
+      "target_probs": {
+        "3": 0.007518796992481203,
+        "5": 0.012345679012345678
+      }
+    },
+    {
+      "id": 5,
+      "raw_target_probs": {
+        "3": 0.85,
+        "5": 0.3
+      },
+      "target_probs": {
+        "3": 0.6390977443609022,
+        "5": 0.37037037037037035
+      }
+    },
+    {
+      "id": 18,
+      "raw_target_probs": {
+        "3": 0.02,
+        "5": 0.35
+      },
+      "target_probs": {
+        "3": 0.015037593984962405,
+        "5": 0.4320987654320987
+      }
+    },
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "3": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "3": 0.03759398496240601,
+        "5": 0.06172839506172839
+      }
+    },
+    {
+      "id": 37,
+      "raw_target_probs": {
+        "3": 0.4,
+        "5": 0.1
+      },
+      "target_probs": {
+        "3": 0.3007518796992481,
+        "5": 0.12345679012345678
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 3,
+      "score_basis": {
+        "3": "Viewpoint 3 is located inside a bathroom (visible toilet and shower), which contradicts the 'kitchen shelf' constraint for target 3.",
+        "5": "Viewpoint 3 is a bathroom with no visible seating or throw pillows, contradicting the 'brown armchair' constraint for target 5."
+      }
+    },
+    {
+      "id": 5,
+      "score_basis": {
+        "3": "Viewpoint 5 marker is inside a kitchen area with visible counters and shelving, strongly matching the 'kitchen shelf' constraint for bottled water.",
+        "5": "Viewpoint 5 is a kitchen area; while kitchens may have seating, the primary evidence supports target 3, making target 5 less likely here than in a living area."
+      }
+    },
+    {
+      "id": 18,
+      "score_basis": {
+        "3": "Prior score preserved; viewpoint 18 is in the luxury bedroom region, lacking kitchen cues for target 3.",
+        "5": "Prior score preserved; viewpoint 18 is in a bedroom with tufted walls, plausible for a throw pillow but less specific than a direct armchair match."
+      }
+    },
+    {
+      "id": 19,
+      "score_basis": {
+        "3": "Viewpoint 19 is in a hallway corridor, offering no kitchen shelf evidence for target 3.",
+        "5": "Viewpoint 19 is a hallway with no visible armchairs, providing weak support for target 5."
+      }
+    },
+    {
+      "id": 37,
+      "score_basis": {
+        "3": "Viewpoint 37 is near the entrance/kitchen transition but further from the core kitchen shelves than viewpoint 5.",
+        "5": "Viewpoint 37 is in a transition/entry area with no visible armchairs, offering low support for target 5."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 46,
+      "label": "kitchen and entry area with white cabinetry and dark flooring"
+    }
+  ]
+}

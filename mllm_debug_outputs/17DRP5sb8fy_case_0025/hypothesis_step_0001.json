@@ -1,0 +1,468 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.085,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.266,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.413,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 14,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.674,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.953,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 23,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.755,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.401,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 29,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.911,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 34,
+      "j": 35,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "51857544c192476faebf212acb1b3d90",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.85,
+        "1": 0.15,
+        "2": 0.45,
+        "3": 0.1,
+        "4": 0.12
+      },
+      "target_probs": {
+        "0": 0.31481481481481477,
+        "1": 0.09374999999999997,
+        "2": 0.1764705882352941,
+        "3": 0.08333333333333334,
+        "4": 0.09448818897637794
+      },
+      "target_score_basis": {
+        "0": "Viewpoint inside bedroom area with bed and headboard visible; matches pillow target location constraints.",
+        "1": "Bedroom viewpoint; bathroom fixtures not directly visible here but adjacent via VP 14.",
+        "2": "Bedroom area; bathrobe typically hangs in bathroom or bedroom closet, possible but not confirmed.",
+        "3": "Bedroom/living area; kitchen shelf not visible from this viewpoint.",
+        "4": "Bedroom area; toilet not visible, bathroom is adjacent but separate."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 9,
+      "label": "85c23efeaecd4d43a7dcd5b90137179e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.15,
+        "3": 0.1,
+        "4": 0.1
+      },
+      "target_probs": {
+        "0": 0.037037037037037035,
+        "1": 0.06249999999999999,
+        "2": 0.0588235294117647,
+        "3": 0.08333333333333334,
+        "4": 0.07874015748031495
+      },
+      "target_score_basis": {
+        "0": "Lounge area with tufted seating; no bed or headboard visible for pillow target.",
+        "1": "Transition/lounge space; no shower niche visible.",
+        "2": "Lounge area; no bathroom wall or hanging robe visible.",
+        "3": "Lounge area; kitchen shelf not in view.",
+        "4": "Lounge area; no toilet or bathroom fixtures visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 14,
+      "label": "1e86968849944444b66d9537efb5da9e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.9,
+        "2": 0.8,
+        "3": 0.05,
+        "4": 0.5
+      },
+      "target_probs": {
+        "0": 0.018518518518518517,
+        "1": 0.5624999999999999,
+        "2": 0.3137254901960784,
+        "3": 0.04166666666666667,
+        "4": 0.3937007874015747
+      },
+      "target_score_basis": {
+        "0": "Bathroom viewpoint; pillow target is bedroom-specific near headboard.",
+        "1": "Bathroom with shower wall niche visible; direct match for toiletry bottles target.",
+        "2": "Bathroom with wooden wall elements; bathrobe likely hangs here.",
+        "3": "Bathroom area; kitchen shelf not visible.",
+        "4": "Bathroom viewpoint; toilet tank may be present but not clearly visible in marker area."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 18,
+      "label": "f4d03f729dfc49068db327584455e975",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "3a6d2322867f40d9a3d2758ab88df288",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.05,
+        "2": 0.1,
+        "3": 0.1,
+        "4": 0.05
+      },
+      "target_probs": {
+        "0": 0.037037037037037035,
+        "1": 0.031249999999999997,
+        "2": 0.0392156862745098,
+        "3": 0.08333333333333334,
+        "4": 0.03937007874015747
+      },
+      "target_score_basis": {
+        "0": "Living area with sofa; no bed or headboard for pillow target.",
+        "1": "Living area; no shower niche visible.",
+        "2": "Living area; no bathroom wall for bathrobe.",
+        "3": "Living area; kitchen shelf not in view.",
+        "4": "Living area; no toilet visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 23,
+      "label": "30c97842da204e6290ac32904c924e17",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.05,
+        "2": 0.1,
+        "3": 0.1,
+        "4": 0.05
+      },
+      "target_probs": {
+        "0": 0.037037037037037035,
+        "1": 0.031249999999999997,
+        "2": 0.0392156862745098,
+        "3": 0.08333333333333334,
+        "4": 0.03937007874015747
+      },
+      "target_score_basis": {
+        "0": "Living area near windows; no bed or headboard visible.",
+        "1": "Living area; no shower niche.",
+        "2": "Living area; no bathroom wall.",
+        "3": "Living area; kitchen shelf not visible.",
+        "4": "Living area; no toilet visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "23ec8bbec8eb40478411cba2e55b732e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.5,
+        "1": 0.15,
+        "2": 0.4,
+        "3": 0.1,
+        "4": 0.2
+      },
+      "target_probs": {
+        "0": 0.18518518518518517,
+        "1": 0.09374999999999997,
+        "2": 0.1568627450980392,
+        "3": 0.08333333333333334,
+        "4": 0.1574803149606299
+      },
+      "target_score_basis": {
+        "0": "Bedroom-adjacent living space; bed partially visible in distance, possible pillow location.",
+        "1": "Near bedroom/bathroom transition; shower niche not directly visible.",
+        "2": "Near bedroom area; bathrobe could hang nearby but not confirmed.",
+        "3": "Bedroom/living area; kitchen shelf not visible.",
+        "4": "Near bathroom; toilet not directly visible from this viewpoint."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 29,
+      "label": "701f7128272a4bb2acd9dbd89b5cdf6f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "3": 0.6,
+        "4": 0.1
+      },
+      "target_probs": {
+        "0": 0.037037037037037035,
+        "1": 0.06249999999999999,
+        "2": 0.0392156862745098,
+        "3": 0.5,
+        "4": 0.07874015748031495
+      },
+      "target_score_basis": {
+        "0": "Dining/living area; no bed or headboard visible for pillow target.",
+        "1": "Dining area with kitchen visible in background; shower niche not in view.",
+        "2": "Dining/living area; no bathroom wall for bathrobe.",
+        "3": "Kitchen area visible in background; bottled water on shelf plausible.",
+        "4": "Dining area; bathroom/toilet not directly visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "d65b6505904448d1940e679c9a098047",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 34,
+      "label": "8a0f2f1a8ea441658501561e5dc34a3e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "50c241453dfd45c1ba95b5d7191982ef",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.9,
+        "1": 0.1,
+        "2": 0.45,
+        "3": 0.05,
+        "4": 0.15
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "1": 0.06249999999999999,
+        "2": 0.1764705882352941,
+        "3": 0.04166666666666667,
+        "4": 0.11811023622047241
+      },
+      "target_score_basis": {
+        "0": "Bedroom area with bed and headboard clearly visible; strong match for pillow target.",
+        "1": "Bedroom area; bathroom shower niche not visible from this angle.",
+        "2": "Bedroom area; bathrobe may hang in closet or bathroom, possible but not confirmed.",
+        "3": "Bedroom area; kitchen shelf not visible.",
+        "4": "Bedroom area; toilet not visible, bathroom adjacent but separate."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        14,
+        20,
+        23,
+        26,
+        34,
+        35
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "bright hotel suite bedroom and living area with large windows and modern furniture",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        18
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "luxury lounge area with gold tufted seating and dark ceiling",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        29,
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 46,
+      "label": "modern dining area with white chairs and glass table near kitchen",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": false,
+    "3": false,
+    "4": false,
+    "5": true,
+    "6": true,
+    "7": true
+  }
+}

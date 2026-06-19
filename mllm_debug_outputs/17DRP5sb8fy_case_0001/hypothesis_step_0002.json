@@ -1,0 +1,105 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.939,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 13,
+      "j": 29,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.401,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 29,
+      "j": 31,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 13,
+      "label": "c429b363fd3145fe8a7631bbe9644066",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05
+      },
+      "target_probs": {
+        "0": 1.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 13 is unvisited and connected to the current living/dining area; target pillow likely in adjacent bedroom not yet observed, so low score based on route proximity only."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 29,
+      "label": "701f7128272a4bb2acd9dbd89b5cdf6f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0
+      },
+      "target_probs": {
+        "0": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "d65b6505904448d1940e679c9a098047",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0
+      },
+      "target_probs": {
+        "0": 0.0
+      },
+      "target_score_basis": {
+        "0": "Living/dining area viewpoint with windows and seating; no bedroom furniture or headboard visible for pillow placement."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        13,
+        29,
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern living and dining area with glass table and white chairs",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false
+  }
+}
