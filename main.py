@@ -1681,16 +1681,31 @@ def main(argv: List[str] | None = None) -> int:
         action="store_true",
         help="Hide interactive agent observation and rotation windows.",
     )
+    parser.add_argument(
+        "--wait-for-debugger",
+        action="store_true",
+        help="Wait for a debugpy client before running an oracle.",
+    )
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
-
-    if args.oracle:
-        from oracle_runner import run_oracle
-
-        run_oracle(args.case_or_config)
-        return 0
 
     config_path = _resolve_scenario_config(args.case_or_config)
     raw_config = _read_json(config_path)
+
+    if args.oracle:
+        from oracle_runner import run_batch_oracles, run_oracle
+
+        if isinstance(raw_config, dict) and is_batch_config(raw_config):
+            run_batch_oracles(
+                config_path,
+                wait_for_debugger=args.wait_for_debugger,
+            )
+        else:
+            run_oracle(
+                config_path,
+                wait_for_debugger=args.wait_for_debugger,
+            )
+        return 0
+
     if isinstance(raw_config, dict) and is_batch_config(raw_config):
         result = run_batch_config(
             config_path,

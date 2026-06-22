@@ -41,6 +41,7 @@ class RollingHorizonOptimizer:
         self.minimize_distance_after_targets = bool(
             optimizer_config.get("minimize_distance_after_targets", False)
         )
+        self.write_model_lp = bool(optimizer_config.get("write_model_lp", True))
 
     def solve(
         self,
@@ -639,7 +640,7 @@ class RollingHorizonOptimizer:
         # model.addConstr(x[9, 41, agent_ids[1]] == 1)
 
         model.update()
-        self._write_model(model)
+        self._write_model_if_enabled(model)
         self._print_model_size(model)
         print("Optimizing model...")
         model.optimize()
@@ -730,6 +731,10 @@ class RollingHorizonOptimizer:
             "objective_terms": objective_terms,
             "selected_edges": selected_edges,
         }
+
+    def _write_model_if_enabled(self, model: Model) -> None:
+        if self.write_model_lp:
+            self._write_model(model)
 
     def _write_model(self, model: Model) -> None:
         model.write("optimization_model.lp")

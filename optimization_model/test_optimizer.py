@@ -993,6 +993,19 @@ class MultiAgentOptimizerTest(unittest.TestCase):
         self.assertFalse(optimizer.force_positive_target_assignment)
         self.assertFalse(optimizer.minimize_distance_after_targets)
 
+    def test_write_model_lp_false_skips_model_write(self):
+        optimizer = RollingHorizonOptimizer(dict(OPTIMIZER_CONFIG, write_model_lp=False))
+        calls = []
+
+        def fail_write_model(model):
+            calls.append(model)
+
+        optimizer._write_model = fail_write_model
+        optimizer._write_model_if_enabled(object())
+
+        self.assertEqual(calls, [])
+        self.assertFalse(optimizer.write_model_lp)
+
     def test_target_directed_mode_enables_unique_positive_raw_assignments(self):
         optimizer = RollingHorizonOptimizer(TARGET_DIRECTED_OPTIMIZER_CONFIG)
 
