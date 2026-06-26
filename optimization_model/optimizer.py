@@ -204,7 +204,8 @@ class RollingHorizonOptimizer:
                 )
 
         model = Model("multi_agent_many_to_many")
-        model.Params.OutputFlag = 0
+        model.Params.OutputFlag = 1
+        model.Params.TimeLimit = 30.0
 
         x = {}
         for agent_id in agent_ids:
@@ -646,8 +647,8 @@ class RollingHorizonOptimizer:
         model.optimize()
         print("Total time for optimization: %s seconds" % model.Runtime)
 
-        if model.Status != GRB.OPTIMAL:
-            raise RuntimeError("Optimizer did not find an optimal solution.")
+        self._assert_accepted_solver_status(model)
+        solver_metadata = self._solver_metadata(model)
 
         agent_paths = {}
         selected_edges = {}
@@ -730,7 +731,67 @@ class RollingHorizonOptimizer:
             "objective_value": model.ObjVal,
             "objective_terms": objective_terms,
             "selected_edges": selected_edges,
+            "solver": solver_metadata,
         }
+
+    @classmethod
+    def _assert_accepted_solver_status(cls, model) -> None:
+        status = int(model.Status)
+        if status == GRB.OPTIMAL:
+            return
+        if status == GRB.TIME_LIMIT and int(model.SolCount) > 0:
+            print("Gurobi reached TimeLimit with a feasible incumbent; using incumbent.")
+            return
+        if status == GRB.TIME_LIMIT:
+            raise RuntimeError(
+                "Optimizer reached the time limit without a feasible incumbent solution."
+            )
+        raise RuntimeError(
+            "Optimizer did not find an optimal solution or a time-limit incumbent. "
+            "Gurobi status: %s."
+            % cls._solver_status_name(status)
+        )
+
+    @staticmethod
+    def _solver_status_name(status: int) -> str:
+        status_names = {
+            GRB.LOADED: "LOADED",
+            GRB.OPTIMAL: "OPTIMAL",
+            GRB.INFEASIBLE: "INFEASIBLE",
+            GRB.INF_OR_UNBD: "INF_OR_UNBD",
+            GRB.UNBOUNDED: "UNBOUNDED",
+            GRB.CUTOFF: "CUTOFF",
+            GRB.ITERATION_LIMIT: "ITERATION_LIMIT",
+            GRB.NODE_LIMIT: "NODE_LIMIT",
+            GRB.TIME_LIMIT: "TIME_LIMIT",
+            GRB.SOLUTION_LIMIT: "SOLUTION_LIMIT",
+            GRB.INTERRUPTED: "INTERRUPTED",
+            GRB.NUMERIC: "NUMERIC",
+            GRB.SUBOPTIMAL: "SUBOPTIMAL",
+            GRB.INPROGRESS: "INPROGRESS",
+            GRB.USER_OBJ_LIMIT: "USER_OBJ_LIMIT",
+            GRB.WORK_LIMIT: "WORK_LIMIT",
+            GRB.MEM_LIMIT: "MEM_LIMIT",
+        }
+        return status_names.get(int(status), str(int(status)))
+
+    @classmethod
+    def _solver_metadata(cls, model) -> Dict[str, object]:
+        status = int(model.Status)
+        is_multi_objective = int(model.NumObj) > 1
+        metadata = {
+            "status": status,
+            "status_name": cls._solver_status_name(status),
+            "runtime_seconds": float(model.Runtime),
+            "solution_count": int(model.SolCount),
+            "objective_value": float(model.ObjVal),
+            "used_time_limit_incumbent": bool(status == GRB.TIME_LIMIT),
+            "is_multi_objective": is_multi_objective,
+        }
+        if not is_multi_objective:
+            metadata["objective_bound"] = float(model.ObjBound)
+            metadata["mip_gap"] = float(model.MIPGap)
+        return metadata
 
     def _write_model_if_enabled(self, model: Model) -> None:
         if self.write_model_lp:

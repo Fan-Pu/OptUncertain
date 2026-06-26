@@ -1,0 +1,124 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.071,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 24,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.829,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 24,
+      "j": 49,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.04,
+        "4": 0.03,
+        "6": 0.03
+      },
+      "target_probs": {
+        "0": 0.5,
+        "4": 0.5,
+        "6": 0.5
+      },
+      "target_score_basis": {
+        "0": "hallway viewpoint with no wooden desk, map, or vintage radio visible; only route access to potential study areas",
+        "4": "hallway viewpoint with no dining room window, white candle, or black holder visible",
+        "6": "hallway viewpoint with no television, wall shelf, or number 8 ornament visible"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 24,
+      "label": "b6ca0cc195da4688ba67fa53f0345b98",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 49,
+      "label": "935e0f6088a54fba87990835d1997d9a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.04,
+        "4": 0.03,
+        "6": 0.03
+      },
+      "target_probs": {
+        "0": 0.5,
+        "4": 0.5,
+        "6": 0.5
+      },
+      "target_score_basis": {
+        "0": "hallway viewpoint near slatted wall feature with no wooden desk, map, or vintage radio visible",
+        "4": "hallway viewpoint near slatted wall feature with no dining room window or candle visible",
+        "6": "hallway viewpoint near slatted wall feature with no television or wall shelf visible"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        24,
+        49
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bright central hallway with wooden ceiling and light tile flooring connecting surrounding rooms",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "4": false,
+    "6": false,
+    "7": true
+  }
+}

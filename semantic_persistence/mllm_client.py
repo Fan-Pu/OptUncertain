@@ -34,9 +34,10 @@ GRAPH_MAX_NEW_TOKENS = 32768
 panorama_max_width_for_prompt = 1660
 DETECTION_IMAGE_MAX_WIDTH = 1980
 DETECTION_IMAGE_JPEG_QUALITY = 85
+GRAPH_IMAGE_MAX_WIDTH = 1660
+GRAPH_IMAGE_JPEG_QUALITY = 85
 
-detect_thinking = False
-graph_thinking = False
+THINKING_MODES = {"enabled", "adaptive", "disabled"}
 
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
@@ -132,6 +133,8 @@ class MLLMClient:
         raw_debug_dir: str = "mllm_debug_outputs",
         max_validation_retries: int = 2,
         max_request_timeout_retries: int = 1,
+        detection_thinking: str | None = None,
+        graph_thinking: str | None = None,
     ):
         self.graph_model_name = graph_model_name
         self.detection_model_name = detection_model_name
@@ -149,6 +152,14 @@ class MLLMClient:
         self.last_direct_detections = []
         self.graph_api_key_env = str(graph_api_key_env)
         self.detection_api_key_env = str(detection_api_key_env)
+        self.detection_thinking = self._normalize_thinking_mode(
+            detection_thinking,
+            "detection_thinking",
+        )
+        self.graph_thinking = self._normalize_thinking_mode(
+            graph_thinking,
+            "graph_thinking",
+        )
         self.graph_client = self._create_openai_client(
             base_url=self.graph_base_url,
             api_key_env=self.graph_api_key_env,
@@ -181,6 +192,20 @@ class MLLMClient:
             api_key=api_key,
             timeout=self.request_timeout,
         )
+
+    @staticmethod
+    def _normalize_thinking_mode(value: object, field_name: str) -> str | None:
+        if value is None:
+            return None
+        normalized = str(value).strip().lower()
+        if not normalized:
+            return None
+        if normalized not in THINKING_MODES:
+            raise ValueError(
+                "%s must be exactly one of %s."
+                % (field_name, ", ".join(sorted(THINKING_MODES)))
+            )
+        return normalized
 
     @staticmethod
     def _strip_code_fences(raw_text: str) -> str:
@@ -337,29 +362,13 @@ class MLLMClient:
             message=message,
         )
 
-    def _request_completion(
+    def _build_completion_request_kwargs(
         self,
         messages,
         model_name: str,
-        request_type: str = "graph",
-        thinking_mode: bool = False,
-    ) -> str:
-        if request_type == "detection":
-            client = self.detection_client
-            api_key_env = self.detection_api_key_env
-            router_name = "detection"
-        else:
-            client = self.graph_client
-            api_key_env = self.graph_api_key_env
-            router_name = "graph"
-
-        if client is None:
-            raise RuntimeError(
-                "No %s MLLM API client is available. A saved raw output file was "
-                "missing or invalid, so the code tried to request the MLLM, but "
-                "environment variable %s is not set." % (router_name, api_key_env)
-            )
-
+        request_type: str,
+        thinking_mode: str | None,
+    ) -> Dict[str, object]:
         if request_type == "detection":
             temperature = DETECTION_TEMPERATURE
             top_p = DETECTION_TOP_P
@@ -384,11 +393,10 @@ class MLLMClient:
                 "top_k": top_k,
                 "min_p": MIN_P,
                 "repetition_penalty": REPETITION_PENALTY,
-                "chat_template_kwargs": {
-                    "enable_thinking": bool(thinking_mode),
-                },
             },
         }
+        if thinking_mode is not None:
+            request_kwargs["extra_body"]["thinking"] = {"type": thinking_mode}
 
         if request_type == "detection":
             request_kwargs["tools"] = [self._detection_tool_definition()]
@@ -399,6 +407,39 @@ class MLLMClient:
             request_kwargs["parallel_tool_calls"] = False
         else:
             request_kwargs["response_format"] = {"type": "json_object"}
+
+        return request_kwargs
+
+    def _request_completion(
+        self,
+        messages,
+        model_name: str,
+        request_type: str = "graph",
+    ) -> str:
+        if request_type == "detection":
+            client = self.detection_client
+            api_key_env = self.detection_api_key_env
+            router_name = "detection"
+            thinking_mode = self.detection_thinking
+        else:
+            client = self.graph_client
+            api_key_env = self.graph_api_key_env
+            router_name = "graph"
+            thinking_mode = self.graph_thinking
+
+        if client is None:
+            raise RuntimeError(
+                "No %s MLLM API client is available. A saved raw output file was "
+                "missing or invalid, so the code tried to request the MLLM, but "
+                "environment variable %s is not set." % (router_name, api_key_env)
+            )
+
+        request_kwargs = self._build_completion_request_kwargs(
+            messages=messages,
+            model_name=model_name,
+            request_type=request_type,
+            thinking_mode=thinking_mode,
+        )
 
         try:
             completion = client.chat.completions.create(**request_kwargs)
@@ -419,13 +460,6 @@ class MLLMClient:
                 raise provider_credit_error from exc
 
             message = str(exc)
-
-            if "chat_template_kwargs" in message or "enable_thinking" in message:
-                raise RuntimeError(
-                    "The current provider did not accept thinking-mode parameters. "
-                    "For Qwen/Qwen3-VL-30B-A3B-Instruct, remove enable_thinking. "
-                    "Use a Thinking-version model only if the provider explicitly supports it."
-                ) from exc
 
             if "model_not_found" in message or "does not exist" in message:
                 raise RuntimeError(
@@ -1744,6 +1778,8 @@ class MLLMClient:
         for image_index, observation in enumerate(agent_observations):
             graph_panorama_bytes = self._resize_panorama_array(
                 observation["annotated_panorama"],
+                max_width=GRAPH_IMAGE_MAX_WIDTH,
+                jpeg_quality=GRAPH_IMAGE_JPEG_QUALITY,
             )
             self._write_observation_image(
                 step_index=step_index,
@@ -1839,7 +1875,6 @@ class MLLMClient:
                     messages=messages,
                     model_name=getattr(self, "detection_model_name", ""),
                     request_type="detection",
-                    thinking_mode=detect_thinking,
                 )
                 raw = self._strip_code_fences(decoded)
                 payload = self._parse_json_strict(raw)
@@ -2615,7 +2650,6 @@ class MLLMClient:
                         messages=messages,
                         model_name=getattr(self, "graph_model_name", ""),
                         request_type="graph",
-                        thinking_mode=graph_thinking,
                     )
                 except MLLMProviderCreditError as exc:
                     exc.step_index = int(step_index)
@@ -2864,19 +2898,25 @@ class MLLMClient:
             value /= 1024.0
         return f"{num_bytes} B"
 
-    def _print_request_size_report(self, messages, model_name: str) -> None:
-        payload = {
-            "model": model_name,
-            "messages": messages,
-            "temperature": 0.0,
-            "top_p": 1.0,
-            "seed": 42,
-            "max_tokens": self.max_new_tokens,
-            "response_format": {"type": "json_object"},
-        }
+    @staticmethod
+    def _request_payload_size_bytes(request_kwargs: Dict[str, object]) -> int:
+        payload_text = json.dumps(request_kwargs, ensure_ascii=False)
+        return len(payload_text.encode("utf-8"))
 
-        payload_text = json.dumps(payload, ensure_ascii=False)
-        total_bytes = len(payload_text.encode("utf-8"))
+    def _print_request_size_report(
+        self,
+        messages,
+        model_name: str,
+        request_type: str = "graph",
+        thinking_mode: str | None = None,
+    ) -> None:
+        request_kwargs = self._build_completion_request_kwargs(
+            messages=messages,
+            model_name=model_name,
+            request_type=request_type,
+            thinking_mode=thinking_mode,
+        )
+        total_bytes = self._request_payload_size_bytes(request_kwargs)
 
         print("\n========== MLLM request size report ==========")
         print(f"Total JSON payload size: {self._format_bytes(total_bytes)}")
