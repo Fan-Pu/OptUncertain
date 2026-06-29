@@ -29,7 +29,7 @@ GRAPH_PRESENCE_PENALTY = 1.5
 MIN_P = 0.0
 REPETITION_PENALTY = 1.0
 
-DETECTION_MAX_NEW_TOKENS = 512
+DETECTION_MAX_NEW_TOKENS = 4096
 GRAPH_MAX_NEW_TOKENS = 32768
 panorama_max_width_for_prompt = 1660
 DETECTION_IMAGE_MAX_WIDTH = 1980
@@ -38,6 +38,7 @@ GRAPH_IMAGE_MAX_WIDTH = 1660
 GRAPH_IMAGE_JPEG_QUALITY = 85
 
 THINKING_MODES = {"enabled", "adaptive", "disabled"}
+API_TYPES = {"chat_completions", "openai_responses"}
 
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
@@ -118,6 +119,8 @@ class MLLMProviderCreditError(RuntimeError):
 
 
 class MLLMClient:
+    _global_response_format_unsupported_request_keys = set()
+
     def __init__(
         self,
         graph_model_name: str = "",  # read from config
@@ -126,6 +129,8 @@ class MLLMClient:
         detection_base_url: str = "",
         graph_api_key_env: str = "",
         detection_api_key_env: str = "",
+        graph_api_type: str = "chat_completions",
+        detection_api_type: str = "chat_completions",
         request_timeout: float = 120.0,
         save_debug_images: bool = True,
         read_saved_raw_outputs: bool = False,
@@ -152,6 +157,14 @@ class MLLMClient:
         self.last_direct_detections = []
         self.graph_api_key_env = str(graph_api_key_env)
         self.detection_api_key_env = str(detection_api_key_env)
+        self.graph_api_type = self._normalize_api_type(
+            graph_api_type,
+            "graph_api_type",
+        )
+        self.detection_api_type = self._normalize_api_type(
+            detection_api_type,
+            "detection_api_type",
+        )
         self.detection_thinking = self._normalize_thinking_mode(
             detection_thinking,
             "detection_thinking",
@@ -171,6 +184,9 @@ class MLLMClient:
             router_name="detection",
         )
         self.client = self.graph_client
+        self._response_format_unsupported_request_keys = (
+            self.__class__._global_response_format_unsupported_request_keys
+        )
 
     def _create_openai_client(
         self,
@@ -187,11 +203,31 @@ class MLLMClient:
                 % (api_key_env, router_name)
             )
 
-        return OpenAI(
-            base_url=base_url,
-            api_key=api_key,
-            timeout=self.request_timeout,
-        )
+        client_kwargs = {
+            "api_key": api_key,
+            "timeout": self.request_timeout,
+        }
+        if str(base_url).strip():
+            client_kwargs["base_url"] = str(base_url)
+        return OpenAI(**client_kwargs)
+
+    @staticmethod
+    def _normalize_api_type(value: object, field_name: str) -> str:
+        normalized = str(value or "chat_completions").strip().lower()
+        aliases = {
+            "chat": "chat_completions",
+            "chat_completion": "chat_completions",
+            "chat_completions": "chat_completions",
+            "responses": "openai_responses",
+            "openai_response": "openai_responses",
+            "openai_responses": "openai_responses",
+        }
+        if normalized not in aliases:
+            raise ValueError(
+                "%s must be exactly one of %s."
+                % (field_name, ", ".join(sorted(API_TYPES)))
+            )
+        return aliases[normalized]
 
     @staticmethod
     def _normalize_thinking_mode(value: object, field_name: str) -> str | None:
@@ -253,6 +289,43 @@ class MLLMClient:
             raise ValueError("The model output must be a JSON object.")
 
         return parsed
+
+    @classmethod
+    def _parse_json_strict_with_repaired_object_bounds(
+        cls,
+        raw_text: str,
+    ) -> tuple[Dict[str, object], Optional[str]]:
+        raw_text = raw_text.strip()
+        try:
+            return cls._parse_json_strict(raw_text), None
+        except ValueError as exc:
+            strict_error = exc
+
+        if not raw_text:
+            raise strict_error
+
+        if raw_text.startswith("{") and raw_text.endswith("}"):
+            raise strict_error
+
+        candidate = raw_text
+        added_parts = []
+        if not candidate.startswith("{"):
+            candidate = "{" + candidate
+            added_parts.append("leading '{'")
+        if not candidate.endswith("}"):
+            candidate = candidate + "}"
+            added_parts.append("trailing '}'")
+
+        try:
+            payload = cls._parse_json_strict(candidate)
+        except ValueError:
+            raise strict_error
+
+        return (
+            payload,
+            "Added missing outer JSON object brace(s): %s."
+            % ", ".join(added_parts),
+        )
 
     @staticmethod
     def _image_to_data_url(image_bytes: bytes) -> str:
@@ -362,12 +435,40 @@ class MLLMClient:
             message=message,
         )
 
+    @classmethod
+    def _response_format_unsupported_error(cls, exc) -> bool:
+        body = cls._api_error_body(exc)
+        searchable = " ".join(
+            str(item)
+            for item in [
+                body.get("message"),
+                body.get("param"),
+                body.get("code"),
+                body.get("type"),
+                exc,
+            ]
+            if item is not None
+        ).lower()
+        mentions_response_constraint = (
+            "response_format" in searchable
+            or "response format" in searchable
+            or "structured-output" in searchable
+            or "structured output" in searchable
+        )
+        return mentions_response_constraint and (
+            "not supported" in searchable
+            or "unsupported" in searchable
+            or "not support" in searchable
+            or "does not support" in searchable
+        )
+
     def _build_completion_request_kwargs(
         self,
         messages,
         model_name: str,
         request_type: str,
         thinking_mode: str | None,
+        use_response_format: bool = True,
     ) -> Dict[str, object]:
         if request_type == "detection":
             temperature = DETECTION_TEMPERATURE
@@ -398,17 +499,234 @@ class MLLMClient:
         if thinking_mode is not None:
             request_kwargs["extra_body"]["thinking"] = {"type": thinking_mode}
 
-        if request_type == "detection":
-            request_kwargs["tools"] = [self._detection_tool_definition()]
-            request_kwargs["tool_choice"] = {
-                "type": "function",
-                "function": {"name": "report_target_detections"},
-            }
-            request_kwargs["parallel_tool_calls"] = False
-        else:
+        if use_response_format:
             request_kwargs["response_format"] = {"type": "json_object"}
 
         return request_kwargs
+
+    @staticmethod
+    def _response_format_request_key(
+        request_type: str,
+        model_name: str,
+        router_name: str,
+    ) -> tuple[str, str, str]:
+        return (str(request_type), str(model_name), str(router_name))
+
+    def _retry_without_response_format_if_unsupported(
+        self,
+        exc,
+        request_kwargs: Dict[str, object],
+        response_format_key: tuple[str, str, str],
+        unsupported_response_format_keys: set,
+        client,
+        router_name: str,
+        model_name: str,
+    ):
+        if (
+            "response_format" not in request_kwargs
+            or not self._response_format_unsupported_error(exc)
+        ):
+            return None
+
+        unsupported_response_format_keys.add(response_format_key)
+        self._response_format_unsupported_request_keys = (
+            unsupported_response_format_keys
+        )
+        self.__class__._global_response_format_unsupported_request_keys = (
+            unsupported_response_format_keys
+        )
+        request_kwargs = dict(request_kwargs)
+        request_kwargs.pop("response_format", None)
+        print(
+            "%s model %s does not support response_format; "
+            "retrying without that request restriction."
+            % (router_name.capitalize(), model_name)
+        )
+        completion = client.chat.completions.create(**request_kwargs)
+        print("usage:", self._format_completion_usage(completion.usage))
+        print("model:", completion.model)
+        print("finish_reason:", completion.choices[0].finish_reason)
+        print()
+        return completion
+
+    @staticmethod
+    def _object_get(value, key: str, default=None):
+        if isinstance(value, dict):
+            return value.get(key, default)
+        return getattr(value, key, default)
+
+    @classmethod
+    def _responses_text_from_content(cls, content) -> str:
+        if isinstance(content, str):
+            return content
+        if not isinstance(content, list):
+            return str(content or "")
+
+        chunks = []
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") == "text":
+                chunks.append(str(item.get("text", "")))
+        return "\n".join(chunk for chunk in chunks if chunk).strip()
+
+    @classmethod
+    def _responses_input_content_from_chat_content(cls, content) -> List[Dict[str, object]]:
+        if isinstance(content, str):
+            return [{"type": "input_text", "text": content}]
+        if not isinstance(content, list):
+            return [{"type": "input_text", "text": str(content or "")}]
+
+        responses_content = []
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+
+            item_type = item.get("type")
+            if item_type == "text":
+                responses_content.append(
+                    {"type": "input_text", "text": str(item.get("text", ""))}
+                )
+            elif item_type == "image_url":
+                image_url = item.get("image_url", {})
+                if isinstance(image_url, dict):
+                    url = image_url.get("url")
+                else:
+                    url = image_url
+                if url:
+                    responses_content.append(
+                        {"type": "input_image", "image_url": str(url)}
+                    )
+
+        return responses_content
+
+    @classmethod
+    def _responses_input_from_chat_messages(
+        cls,
+        messages,
+    ) -> tuple[str, List[Dict[str, object]]]:
+        instructions = []
+        responses_input = []
+
+        for message in messages:
+            if not isinstance(message, dict):
+                continue
+            role = str(message.get("role", "user"))
+            content = message.get("content", "")
+            if role == "system":
+                system_text = cls._responses_text_from_content(content)
+                if system_text:
+                    instructions.append(system_text)
+                continue
+
+            response_role = role if role in {"user", "assistant"} else "user"
+            responses_content = cls._responses_input_content_from_chat_content(content)
+            if responses_content:
+                responses_input.append(
+                    {
+                        "role": response_role,
+                        "content": responses_content,
+                    }
+                )
+
+        return "\n\n".join(instructions).strip(), responses_input
+
+    def _build_responses_request_kwargs(
+        self,
+        messages,
+        model_name: str,
+        request_type: str,
+    ) -> Dict[str, object]:
+        instructions, responses_input = self._responses_input_from_chat_messages(
+            messages
+        )
+        max_output_tokens = (
+            DETECTION_MAX_NEW_TOKENS
+            if request_type == "detection"
+            else GRAPH_MAX_NEW_TOKENS
+        )
+        request_kwargs = {
+            "model": model_name,
+            "input": responses_input,
+            "max_output_tokens": max_output_tokens,
+            "text": {"format": {"type": "json_object"}},
+        }
+        if instructions:
+            request_kwargs["instructions"] = instructions
+        return request_kwargs
+
+    @classmethod
+    def _responses_output_to_text(cls, response) -> str:
+        output_text = cls._object_get(response, "output_text")
+        if output_text is not None:
+            return str(output_text)
+
+        output_items = cls._object_get(response, "output", [])
+        if not isinstance(output_items, list):
+            return str(output_items or "")
+
+        chunks = []
+        for output_item in output_items:
+            content_items = cls._object_get(output_item, "content", [])
+            if not isinstance(content_items, list):
+                continue
+            for content_item in content_items:
+                item_type = cls._object_get(content_item, "type", "")
+                if item_type in {"output_text", "text"}:
+                    text = cls._object_get(content_item, "text", "")
+                    if text:
+                        chunks.append(str(text))
+        return "\n".join(chunks).strip()
+
+    def _request_responses_completion(
+        self,
+        messages,
+        model_name: str,
+        request_type: str,
+        client,
+        router_name: str,
+    ) -> str:
+        request_kwargs = self._build_responses_request_kwargs(
+            messages=messages,
+            model_name=model_name,
+            request_type=request_type,
+        )
+
+        try:
+            response = client.responses.create(**request_kwargs)
+        except BadRequestError as exc:
+            provider_credit_error = self._provider_credit_error_from_exception(
+                exc=exc,
+                stage=request_type,
+                router=router_name,
+                model=model_name,
+            )
+            if provider_credit_error is not None:
+                raise provider_credit_error from exc
+
+            message = str(exc)
+            if "model_not_found" in message or "does not exist" in message:
+                raise RuntimeError(
+                    "The configured model was not found. Resolved model='%s'."
+                    % model_name
+                ) from exc
+            raise
+        except Exception as exc:
+            provider_credit_error = self._provider_credit_error_from_exception(
+                exc=exc,
+                stage=request_type,
+                router=router_name,
+                model=model_name,
+            )
+            if provider_credit_error is not None:
+                raise provider_credit_error from exc
+            raise
+
+        print("usage:", self._object_get(response, "usage", None))
+        print("model:", self._object_get(response, "model", model_name))
+        print("status:", self._object_get(response, "status", "unknown"))
+        print()
+        return self._responses_output_to_text(response)
 
     def _request_completion(
         self,
@@ -421,11 +739,13 @@ class MLLMClient:
             api_key_env = self.detection_api_key_env
             router_name = "detection"
             thinking_mode = self.detection_thinking
+            api_type = self.detection_api_type
         else:
             client = self.graph_client
             api_key_env = self.graph_api_key_env
             router_name = "graph"
             thinking_mode = self.graph_thinking
+            api_type = self.graph_api_type
 
         if client is None:
             raise RuntimeError(
@@ -434,11 +754,34 @@ class MLLMClient:
                 "environment variable %s is not set." % (router_name, api_key_env)
             )
 
+        if api_type == "openai_responses":
+            return self._request_responses_completion(
+                messages=messages,
+                model_name=model_name,
+                request_type=request_type,
+                client=client,
+                router_name=router_name,
+            )
+
+        unsupported_response_format_keys = getattr(
+            self,
+            "_response_format_unsupported_request_keys",
+            self.__class__._global_response_format_unsupported_request_keys,
+        )
+        response_format_key = self._response_format_request_key(
+            request_type=request_type,
+            model_name=model_name,
+            router_name=router_name,
+        )
+        use_response_format = (
+            response_format_key not in unsupported_response_format_keys
+        )
         request_kwargs = self._build_completion_request_kwargs(
             messages=messages,
             model_name=model_name,
             request_type=request_type,
             thinking_mode=thinking_mode,
+            use_response_format=use_response_format,
         )
 
         try:
@@ -467,7 +810,17 @@ class MLLMClient:
                     % model_name
                 ) from exc
 
-            raise
+            completion = self._retry_without_response_format_if_unsupported(
+                exc=exc,
+                request_kwargs=request_kwargs,
+                response_format_key=response_format_key,
+                unsupported_response_format_keys=unsupported_response_format_keys,
+                client=client,
+                router_name=router_name,
+                model_name=model_name,
+            )
+            if completion is None:
+                raise
 
         except Exception as exc:
             provider_credit_error = self._provider_credit_error_from_exception(
@@ -478,90 +831,19 @@ class MLLMClient:
             )
             if provider_credit_error is not None:
                 raise provider_credit_error from exc
-            raise
-
-        if request_type == "detection":
-            return self._extract_detection_tool_arguments(completion)
+            completion = self._retry_without_response_format_if_unsupported(
+                exc=exc,
+                request_kwargs=request_kwargs,
+                response_format_key=response_format_key,
+                unsupported_response_format_keys=unsupported_response_format_keys,
+                client=client,
+                router_name=router_name,
+                model_name=model_name,
+            )
+            if completion is None:
+                raise
 
         return self._message_to_text(completion.choices[0].message.content)
-
-    @staticmethod
-    def _detection_tool_definition() -> Dict[str, object]:
-        return {
-            "type": "function",
-            "function": {
-                "name": "report_target_detections",
-                "description": (
-                    "Report directly visible target detections for each panorama image."
-                ),
-                "strict": True,
-                "parameters": {
-                    "type": "object",
-                    "additionalProperties": False,
-                    "properties": {
-                        "detections": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": False,
-                                "properties": {
-                                    "agent_id": {"type": "string"},
-                                    "found_target_indices": {
-                                        "type": "array",
-                                        "items": {"type": "string"},
-                                    },
-                                    "target_center_xs": {
-                                        "type": "array",
-                                        "items": {"type": "number"},
-                                    },
-                                },
-                                "required": [
-                                    "agent_id",
-                                    "found_target_indices",
-                                    "target_center_xs",
-                                ],
-                            },
-                        }
-                    },
-                    "required": ["detections"],
-                },
-            },
-        }
-
-    @staticmethod
-    def _tool_call_attr(value, key: str):
-        if isinstance(value, dict):
-            return value.get(key)
-        return getattr(value, key)
-
-    @classmethod
-    def _extract_detection_tool_arguments(cls, completion) -> str:
-        message = completion.choices[0].message
-        tool_calls = cls._tool_call_attr(message, "tool_calls")
-
-        if not tool_calls:
-            raise ValueError("Detection model did not call report_target_detections.")
-        if len(tool_calls) != 1:
-            raise ValueError(
-                "Detection model must call report_target_detections exactly once."
-            )
-
-        tool_call = tool_calls[0]
-        if cls._tool_call_attr(tool_call, "type") != "function":
-            raise ValueError("Detection tool call must have type 'function'.")
-
-        function_call = cls._tool_call_attr(tool_call, "function")
-        function_name = cls._tool_call_attr(function_call, "name")
-        if function_name != "report_target_detections":
-            raise ValueError(
-                "Detection model called unexpected function %s." % function_name
-            )
-
-        arguments = cls._tool_call_attr(function_call, "arguments")
-        if not isinstance(arguments, str) or not arguments.strip():
-            raise ValueError("Detection tool call arguments must be a nonempty string.")
-
-        return arguments
 
     def _semantic_raw_output_path(self, step_index: int) -> str:
         return os.path.join(
@@ -1140,8 +1422,8 @@ class MLLMClient:
 
         system_message = dedent("""
             You are doing direct visual target detection from indoor panorama images.
-            Call report_target_detections exactly once with arguments matching the required detection schema.
-            Do not output markdown, code fences, comments, text outside the tool call, extra top-level keys, trailing commas, or non-JSON booleans.
+            Return exactly one JSON object matching the required detection schema.
+            Do not output markdown, code fences, comments, text outside the JSON object, extra top-level keys, trailing commas, or non-JSON booleans.
 
             Match the exact target object identity, not a broad object category.
             The target description may contain object type, color, size, shape, material, location, or context. Use all visible parts of the description when deciding whether the target is present.
@@ -1176,8 +1458,7 @@ class MLLMClient:
                 - Do report small targets when the raw panorama makes the target-specific object identity clear.
 
                 Output rules:
-                - Call report_target_detections exactly once.
-                - The tool arguments must be exactly one JSON object with top-level key "detections".
+                - Return exactly one JSON object with top-level key "detections".
                 - If no active target is visible in any image, pass:
                   {{"detections":[]}}
                 - Include only agents that detect at least one target.
@@ -1674,7 +1955,7 @@ class MLLMClient:
             Detection output failed validation on retry {attempt_index} of {max_validation_retries}.
             Error: {validation_error}
 
-            Call report_target_detections exactly once with corrected complete arguments. Keep the same detection schema.
+            Return exactly one corrected JSON object. Keep the same detection schema.
             """).strip()
 
         return (
@@ -1833,12 +2114,21 @@ class MLLMClient:
                 print(f"Reading saved detection raw output for step {step_index}")
                 try:
                     raw = self._strip_code_fences(decoded)
-                    payload = self._parse_json_strict(raw)
-                    return self._validate_detection_payload(
+                    payload, repair_message = (
+                        self._parse_json_strict_with_repaired_object_bounds(raw)
+                    )
+                    detections = self._validate_detection_payload(
                         payload=payload,
                         agent_observations=agent_observations,
                         targets=targets,
                     )
+                    if repair_message:
+                        print("Saved detection raw output repair applied: %s" % repair_message)
+                        self._write_detection_raw_output(
+                            step_index,
+                            json.dumps(payload, indent=2, sort_keys=True),
+                        )
+                    return detections
                 except Exception as exc:
                     print(
                         "Saved detection raw output for step %s is invalid. "
@@ -1877,13 +2167,24 @@ class MLLMClient:
                     request_type="detection",
                 )
                 raw = self._strip_code_fences(decoded)
-                payload = self._parse_json_strict(raw)
+                payload, repair_message = (
+                    self._parse_json_strict_with_repaired_object_bounds(raw)
+                )
                 detections = self._validate_detection_payload(
                     payload=payload,
                     agent_observations=agent_observations,
                     targets=targets,
                 )
-                self._write_detection_raw_output(step_index, decoded)
+                if repair_message:
+                    print("Detection raw output repair applied: %s" % repair_message)
+                self._write_detection_raw_output(
+                    step_index,
+                    (
+                        json.dumps(payload, indent=2, sort_keys=True)
+                        if repair_message
+                        else decoded
+                    ),
+                )
                 return detections
             except MLLMProviderCreditError as exc:
                 exc.step_index = int(step_index)

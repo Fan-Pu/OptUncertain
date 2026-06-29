@@ -4,9 +4,271 @@
     "agent1": 17,
     "agent2": 45
   },
-  "edges": [],
-  "nodes": [],
-  "observation_step": 0,
-  "region_to_viewpoints": {},
-  "viewpoint_to_region": {}
+  "edges": [
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 2,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 17,
+      "j": 27,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 18,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 25,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        2,
+        33,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 17,
+      "label": "4c0aab63a4434cf4878e6f5b3ce9a70b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "f04ae8ebf8254168814bc669635b3775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "76c7a665d2b242bfa203e7f394b1353e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        17
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "2c687aab96b7498b92023a4888c6e7ab",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 36,
+      "label": "ead481533f834704bd489d3d44b6a03a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        18,
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "d48feeed33774f64adb093679b9fcebf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        36
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "carpeted bedroom with grey bedding and bedside lamps",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        17,
+        27
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "tiled bathroom with white toilet and framed circular artwork",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25,
+        45
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 55,
+      "label": "bright living room with grey sofa and decorative wall art",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 56,
+      "label": "transitional hallway area near bedroom doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        33
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 57,
+      "label": "northern room area visible from bedroom",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 58,
+      "label": "northeast dining or kitchen area adjacent to living room",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "53": [
+      1,
+      36
+    ],
+    "54": [
+      17,
+      27
+    ],
+    "55": [
+      25,
+      45
+    ],
+    "56": [
+      2
+    ],
+    "57": [
+      33
+    ],
+    "58": [
+      18
+    ]
+  },
+  "viewpoint_to_region": {
+    "1": 53,
+    "2": 56,
+    "17": 54,
+    "18": 58,
+    "25": 55,
+    "27": 54,
+    "33": 57,
+    "36": 53,
+    "45": 55
+  }
 }

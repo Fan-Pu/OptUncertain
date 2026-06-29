@@ -204,7 +204,7 @@ class RollingHorizonOptimizer:
                 )
 
         model = Model("multi_agent_many_to_many")
-        model.Params.OutputFlag = 1
+        model.Params.OutputFlag = 0
         model.Params.TimeLimit = 30.0
 
         x = {}

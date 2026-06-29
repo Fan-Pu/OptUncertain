@@ -1,8 +1,20 @@
 {
+  "_mllm_provider_notes": [
+    "HuggingFace: base_url=https://router.huggingface.co/v1, api_key_env=HF_TOKEN",
+    "DeepInfra: base_url=https://api.deepinfra.com/v1/openai, api_key_env=DEEPINFRA_TOKEN",
+    "DASHSCOPE: base_url=https://dashscope-us.aliyuncs.com/compatible-mode/v1, api_key_env=DASHSCOPE_API_KEY",
+    "OpenAI Responses: api_type=openai_responses, base_url='', api_key_env=OPENAI_API_KEY"
+  ],
   "mllm": {
-    "detection_model_name": "MiniMaxAI/MiniMax-M3:cheapest",
-    "graph_model_name": "MiniMaxAI/MiniMax-M3:cheapest",
-    "detection_thinking": "enabled",
+    "detection_model_name": "gpt-5.4-mini-2026-03-17",
+    "graph_model_name": "MiniMaxAI/MiniMax-M3:together",
+    "detection_api_type": "openai_responses",
+    "detection_base_url": "",
+    "detection_api_key_env": "OPENAI_API_KEY",
+    "graph_api_type": "chat_completions",
+    "graph_base_url": "https://router.huggingface.co/v1",
+    "graph_api_key_env": "HF_TOKEN",
+    "detection_thinking": "disabled",
     "graph_thinking": "enabled",
     "read_saved_raw_outputs": true,
     "max_validation_retries": 6

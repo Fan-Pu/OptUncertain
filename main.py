@@ -1475,29 +1475,75 @@ def run_scenario(
 
     optimizer = RollingHorizonOptimizer(scenario["optimizer"])
 
-    # for huggingface, use base_url="https://router.huggingface.co/v1" and api_key_env="HF_TOKEN"
+    mllm_config = scenario["mllm"]
+    detection_api_type = MLLMClient._normalize_api_type(
+        mllm_config.get("detection_api_type", "chat_completions"),
+        "detection_api_type",
+    )
+    if detection_api_type == "openai_responses":
+        default_detection_base_url = ""
+        default_detection_api_key_env = "OPENAI_API_KEY"
+    else:
+        default_detection_base_url = "https://router.huggingface.co/v1"
+        default_detection_api_key_env = "HF_TOKEN"
+    detection_base_url = str(
+        mllm_config.get("detection_base_url", default_detection_base_url)
+    )
+    detection_api_key_env = str(
+        mllm_config.get("detection_api_key_env", default_detection_api_key_env)
+    )
+    if detection_api_type == "openai_responses":
+        if detection_base_url == "https://router.huggingface.co/v1":
+            detection_base_url = ""
+        if detection_api_key_env == "HF_TOKEN":
+            detection_api_key_env = "OPENAI_API_KEY"
+
+    graph_api_type = MLLMClient._normalize_api_type(
+        mllm_config.get("graph_api_type", "chat_completions"),
+        "graph_api_type",
+    )
+    if graph_api_type == "openai_responses":
+        default_graph_base_url = ""
+        default_graph_api_key_env = "OPENAI_API_KEY"
+    else:
+        default_graph_base_url = "https://router.huggingface.co/v1"
+        default_graph_api_key_env = "HF_TOKEN"
+    graph_base_url = str(mllm_config.get("graph_base_url", default_graph_base_url))
+    graph_api_key_env = str(
+        mllm_config.get("graph_api_key_env", default_graph_api_key_env)
+    )
+    if graph_api_type == "openai_responses":
+        if graph_base_url == "https://router.huggingface.co/v1":
+            graph_base_url = ""
+        if graph_api_key_env == "HF_TOKEN":
+            graph_api_key_env = "OPENAI_API_KEY"
+
+    # for HuggingFace, use base_url="https://router.huggingface.co/v1" and api_key_env="HF_TOKEN"
     # for DeepInfra, use base_url="https://api.deepinfra.com/v1/openai" and api_key_env="DEEPINFRA_TOKEN"
     # for DASHSCOPE, use base_url="https://dashscope-us.aliyuncs.com/compatible-mode/v1" and api_key_env="DASHSCOPE_API_KEY"
+    # for OpenAI Responses, use api_type="openai_responses", base_url="", and api_key_env="OPENAI_API_KEY"
     mllm_client = MLLMClient(
-        graph_model_name=str(scenario["mllm"]["graph_model_name"]),
+        graph_model_name=str(mllm_config["graph_model_name"]),
         # detection
-        detection_model_name=str(scenario["mllm"]["detection_model_name"]),
-        detection_base_url="https://router.huggingface.co/v1",
-        detection_api_key_env="HF_TOKEN",
+        detection_model_name=str(mllm_config["detection_model_name"]),
+        detection_base_url=detection_base_url,
+        detection_api_key_env=detection_api_key_env,
+        detection_api_type=detection_api_type,
         # graph generation
-        graph_base_url="https://router.huggingface.co/v1",
-        graph_api_key_env="HF_TOKEN",
+        graph_base_url=graph_base_url,
+        graph_api_key_env=graph_api_key_env,
+        graph_api_type=graph_api_type,
         read_saved_raw_outputs=bool(
-            scenario["mllm"].get("read_saved_raw_outputs", False)
+            mllm_config.get("read_saved_raw_outputs", False)
         ),
         raw_output_dir=run_output_dir,
         raw_debug_dir=debug_output_dir,
-        max_validation_retries=int(scenario["mllm"].get("max_validation_retries", 2)),
+        max_validation_retries=int(mllm_config.get("max_validation_retries", 2)),
         max_request_timeout_retries=int(
-            scenario["mllm"].get("max_request_timeout_retries", 1)
+            mllm_config.get("max_request_timeout_retries", 1)
         ),
-        detection_thinking=scenario["mllm"].get("detection_thinking"),
-        graph_thinking=scenario["mllm"].get("graph_thinking"),
+        detection_thinking=mllm_config.get("detection_thinking"),
+        graph_thinking=mllm_config.get("graph_thinking"),
     )
 
     scorer = siglip_scorer if siglip_scorer is not None else SigLIPScorer()
@@ -2074,12 +2120,19 @@ def run_batch_config(
     sample_count: int | None = None,
     sample_seed: int = 0,
     run_id: str | None = None,
+    batch_case_id: str | None = None,
 ) -> Dict[str, object]:
     from semantic_persistence import SigLIPScorer
 
+    if sample_count is not None and batch_case_id is not None:
+        raise ValueError("--sample-count and --batch-case-id are mutually exclusive.")
     if sample_count is not None and run_id is None:
         raise ValueError(
             "--sample-count requires --run-id so sampled outputs are isolated."
+        )
+    if batch_case_id is not None and run_id is None:
+        raise ValueError(
+            "--batch-case-id requires --run-id so single-case outputs are isolated."
         )
 
     path = Path(batch_config_path)
@@ -2104,7 +2157,30 @@ def run_batch_config(
     case_order = _case_order_from_batch_summary(summary)
     sampled_cases_path = None
     sampled_generated_cases_path = None
-    if sample_count is not None:
+    if batch_case_id is not None:
+        selected_case_id = str(batch_case_id)
+        if selected_case_id not in summary["cases"]:
+            raise KeyError(
+                "Batch case %s is not present in generated cases for %s."
+                % (selected_case_id, str(batch_id))
+            )
+        sampled_cases_path, sampled_generated_cases_path = (
+            write_sampled_batch_manifests(
+                batch_id=batch_id,
+                summary=summary,
+                sampled_case_ids=[selected_case_id],
+                sample_count=1,
+                sample_seed=int(sample_seed),
+                run_id=run_id,
+            )
+        )
+        scenarios = [
+            scenario
+            for scenario in scenarios
+            if str(scenario["test_case"]) == selected_case_id
+        ]
+        case_order = [selected_case_id]
+    elif sample_count is not None:
         sampled_case_ids = sample_batch_case_ids(
             summary=summary,
             sample_count=int(sample_count),
