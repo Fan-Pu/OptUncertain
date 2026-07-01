@@ -1,8 +1,10 @@
 import json
+from datetime import date
 from pathlib import Path
 
 import pytest
 
+import graph_test.evaluate_graph_model as evaluate_graph_model
 from graph_test.evaluate_graph_benchmark_metrics import (
     GraphMethodSpec,
     _load_method_case,
@@ -11,6 +13,8 @@ from graph_test.evaluate_graph_model import (
     DEFAULT_GRAPH_TEST_CASE_ID,
     FIXED_DETECTION_CONFIG,
     GRAPH_TEST_MAX_STEPS,
+    _ensure_fresh_run_id,
+    _fresh_default_run_id,
     _run_id_for_graph_model,
     build_graph_benchmark_batch_config,
     graph_benchmark_summary_from_source,
@@ -105,6 +109,11 @@ def _write_json(path: Path, payload):
     with open(path, "w", encoding="utf-8") as file_handle:
         json.dump(payload, file_handle, indent=2)
         file_handle.write("\n")
+
+
+def _make_graph_output_roots(run_id: str) -> None:
+    for path in evaluate_graph_model._run_output_roots(run_id):
+        path.mkdir(parents=True, exist_ok=True)
 
 
 def test_selected_case_validation_accepts_default_three_agent_case():
@@ -222,6 +231,67 @@ def test_default_run_id_includes_reasoning_split():
         )
         == "graph_eval_MiniMaxAI_MiniMax-M3_together_reasoning-split"
     )
+
+
+def test_fresh_default_run_id_keeps_fresh_base(tmp_path, monkeypatch):
+    monkeypatch.setattr(evaluate_graph_model, "GRAPH_TEST_ROOT", tmp_path)
+
+    assert (
+        _fresh_default_run_id(
+            "graph_eval_gpt-5.4-2026-03-05_reasoning-medium_max-steps-25",
+            DEFAULT_GRAPH_TEST_CASE_ID,
+            date(2026, 7, 1),
+        )
+        == "graph_eval_gpt-5.4-2026-03-05_reasoning-medium_max-steps-25"
+    )
+
+
+def test_fresh_default_run_id_uses_case_dated_rerun_on_base_collision(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(evaluate_graph_model, "GRAPH_TEST_ROOT", tmp_path)
+    base_run_id = "graph_eval_gpt-5.4-2026-03-05_reasoning-medium_max-steps-25"
+    _make_graph_output_roots(base_run_id)
+
+    assert (
+        _fresh_default_run_id(
+            base_run_id,
+            DEFAULT_GRAPH_TEST_CASE_ID,
+            date(2026, 7, 1),
+        )
+        == "graph_eval_gpt-5.4-2026-03-05_reasoning-medium_max-steps-25_"
+        + "zsNo4HB9uLZ_case_0024_rerun-20260701-1"
+    )
+
+
+def test_fresh_default_run_id_uses_next_rerun_index(tmp_path, monkeypatch):
+    monkeypatch.setattr(evaluate_graph_model, "GRAPH_TEST_ROOT", tmp_path)
+    base_run_id = "graph_eval_gpt-5.4-2026-03-05_reasoning-medium_max-steps-25"
+    first_rerun_id = (
+        "graph_eval_gpt-5.4-2026-03-05_reasoning-medium_max-steps-25_"
+        + "zsNo4HB9uLZ_case_0024_rerun-20260701-1"
+    )
+    _make_graph_output_roots(base_run_id)
+    _make_graph_output_roots(first_rerun_id)
+
+    assert (
+        _fresh_default_run_id(
+            base_run_id,
+            DEFAULT_GRAPH_TEST_CASE_ID,
+            date(2026, 7, 1),
+        )
+        == "graph_eval_gpt-5.4-2026-03-05_reasoning-medium_max-steps-25_"
+        + "zsNo4HB9uLZ_case_0024_rerun-20260701-2"
+    )
+
+
+def test_explicit_run_id_still_rejects_existing_outputs(tmp_path, monkeypatch):
+    monkeypatch.setattr(evaluate_graph_model, "GRAPH_TEST_ROOT", tmp_path)
+    _make_graph_output_roots("explicit_graph_run")
+
+    with pytest.raises(FileExistsError, match="not fresh"):
+        _ensure_fresh_run_id("explicit_graph_run")
 
 
 def test_graph_benchmark_config_sets_graph_thinking_format():

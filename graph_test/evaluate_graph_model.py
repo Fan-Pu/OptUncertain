@@ -6,6 +6,7 @@ import json
 import re
 import sys
 import tempfile
+from datetime import date
 from pathlib import Path
 from typing import Dict, Sequence
 
@@ -339,9 +340,36 @@ def write_graph_benchmark_case_summary(
     )
 
 
+def _run_output_roots(run_id: str) -> tuple[Path, Path]:
+    return (
+        GRAPH_TEST_ROOT / _debug_output_root_name(run_id),
+        GRAPH_TEST_ROOT / _raw_output_root_name(run_id),
+    )
+
+
+def _run_id_has_outputs(run_id: str) -> bool:
+    return any(path.exists() for path in _run_output_roots(run_id))
+
+
+def _fresh_default_run_id(base_run_id: str, case_id: str, run_date: date) -> str:
+    if not _run_id_has_outputs(base_run_id):
+        return base_run_id
+    date_slug = run_date.strftime("%Y%m%d")
+    rerun_index = 1
+    while True:
+        run_id = "%s_%s_rerun-%s-%d" % (
+            str(base_run_id),
+            str(case_id),
+            date_slug,
+            rerun_index,
+        )
+        if not _run_id_has_outputs(run_id):
+            return run_id
+        rerun_index += 1
+
+
 def _ensure_fresh_run_id(run_id: str) -> None:
-    debug_root = GRAPH_TEST_ROOT / _debug_output_root_name(run_id)
-    raw_root = GRAPH_TEST_ROOT / _raw_output_root_name(run_id)
+    debug_root, raw_root = _run_output_roots(run_id)
     existing = [str(path) for path in (debug_root, raw_root) if path.exists()]
     if existing:
         raise FileExistsError(
@@ -360,18 +388,19 @@ def _write_temp_batch_config(batch_config: Dict[str, object], temp_dir: Path) ->
 
 def run_graph_benchmark(args: argparse.Namespace) -> Dict[str, object]:
     max_steps = int(args.max_steps)
-    run_id = (
-        str(args.run_id)
-        if args.run_id
-        else _run_id_for_graph_model(
+    if args.run_id:
+        run_id = str(args.run_id)
+        _ensure_fresh_run_id(run_id)
+    else:
+        base_run_id = _run_id_for_graph_model(
             graph_model_name=str(args.graph_model_name),
             graph_reasoning_effort=args.graph_reasoning_effort,
             graph_thinking_format=args.graph_thinking_format,
             graph_reasoning_split=bool(args.graph_reasoning_split),
             max_steps=max_steps,
         )
-    )
-    _ensure_fresh_run_id(run_id)
+        run_id = _fresh_default_run_id(base_run_id, str(args.case_id), date.today())
+    print("Resolved graph benchmark run id: %s" % run_id, flush=True)
 
     batch_config_path = Path(args.batch_config)
     batch_config = _read_batch_config(batch_config_path)
