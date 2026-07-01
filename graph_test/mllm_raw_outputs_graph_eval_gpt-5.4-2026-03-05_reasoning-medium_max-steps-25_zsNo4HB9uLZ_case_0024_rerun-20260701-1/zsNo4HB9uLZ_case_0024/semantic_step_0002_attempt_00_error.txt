@@ -1,0 +1,173 @@
+{
+  "current_viewpoints_reassignment": [],
+  "visible_region_nodes": [
+    {
+      "id": 59,
+      "label": "small vanity bathroom with dark cabinet just off the white tiled hall"
+    },
+    {
+      "id": 60,
+      "label": "carpeted bedroom sleeping area with curtained window through the ensuite doorway"
+    },
+    {
+      "id": 61,
+      "label": "light entry-side console nook along the right wall beyond the dining area"
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 25,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.08,
+          "evidence_strength": "low",
+          "basis": "Marker 25 lies in the living media area by the TV wall; kitchen shelving is only indirect across the open plan, so it weakly matches the kitchen top-shelf cue."
+        },
+        "4": {
+          "raw_score": 0.12,
+          "evidence_strength": "low",
+          "basis": "Marker 25 is in the living seating zone rather than by the dining window, so its earlier high dining-candle hypothesis should be reduced."
+        },
+        "5": {
+          "raw_score": 0.07,
+          "evidence_strength": "low",
+          "basis": "This viewpoint is centered on the media wall and sofa area, not on a kitchen counter beside the stove."
+        },
+        "7": {
+          "raw_score": 0.1,
+          "evidence_strength": "low",
+          "basis": "The entrance-side console is only distant from the living media marker, so support for the entrance console-table target is weak."
+        }
+      }
+    },
+    {
+      "id": 43,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.83,
+          "evidence_strength": "medium",
+          "basis": "Marker 43 sits on the dining-side approach to the kitchen with direct sight toward the cabinet wall, making it a stronger kitchen shelf candidate than living or bathroom viewpoints."
+        },
+        "4": {
+          "raw_score": 0.26,
+          "evidence_strength": "low",
+          "basis": "This dining-side marker is closer to the dining zone than living viewpoints, but it is not the clearest window-adjacent dining position."
+        },
+        "5": {
+          "raw_score": 0.88,
+          "evidence_strength": "medium",
+          "basis": "Marker 43 is the nearest unvisited viewpoint to the kitchen work area and island, best matching the cookbook-on-counter-beside-stove cue."
+        },
+        "7": {
+          "raw_score": 0.18,
+          "evidence_strength": "low",
+          "basis": "The marker is in the dining-kitchen circulation space rather than at the entrance-side console table."
+        }
+      }
+    },
+    {
+      "id": 46,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.37,
+          "evidence_strength": "low",
+          "basis": "Marker 46 is on the dining side with some kitchen visibility, but it is less aligned to kitchen shelving than viewpoint 43."
+        },
+        "4": {
+          "raw_score": 0.94,
+          "evidence_strength": "medium",
+          "basis": "Marker 46 lies in the dining area beside the windowed wall and table, making it the best match for a candle by the dining room window."
+        },
+        "5": {
+          "raw_score": 0.31,
+          "evidence_strength": "low",
+          "basis": "This viewpoint overlooks the kitchen from the dining edge, but it is not as close to the stove-side counter as viewpoint 43."
+        },
+        "7": {
+          "raw_score": 0.39,
+          "evidence_strength": "low",
+          "basis": "Marker 46 is adjacent to the dining area with sight toward the console side, so it has only secondary support for the entrance console target."
+        }
+      }
+    },
+    {
+      "id": 50,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.15,
+          "evidence_strength": "low",
+          "basis": "Marker 50 is in the entrance-side nook and not near the main kitchen shelving wall."
+        },
+        "4": {
+          "raw_score": 0.34,
+          "evidence_strength": "low",
+          "basis": "This viewpoint remains near the dining side of the open plan, but it is less directly window-adjacent than viewpoint 46."
+        },
+        "5": {
+          "raw_score": 0.11,
+          "evidence_strength": "low",
+          "basis": "The entrance-side marker is away from the kitchen counter and stove, so it weakly fits the cookbook location."
+        },
+        "7": {
+          "raw_score": 1.06,
+          "evidence_strength": "high",
+          "basis": "Marker 50 sits in the entry-side console nook with the console table visible along the wall, directly matching the glass vase on a console table near the entrance."
+        }
+      }
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "region_node_id": 59,
+      "assigned_viewpoint_node_indices": [
+        5
+      ]
+    },
+    {
+      "region_node_id": 60,
+      "assigned_viewpoint_node_indices": [
+        28,
+        42
+      ]
+    },
+    {
+      "region_node_id": 58,
+      "assigned_viewpoint_node_indices": [
+        43,
+        46
+      ]
+    },
+    {
+      "region_node_id": 61,
+      "assigned_viewpoint_node_indices": [
+        50
+      ]
+    }
+  ],
+  "new_edges": [
+    {
+      "i": 28,
+      "j": 42,
+      "type": "vv",
+      "exist_prob": 0.84,
+      "distance_mean": 1.647
+    },
+    {
+      "i": 43,
+      "j": 46,
+      "type": "vv",
+      "exist_prob": 0.88,
+      "distance_mean": 1.537
+    },
+    {
+      "i": 46,
+      "j": 50,
+      "type": "vv",
+      "exist_prob": 0.73,
+      "distance_mean": 1.805
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 0.36
+  }
+}
