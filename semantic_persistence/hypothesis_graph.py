@@ -313,7 +313,6 @@ class HypothesisGraph:
         self,
         mllm_output: Dict[str, object],
         agent_observations: List[Dict[str, object]],
-        scorer,
     ) -> None:
         self.observation_step += 1
 
@@ -624,13 +623,11 @@ class HypothesisGraph:
             previous_distance_means=previous_distance_means,
             previous_distance_vars=previous_distance_vars,
             previous_cond_exist_probs=previous_cond_exist_probs,
-            scorer=scorer,
         )
         self._update_edge_existence_posteriors(
             existing_edge_ids=existing_edge_ids,
             previous_distance_means=previous_distance_means,
             previous_cond_exist_probs=previous_cond_exist_probs,
-            scorer=scorer,
         )
 
         self.target_found
@@ -1150,30 +1147,6 @@ class HypothesisGraph:
         for edge_id in invalid_edges:
             self.remove_edge(edge_id)
 
-    def _target_visual_score(
-        self,
-        node_id: int,
-        target_id: str,
-        scorer,
-    ) -> float:
-        node = self.nodes[node_id]
-        target_text = self._target_text(target_id)
-
-        if node.type == TYPE_VP:
-            images = self.viewpoint_rgb_evidence.get(node_id, [])
-            if not images:
-                return 0.0
-            return float(scorer.score_images_text(images, target_text))
-
-        assigned_viewpoints = self.region_to_viewpoints.get(node_id, set())
-        if not assigned_viewpoints:
-            return 0.0
-
-        return max(
-            self._target_visual_score(viewpoint_id, target_id, scorer)
-            for viewpoint_id in assigned_viewpoints
-        )
-
     def _apply_mllm_viewpoint_target_probabilities(
         self,
         viewpoint_initial_probs: Dict[int, Dict[str, float]],
@@ -1301,7 +1274,6 @@ class HypothesisGraph:
         previous_distance_means: Dict[Tuple[int, int], float],
         previous_distance_vars: Dict[Tuple[int, int], float],
         previous_cond_exist_probs: Dict[Tuple[int, int], float],
-        scorer,
     ) -> None:
         epsilon = float(self.bayes_config["epsilon"])
         sigma_vv2 = float(self.bayes_config["sigma_vv2"])
@@ -1376,7 +1348,6 @@ class HypothesisGraph:
         existing_edge_ids: Set[Tuple[int, int]],
         previous_distance_means: Dict[Tuple[int, int], float],
         previous_cond_exist_probs: Dict[Tuple[int, int], float],
-        scorer,
     ) -> None:
         epsilon = float(self.bayes_config["epsilon"])
         varrho = float(self.bayes_config["varrho"])

@@ -1,0 +1,30 @@
+{
+  "batch_id": "batch_test",
+  "run_id": "graph_eval_Qwen_Qwen3-VL-235B-A22B-Instruct_novita",
+  "status": "completed",
+  "case_order": [
+    "zsNo4HB9uLZ_case_0024"
+  ],
+  "completed_case_count": 0,
+  "skipped_case_count": 1,
+  "completed_cases": {},
+  "skipped_cases": {
+    "zsNo4HB9uLZ_case_0024": {
+      "test_case": "zsNo4HB9uLZ_case_0024",
+      "scan_id": "zsNo4HB9uLZ",
+      "status": "incomplete",
+      "reason": "mllm_retry_exhausted",
+      "debug_output_dir": "graph_test/mllm_debug_outputs_graph_eval_Qwen_Qwen3-VL-235B-A22B-Instruct_novita/zsNo4HB9uLZ_case_0024",
+      "raw_output_dir": "graph_test/mllm_raw_outputs_graph_eval_Qwen_Qwen3-VL-235B-A22B-Instruct_novita/zsNo4HB9uLZ_case_0024",
+      "steps_completed": 0,
+      "max_steps": 10,
+      "failed_step_index": 1,
+      "mllm_stage": "graph",
+      "mllm_attempts": 7,
+      "error": "[viewpoint target scores] Missing required MLLM-updatable viewpoint_target_probs values {2: ['2', '4', '5', '7'], 18: ['2', '4', '5', '7'], 25: ['2', '4', '5', '7'], 27: ['2', '4', '5', '7'], 33: ['2', '4', '5', '7'], 36: ['2', '4', '5', '7']}. Returned ids were [].\nDetails: {\"detection_fixed_viewpoint_ids\": [1, 17, 45], \"error_type\": \"ValueError\", \"required_mllm_viewpoint_target_ids\": [2, 18, 25, 27, 33, 36], \"returned_viewpoint_target_ids\": [], \"semantic_payload_contract\": \"graph_mllm\", \"target_ids\": [\"2\", \"4\", \"5\", \"7\"]}\nRetry guidance: Use viewpoint_target_scores only for eligible MLLM-updatable viewpoint ids. Remove current, grounded, and previously visited detection-fixed viewpoint ids from viewpoint_target_scores. Each returned viewpoint-target score must contain exactly raw_score, evidence_strength, and basis. Use active target ids only, nonnegative raw_score values, and evidence_strength exactly one of low, medium, or high."
+    }
+  },
+  "terminated_case": null,
+  "next_case_id": null
+}
+

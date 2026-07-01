@@ -195,3 +195,48 @@ def test_evaluate_methods_requires_expected_pair_count(tmp_path):
             batch_id="batch_test",
             expected_pairs=440,
         )
+
+
+def test_evaluate_methods_filters_to_case_id_subset(tmp_path):
+    method_root = tmp_path / "method"
+    metrics_path = (
+        method_root
+        / "batch_test"
+        / "detection_metrics"
+        / "detection_target_metrics.csv"
+    )
+    row_a = _target_row(
+        case_id="case_a",
+        scan_id="scan_a",
+        viewpoint_id="vp1",
+        target_description="target one",
+        oracle_visible="1",
+        predicted="1",
+        outcome="tp",
+    )
+    row_b = _target_row(
+        case_id="case_b",
+        scan_id="scan_a",
+        viewpoint_id="vp2",
+        target_description="target two",
+        oracle_visible="1",
+        predicted="0",
+        outcome="fn",
+    )
+    _write_csv(metrics_path, [row_a, row_b], list(row_a))
+
+    _target_rows, case_rows, method_rows, _disagreements = evaluate_methods(
+        [MethodSpec("ModelA", method_root)],
+        {
+            ("scan_a", "vp1", "target one"): 1,
+            ("scan_a", "vp2", "target two"): 1,
+        },
+        batch_id="batch_test",
+        expected_pairs=1,
+        case_ids=["case_a"],
+    )
+
+    assert len(case_rows) == 1
+    assert case_rows[0]["case_id"] == "case_a"
+    assert method_rows[0]["agent_target_pairs"] == 1
+    assert method_rows[0]["tp"] == 1

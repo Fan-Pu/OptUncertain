@@ -29,7 +29,7 @@ GRAPH_PRESENCE_PENALTY = 1.5
 MIN_P = 0.0
 REPETITION_PENALTY = 1.0
 
-DETECTION_MAX_NEW_TOKENS = 4096
+DETECTION_MAX_NEW_TOKENS = 32768
 GRAPH_MAX_NEW_TOKENS = 32768
 panorama_max_width_for_prompt = 1660
 DETECTION_IMAGE_MAX_WIDTH = 1980
@@ -38,14 +38,13 @@ GRAPH_IMAGE_MAX_WIDTH = 1660
 GRAPH_IMAGE_JPEG_QUALITY = 85
 
 THINKING_MODES = {"enabled", "adaptive", "disabled"}
-API_TYPES = {"chat_completions", "openai_responses"}
+THINKING_FORMATS = {"thinking_type", "enable_thinking"}
+REASONING_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh"}
+OPENAI_RESPONSE_SERVICE_TIERS = {"auto", "flex", "priority"}
+API_TYPES = {"chat_completions", "openai_responses", "google_genai"}
 
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
-
-
-class SigLIPRegionValidationError(RuntimeError):
-    pass
 
 
 class GraphValidationError(ValueError):
@@ -138,8 +137,13 @@ class MLLMClient:
         raw_debug_dir: str = "mllm_debug_outputs",
         max_validation_retries: int = 2,
         max_request_timeout_retries: int = 1,
-        detection_thinking: str | None = None,
         graph_thinking: str | None = None,
+        graph_thinking_format: str | None = None,
+        graph_reasoning_split: bool = False,
+        detection_reasoning_effort: str | None = None,
+        graph_reasoning_effort: str | None = None,
+        detection_service_tier: str | None = None,
+        graph_service_tier: str | None = None,
     ):
         self.graph_model_name = graph_model_name
         self.detection_model_name = detection_model_name
@@ -165,20 +169,42 @@ class MLLMClient:
             detection_api_type,
             "detection_api_type",
         )
-        self.detection_thinking = self._normalize_thinking_mode(
-            detection_thinking,
-            "detection_thinking",
-        )
         self.graph_thinking = self._normalize_thinking_mode(
             graph_thinking,
             "graph_thinking",
         )
-        self.graph_client = self._create_openai_client(
+        self.graph_thinking_format = self._normalize_thinking_format(
+            graph_thinking_format,
+            "graph_thinking_format",
+        )
+        self.graph_reasoning_split = self._normalize_bool(
+            graph_reasoning_split,
+            "graph_reasoning_split",
+        )
+        self.detection_reasoning_effort = self._normalize_reasoning_effort(
+            detection_reasoning_effort,
+            "detection_reasoning_effort",
+        )
+        self.graph_reasoning_effort = self._normalize_reasoning_effort(
+            graph_reasoning_effort,
+            "graph_reasoning_effort",
+        )
+        self.detection_service_tier = self._normalize_service_tier(
+            detection_service_tier,
+            "detection_service_tier",
+        )
+        self.graph_service_tier = self._normalize_service_tier(
+            graph_service_tier,
+            "graph_service_tier",
+        )
+        self.graph_client = self._create_api_client(
+            api_type=self.graph_api_type,
             base_url=self.graph_base_url,
             api_key_env=self.graph_api_key_env,
             router_name="graph",
         )
-        self.detection_client = self._create_openai_client(
+        self.detection_client = self._create_api_client(
+            api_type=self.detection_api_type,
             base_url=self.detection_base_url,
             api_key_env=self.detection_api_key_env,
             router_name="detection",
@@ -186,6 +212,24 @@ class MLLMClient:
         self.client = self.graph_client
         self._response_format_unsupported_request_keys = (
             self.__class__._global_response_format_unsupported_request_keys
+        )
+
+    def _create_api_client(
+        self,
+        api_type: str,
+        base_url: str,
+        api_key_env: str,
+        router_name: str,
+    ):
+        if api_type == "google_genai":
+            return self._create_google_genai_client(
+                api_key_env=api_key_env,
+                router_name=router_name,
+            )
+        return self._create_openai_client(
+            base_url=base_url,
+            api_key_env=api_key_env,
+            router_name=router_name,
         )
 
     def _create_openai_client(
@@ -211,6 +255,30 @@ class MLLMClient:
             client_kwargs["base_url"] = str(base_url)
         return OpenAI(**client_kwargs)
 
+    def _create_google_genai_client(
+        self,
+        api_key_env: str,
+        router_name: str,
+    ):
+        api_key = os.environ.get(api_key_env)
+        if not api_key:
+            if self.read_saved_raw_outputs:
+                return None
+            raise RuntimeError(
+                "Environment variable %s is required for the %s MLLM API."
+                % (api_key_env, router_name)
+            )
+
+        genai, _types = self._google_genai_modules()
+        return genai.Client(api_key=api_key)
+
+    @staticmethod
+    def _google_genai_modules():
+        from google import genai
+        from google.genai import types
+
+        return genai, types
+
     @staticmethod
     def _normalize_api_type(value: object, field_name: str) -> str:
         normalized = str(value or "chat_completions").strip().lower()
@@ -221,6 +289,9 @@ class MLLMClient:
             "responses": "openai_responses",
             "openai_response": "openai_responses",
             "openai_responses": "openai_responses",
+            "gemini": "google_genai",
+            "google": "google_genai",
+            "google_genai": "google_genai",
         }
         if normalized not in aliases:
             raise ValueError(
@@ -240,8 +311,80 @@ class MLLMClient:
             raise ValueError(
                 "%s must be exactly one of %s."
                 % (field_name, ", ".join(sorted(THINKING_MODES)))
+        )
+        return normalized
+
+    @staticmethod
+    def _normalize_thinking_format(value: object, field_name: str) -> str:
+        if value is None:
+            return "thinking_type"
+        normalized = str(value).strip().lower()
+        aliases = {
+            "thinking": "thinking_type",
+            "thinking_type": "thinking_type",
+            "dashscope": "enable_thinking",
+            "dashscope_enable_thinking": "enable_thinking",
+            "enable_thinking": "enable_thinking",
+        }
+        if normalized not in aliases:
+            raise ValueError(
+                "%s must be exactly one of %s."
+                % (field_name, ", ".join(sorted(THINKING_FORMATS)))
+        )
+        return aliases[normalized]
+
+    @staticmethod
+    def _normalize_bool(value: object, field_name: str) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, bool):
+            return value
+        normalized = str(value).strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off", ""}:
+            return False
+        raise ValueError("%s must be a boolean value." % field_name)
+
+    @staticmethod
+    def _normalize_reasoning_effort(value: object, field_name: str) -> str | None:
+        if value is None:
+            return None
+        normalized = str(value).strip().lower()
+        if not normalized:
+            return None
+        if normalized not in REASONING_EFFORTS:
+            raise ValueError(
+                "%s must be exactly one of %s."
+                % (field_name, ", ".join(sorted(REASONING_EFFORTS)))
             )
         return normalized
+
+    @staticmethod
+    def _normalize_service_tier(value: object, field_name: str) -> str | None:
+        if value is None:
+            return None
+        normalized = str(value).strip().lower()
+        if not normalized:
+            return None
+        if normalized not in OPENAI_RESPONSE_SERVICE_TIERS:
+            raise ValueError(
+                "%s must be exactly one of %s."
+                % (field_name, ", ".join(sorted(OPENAI_RESPONSE_SERVICE_TIERS)))
+            )
+        return normalized
+
+    @classmethod
+    def _responses_service_tier_for_model(
+        cls,
+        configured_service_tier: str | None,
+        model_name: str,
+    ) -> str | None:
+        if configured_service_tier is not None:
+            return configured_service_tier
+        if str(model_name).strip().lower().startswith("gpt-5.4"):
+            return "flex"
+        return None
 
     @staticmethod
     def _strip_code_fences(raw_text: str) -> str:
@@ -323,8 +466,7 @@ class MLLMClient:
 
         return (
             payload,
-            "Added missing outer JSON object brace(s): %s."
-            % ", ".join(added_parts),
+            "Added missing outer JSON object brace(s): %s." % ", ".join(added_parts),
         )
 
     @staticmethod
@@ -468,6 +610,8 @@ class MLLMClient:
         model_name: str,
         request_type: str,
         thinking_mode: str | None,
+        thinking_format: str = "thinking_type",
+        reasoning_split: bool = False,
         use_response_format: bool = True,
     ) -> Dict[str, object]:
         if request_type == "detection":
@@ -497,7 +641,23 @@ class MLLMClient:
             },
         }
         if thinking_mode is not None:
-            request_kwargs["extra_body"]["thinking"] = {"type": thinking_mode}
+            normalized_thinking_format = self._normalize_thinking_format(
+                thinking_format,
+                "%s_thinking_format" % request_type,
+            )
+            if normalized_thinking_format == "thinking_type":
+                request_kwargs["extra_body"]["thinking"] = {"type": thinking_mode}
+            elif thinking_mode in {"enabled", "disabled"}:
+                request_kwargs["extra_body"]["enable_thinking"] = (
+                    thinking_mode == "enabled"
+                )
+            else:
+                raise ValueError(
+                    "%s_thinking=%r cannot use thinking format %r."
+                    % (request_type, thinking_mode, normalized_thinking_format)
+                )
+        if reasoning_split:
+            request_kwargs["extra_body"]["reasoning_split"] = True
 
         if use_response_format:
             request_kwargs["response_format"] = {"type": "json_object"}
@@ -571,7 +731,9 @@ class MLLMClient:
         return "\n".join(chunk for chunk in chunks if chunk).strip()
 
     @classmethod
-    def _responses_input_content_from_chat_content(cls, content) -> List[Dict[str, object]]:
+    def _responses_input_content_from_chat_content(
+        cls, content
+    ) -> List[Dict[str, object]]:
         if isinstance(content, str):
             return [{"type": "input_text", "text": content}]
         if not isinstance(content, list):
@@ -636,6 +798,8 @@ class MLLMClient:
         messages,
         model_name: str,
         request_type: str,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
     ) -> Dict[str, object]:
         instructions, responses_input = self._responses_input_from_chat_messages(
             messages
@@ -653,6 +817,18 @@ class MLLMClient:
         }
         if instructions:
             request_kwargs["instructions"] = instructions
+        normalized_reasoning_effort = self._normalize_reasoning_effort(
+            reasoning_effort,
+            "%s_reasoning_effort" % request_type,
+        )
+        if normalized_reasoning_effort is not None:
+            request_kwargs["reasoning"] = {"effort": normalized_reasoning_effort}
+        normalized_service_tier = self._normalize_service_tier(
+            service_tier,
+            "%s_service_tier" % request_type,
+        )
+        if normalized_service_tier is not None:
+            request_kwargs["service_tier"] = normalized_service_tier
         return request_kwargs
 
     @classmethod
@@ -685,11 +861,15 @@ class MLLMClient:
         request_type: str,
         client,
         router_name: str,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
     ) -> str:
         request_kwargs = self._build_responses_request_kwargs(
             messages=messages,
             model_name=model_name,
             request_type=request_type,
+            reasoning_effort=reasoning_effort,
+            service_tier=service_tier,
         )
 
         try:
@@ -728,6 +908,157 @@ class MLLMClient:
         print()
         return self._responses_output_to_text(response)
 
+    @staticmethod
+    def _request_controls(request_type: str) -> tuple[float, float, int, int]:
+        if request_type == "detection":
+            return (
+                DETECTION_TEMPERATURE,
+                DETECTION_TOP_P,
+                DETECTION_TOP_K,
+                DETECTION_MAX_NEW_TOKENS,
+            )
+        return (
+            GRAPH_TEMPERATURE,
+            GRAPH_TOP_P,
+            GRAPH_TOP_K,
+            GRAPH_MAX_NEW_TOKENS,
+        )
+
+    @classmethod
+    def _google_part_from_data_url(cls, data_url: str, types_module):
+        match = re.fullmatch(r"data:([^;,]+);base64,(.*)", str(data_url), re.DOTALL)
+        if match is None:
+            raise ValueError(
+                "Google GenAI image inputs must be local data URLs produced by "
+                "this project."
+            )
+        mime_type, encoded = match.groups()
+        image_bytes = base64.b64decode(encoded)
+        return types_module.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+
+    @classmethod
+    def _google_parts_from_chat_content(cls, content, types_module) -> List[object]:
+        if isinstance(content, str):
+            return [types_module.Part.from_text(text=content)]
+        if not isinstance(content, list):
+            return [types_module.Part.from_text(text=str(content or ""))]
+
+        parts = []
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get("type")
+            if item_type == "text":
+                parts.append(
+                    types_module.Part.from_text(text=str(item.get("text", "")))
+                )
+            elif item_type == "image_url":
+                image_url = item.get("image_url", {})
+                if isinstance(image_url, dict):
+                    url = image_url.get("url")
+                else:
+                    url = image_url
+                parts.append(cls._google_part_from_data_url(str(url), types_module))
+
+        return parts
+
+    @classmethod
+    def _google_contents_from_chat_messages(
+        cls,
+        messages,
+        types_module,
+    ) -> tuple[str, List[object]]:
+        instructions = []
+        contents = []
+
+        for message in messages:
+            if not isinstance(message, dict):
+                continue
+            role = str(message.get("role", "user"))
+            content = message.get("content", "")
+            if role == "system":
+                system_text = cls._responses_text_from_content(content)
+                if system_text:
+                    instructions.append(system_text)
+                continue
+
+            google_role = "model" if role == "assistant" else "user"
+            parts = cls._google_parts_from_chat_content(content, types_module)
+            if parts:
+                contents.append(types_module.Content(role=google_role, parts=parts))
+
+        return "\n\n".join(instructions).strip(), contents
+
+    def _build_google_genai_request_kwargs(
+        self,
+        messages,
+        model_name: str,
+        request_type: str,
+    ) -> Dict[str, object]:
+        _genai, types_module = self._google_genai_modules()
+        temperature, top_p, top_k, max_output_tokens = self._request_controls(
+            request_type
+        )
+        system_instruction, contents = self._google_contents_from_chat_messages(
+            messages,
+            types_module,
+        )
+        config_kwargs = {
+            "temperature": temperature,
+            "top_p": top_p,
+            "top_k": top_k,
+            "max_output_tokens": max_output_tokens,
+            "response_mime_type": "application/json",
+        }
+        if system_instruction:
+            config_kwargs["system_instruction"] = system_instruction
+
+        return {
+            "model": model_name,
+            "contents": contents,
+            "config": types_module.GenerateContentConfig(**config_kwargs),
+        }
+
+    @classmethod
+    def _google_genai_output_to_text(cls, response) -> str:
+        text = cls._object_get(response, "text")
+        if text is not None:
+            return str(text)
+        candidates = cls._object_get(response, "candidates", [])
+        if not isinstance(candidates, list):
+            return str(candidates or "")
+        chunks = []
+        for candidate in candidates:
+            content = cls._object_get(candidate, "content")
+            parts = cls._object_get(content, "parts", [])
+            if not isinstance(parts, list):
+                continue
+            for part in parts:
+                part_text = cls._object_get(part, "text")
+                if part_text:
+                    chunks.append(str(part_text))
+        return "\n".join(chunks).strip()
+
+    def _request_google_genai_completion(
+        self,
+        messages,
+        model_name: str,
+        request_type: str,
+        client,
+        router_name: str,
+    ) -> str:
+        request_kwargs = self._build_google_genai_request_kwargs(
+            messages=messages,
+            model_name=model_name,
+            request_type=request_type,
+        )
+        response = client.models.generate_content(**request_kwargs)
+        print("usage:", self._object_get(response, "usage_metadata", None))
+        print("model:", model_name)
+        print("provider:", "google_genai")
+        print()
+        return self._google_genai_output_to_text(response)
+
     def _request_completion(
         self,
         messages,
@@ -738,13 +1069,27 @@ class MLLMClient:
             client = self.detection_client
             api_key_env = self.detection_api_key_env
             router_name = "detection"
-            thinking_mode = self.detection_thinking
+            thinking_mode = None
+            thinking_format = "thinking_type"
+            reasoning_split = False
+            reasoning_effort = self.detection_reasoning_effort
+            service_tier = self._responses_service_tier_for_model(
+                self.detection_service_tier,
+                model_name,
+            )
             api_type = self.detection_api_type
         else:
             client = self.graph_client
             api_key_env = self.graph_api_key_env
             router_name = "graph"
             thinking_mode = self.graph_thinking
+            thinking_format = self.graph_thinking_format
+            reasoning_split = self.graph_reasoning_split
+            reasoning_effort = self.graph_reasoning_effort
+            service_tier = self._responses_service_tier_for_model(
+                self.graph_service_tier,
+                model_name,
+            )
             api_type = self.graph_api_type
 
         if client is None:
@@ -756,6 +1101,17 @@ class MLLMClient:
 
         if api_type == "openai_responses":
             return self._request_responses_completion(
+                messages=messages,
+                model_name=model_name,
+                request_type=request_type,
+                client=client,
+                router_name=router_name,
+                reasoning_effort=reasoning_effort,
+                service_tier=service_tier,
+            )
+
+        if api_type == "google_genai":
+            return self._request_google_genai_completion(
                 messages=messages,
                 model_name=model_name,
                 request_type=request_type,
@@ -781,6 +1137,8 @@ class MLLMClient:
             model_name=model_name,
             request_type=request_type,
             thinking_mode=thinking_mode,
+            thinking_format=thinking_format,
+            reasoning_split=reasoning_split,
             use_response_format=use_response_format,
         )
 
@@ -1918,7 +2276,6 @@ class MLLMClient:
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         graph_summary: Optional[Dict[str, object]],
-        scorer,
     ) -> tuple[Dict[str, object], List[str]]:
         raw = self._strip_code_fences(decoded)
         payload = self._parse_json_strict(raw)
@@ -1939,7 +2296,6 @@ class MLLMClient:
             agent_observations=agent_observations,
             targets=targets,
             graph_summary=graph_summary,
-            scorer=scorer,
             semantic_payload_contract="saved_materialized",
         )
         return payload, repair_messages
@@ -2123,7 +2479,10 @@ class MLLMClient:
                         targets=targets,
                     )
                     if repair_message:
-                        print("Saved detection raw output repair applied: %s" % repair_message)
+                        print(
+                            "Saved detection raw output repair applied: %s"
+                            % repair_message
+                        )
                         self._write_detection_raw_output(
                             step_index,
                             json.dumps(payload, indent=2, sort_keys=True),
@@ -2781,7 +3140,6 @@ class MLLMClient:
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         graph: HypothesisGraph,
-        scorer,
     ) -> Optional[Dict[str, object]]:
         graph_summary = graph.get_mllm_summary()
         active_detection_targets = self._filter_targets_by_found_state(
@@ -2888,7 +3246,6 @@ class MLLMClient:
                     agent_observations=agent_observations,
                     targets=graph_targets,
                     graph_summary=graph_summary,
-                    scorer=scorer,
                 )
                 if repair_messages:
                     print("Saved graph MLLM payload repair applied:")
@@ -2998,7 +3355,6 @@ class MLLMClient:
                     agent_observations=agent_observations,
                     targets=graph_targets,
                     graph_summary=graph_summary,
-                    scorer=scorer,
                     semantic_payload_contract="graph_mllm",
                 )
 
@@ -3015,15 +3371,6 @@ class MLLMClient:
 
                 self.semantic_raw_output_index = step_index + 1
                 return payload
-
-            except SigLIPRegionValidationError:
-                self._write_semantic_attempt_error_raw_output(
-                    step_index=step_index,
-                    attempt_index=attempt_index,
-                    decoded=decoded,
-                )
-                self.semantic_raw_output_index = step_index + 1
-                raise
 
             except Exception as exc:
                 last_error = exc
@@ -3663,7 +4010,6 @@ class MLLMClient:
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         graph_summary: Optional[Dict[str, object]] = None,
-        scorer=None,
         semantic_payload_contract: str = "graph_mllm",
     ) -> Dict[str, object]:
         try:
@@ -3672,11 +4018,8 @@ class MLLMClient:
                 agent_observations=agent_observations,
                 targets=targets,
                 graph_summary=graph_summary,
-                scorer=scorer,
                 semantic_payload_contract=semantic_payload_contract,
             )
-        except SigLIPRegionValidationError:
-            raise
         except GraphValidationError:
             raise
         except (KeyError, TypeError, ValueError) as exc:
@@ -3695,7 +4038,6 @@ class MLLMClient:
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         graph_summary: Optional[Dict[str, object]] = None,
-        scorer=None,
         semantic_payload_contract: str = "graph_mllm",
     ) -> Dict[str, object]:
         if semantic_payload_contract not in {"graph_mllm", "saved_materialized"}:

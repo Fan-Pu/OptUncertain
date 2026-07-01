@@ -90,12 +90,6 @@ generated batch output.
 
 ## Dependencies
 
-SigLIP scoring requires:
-
-```bash
-pip install torch transformers
-```
-
 The MLLM client uses OpenAI-compatible APIs. The runtime currently routes
 detection through Hugging Face (`HF_TOKEN`) and graph generation through
 DashScope (`DASHSCOPE_API_KEY`) in `main.py`.

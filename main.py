@@ -14,7 +14,6 @@ from typing import Dict, List, Tuple
 import debugpy
 from tqdm import tqdm
 
-import Helper
 from route_plotter import (
     load_environment_graph,
     print_route_summary,
@@ -32,6 +31,9 @@ BATCH_GENERATION_KEYS = (
 DEFAULT_CONFIG_PATH = Path("config") / "default_config.json"
 DEBUGPY_LISTENING = False
 BATCH_GENERATION_VERSION = 3
+BATCH_CASE_GENERATION_VERSION = 1
+BATCH_VISIBILITY_VERSION = 1
+SAMPLE_BALANCE_MODES = ("marginal", "param_config")
 
 
 def _read_json(path: str | Path) -> object:
@@ -56,6 +58,12 @@ def _read_json_if_exists(path: str | Path) -> object | None:
 
 def _project_root() -> Path:
     return Path(__file__).resolve().parent
+
+
+def _helper_module():
+    import Helper
+
+    return Helper
 
 
 def _default_config_path(project_root: str | Path | None = None) -> Path:
@@ -341,6 +349,27 @@ def _build_diverse_target_selections(
 
 
 def _batch_generation_config(batch_config: Dict[str, object]) -> Dict[str, object]:
+    config: Dict[str, object] = {}
+    if "scans" in batch_config:
+        config["scans"] = [
+            {
+                "scan_id": str(scan["scan_id"]),
+                "targets": [
+                    _normalize_batch_generation_target(target)
+                    for target in scan["targets"]
+                ],
+            }
+            for scan in batch_config["scans"]
+        ]
+    for key in ("agent_num_selections", "target_num_selections", "max_steps"):
+        if key in batch_config:
+            config[key] = copy.deepcopy(batch_config[key])
+    return config
+
+
+def _legacy_batch_generation_config(
+    batch_config: Dict[str, object],
+) -> Dict[str, object]:
     return {
         key: copy.deepcopy(batch_config[key])
         for key in BATCH_GENERATION_KEYS
@@ -360,23 +389,289 @@ def _batch_config_hash_payload(batch_config: Dict[str, object]) -> bytes:
     return encoded
 
 
-def _batch_config_hash(batch_config: Dict[str, object]) -> str:
-    encoded = _batch_config_hash_payload(_batch_generation_config(batch_config))
+def _batch_case_generation_hash_payload(batch_config: Dict[str, object]) -> bytes:
+    return json.dumps(
+        {
+            "batch_case_generation_version": BATCH_CASE_GENERATION_VERSION,
+            "batch_case_generation_config": batch_config,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def _batch_visibility_hash_payload(batch_config: Dict[str, object]) -> bytes:
+    return json.dumps(
+        {
+            "batch_visibility_version": BATCH_VISIBILITY_VERSION,
+            "batch_visibility_config": batch_config,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def _normalize_batch_generation_target(
+    target: Dict[str, object],
+) -> Dict[str, object]:
+    normalized_target = {
+        "target_id": str(target["target_id"]),
+        "description": str(target["description"]),
+    }
+    if "distance_threshold_m" in target:
+        normalized_target["distance_threshold_m"] = float(
+            target["distance_threshold_m"]
+        )
+    return normalized_target
+
+
+def _batch_visibility_config(batch_config: Dict[str, object]) -> Dict[str, object]:
+    return {
+        "scans": [
+            {
+                "scan_id": str(scan["scan_id"]),
+                "targets": [
+                    {
+                        "target_id": str(target["target_id"]),
+                        "detectable_viewpoint_ids": [
+                            str(viewpoint_id)
+                            for viewpoint_id in target.get(
+                                "detectable_viewpoint_ids", []
+                            )
+                        ],
+                    }
+                    for target in scan["targets"]
+                ],
+            }
+            for scan in batch_config.get("scans", [])
+        ]
+    }
+
+
+def _batch_case_generation_hash(batch_config: Dict[str, object]) -> str:
+    encoded = _batch_case_generation_hash_payload(
+        _batch_generation_config(batch_config)
+    )
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _batch_visibility_hash(batch_config: Dict[str, object]) -> str:
+    encoded = _batch_visibility_hash_payload(_batch_visibility_config(batch_config))
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _batch_config_hash(batch_config: Dict[str, object]) -> str:
+    return _batch_case_generation_hash(batch_config)
 
 
 def _legacy_batch_config_hash_for_generation_config(
     batch_config: Dict[str, object],
 ) -> str:
-    encoded = _batch_config_hash_payload(_batch_generation_config(batch_config))
+    encoded = _batch_config_hash_payload(_legacy_batch_generation_config(batch_config))
     return hashlib.sha256(encoded).hexdigest()
 
 
 def _accepted_batch_config_hashes(batch_config: Dict[str, object]) -> set[str]:
     return {
         _batch_config_hash(batch_config),
+        _batch_case_generation_hash(batch_config),
         _legacy_batch_config_hash_for_generation_config(batch_config),
     }
+
+
+def _target_records_by_scan(
+    batch_config: Dict[str, object],
+) -> Dict[str, Dict[str, Dict[str, object]]]:
+    records_by_scan: Dict[str, Dict[str, Dict[str, object]]] = {}
+    for scan in batch_config["scans"]:
+        scan_id = str(scan["scan_id"])
+        if scan_id in records_by_scan:
+            raise ValueError("Duplicate scan_id %s in batch config." % scan_id)
+        target_records: Dict[str, Dict[str, object]] = {}
+        for target in scan["targets"]:
+            target_record = _normalize_batch_generation_target(target)
+            target_id = str(target_record["target_id"])
+            if target_id in target_records:
+                raise ValueError(
+                    "Duplicate target_id %s in batch scan %s."
+                    % (target_id, scan_id)
+                )
+            target_records[target_id] = target_record
+        records_by_scan[scan_id] = target_records
+    return records_by_scan
+
+
+def _expected_batch_case_specs(
+    batch_config: Dict[str, object],
+) -> Tuple[List[str], Dict[str, Dict[str, object]]]:
+    agent_requests = _selection_requests(
+        list(batch_config["agent_num_selections"]),
+        "agent_number",
+    )
+    target_requests = _selection_requests(
+        list(batch_config["target_num_selections"]),
+        "target_number",
+    )
+    expected_order: List[str] = []
+    expected_specs: Dict[str, Dict[str, object]] = {}
+    max_steps = int(batch_config["max_steps"]) if "max_steps" in batch_config else None
+
+    for scan in batch_config["scans"]:
+        scan_id = str(scan["scan_id"])
+        case_index_for_scan = 1
+        for agent_number, agent_selection_index in agent_requests:
+            for target_number, target_selection_index in target_requests:
+                case_id = "%s_case_%04d" % (scan_id, case_index_for_scan)
+                case_index_for_scan += 1
+                spec: Dict[str, object] = {
+                    "test_case": case_id,
+                    "scan_id": scan_id,
+                    "agent_number": agent_number,
+                    "agent_selection_index": agent_selection_index,
+                    "target_number": target_number,
+                    "target_selection_index": target_selection_index,
+                }
+                if max_steps is not None:
+                    spec["max_steps"] = max_steps
+                expected_order.append(case_id)
+                expected_specs[case_id] = spec
+    return expected_order, expected_specs
+
+
+def _raise_batch_case_generation_mismatch(
+    batch_id: str,
+    summary_path: Path,
+    reason: str,
+) -> None:
+    raise ValueError(
+        "Existing generated batch cases for %s are not compatible with the "
+        "current case-generation config at %s: %s"
+        % (str(batch_id), str(summary_path), reason)
+    )
+
+
+def _validate_batch_summary_case_generation(
+    summary: Dict[str, object],
+    batch_config: Dict[str, object],
+    batch_id: str,
+    summary_path: Path,
+) -> None:
+    cases = summary.get("cases")
+    if not isinstance(cases, dict):
+        raise TypeError("Generated batch case summary cases must be a JSON object.")
+
+    if "batch_id" in summary and str(summary["batch_id"]) != str(batch_id):
+        _raise_batch_case_generation_mismatch(
+            batch_id=batch_id,
+            summary_path=summary_path,
+            reason="saved batch_id %s does not match %s"
+            % (str(summary["batch_id"]), str(batch_id)),
+        )
+
+    expected_order, expected_specs = _expected_batch_case_specs(batch_config)
+    case_order = _case_order_from_batch_summary(summary)
+    if case_order != expected_order:
+        _raise_batch_case_generation_mismatch(
+            batch_id=batch_id,
+            summary_path=summary_path,
+            reason="case order does not match the configured scan/selection layout",
+        )
+    if set(cases) != set(expected_order):
+        _raise_batch_case_generation_mismatch(
+            batch_id=batch_id,
+            summary_path=summary_path,
+            reason="case ids do not match the configured scan/selection layout",
+        )
+    if "generated_case_count" in summary and int(summary["generated_case_count"]) != len(
+        expected_order
+    ):
+        _raise_batch_case_generation_mismatch(
+            batch_id=batch_id,
+            summary_path=summary_path,
+            reason="generated_case_count does not match configured case count",
+        )
+
+    target_records_by_scan = _target_records_by_scan(batch_config)
+    for case_id in expected_order:
+        case = cases[case_id]
+        expected = expected_specs[case_id]
+        for field, expected_value in expected.items():
+            if field not in case:
+                _raise_batch_case_generation_mismatch(
+                    batch_id=batch_id,
+                    summary_path=summary_path,
+                    reason="case %s is missing %s" % (case_id, field),
+                )
+            if field in {
+                "agent_number",
+                "agent_selection_index",
+                "target_number",
+                "target_selection_index",
+                "max_steps",
+            }:
+                actual_value = int(case[field])
+            else:
+                actual_value = str(case[field])
+            if actual_value != expected_value:
+                _raise_batch_case_generation_mismatch(
+                    batch_id=batch_id,
+                    summary_path=summary_path,
+                    reason="case %s field %s changed" % (case_id, field),
+                )
+
+        agents = case.get("agents")
+        if not isinstance(agents, list) or len(agents) != int(case["agent_number"]):
+            _raise_batch_case_generation_mismatch(
+                batch_id=batch_id,
+                summary_path=summary_path,
+                reason="case %s agent count does not match agent_number" % case_id,
+            )
+
+        targets = case.get("targets")
+        if not isinstance(targets, list) or len(targets) != int(case["target_number"]):
+            _raise_batch_case_generation_mismatch(
+                batch_id=batch_id,
+                summary_path=summary_path,
+                reason="case %s target count does not match target_number" % case_id,
+            )
+        target_records = target_records_by_scan[str(case["scan_id"])]
+        for target in targets:
+            target_record = _normalize_batch_generation_target(target)
+            target_id = str(target_record["target_id"])
+            if target_id not in target_records:
+                _raise_batch_case_generation_mismatch(
+                    batch_id=batch_id,
+                    summary_path=summary_path,
+                    reason="case %s uses unknown target_id %s"
+                    % (case_id, target_id),
+                )
+            if target_record != target_records[target_id]:
+                _raise_batch_case_generation_mismatch(
+                    batch_id=batch_id,
+                    summary_path=summary_path,
+                    reason="case %s target %s definition changed"
+                    % (case_id, target_id),
+                )
+
+
+def refresh_batch_summary_hash_metadata(
+    summary: Dict[str, object],
+    batch_config: Dict[str, object],
+    batch_id: str,
+    summary_path: Path,
+) -> Dict[str, object]:
+    _validate_batch_summary_case_generation(
+        summary=summary,
+        batch_config=batch_config,
+        batch_id=batch_id,
+        summary_path=summary_path,
+    )
+    refreshed = copy.deepcopy(summary)
+    case_generation_hash = _batch_case_generation_hash(batch_config)
+    refreshed["batch_config_hash"] = case_generation_hash
+    refreshed["batch_case_generation_hash"] = case_generation_hash
+    refreshed["batch_visibility_hash"] = _batch_visibility_hash(batch_config)
+    return refreshed
 
 
 def _debug_output_root_name(run_id: str | None = None) -> str:
@@ -433,13 +728,19 @@ def _validate_batch_summary_hash(
     batch_id: str,
     summary_path: Path,
 ) -> None:
-    saved_hash = str(summary.get("batch_config_hash"))
-    if saved_hash not in _accepted_batch_config_hashes(batch_config):
-        raise ValueError(
-            "Existing generated batch cases for %s were produced from a "
-            "different batch config. Delete %s to start a new random batch."
-            % (str(batch_id), str(summary_path))
-        )
+    saved_hashes = {
+        str(summary[key])
+        for key in ("batch_case_generation_hash", "batch_config_hash")
+        if key in summary
+    }
+    if saved_hashes & _accepted_batch_config_hashes(batch_config):
+        return
+    _validate_batch_summary_case_generation(
+        summary=summary,
+        batch_config=batch_config,
+        batch_id=batch_id,
+        summary_path=summary_path,
+    )
 
 
 def generate_batch_scenarios(
@@ -565,6 +866,8 @@ def generate_batch_scenarios(
     summary = {
         "batch_id": str(batch_id),
         "batch_config_hash": _batch_config_hash(batch_config),
+        "batch_case_generation_hash": _batch_case_generation_hash(batch_config),
+        "batch_visibility_hash": _batch_visibility_hash(batch_config),
         "generated_case_count": len(generated_cases),
         "case_order": list(generated_cases),
         "cases": generated_cases,
@@ -666,6 +969,92 @@ def _balanced_count_bounds(
     return [lower for _ in labels], [upper for _ in labels]
 
 
+def _proportional_count_bounds(
+    total_count: int,
+    labels: List[object],
+    source_counts: Dict[object, int],
+) -> Tuple[List[int], List[int]]:
+    source_total = sum(int(source_counts[label]) for label in labels)
+    if source_total <= 0:
+        raise ValueError("Source count total must be positive.")
+    lower = []
+    upper = []
+    for label in labels:
+        numerator = int(total_count) * int(source_counts[label])
+        lower.append(numerator // source_total)
+        upper.append((numerator + source_total - 1) // source_total)
+    return lower, upper
+
+
+def _apportioned_counts(
+    total_count: int,
+    labels: List[object],
+    source_counts: Dict[object, int],
+    sample_seed: int,
+    state: Tuple[object, ...],
+) -> List[int]:
+    source_total = sum(int(source_counts[label]) for label in labels)
+    if source_total <= 0:
+        raise ValueError("Source count total must be positive.")
+    counts = []
+    remainders_by_index = []
+    for index, label in enumerate(labels):
+        numerator = int(total_count) * int(source_counts[label])
+        counts.append(numerator // source_total)
+        remainders_by_index.append((numerator % source_total, index))
+
+    remaining = int(total_count) - sum(counts)
+    if remaining < 0:
+        raise ValueError("Apportioned lower counts exceed total count.")
+    by_remainder: Dict[int, List[int]] = {}
+    for remainder, index in remainders_by_index:
+        by_remainder.setdefault(remainder, []).append(index)
+    ordered_indices = []
+    for remainder in sorted(by_remainder, reverse=True):
+        tied_indices = list(by_remainder[remainder])
+        _state_shuffle(
+            tied_indices,
+            sample_seed=sample_seed,
+            state=tuple(list(state) + [remainder]),
+        )
+        ordered_indices.extend(tied_indices)
+    for index in ordered_indices[:remaining]:
+        counts[index] += 1
+    return counts
+
+
+def _batch_agent_target_combo_key(case: Dict[str, object]) -> str:
+    return "agents=%s,target=%s" % (
+        str(case["agent_number"]),
+        str(case["target_number"]),
+    )
+
+
+def _batch_param_config_key(case: Dict[str, object]) -> Tuple[int, int, int, int]:
+    return (
+        int(case["agent_number"]),
+        int(case["target_number"]),
+        int(case["agent_selection_index"]),
+        int(case["target_selection_index"]),
+    )
+
+
+def _batch_param_config_distribution_key(
+    config_key: Tuple[int, int, int, int]
+) -> str:
+    return "agents=%s,target=%s,agent_sel=%s,target_sel=%s" % config_key
+
+
+def _normalize_sample_balance(value: str | None) -> str:
+    normalized = str(value or "marginal").strip().lower()
+    if normalized not in SAMPLE_BALANCE_MODES:
+        raise ValueError(
+            "--sample-balance must be exactly one of %s."
+            % ", ".join(SAMPLE_BALANCE_MODES)
+        )
+    return normalized
+
+
 def _batch_case_distribution(
     summary: Dict[str, object],
     case_ids: List[str],
@@ -675,12 +1064,24 @@ def _batch_case_distribution(
         "scan_id": {},
         "agent_number": {},
         "target_number": {},
+        "agent_target_combo": {},
+        "param_config": {},
     }
     for case_id in case_ids:
         case = cases[case_id]
-        for field in distribution:
+        for field in ("scan_id", "agent_number", "target_number"):
             key = str(case[field])
             distribution[field][key] = distribution[field].get(key, 0) + 1
+        combo_key = _batch_agent_target_combo_key(case)
+        distribution["agent_target_combo"][combo_key] = (
+            distribution["agent_target_combo"].get(combo_key, 0) + 1
+        )
+        param_key = _batch_param_config_distribution_key(
+            _batch_param_config_key(case)
+        )
+        distribution["param_config"][param_key] = (
+            distribution["param_config"].get(param_key, 0) + 1
+        )
     return distribution
 
 
@@ -692,6 +1093,26 @@ def _state_shuffle(
 
 
 def sample_batch_case_ids(
+    summary: Dict[str, object],
+    sample_count: int,
+    sample_seed: int = 0,
+    sample_balance: str = "marginal",
+) -> List[str]:
+    sample_balance = _normalize_sample_balance(sample_balance)
+    if sample_balance == "param_config":
+        return _sample_param_config_batch_case_ids(
+            summary=summary,
+            sample_count=sample_count,
+            sample_seed=sample_seed,
+        )
+    return _sample_marginal_batch_case_ids(
+        summary=summary,
+        sample_count=sample_count,
+        sample_seed=sample_seed,
+    )
+
+
+def _sample_marginal_batch_case_ids(
     summary: Dict[str, object],
     sample_count: int,
     sample_seed: int = 0,
@@ -766,6 +1187,411 @@ def sample_batch_case_ids(
         ).shuffle(shuffled_case_ids)
         selected_case_ids.update(shuffled_case_ids[:selected_count])
 
+    return [case_id for case_id in case_order if case_id in selected_case_ids]
+
+
+def _sample_param_config_batch_case_ids(
+    summary: Dict[str, object],
+    sample_count: int,
+    sample_seed: int = 0,
+) -> List[str]:
+    case_order = _case_order_from_batch_summary(summary)
+    if sample_count <= 0:
+        raise ValueError("Sample count must be positive.")
+    if sample_count > len(case_order):
+        raise ValueError(
+            "Sample count %s exceeds generated case count %s."
+            % (sample_count, len(case_order))
+        )
+
+    cases = summary["cases"]
+    scans = _unique_in_order([str(cases[case_id]["scan_id"]) for case_id in case_order])
+    config_keys = _unique_in_order(
+        [_batch_param_config_key(cases[case_id]) for case_id in case_order]
+    )
+    if sample_count < len(scans):
+        raise ValueError(
+            "Sample count %s cannot cover all %s scans." % (sample_count, len(scans))
+        )
+
+    config_index = {config_key: index for index, config_key in enumerate(config_keys)}
+    config_source_counts = {config_key: 0 for config_key in config_keys}
+    agent_labels = _unique_in_order([config_key[0] for config_key in config_keys])
+    target_labels = _unique_in_order([config_key[1] for config_key in config_keys])
+    combo_labels = _unique_in_order(
+        [(config_key[0], config_key[1]) for config_key in config_keys]
+    )
+    agent_source_counts = {agent: 0 for agent in agent_labels}
+    target_source_counts = {target: 0 for target in target_labels}
+    combo_source_counts = {combo: 0 for combo in combo_labels}
+    scan_source_counts = {scan_id: 0 for scan_id in scans}
+    for case_id in case_order:
+        case = cases[case_id]
+        config_key = _batch_param_config_key(case)
+        agent_target_combo = (config_key[0], config_key[1])
+        config_source_counts[config_key] += 1
+        agent_source_counts[config_key[0]] += 1
+        target_source_counts[config_key[1]] += 1
+        combo_source_counts[agent_target_combo] += 1
+        scan_source_counts[str(case["scan_id"])] += 1
+
+    config_lower, config_upper = _balanced_count_bounds(sample_count, config_keys)
+    for config_key in config_keys:
+        index = config_index[config_key]
+        if config_lower[index] > config_source_counts[config_key]:
+            raise ValueError(
+                "Param-config sample count lower bound exceeds available cases."
+            )
+        config_upper[index] = min(config_upper[index], config_source_counts[config_key])
+
+    agent_lower, agent_upper = _proportional_count_bounds(
+        sample_count,
+        agent_labels,
+        agent_source_counts,
+    )
+    target_lower, target_upper = _proportional_count_bounds(
+        sample_count,
+        target_labels,
+        target_source_counts,
+    )
+    combo_lower, combo_upper = _proportional_count_bounds(
+        sample_count,
+        combo_labels,
+        combo_source_counts,
+    )
+
+    agent_index = {agent: index for index, agent in enumerate(agent_labels)}
+    target_index = {target: index for index, target in enumerate(target_labels)}
+    combo_index = {combo: index for index, combo in enumerate(combo_labels)}
+    config_records = []
+    for config_key in config_keys:
+        combo_key = (config_key[0], config_key[1])
+        config_records.append(
+            (
+                agent_index[config_key[0]],
+                target_index[config_key[1]],
+                combo_index[combo_key],
+                config_source_counts[config_key],
+            )
+        )
+
+    config_counts = _solve_param_config_counts(
+        config_records=config_records,
+        sample_count=sample_count,
+        config_lower=config_lower,
+        config_upper=config_upper,
+        agent_lower=agent_lower,
+        agent_upper=agent_upper,
+        target_lower=target_lower,
+        target_upper=target_upper,
+        combo_lower=combo_lower,
+        combo_upper=combo_upper,
+        sample_seed=sample_seed,
+    )
+    return _select_param_config_cases_by_scan_flow(
+        summary=summary,
+        case_order=case_order,
+        config_keys=config_keys,
+        config_counts=config_counts,
+        scans=scans,
+        scan_source_counts=scan_source_counts,
+        sample_count=sample_count,
+        sample_seed=sample_seed,
+    )
+
+
+def _solve_param_config_counts(
+    config_records: List[Tuple[int, int, int, int]],
+    sample_count: int,
+    config_lower: List[int],
+    config_upper: List[int],
+    agent_lower: List[int],
+    agent_upper: List[int],
+    target_lower: List[int],
+    target_upper: List[int],
+    combo_lower: List[int],
+    combo_upper: List[int],
+    sample_seed: int,
+) -> List[int]:
+    config_count = len(config_records)
+    suffix_min_total = [0 for _ in range(config_count + 1)]
+    suffix_max_total = [0 for _ in range(config_count + 1)]
+    suffix_min_agent = [[0 for _ in agent_lower] for _ in range(config_count + 1)]
+    suffix_max_agent = [[0 for _ in agent_lower] for _ in range(config_count + 1)]
+    suffix_min_target = [[0 for _ in target_lower] for _ in range(config_count + 1)]
+    suffix_max_target = [[0 for _ in target_lower] for _ in range(config_count + 1)]
+    suffix_min_combo = [[0 for _ in combo_lower] for _ in range(config_count + 1)]
+    suffix_max_combo = [[0 for _ in combo_lower] for _ in range(config_count + 1)]
+    for index in range(config_count - 1, -1, -1):
+        agent_id, target_id, combo_id, capacity = config_records[index]
+        lower = config_lower[index]
+        upper = min(config_upper[index], capacity)
+        suffix_min_total[index] = suffix_min_total[index + 1] + lower
+        suffix_max_total[index] = suffix_max_total[index + 1] + upper
+        suffix_min_agent[index] = list(suffix_min_agent[index + 1])
+        suffix_max_agent[index] = list(suffix_max_agent[index + 1])
+        suffix_min_target[index] = list(suffix_min_target[index + 1])
+        suffix_max_target[index] = list(suffix_max_target[index + 1])
+        suffix_min_combo[index] = list(suffix_min_combo[index + 1])
+        suffix_max_combo[index] = list(suffix_max_combo[index + 1])
+        suffix_min_agent[index][agent_id] += lower
+        suffix_max_agent[index][agent_id] += upper
+        suffix_min_target[index][target_id] += lower
+        suffix_max_target[index][target_id] += upper
+        suffix_min_combo[index][combo_id] += lower
+        suffix_max_combo[index][combo_id] += upper
+
+    failed_states = set()
+
+    def category_feasible(
+        counts: Tuple[int, ...],
+        lower: List[int],
+        upper: List[int],
+        suffix_min: List[int],
+        suffix_max: List[int],
+    ) -> bool:
+        for category_index, count in enumerate(counts):
+            if count > upper[category_index]:
+                return False
+            if count + suffix_max[category_index] < lower[category_index]:
+                return False
+            if count + suffix_min[category_index] > upper[category_index]:
+                return False
+        return True
+
+    def feasible_prefix(
+        index: int,
+        selected_total: int,
+        agent_counts: Tuple[int, ...],
+        target_counts: Tuple[int, ...],
+        combo_counts: Tuple[int, ...],
+    ) -> bool:
+        if selected_total + suffix_min_total[index] > sample_count:
+            return False
+        if selected_total + suffix_max_total[index] < sample_count:
+            return False
+        return (
+            category_feasible(
+                agent_counts,
+                agent_lower,
+                agent_upper,
+                suffix_min_agent[index],
+                suffix_max_agent[index],
+            )
+            and category_feasible(
+                target_counts,
+                target_lower,
+                target_upper,
+                suffix_min_target[index],
+                suffix_max_target[index],
+            )
+            and category_feasible(
+                combo_counts,
+                combo_lower,
+                combo_upper,
+                suffix_min_combo[index],
+                suffix_max_combo[index],
+            )
+        )
+
+    def search(
+        index: int,
+        selected_total: int,
+        agent_counts: Tuple[int, ...],
+        target_counts: Tuple[int, ...],
+        combo_counts: Tuple[int, ...],
+    ) -> List[int] | None:
+        state = (index, selected_total, agent_counts, target_counts, combo_counts)
+        if state in failed_states:
+            return None
+        if not feasible_prefix(
+            index=index,
+            selected_total=selected_total,
+            agent_counts=agent_counts,
+            target_counts=target_counts,
+            combo_counts=combo_counts,
+        ):
+            failed_states.add(state)
+            return None
+        if index == config_count:
+            if selected_total == sample_count:
+                return []
+            failed_states.add(state)
+            return None
+
+        agent_id, target_id, combo_id, capacity = config_records[index]
+        min_selected = config_lower[index]
+        max_selected = min(
+            config_upper[index],
+            capacity,
+            sample_count - selected_total,
+            agent_upper[agent_id] - agent_counts[agent_id],
+            target_upper[target_id] - target_counts[target_id],
+            combo_upper[combo_id] - combo_counts[combo_id],
+        )
+        candidates = list(range(min_selected, max_selected + 1))
+        _state_shuffle(candidates, sample_seed=sample_seed, state=state)
+        for selected_count in candidates:
+            next_agent_counts = list(agent_counts)
+            next_target_counts = list(target_counts)
+            next_combo_counts = list(combo_counts)
+            next_agent_counts[agent_id] += selected_count
+            next_target_counts[target_id] += selected_count
+            next_combo_counts[combo_id] += selected_count
+            tail = search(
+                index=index + 1,
+                selected_total=selected_total + selected_count,
+                agent_counts=tuple(next_agent_counts),
+                target_counts=tuple(next_target_counts),
+                combo_counts=tuple(next_combo_counts),
+            )
+            if tail is not None:
+                return [selected_count] + tail
+
+        failed_states.add(state)
+        return None
+
+    solution = search(
+        index=0,
+        selected_total=0,
+        agent_counts=tuple(0 for _ in agent_lower),
+        target_counts=tuple(0 for _ in target_lower),
+        combo_counts=tuple(0 for _ in combo_lower),
+    )
+    if solution is None:
+        raise ValueError("No param-config-balanced sample exists for the requested count.")
+    return solution
+
+
+def _select_param_config_cases_by_scan_flow(
+    summary: Dict[str, object],
+    case_order: List[str],
+    config_keys: List[Tuple[int, int, int, int]],
+    config_counts: List[int],
+    scans: List[str],
+    scan_source_counts: Dict[str, int],
+    sample_count: int,
+    sample_seed: int,
+) -> List[str]:
+    cases = summary["cases"]
+    config_index = {config_key: index for index, config_key in enumerate(config_keys)}
+    scan_index = {scan_id: index for index, scan_id in enumerate(scans)}
+    scan_quotas = _apportioned_counts(
+        sample_count,
+        scans,
+        scan_source_counts,
+        sample_seed=sample_seed,
+        state=("param_config_scan_quota",),
+    )
+
+    edge_case_ids: Dict[Tuple[int, int], List[str]] = {}
+    for case_id in case_order:
+        case = cases[case_id]
+        edge_key = (
+            config_index[_batch_param_config_key(case)],
+            scan_index[str(case["scan_id"])],
+        )
+        edge_case_ids.setdefault(edge_key, []).append(case_id)
+
+    node_count = 2 + len(config_keys) + len(scans)
+    source = 0
+    config_offset = 1
+    scan_offset = config_offset + len(config_keys)
+    sink = node_count - 1
+    adjacency: List[List[Dict[str, int]]] = [[] for _ in range(node_count)]
+
+    def add_edge(source_node: int, target_node: int, capacity: int) -> Dict[str, int]:
+        forward = {
+            "to": target_node,
+            "rev": len(adjacency[target_node]),
+            "cap": int(capacity),
+            "initial": int(capacity),
+        }
+        reverse = {
+            "to": source_node,
+            "rev": len(adjacency[source_node]),
+            "cap": 0,
+            "initial": 0,
+        }
+        adjacency[source_node].append(forward)
+        adjacency[target_node].append(reverse)
+        return forward
+
+    for config_id, config_count in enumerate(config_counts):
+        add_edge(source, config_offset + config_id, config_count)
+    config_scan_edges: Dict[Tuple[int, int], Dict[str, int]] = {}
+    for config_id in range(len(config_keys)):
+        for scan_id in range(len(scans)):
+            capacity = len(edge_case_ids.get((config_id, scan_id), []))
+            if capacity:
+                edge = add_edge(
+                    config_offset + config_id,
+                    scan_offset + scan_id,
+                    capacity,
+                )
+                config_scan_edges[(config_id, scan_id)] = edge
+    for scan_id, scan_quota in enumerate(scan_quotas):
+        add_edge(scan_offset + scan_id, sink, scan_quota)
+
+    def max_flow() -> int:
+        total_flow = 0
+        while True:
+            levels = [-1 for _ in range(node_count)]
+            levels[source] = 0
+            queue = [source]
+            queue_index = 0
+            while queue_index < len(queue):
+                node = queue[queue_index]
+                queue_index += 1
+                for edge in adjacency[node]:
+                    if edge["cap"] > 0 and levels[edge["to"]] < 0:
+                        levels[edge["to"]] = levels[node] + 1
+                        queue.append(edge["to"])
+            if levels[sink] < 0:
+                return total_flow
+
+            next_edge = [0 for _ in range(node_count)]
+
+            def send_flow(node: int, flow: int) -> int:
+                if node == sink:
+                    return flow
+                while next_edge[node] < len(adjacency[node]):
+                    edge = adjacency[node][next_edge[node]]
+                    if edge["cap"] > 0 and levels[node] + 1 == levels[edge["to"]]:
+                        pushed = send_flow(edge["to"], min(flow, edge["cap"]))
+                        if pushed:
+                            edge["cap"] -= pushed
+                            reverse_edge = adjacency[edge["to"]][edge["rev"]]
+                            reverse_edge["cap"] += pushed
+                            return pushed
+                    next_edge[node] += 1
+                return 0
+
+            while True:
+                pushed_flow = send_flow(source, sample_count - total_flow)
+                if not pushed_flow:
+                    break
+                total_flow += pushed_flow
+
+    flow_value = max_flow()
+    if flow_value != sample_count:
+        raise ValueError("No exact scan-balanced assignment exists for selected configs.")
+
+    selected_case_ids = set()
+    for edge_key, edge in config_scan_edges.items():
+        edge_flow = edge["initial"] - edge["cap"]
+        if edge_flow <= 0:
+            continue
+        candidates = list(edge_case_ids[edge_key])
+        _state_shuffle(
+            candidates,
+            sample_seed=sample_seed,
+            state=tuple(["param_config_edge_cases"] + list(edge_key)),
+        )
+        selected_case_ids.update(candidates[:edge_flow])
+
+    if len(selected_case_ids) != sample_count:
+        raise ValueError("Param-config sample selected an unexpected case count.")
     return [case_id for case_id in case_order if case_id in selected_case_ids]
 
 
@@ -954,7 +1780,9 @@ def write_sampled_batch_manifests(
     sample_seed: int,
     project_root: str | Path | None = None,
     run_id: str | None = None,
+    sample_balance: str = "marginal",
 ) -> Tuple[Path, Path]:
+    sample_balance = _normalize_sample_balance(sample_balance)
     sampled_summary = _sampled_batch_summary(summary, sampled_case_ids)
     sampled_cases_path = _sampled_cases_path(
         batch_id=batch_id,
@@ -973,6 +1801,7 @@ def write_sampled_batch_manifests(
             "run_id": None if run_id is None else str(run_id),
             "sample_count": int(sample_count),
             "sample_seed": int(sample_seed),
+            "sample_balance": sample_balance,
             "generated_case_count": len(_case_order_from_batch_summary(summary)),
             "sampled_case_count": len(sampled_case_ids),
             "case_order": [str(case_id) for case_id in sampled_case_ids],
@@ -1077,6 +1906,7 @@ def _collect_completed_targets(
     been updated.
     """
 
+    Helper = _helper_module()
     target_records = _normalize_targets(targets)
     valid_target_ids = {str(target["target_id"]) for target in target_records}
 
@@ -1177,6 +2007,7 @@ def _center_completed_targets(
 ) -> None:
     """Rotate agents in-place to center the found targets in their view."""
 
+    Helper = _helper_module()
     completed_targets_by_agent = {}
     for completed_target in completed_targets:
         agent_id = str(completed_target["agent_id"])
@@ -1222,6 +2053,7 @@ def _center_completed_targets(
 
 
 def _init_agent_sims(scenario: Dict[str, object], scan_id: str):
+    Helper = _helper_module()
     sims = []
     for agent in scenario["agents"]:
         sim = Helper.init_render(batch_size=1, enable_render=False)
@@ -1241,6 +2073,7 @@ def _current_agent_states(agent_sims):
 
 
 def _initialize_executed_routes(scenario: Dict[str, object]) -> Dict[str, List[int]]:
+    Helper = _helper_module()
     return {
         str(agent["id"]): [
             int(Helper.viewpoint_index_by_vp_label[str(agent["start_viewpoint_id"])])
@@ -1327,6 +2160,7 @@ def _max_steps_reached(step_index: int, max_steps: int | None) -> bool:
 
 
 def _target_directed_eligible_endpoint_ids(hypothesis_graph) -> List[int]:
+    Helper = _helper_module()
     current_viewpoint_ids = {
         int(node_id) for node_id in hypothesis_graph.agent_current_vp_ids.values()
     }
@@ -1423,7 +2257,6 @@ def run_scenario(
     config_or_scenario: str | Path | Dict[str, object],
     show_agent_views: bool = True,
     default_config: Dict[str, object] | None = None,
-    siglip_scorer=None,
 ) -> Dict[str, object]:
     from optimization_model import RollingHorizonOptimizer
     from semantic_persistence import (
@@ -1431,7 +2264,6 @@ def run_scenario(
         MLLMClient,
         MLLMProviderCreditError,
         MLLMRetryExhaustedError,
-        SigLIPScorer,
     )
 
     # -------------------- Debugger --------------------
@@ -1460,6 +2292,7 @@ def run_scenario(
     test_case = str(scenario["test_case"])
     max_steps = int(scenario["max_steps"]) if "max_steps" in scenario else None
 
+    Helper = _helper_module()
     Helper.build_viewpoint_index(scan_id)
     executed_routes_by_agent = _initialize_executed_routes(scenario)
     completed_target_node_ids: Dict[str, int] = {}
@@ -1480,7 +2313,10 @@ def run_scenario(
         mllm_config.get("detection_api_type", "chat_completions"),
         "detection_api_type",
     )
-    if detection_api_type == "openai_responses":
+    if detection_api_type == "google_genai":
+        default_detection_base_url = ""
+        default_detection_api_key_env = "GEMINI_API_KEY"
+    elif detection_api_type == "openai_responses":
         default_detection_base_url = ""
         default_detection_api_key_env = "OPENAI_API_KEY"
     else:
@@ -1492,7 +2328,12 @@ def run_scenario(
     detection_api_key_env = str(
         mllm_config.get("detection_api_key_env", default_detection_api_key_env)
     )
-    if detection_api_type == "openai_responses":
+    if detection_api_type == "google_genai":
+        if detection_base_url == "https://router.huggingface.co/v1":
+            detection_base_url = ""
+        if detection_api_key_env == "HF_TOKEN":
+            detection_api_key_env = "GEMINI_API_KEY"
+    elif detection_api_type == "openai_responses":
         if detection_base_url == "https://router.huggingface.co/v1":
             detection_base_url = ""
         if detection_api_key_env == "HF_TOKEN":
@@ -1502,7 +2343,10 @@ def run_scenario(
         mllm_config.get("graph_api_type", "chat_completions"),
         "graph_api_type",
     )
-    if graph_api_type == "openai_responses":
+    if graph_api_type == "google_genai":
+        default_graph_base_url = ""
+        default_graph_api_key_env = "GEMINI_API_KEY"
+    elif graph_api_type == "openai_responses":
         default_graph_base_url = ""
         default_graph_api_key_env = "OPENAI_API_KEY"
     else:
@@ -1512,7 +2356,12 @@ def run_scenario(
     graph_api_key_env = str(
         mllm_config.get("graph_api_key_env", default_graph_api_key_env)
     )
-    if graph_api_type == "openai_responses":
+    if graph_api_type == "google_genai":
+        if graph_base_url == "https://router.huggingface.co/v1":
+            graph_base_url = ""
+        if graph_api_key_env == "HF_TOKEN":
+            graph_api_key_env = "GEMINI_API_KEY"
+    elif graph_api_type == "openai_responses":
         if graph_base_url == "https://router.huggingface.co/v1":
             graph_base_url = ""
         if graph_api_key_env == "HF_TOKEN":
@@ -1522,6 +2371,7 @@ def run_scenario(
     # for DeepInfra, use base_url="https://api.deepinfra.com/v1/openai" and api_key_env="DEEPINFRA_TOKEN"
     # for DASHSCOPE, use base_url="https://dashscope-us.aliyuncs.com/compatible-mode/v1" and api_key_env="DASHSCOPE_API_KEY"
     # for OpenAI Responses, use api_type="openai_responses", base_url="", and api_key_env="OPENAI_API_KEY"
+    # for Google Gemini native API, use api_type="google_genai", base_url="", and api_key_env="GEMINI_API_KEY"
     mllm_client = MLLMClient(
         graph_model_name=str(mllm_config["graph_model_name"]),
         # detection
@@ -1542,11 +2392,14 @@ def run_scenario(
         max_request_timeout_retries=int(
             mllm_config.get("max_request_timeout_retries", 1)
         ),
-        detection_thinking=mllm_config.get("detection_thinking"),
         graph_thinking=mllm_config.get("graph_thinking"),
+        graph_thinking_format=mllm_config.get("graph_thinking_format"),
+        graph_reasoning_split=mllm_config.get("graph_reasoning_split", False),
+        detection_reasoning_effort=mllm_config.get("detection_reasoning_effort"),
+        graph_reasoning_effort=mllm_config.get("graph_reasoning_effort"),
+        detection_service_tier=mllm_config.get("detection_service_tier"),
+        graph_service_tier=mllm_config.get("graph_service_tier"),
     )
-
-    scorer = siglip_scorer if siglip_scorer is not None else SigLIPScorer()
 
     all_targets_found = False
 
@@ -1576,7 +2429,6 @@ def run_scenario(
                 agent_observations=agent_observations,
                 targets=graph_targets,
                 graph=hypothesis_graph,
-                scorer=scorer,
             )
         except MLLMRetryExhaustedError as exc:
             failed_step_index = int(exc.step_index)
@@ -1690,7 +2542,6 @@ def run_scenario(
             hypothesis_graph.update_from_mllm(
                 mllm_output=mllm_output,
                 agent_observations=agent_observations,
-                scorer=scorer,
             )
         else:
             hypothesis_graph.update_without_mllm(agent_observations=agent_observations)
@@ -2119,10 +2970,12 @@ def run_batch_config(
     show_agent_views: bool = True,
     sample_count: int | None = None,
     sample_seed: int = 0,
+    sample_balance: str = "marginal",
     run_id: str | None = None,
     batch_case_id: str | None = None,
+    project_root: str | Path | None = None,
 ) -> Dict[str, object]:
-    from semantic_persistence import SigLIPScorer
+    sample_balance = _normalize_sample_balance(sample_balance)
 
     if sample_count is not None and batch_case_id is not None:
         raise ValueError("--sample-count and --batch-case-id are mutually exclusive.")
@@ -2151,6 +3004,7 @@ def run_batch_config(
         batch_config=batch_config,
         batch_id=batch_id,
         default_config=default_config,
+        project_root=project_root,
         run_id=run_id,
     )
 
@@ -2171,7 +3025,9 @@ def run_batch_config(
                 sampled_case_ids=[selected_case_id],
                 sample_count=1,
                 sample_seed=int(sample_seed),
+                project_root=project_root,
                 run_id=run_id,
+                sample_balance=sample_balance,
             )
         )
         scenarios = [
@@ -2185,6 +3041,7 @@ def run_batch_config(
             summary=summary,
             sample_count=int(sample_count),
             sample_seed=int(sample_seed),
+            sample_balance=sample_balance,
         )
         sampled_cases_path, sampled_generated_cases_path = (
             write_sampled_batch_manifests(
@@ -2193,7 +3050,9 @@ def run_batch_config(
                 sampled_case_ids=sampled_case_ids,
                 sample_count=int(sample_count),
                 sample_seed=int(sample_seed),
+                project_root=project_root,
                 run_id=run_id,
+                sample_balance=sample_balance,
             )
         )
         sampled_case_id_set = set(sampled_case_ids)
@@ -2206,6 +3065,7 @@ def run_batch_config(
     results = {}
     completed_cases, skipped_cases = _load_batch_resume_state(
         batch_id,
+        project_root=project_root,
         run_id=run_id,
     )
     active_case_ids = set(case_order)
@@ -2227,18 +3087,25 @@ def run_batch_config(
     tqdm.write("Using generated batch case summary at %s.\n" % str(summary_path))
     if sampled_cases_path is not None:
         tqdm.write("Using sampled batch cases at %s.\n" % str(sampled_cases_path))
-    skipped_cases_path = _batch_skip_ledger_path(batch_id, run_id=run_id)
+    skipped_cases_path = _batch_skip_ledger_path(
+        batch_id,
+        project_root=project_root,
+        run_id=run_id,
+    )
     progress_path = write_batch_progress(
         batch_id=batch_id,
         case_order=case_order,
         completed_cases=completed_cases,
         skipped_cases=skipped_cases,
         status="running",
+        project_root=project_root,
         run_id=run_id,
     )
-    termination_path = _batch_termination_path(batch_id, run_id=run_id)
-    siglip_scorer = SigLIPScorer()
-
+    termination_path = _batch_termination_path(
+        batch_id,
+        project_root=project_root,
+        run_id=run_id,
+    )
     for scenario in scenarios:
         test_case = str(scenario["test_case"])
         if test_case in completed_cases:
@@ -2253,7 +3120,6 @@ def run_batch_config(
             scenario,
             show_agent_views=show_agent_views,
             default_config=default_config,
-            siglip_scorer=siglip_scorer,
         )
         if results[test_case].get("status") == "completed":
             completed_cases[test_case] = _build_batch_completed_record(
@@ -2266,6 +3132,7 @@ def run_batch_config(
                 completed_cases=completed_cases,
                 skipped_cases=skipped_cases,
                 status="running",
+                project_root=project_root,
                 run_id=run_id,
             )
             progress_bar.update(1)
@@ -2274,6 +3141,7 @@ def run_batch_config(
                 batch_id=batch_id,
                 scenario=scenario,
                 result=results[test_case],
+                project_root=project_root,
                 run_id=run_id,
             )
             progress_path = write_batch_progress(
@@ -2283,6 +3151,7 @@ def run_batch_config(
                 skipped_cases=skipped_cases,
                 status="terminated",
                 terminated_case=test_case,
+                project_root=project_root,
                 run_id=run_id,
             )
             progress_bar.update(1)
@@ -2298,6 +3167,7 @@ def run_batch_config(
             skipped_cases_path = write_batch_skip_ledger(
                 batch_id,
                 skipped_cases,
+                project_root=project_root,
                 run_id=run_id,
             )
             progress_path = write_batch_progress(
@@ -2306,6 +3176,7 @@ def run_batch_config(
                 completed_cases=completed_cases,
                 skipped_cases=skipped_cases,
                 status="running",
+                project_root=project_root,
                 run_id=run_id,
             )
             progress_bar.update(1)
@@ -2319,6 +3190,7 @@ def run_batch_config(
             completed_cases=completed_cases,
             skipped_cases=skipped_cases,
             status="completed",
+            project_root=project_root,
             run_id=run_id,
         )
 
@@ -2373,6 +3245,19 @@ def main(argv: List[str] | None = None) -> int:
         help="Tie-break seed for balanced batch sampling.",
     )
     parser.add_argument(
+        "--sample-balance",
+        choices=SAMPLE_BALANCE_MODES,
+        default="marginal",
+        help=(
+            "Sampling balance mode. 'marginal' preserves the existing sampler; "
+            "'param_config' balances full generated parameter configurations."
+        ),
+    )
+    parser.add_argument(
+        "--batch-case-id",
+        help="Run one generated batch case id. Requires --run-id.",
+    )
+    parser.add_argument(
         "--run-id",
         help=(
             "Write batch outputs under mllm_debug_outputs_<run_id> and "
@@ -2410,7 +3295,9 @@ def main(argv: List[str] | None = None) -> int:
             show_agent_views=not args.hide_agent_views,
             sample_count=args.sample_count,
             sample_seed=args.sample_seed,
+            sample_balance=args.sample_balance,
             run_id=args.run_id,
+            batch_case_id=args.batch_case_id,
         )
         if result.get("status") == "terminated":
             return 1

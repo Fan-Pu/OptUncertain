@@ -38,6 +38,7 @@ def _selected_case_ids(
     summary: Dict[str, object],
     sample_count: int | None,
     sample_seed: int,
+    sample_balance: str,
     case_ids: Sequence[str],
 ) -> List[str]:
     from main import _case_order_from_batch_summary, sample_batch_case_ids
@@ -55,7 +56,19 @@ def _selected_case_ids(
         summary=summary,
         sample_count=int(sample_count),
         sample_seed=int(sample_seed),
+        sample_balance=str(sample_balance),
     )
+
+
+def _read_case_id_file(path: str | Path) -> List[str]:
+    case_ids = []
+    with open(path, "r", encoding="utf-8") as file_handle:
+        for line in file_handle:
+            text = line.strip()
+            if not text or text.startswith("#"):
+                continue
+            case_ids.append(text)
+    return case_ids
 
 
 def _target_visibility_by_scan(
@@ -119,7 +132,10 @@ def _api_config_defaults(
         api_type,
         "%s_api_type" % prefix,
     )
-    if normalized_api_type == "openai_responses":
+    if normalized_api_type == "google_genai":
+        default_base_url = ""
+        default_api_key_env = "GEMINI_API_KEY"
+    elif normalized_api_type == "openai_responses":
         default_base_url = ""
         default_api_key_env = "OPENAI_API_KEY"
     else:
@@ -128,7 +144,12 @@ def _api_config_defaults(
 
     base_url = str(mllm.get("%s_base_url" % prefix, default_base_url))
     api_key_env = str(mllm.get("%s_api_key_env" % prefix, default_api_key_env))
-    if normalized_api_type == "openai_responses":
+    if normalized_api_type == "google_genai":
+        if base_url == "https://router.huggingface.co/v1":
+            base_url = ""
+        if api_key_env == "HF_TOKEN":
+            api_key_env = "GEMINI_API_KEY"
+    elif normalized_api_type == "openai_responses":
         if base_url == "https://router.huggingface.co/v1":
             base_url = ""
         if api_key_env == "HF_TOKEN":
@@ -162,8 +183,13 @@ def _init_detection_client(scenario: Dict[str, object]):
         raw_debug_dir=str(mllm["debug_output_dir"]),
         max_validation_retries=int(mllm.get("max_validation_retries", 2)),
         max_request_timeout_retries=int(mllm.get("max_request_timeout_retries", 1)),
-        detection_thinking=mllm.get("detection_thinking"),
         graph_thinking=mllm.get("graph_thinking"),
+        graph_thinking_format=mllm.get("graph_thinking_format"),
+        graph_reasoning_split=mllm.get("graph_reasoning_split", False),
+        detection_reasoning_effort=mllm.get("detection_reasoning_effort"),
+        graph_reasoning_effort=mllm.get("graph_reasoning_effort"),
+        detection_service_tier=mllm.get("detection_service_tier"),
+        graph_service_tier=mllm.get("graph_service_tier"),
     )
 
 
@@ -328,10 +354,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Tie-break seed for balanced case sampling.",
     )
     parser.add_argument(
+        "--sample-balance",
+        choices=("marginal", "param_config"),
+        default="marginal",
+        help=(
+            "Sampling balance mode. 'marginal' preserves the existing sampler; "
+            "'param_config' balances full generated parameter configurations."
+        ),
+    )
+    parser.add_argument(
         "--case-id",
         action="append",
         default=[],
         help="Specific generated case id to evaluate. Can be repeated.",
+    )
+    parser.add_argument(
+        "--case-id-file",
+        help="Text file with one generated case id per line. Disables sampling.",
     )
     parser.add_argument(
         "--out",
@@ -370,11 +409,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         default_config=default_config,
         run_id=run_id,
     )
+    explicit_case_ids = list(args.case_id)
+    if args.case_id_file:
+        explicit_case_ids.extend(_read_case_id_file(args.case_id_file))
     case_ids = _selected_case_ids(
         summary=summary,
-        sample_count=None if args.case_id else int(args.sample_count),
+        sample_count=None if explicit_case_ids else int(args.sample_count),
         sample_seed=int(args.sample_seed),
-        case_ids=args.case_id,
+        sample_balance=str(args.sample_balance),
+        case_ids=explicit_case_ids,
     )
     scenario_by_case_id = {
         str(scenario["test_case"]): scenario for scenario in scenarios
@@ -388,6 +431,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         sample_count=len(case_ids),
         sample_seed=int(args.sample_seed),
         run_id=run_id,
+        sample_balance=str(args.sample_balance),
     )
 
     output_dir = (
@@ -486,6 +530,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "batch_config": str(batch_config_path),
                 "run_id": run_id,
                 "detection_model_name": detection_model_name,
+                "detection_reasoning_effort": default_config["mllm"].get(
+                    "detection_reasoning_effort"
+                ),
+                "detection_service_tier": default_config["mllm"].get(
+                    "detection_service_tier"
+                ),
                 "case_order": case_ids,
                 "predictions": prediction_records,
             },

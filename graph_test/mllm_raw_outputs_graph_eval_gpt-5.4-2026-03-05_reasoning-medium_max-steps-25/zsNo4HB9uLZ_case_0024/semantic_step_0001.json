@@ -1,0 +1,204 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        1,
+        33
+      ],
+      "region_node_id": 53
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        2,
+        36
+      ],
+      "region_node_id": 54
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        17
+      ],
+      "region_node_id": 55
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        27
+      ],
+      "region_node_id": 56
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        45
+      ],
+      "region_node_id": 57
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        18,
+        25
+      ],
+      "region_node_id": 58
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 2,
+      "raw_target_probs": {
+        "2": 0.09,
+        "4": 0.05,
+        "5": 0.06
+      },
+      "target_probs": {
+        "2": 0.022332506203473948,
+        "4": 0.008347245409015025,
+        "5": 0.012958963282937365
+      }
+    },
+    {
+      "id": 18,
+      "raw_target_probs": {
+        "2": 1.1,
+        "4": 3.8,
+        "5": 1.3
+      },
+      "target_probs": {
+        "2": 0.27295285359801497,
+        "4": 0.6343906510851418,
+        "5": 0.2807775377969763
+      }
+    },
+    {
+      "id": 25,
+      "raw_target_probs": {
+        "2": 2.6,
+        "4": 2.0,
+        "5": 3.1
+      },
+      "target_probs": {
+        "2": 0.6451612903225807,
+        "4": 0.333889816360601,
+        "5": 0.6695464362850972
+      }
+    },
+    {
+      "id": 27,
+      "raw_target_probs": {
+        "2": 0.02,
+        "4": 0.03,
+        "5": 0.02
+      },
+      "target_probs": {
+        "2": 0.004962779156327544,
+        "4": 0.005008347245409015,
+        "5": 0.004319654427645789
+      }
+    },
+    {
+      "id": 33,
+      "raw_target_probs": {
+        "2": 0.04,
+        "4": 0.04,
+        "5": 0.03
+      },
+      "target_probs": {
+        "2": 0.009925558312655089,
+        "4": 0.00667779632721202,
+        "5": 0.0064794816414686825
+      }
+    },
+    {
+      "id": 36,
+      "raw_target_probs": {
+        "2": 0.18,
+        "4": 0.07,
+        "5": 0.12
+      },
+      "target_probs": {
+        "2": 0.044665012406947896,
+        "4": 0.011686143572621035,
+        "5": 0.02591792656587473
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 2,
+      "score_basis": {
+        "2": "Marker lies in a tiled hallway, which is route-only evidence and contradicts the explicit kitchen location cue.",
+        "4": "This hallway viewpoint is not in a dining area or by a dining-room window.",
+        "5": "Hallway location lacks kitchen counter or stove evidence and only offers transit access."
+      }
+    },
+    {
+      "id": 18,
+      "score_basis": {
+        "2": "Marker is in the dining zone adjacent to the open kitchen, so kitchen shelving is somewhat plausible but not directly shown.",
+        "4": "Marker sits in the bright dining area at the large glass window-door edge, directly matching 'by the dining room window'.",
+        "5": "Dining-area marker is adjacent to the visible kitchen, but the target's kitchen counter beside stove cue is not directly anchored here."
+      }
+    },
+    {
+      "id": 25,
+      "score_basis": {
+        "2": "Marker is the closest candidate on the open dining-kitchen edge with visible kitchen side access, making a kitchen shelf target more likely here.",
+        "4": "This marker is near the dining area and glass-door window zone, but less directly on the window side than viewpoint 18.",
+        "5": "Marker is nearest the open kitchen approach with counters visible off to the left, best matching a cookbook on a kitchen counter beside the stove."
+      }
+    },
+    {
+      "id": 27,
+      "score_basis": {
+        "2": "Bathroom vanity and shower area strongly contradict the kitchen cue for the scale.",
+        "4": "Bathroom viewpoint conflicts with the dining-room window cue despite having reflective surfaces.",
+        "5": "Bathroom marker has no kitchen counter or stove evidence and is room-contradictory."
+      }
+    },
+    {
+      "id": 33,
+      "score_basis": {
+        "2": "Marker remains in the bedroom area, which contradicts the explicit kitchen cue.",
+        "4": "This bedroom has a window, but it is not a dining-room window and therefore poorly matches the target text.",
+        "5": "Bedroom marker lacks any kitchen counter or stove support-surface evidence."
+      }
+    },
+    {
+      "id": 36,
+      "score_basis": {
+        "2": "Marker is just outside the bedroom in a hallway; same-floor access to common areas is possible, but it is still route-only evidence.",
+        "4": "Hallway viewpoint does not itself contain dining-room or window evidence for the candle target.",
+        "5": "This is a corridor viewpoint with no kitchen counter or stove evidence, only access toward other rooms."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 53,
+      "label": "carpeted gray bedroom with black bed near the left window"
+    },
+    {
+      "id": 54,
+      "label": "bright tiled hallway outside the bedroom doorway"
+    },
+    {
+      "id": 55,
+      "label": "small beige toilet alcove off the bathroom area"
+    },
+    {
+      "id": 56,
+      "label": "dark vanity and shower bathroom area to the right of the toilet alcove"
+    },
+    {
+      "id": 57,
+      "label": "open-plan living media area with dark wall unit beside the kitchen"
+    },
+    {
+      "id": 58,
+      "label": "bright dining area by the large glass doors left of the media wall"
+    }
+  ]
+}

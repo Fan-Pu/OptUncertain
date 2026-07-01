@@ -1,0 +1,376 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.128,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 2,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.523,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.093,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.117,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 17,
+      "j": 27,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.712,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.531,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.09,
+        "4": 0.05,
+        "5": 0.06
+      },
+      "target_probs": {
+        "2": 0.022332506203473945,
+        "4": 0.008347245409015025,
+        "5": 0.012958963282937365
+      },
+      "target_score_basis": {
+        "2": "Marker lies in a tiled hallway, which is route-only evidence and contradicts the explicit kitchen location cue.",
+        "4": "This hallway viewpoint is not in a dining area or by a dining-room window.",
+        "5": "Hallway location lacks kitchen counter or stove evidence and only offers transit access."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 17,
+      "label": "4c0aab63a4434cf4878e6f5b3ce9a70b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "f04ae8ebf8254168814bc669635b3775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 1.1,
+        "4": 3.8,
+        "5": 1.3
+      },
+      "target_probs": {
+        "2": 0.2729528535980149,
+        "4": 0.6343906510851418,
+        "5": 0.2807775377969763
+      },
+      "target_score_basis": {
+        "2": "Marker is in the dining zone adjacent to the open kitchen, so kitchen shelving is somewhat plausible but not directly shown.",
+        "4": "Marker sits in the bright dining area at the large glass window-door edge, directly matching 'by the dining room window'.",
+        "5": "Dining-area marker is adjacent to the visible kitchen, but the target's kitchen counter beside stove cue is not directly anchored here."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "76c7a665d2b242bfa203e7f394b1353e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 2.6,
+        "4": 2.0,
+        "5": 3.1
+      },
+      "target_probs": {
+        "2": 0.6451612903225806,
+        "4": 0.333889816360601,
+        "5": 0.6695464362850972
+      },
+      "target_score_basis": {
+        "2": "Marker is the closest candidate on the open dining-kitchen edge with visible kitchen side access, making a kitchen shelf target more likely here.",
+        "4": "This marker is near the dining area and glass-door window zone, but less directly on the window side than viewpoint 18.",
+        "5": "Marker is nearest the open kitchen approach with counters visible off to the left, best matching a cookbook on a kitchen counter beside the stove."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "2c687aab96b7498b92023a4888c6e7ab",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.02,
+        "4": 0.03,
+        "5": 0.02
+      },
+      "target_probs": {
+        "2": 0.004962779156327543,
+        "4": 0.005008347245409015,
+        "5": 0.004319654427645789
+      },
+      "target_score_basis": {
+        "2": "Bathroom vanity and shower area strongly contradict the kitchen cue for the scale.",
+        "4": "Bathroom viewpoint conflicts with the dining-room window cue despite having reflective surfaces.",
+        "5": "Bathroom marker has no kitchen counter or stove evidence and is room-contradictory."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.04,
+        "4": 0.04,
+        "5": 0.03
+      },
+      "target_probs": {
+        "2": 0.009925558312655087,
+        "4": 0.00667779632721202,
+        "5": 0.0064794816414686825
+      },
+      "target_score_basis": {
+        "2": "Marker remains in the bedroom area, which contradicts the explicit kitchen cue.",
+        "4": "This bedroom has a window, but it is not a dining-room window and therefore poorly matches the target text.",
+        "5": "Bedroom marker lacks any kitchen counter or stove support-surface evidence."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 36,
+      "label": "ead481533f834704bd489d3d44b6a03a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.18,
+        "4": 0.07,
+        "5": 0.12
+      },
+      "target_probs": {
+        "2": 0.04466501240694789,
+        "4": 0.011686143572621035,
+        "5": 0.02591792656587473
+      },
+      "target_score_basis": {
+        "2": "Marker is just outside the bedroom in a hallway; same-floor access to common areas is possible, but it is still route-only evidence.",
+        "4": "Hallway viewpoint does not itself contain dining-room or window evidence for the candle target.",
+        "5": "This is a corridor viewpoint with no kitchen counter or stove evidence, only access toward other rooms."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "d48feeed33774f64adb093679b9fcebf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        33
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "carpeted gray bedroom with black bed near the left window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "bright tiled hallway outside the bedroom doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        17
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 55,
+      "label": "small beige toilet alcove off the bathroom area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 56,
+      "label": "dark vanity and shower bathroom area to the right of the toilet alcove",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 57,
+      "label": "open-plan living media area with dark wall unit beside the kitchen",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18,
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 58,
+      "label": "bright dining area by the large glass doors left of the media wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "2": false,
+    "4": false,
+    "5": false,
+    "7": true
+  }
+}

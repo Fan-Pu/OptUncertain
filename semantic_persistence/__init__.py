@@ -3,7 +3,6 @@ __all__ = [
     "MLLMClient",
     "MLLMProviderCreditError",
     "MLLMRetryExhaustedError",
-    "SigLIPScorer",
     "load_nav_graph",
     "shortest_path_next_hop",
     "argmin_distance_to_set",
@@ -27,10 +26,6 @@ def __getattr__(name):
         from .mllm_client import MLLMProviderCreditError
 
         return MLLMProviderCreditError
-    if name == "SigLIPScorer":
-        from .siglip_scorer import SigLIPScorer
-
-        return SigLIPScorer
     if name in ("load_nav_graph", "shortest_path_next_hop", "argmin_distance_to_set"):
         from .nav_graph import (
             argmin_distance_to_set,

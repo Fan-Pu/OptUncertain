@@ -254,11 +254,23 @@ def _target_metrics_path(method: MethodSpec, batch_id: str) -> Path:
     )
 
 
+def _read_case_id_file(path: Path) -> List[str]:
+    case_ids = []
+    with open(path, "r", encoding="utf-8") as file_handle:
+        for line in file_handle:
+            text = line.strip()
+            if not text or text.startswith("#"):
+                continue
+            case_ids.append(text)
+    return case_ids
+
+
 def evaluate_methods(
     method_specs: Sequence[MethodSpec],
     reviewed_oracle: Dict[Tuple[str, str, str], int],
     batch_id: str,
     expected_pairs: int,
+    case_ids: Sequence[str] | None = None,
 ) -> tuple[
     List[Dict[str, object]],
     List[Dict[str, object]],
@@ -272,6 +284,11 @@ def evaluate_methods(
 
     for method in method_specs:
         target_rows = _read_csv(_target_metrics_path(method, batch_id))
+        if case_ids is not None:
+            case_id_set = {str(case_id) for case_id in case_ids}
+            target_rows = [
+                row for row in target_rows if str(row["case_id"]) in case_id_set
+            ]
         (
             reviewed_target_rows,
             case_rows,
@@ -308,6 +325,10 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--batch-id", default="batch_test")
     parser.add_argument("--expected-pairs", type=int, default=440)
+    parser.add_argument(
+        "--case-id-file",
+        help="Restrict each method to case ids listed in this text file.",
+    )
     parser.add_argument("--out", required=True)
     return parser.parse_args(argv)
 
@@ -316,6 +337,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
     reviewed_oracle = read_reviewed_oracle(Path(args.oracle))
     method_specs = [_parse_method_spec(spec) for spec in args.method]
+    case_ids = (
+        _read_case_id_file(Path(args.case_id_file))
+        if args.case_id_file
+        else None
+    )
     (
         target_rows,
         case_rows,
@@ -326,6 +352,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         reviewed_oracle=reviewed_oracle,
         batch_id=str(args.batch_id),
         expected_pairs=int(args.expected_pairs),
+        case_ids=case_ids,
     )
 
     out_dir = Path(args.out)
