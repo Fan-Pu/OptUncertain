@@ -2388,6 +2388,7 @@ def run_scenario(
         ),
         raw_output_dir=run_output_dir,
         raw_debug_dir=debug_output_dir,
+        request_timeout=float(mllm_config.get("request_timeout", 120.0)),
         max_validation_retries=int(mllm_config.get("max_validation_retries", 2)),
         max_request_timeout_retries=int(
             mllm_config.get("max_request_timeout_retries", 1)

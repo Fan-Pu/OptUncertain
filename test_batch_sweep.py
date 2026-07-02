@@ -28,6 +28,7 @@ def _default_config(graph_models=None):
             "graph_api_key_env": "OLD_KEY",
             "graph_reasoning_effort": "low",
             "graph_service_tier": "flex",
+            "request_timeout": 900,
             "read_saved_raw_outputs": True,
         },
         "bayes": {},
@@ -240,6 +241,7 @@ def test_run_batch_sweep_uses_balanced_100_sample_and_distinct_run_ids(
         assert call["sample_balance"] == "param_config"
         assert call["mllm"]["detection_model_name"] == "gpt-5.4-2026-03-05"
         assert call["mllm"]["detection_reasoning_effort"] == "medium"
+        assert call["mllm"]["request_timeout"] == 900
 
     assert calls[0]["mllm"]["graph_model_name"] == "gpt-5.4-2026-03-05"
     assert calls[0]["mllm"]["graph_service_tier"] is None

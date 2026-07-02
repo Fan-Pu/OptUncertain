@@ -181,6 +181,7 @@ def _init_detection_client(scenario: Dict[str, object]):
         read_saved_raw_outputs=bool(mllm.get("read_saved_raw_outputs", False)),
         raw_output_dir=str(mllm["raw_output_dir"]),
         raw_debug_dir=str(mllm["debug_output_dir"]),
+        request_timeout=float(mllm.get("request_timeout", 120.0)),
         max_validation_retries=int(mllm.get("max_validation_retries", 2)),
         max_request_timeout_retries=int(mllm.get("max_request_timeout_retries", 1)),
         graph_thinking=mllm.get("graph_thinking"),
