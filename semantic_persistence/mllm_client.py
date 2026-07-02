@@ -374,18 +374,6 @@ class MLLMClient:
             )
         return normalized
 
-    @classmethod
-    def _responses_service_tier_for_model(
-        cls,
-        configured_service_tier: str | None,
-        model_name: str,
-    ) -> str | None:
-        if configured_service_tier is not None:
-            return configured_service_tier
-        if str(model_name).strip().lower().startswith("gpt-5.4"):
-            return "flex"
-        return None
-
     @staticmethod
     def _strip_code_fences(raw_text: str) -> str:
         """Strip markdown code fences from the raw text if they exist."""
@@ -1073,10 +1061,7 @@ class MLLMClient:
             thinking_format = "thinking_type"
             reasoning_split = False
             reasoning_effort = self.detection_reasoning_effort
-            service_tier = self._responses_service_tier_for_model(
-                self.detection_service_tier,
-                model_name,
-            )
+            service_tier = self.detection_service_tier
             api_type = self.detection_api_type
         else:
             client = self.graph_client
@@ -1086,10 +1071,7 @@ class MLLMClient:
             thinking_format = self.graph_thinking_format
             reasoning_split = self.graph_reasoning_split
             reasoning_effort = self.graph_reasoning_effort
-            service_tier = self._responses_service_tier_for_model(
-                self.graph_service_tier,
-                model_name,
-            )
+            service_tier = self.graph_service_tier
             api_type = self.graph_api_type
 
         if client is None:

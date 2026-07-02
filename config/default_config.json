@@ -15,7 +15,7 @@
     "graph_api_type": "chat_completions",
     "graph_base_url": "https://router.huggingface.co/v1",
     "graph_api_key_env": "HF_TOKEN",
-    "detection_reasoning_effort": "low",
+    "detection_reasoning_effort": "medium",
     "detection_service_tier": "flex",
     "graph_service_tier": "flex",
     "graph_thinking": "enabled",
@@ -37,5 +37,40 @@
     "target_directed_mode": true,
     "target_directed_each_agent_when_possible": true,
     "target_directed_use_raw_target_probs": false
+  },
+  "batch_sweep": {
+    "sample_count": 100,
+    "sample_seed": 0,
+    "sample_balance": "param_config",
+    "hide_agent_views": true,
+    "run_id_prefix": "balanced100",
+    "selected_graph_model_label": "GPT54Medium",
+    "graph_models": [
+      {
+        "label": "GPT54Medium",
+        "graph_model_name": "gpt-5.4-2026-03-05",
+        "graph_api_type": "openai_responses",
+        "graph_base_url": "",
+        "graph_api_key_env": "OPENAI_API_KEY",
+        "graph_reasoning_effort": "medium",
+        "graph_service_tier": "flex"
+      },
+      {
+        "label": "Gemma431BThinking",
+        "graph_model_name": "google/gemma-4-31B-it",
+        "graph_api_type": "chat_completions",
+        "graph_base_url": "https://router.huggingface.co/v1",
+        "graph_api_key_env": "HF_TOKEN",
+        "graph_thinking": "enabled"
+      },
+      {
+        "label": "Qwen36_35BA3BThinking",
+        "graph_model_name": "Qwen/Qwen3.6-35B-A3B",
+        "graph_api_type": "chat_completions",
+        "graph_base_url": "https://router.huggingface.co/v1",
+        "graph_api_key_env": "HF_TOKEN",
+        "graph_thinking": "enabled"
+      }
+    ]
   }
 }
