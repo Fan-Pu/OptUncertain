@@ -1,0 +1,95 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        50
+      ],
+      "region_node_id": 61
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        28,
+        42
+      ],
+      "region_node_id": 62
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 28,
+      "raw_target_probs": {
+        "0": 0.24,
+        "1": 0.11,
+        "5": 0.13
+      },
+      "target_probs": {
+        "0": 0.21621621621621623,
+        "1": 0.3666666666666667,
+        "5": 0.3823529411764706
+      }
+    },
+    {
+      "id": 42,
+      "raw_target_probs": {
+        "0": 0.09,
+        "1": 0.16,
+        "5": 0.19
+      },
+      "target_probs": {
+        "0": 0.08108108108108109,
+        "1": 0.5333333333333333,
+        "5": 0.5588235294117647
+      }
+    },
+    {
+      "id": 50,
+      "raw_target_probs": {
+        "0": 0.78,
+        "1": 0.03,
+        "5": 0.02
+      },
+      "target_probs": {
+        "0": 0.7027027027027029,
+        "1": 0.1,
+        "5": 0.05882352941176471
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 28,
+      "score_basis": {
+        "0": "Assigned to the dim hallway just outside the bathroom; this route area is only weakly compatible with a hair dryer that should be beside a bathroom sink.",
+        "1": "Hallway viewpoint is outside the bathroom and slightly more compatible with an adjacent furnished room, but no glass display cabinet evidence is present at the marker.",
+        "5": "This non-bathroom hallway marker is weakly more compatible than the bathroom-side point for a counter beside a water dispenser, but it still lacks counter or dispenser evidence."
+      }
+    },
+    {
+      "id": 42,
+      "score_basis": {
+        "0": "Farthest hallway marker from the bathroom region, so it is more contradictory to a bathroom sink-side hair dryer target.",
+        "1": "Farthest non-bathroom marker is weakly the most compatible with an adjacent cabinet-bearing room, though the viewpoint itself still shows no glass display cabinet evidence.",
+        "5": "Deepest hallway marker is the least bathroom-like candidate and thus weakly best for a counter beside a water dispenser, still without direct support-object evidence."
+      }
+    },
+    {
+      "id": 50,
+      "score_basis": {
+        "0": "Marker is the nearest unvisited point to the current bathroom-assigned viewpoint, so it is the least contradictory candidate for a bathroom-sink target.",
+        "1": "Near-bathroom viewpoint lacks any glass display cabinet evidence and remains tied to the bathroom-side area.",
+        "5": "Bathroom-side viewpoint contradicts the counter-beside-water-dispenser cue."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 62,
+      "label": "dim hallway area southwest of the bathroom"
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_probs": [
+    {
+      "id": 2,
+      "raw_target_probs": {
+        "1": 0.00016
+      },
+      "target_probs": {
+        "1": 0.2279202279202279
+      }
+    },
+    {
+      "id": 12,
+      "raw_target_probs": {
+        "1": 0.00023
+      },
+      "target_probs": {
+        "1": 0.3276353276353276
+      }
+    },
+    {
+      "id": 25,
+      "raw_target_probs": {
+        "1": 0.00019
+      },
+      "target_probs": {
+        "1": 0.2706552706552706
+      }
+    },
+    {
+      "id": 46,
+      "raw_target_probs": {
+        "1": 1.2e-05
+      },
+      "target_probs": {
+        "1": 0.017094017094017092
+      }
+    },
+    {
+      "id": 54,
+      "raw_target_probs": {
+        "1": 0.00011
+      },
+      "target_probs": {
+        "1": 0.15669515669515666
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 2,
+      "score_basis": {
+        "1": "Graph history places this unvisited node in the same explored hallway region as several detection-negative viewpoints, which weakly fits a vase in a glass display cabinet."
+      }
+    },
+    {
+      "id": 12,
+      "score_basis": {
+        "1": "Visible marker sits at the far end of the same dim hallway region; the target text specifies a glass display cabinet, so this is only a weak spillover candidate."
+      }
+    },
+    {
+      "id": 25,
+      "score_basis": {
+        "1": "Marker appears in hallway continuation near the current hall node, with no specific evidence of a glass display cabinet at that viewpoint."
+      }
+    },
+    {
+      "id": 46,
+      "score_basis": {
+        "1": "Very close adjacent hallway viewpoint to current 42; this nearby hall segment has no target-bearing cabinet cue and neighboring hall viewpoints were already detection-negative."
+      }
+    },
+    {
+      "id": 54,
+      "score_basis": {
+        "1": "This node is also assigned to the explored hallway region off viewpoint 18; the support-object cue 'glass display cabinet' is not evidenced in that hall context."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

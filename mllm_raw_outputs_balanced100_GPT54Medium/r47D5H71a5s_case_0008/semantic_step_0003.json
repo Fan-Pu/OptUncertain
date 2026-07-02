@@ -1,0 +1,67 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 62,
+      "viewpoint_id": 45
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        4
+      ],
+      "region_node_id": 63
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 4,
+      "raw_target_probs": {
+        "2": 0.61,
+        "4": 0.72,
+        "7": 0.11
+      },
+      "target_probs": {
+        "2": 0.8133333333333334,
+        "4": 0.935064935064935,
+        "7": 0.7857142857142857
+      }
+    },
+    {
+      "id": 36,
+      "raw_target_probs": {
+        "2": 0.14,
+        "4": 0.05,
+        "7": 0.03
+      },
+      "target_probs": {
+        "2": 0.18666666666666668,
+        "4": 0.06493506493506494,
+        "7": 0.21428571428571425
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 4,
+      "score_basis": {
+        "2": "Red marker 4 lies inside the dim adjoining room through the doorway, where seating furniture is visible; that fits a chair-based cushion target better than the corridor.",
+        "4": "Red marker 4 is inside the adjoining spa-like room, which is more consistent with massage-table furniture than the tiled corridor, though the tables and vase are not directly visible.",
+        "7": "Marker 4 is in the adjoining room rather than a clear transit corridor, but no treadmill or yellow sign is visible, so only weak gym-related support remains."
+      }
+    },
+    {
+      "id": 36,
+      "score_basis": {
+        "2": "Red marker 36 sits in the beige tiled corridor by the wooden lattice partition; no wicker chair or cushion-bearing seating is visible, so the prior high chair score should drop.",
+        "4": "Marker 36 is in a corridor transit space with no massage tables or vase visible, making it much weaker than the adjoining treatment room for this target.",
+        "7": "Marker 36 remains a corridor viewpoint with route-only evidence and no treadmill or wet-floor sign visible, so the prior score should be lowered."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

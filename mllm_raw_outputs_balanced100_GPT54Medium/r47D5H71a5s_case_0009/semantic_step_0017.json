@@ -1,0 +1,93 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_probs": [
+    {
+      "id": 12,
+      "raw_target_probs": {
+        "0": 0.004,
+        "1": 0.007,
+        "5": 0.006
+      },
+      "target_probs": {
+        "0": 0.26666666666666666,
+        "1": 0.28,
+        "5": 0.2857142857142857
+      }
+    },
+    {
+      "id": 18,
+      "raw_target_probs": {
+        "0": 0.006,
+        "1": 0.005,
+        "5": 0.004
+      },
+      "target_probs": {
+        "0": 0.39999999999999997,
+        "1": 0.2,
+        "5": 0.19047619047619047
+      }
+    },
+    {
+      "id": 25,
+      "raw_target_probs": {
+        "0": 0.003,
+        "1": 0.009,
+        "5": 0.008
+      },
+      "target_probs": {
+        "0": 0.19999999999999998,
+        "1": 0.36,
+        "5": 0.38095238095238093
+      }
+    },
+    {
+      "id": 46,
+      "raw_target_probs": {
+        "0": 0.002,
+        "1": 0.004,
+        "5": 0.003
+      },
+      "target_probs": {
+        "0": 0.13333333333333333,
+        "1": 0.16,
+        "5": 0.14285714285714285
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 12,
+      "score_basis": {
+        "0": "Graph context keeps viewpoint 12 in the dim hallway region; that is only weak access evidence for a hair dryer specifically beside a bathroom sink.",
+        "1": "Viewpoint 12 remains a hallway candidate with no visible glass display cabinet or plant-vase support cue, so the prior hallway score should be reduced.",
+        "5": "This candidate is still a transit hallway location without counter or water-dispenser evidence, which weakly matches the kettle-on-counter description."
+      }
+    },
+    {
+      "id": 18,
+      "score_basis": {}
+    },
+    {
+      "id": 25,
+      "score_basis": {
+        "0": "Viewpoint 25 is also assigned to the dim hallway region, giving only route access toward the bathroom and no sink-adjacent target-bearing evidence.",
+        "1": "The current observation supports hallway/transit structure rather than a room with a glass display cabinet, so this hallway candidate should carry only a small vase score.",
+        "5": "No kitchen counter or nearby water-dispenser cue is supported here; as a hallway viewpoint it should keep only a weak residual kettle score."
+      }
+    },
+    {
+      "id": 46,
+      "score_basis": {
+        "0": "Marker 46 appears farther down the same hallway continuation, farther from the bathroom-side area and still lacking any sink-side evidence.",
+        "1": "Current panorama places viewpoint 46 in hallway continuation space, not at a glass display cabinet or furnishing zone, so its vase score should drop.",
+        "5": "Viewpoint 46 is route-only hallway continuation with no counter-beside-water-dispenser evidence, so it is a poor kettle location."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

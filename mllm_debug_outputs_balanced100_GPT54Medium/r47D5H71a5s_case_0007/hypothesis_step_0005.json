@@ -1,0 +1,258 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.642,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 6,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.927,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.734,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.895,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.228,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.714,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 21,
+      "j": 59,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 3,
+      "label": "04dba6ce40274f9b80f8e18eb201d33b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0
+      },
+      "target_probs": {
+        "2": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "32ddd1485c98480f9a6ecd24ace5d49f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.0007
+      },
+      "target_probs": {
+        "2": 0.14583333333333331
+      },
+      "target_score_basis": {
+        "2": "The candidate is assigned to a bright tiled vanity area, which weakly matches a light blue cushion on a wicker chair and provides no chair or cushion evidence."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 16,
+      "label": "9d5a333a21004d1cb17692e2f9b8aff0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0
+      },
+      "target_probs": {
+        "2": 0.0
+      },
+      "target_score_basis": {
+        "2": "This marker remains in the mural-lined sitting room, which is the best seating-area candidate among the options, but no wicker chair or light-blue cushion is visible there."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 21,
+      "label": "95903e1adf7e4ce9a87b9df4e9ec63e6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "2": 0.0
+      },
+      "target_probs": {
+        "2": 0.0
+      },
+      "target_score_basis": {
+        "2": "Marker 21 is inside a sitting-room-like space with visible seating through the right doorway, which matches a cushion-on-chair target better than the bath or bed alcove."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "869e52d579cc4c9a85979d3e20eb2455",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.0041
+      },
+      "target_probs": {
+        "2": 0.8541666666666666
+      },
+      "target_score_basis": {
+        "2": "The dim sleeping alcove is still a seating-adjacent room candidate, but its bed-bench context lacks visible wicker-chair or light-blue-cushion support, so the prior score should be reduced."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 59,
+      "label": "1d80333e82b347e89884fffc9f4187e0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0
+      },
+      "target_probs": {
+        "2": 0.0
+      },
+      "target_score_basis": {
+        "2": "Marker 59 lies deeper in the same mural-lined sitting room near visible cushioned seating and lounge decor, giving the strongest current evidence for a chair-based cushion target."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "narrow wallpapered tile hallway between adjacent doorways",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        35
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "dim sleeping alcove with bed bench through the left doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        59
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 63,
+      "label": "bright beige-tiled vanity area past the center-right opening",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 64,
+      "label": "warm mural-lined sitting room through the right doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        16
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 65,
+      "label": "dim floral-wallpapered tiled alcove beside the central doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 5,
+  "target_found": {
+    "2": false
+  }
+}
