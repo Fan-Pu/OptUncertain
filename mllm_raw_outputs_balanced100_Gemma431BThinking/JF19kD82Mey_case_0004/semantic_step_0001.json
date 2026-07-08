@@ -1,0 +1,84 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        8,
+        9
+      ],
+      "region_node_id": 50
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        42
+      ],
+      "region_node_id": 51
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 8,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "4": 0.9,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.5,
+        "2": 0.5,
+        "4": 0.9,
+        "7": 0.5
+      }
+    },
+    {
+      "id": 42,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "4": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.5,
+        "2": 0.5,
+        "4": 0.1,
+        "7": 0.5
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 8,
+      "score_basis": {
+        "0": "Located in the bedroom area, which contradicts the dining table location",
+        "2": "Located in the bedroom area, which contradicts the kitchen appliance nook location",
+        "4": "Viewpoint 8 is within the bedroom area, matching the target location of a chair beside the bed",
+        "7": "Located in the bedroom area, which contradicts the kitchen counter location"
+      }
+    },
+    {
+      "id": 42,
+      "score_basis": {
+        "0": "Located in a transition hallway, which is not the dining area",
+        "2": "Located in a transition hallway, not the kitchen appliance nook",
+        "4": "Located in a transition hallway, not inside the bedroom",
+        "7": "Located in a transition hallway, not the kitchen counter"
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 50,
+      "label": "modern bedroom with white bed and large artwork"
+    },
+    {
+      "id": 51,
+      "label": "bright transition hallway"
+    }
+  ]
+}

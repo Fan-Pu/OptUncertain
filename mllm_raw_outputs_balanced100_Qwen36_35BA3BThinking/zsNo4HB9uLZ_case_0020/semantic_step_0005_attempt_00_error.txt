@@ -1,0 +1,121 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 55,
+      "viewpoint_id": 5
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "i": 9,
+      "j": 48,
+      "type": "vv",
+      "exist_prob": 0.6,
+      "cond_exist_prob": 0.6,
+      "distance_mean": 3.3,
+      "distance_var": 1.0
+    },
+    {
+      "i": 44,
+      "j": 50,
+      "type": "vv",
+      "exist_prob": 0.7,
+      "cond_exist_prob": 0.7,
+      "distance_mean": 2.1,
+      "distance_var": 1.0
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        7,
+        48
+      ],
+      "region_node_id": 53
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        23
+      ],
+      "region_node_id": 56
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        14,
+        30
+      ],
+      "region_node_id": 59
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 7,
+      "target_scores": {
+        "4": {
+          "basis": "bedroom window area does not match dining room window constraint",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 9,
+      "target_scores": {
+        "1": {
+          "basis": "bedroom location matches beside-bed constraint but bathrobe not visually confirmed",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        }
+      }
+    },
+    {
+      "id": 14,
+      "target_scores": {
+        "2": {
+          "basis": "kitchen area with counters and shelves matches top-shelf constraint",
+          "evidence_strength": "medium",
+          "raw_score": 0.3
+        },
+        "5": {
+          "basis": "kitchen counter location matches stove-side constraint",
+          "evidence_strength": "high",
+          "raw_score": 0.6
+        }
+      }
+    },
+    {
+      "id": 30,
+      "target_scores": {
+        "2": {
+          "basis": "kitchen wall area near counters matches top-shelf constraint",
+          "evidence_strength": "medium",
+          "raw_score": 0.3
+        },
+        "5": {
+          "basis": "kitchen area near counter matches stove-side constraint",
+          "evidence_strength": "medium",
+          "raw_score": 0.4
+        }
+      }
+    },
+    {
+      "id": 50,
+      "target_scores": {
+        "4": {
+          "basis": "dining table near outdoor doorway matches dining-window constraint",
+          "evidence_strength": "high",
+          "raw_score": 0.6
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 59,
+      "label": "kitchen area with island and dark cabinets"
+    }
+  ]
+}

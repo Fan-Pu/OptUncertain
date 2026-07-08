@@ -452,6 +452,10 @@ def _solve_oracle_shortest_walk(instance: OracleInstance) -> Dict[str, object]:
         route_choice.cost for route_choice in selected_choices_by_agent.values()
     )
     return {
+        "solver": {
+            "name": "oracle_shortest_walk",
+            "status": "OPTIMAL",
+        },
         "agent_paths": agent_paths,
         "target_assignments": target_assignments,
         "objective_value": total_distance,

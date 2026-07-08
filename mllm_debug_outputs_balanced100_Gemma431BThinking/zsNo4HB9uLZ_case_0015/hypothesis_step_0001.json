@@ -1,0 +1,174 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.944,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.061,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 39,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "6": 0.1,
+        "7": 0.8
+      },
+      "target_probs": {
+        "0": 0.6666666666666666,
+        "1": 0.6666666666666666,
+        "2": 0.6666666666666666,
+        "4": 0.6666666666666666,
+        "5": 0.6666666666666666,
+        "6": 0.6666666666666666,
+        "7": 0.9411764705882353
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 26 is in a hallway, which is a transit area and not a likely location for a desk with a radio",
+        "1": "Viewpoint 26 is in a hallway, not a bedroom where a bathrobe would be hanging",
+        "2": "Viewpoint 26 is in a hallway, not a kitchen where a scale would be on a shelf",
+        "4": "Viewpoint 26 is in a hallway, not a dining room window area",
+        "5": "Viewpoint 26 is in a hallway, not a kitchen counter area",
+        "6": "Viewpoint 26 is in a hallway, not a living area with a television",
+        "7": "Viewpoint 26 is located in the hallway near the entrance, which matches the location cue for the console table with a vase"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "320c0ec6c0a343fea6227a2699d0eb7a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "5340c12f388446b589bf2c082c39bd5e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.05,
+        "2": 0.05,
+        "4": 0.05,
+        "5": 0.05,
+        "6": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "1": 0.3333333333333333,
+        "2": 0.3333333333333333,
+        "4": 0.3333333333333333,
+        "5": 0.3333333333333333,
+        "6": 0.3333333333333333,
+        "7": 0.058823529411764705
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 39 is inside the bathroom, not a likely location for a desk with a radio",
+        "1": "Viewpoint 39 is inside the bathroom, not a bedroom where a bathrobe would be hanging",
+        "2": "Viewpoint 39 is inside the bathroom, not a kitchen",
+        "4": "Viewpoint 39 is inside the bathroom, not a dining room",
+        "5": "Viewpoint 39 is inside the bathroom, not a kitchen",
+        "6": "Viewpoint 39 is inside the bathroom, not a living area with a television",
+        "7": "Viewpoint 39 is inside the bathroom, far from the entrance console table"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        31,
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "modern bathroom with newspaper-patterned wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "white tiled hallway corridor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": false,
+    "3": true,
+    "4": false,
+    "5": false,
+    "6": false,
+    "7": false
+  }
+}

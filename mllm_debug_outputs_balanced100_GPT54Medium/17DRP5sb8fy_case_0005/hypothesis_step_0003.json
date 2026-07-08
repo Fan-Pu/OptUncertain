@@ -1,0 +1,243 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.266,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.87,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.705,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.007,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.199,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.666,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 9,
+      "label": "85c23efeaecd4d43a7dcd5b90137179e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {
+        "1": "Assigned region reads as a lounge area, and no shower niche or bathroom fixture cues appear near marker 9.",
+        "3": "An adjacent service area is possible, but no kitchen shelf evidence is visible from the nearby marker position.",
+        "4": "No toilet tank or other bathroom evidence is visible around marker 9, which sits in a lounge-like area."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 18,
+      "label": "f4d03f729dfc49068db327584455e975",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.18,
+        "3": 0.22,
+        "4": 0.16
+      },
+      "target_probs": {
+        "1": 0.5625,
+        "3": 0.5641025641025641,
+        "4": 0.5517241379310345
+      },
+      "target_score_basis": {
+        "1": "Marker 19 is farthest from the current lounge cluster, so it has weak next-room potential, but no shower niche or bathroom fixtures are visible.",
+        "3": "Marker 19 is the best exit-side candidate among the eligible viewpoints, yet no kitchen shelf or bottled-water evidence is visible there.",
+        "4": "This farther side marker could lead beyond the lounge, but the viewpoint itself shows no toilet or toilet-tank cue."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.11,
+        "3": 0.13,
+        "4": 0.1
+      },
+      "target_probs": {
+        "1": 0.34375,
+        "3": 0.3333333333333333,
+        "4": 0.3448275862068965
+      },
+      "target_score_basis": {
+        "1": "Marker 25 appears close to the current lounge area and lacks any visible shower niche or bathroom-surface evidence.",
+        "3": "Marker 25 is a nearby continuation within the same open area, with no visible kitchen shelving or bottled-water support cue.",
+        "4": "Marker 25 remains in lounge-like space near the current viewpoint, and no toilet or tank-top cue is visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 40,
+      "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.03,
+        "3": 0.04,
+        "4": 0.03
+      },
+      "target_probs": {
+        "1": 0.09375,
+        "3": 0.10256410256410256,
+        "4": 0.10344827586206895
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 40 is very close to the current lounge viewpoint in the same region, so its prior generic score should drop because no shower niche or bathroom evidence is present.",
+        "3": "Viewpoint 40 sits inside the same lounge region and shows only route/lounge context, not a kitchen shelf or bottled-water placement.",
+        "4": "Viewpoint 40 is essentially lounge-core continuation, so the prior score should be lowered because no toilet or toilet-tank cue is visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 41,
+      "label": "194bef4cbba641dc9860ba7f43a0c16a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {
+        "1": "Marker is assigned to the same lounge-like region 44 as the current area, with no visible bathroom, shower, or wall-niche evidence.",
+        "3": "Marker lies in region 44 and provides no kitchen or shelf evidence for bottled water; only weak residual uncertainty remains.",
+        "4": "Marker is in the same lounge-like region 44 with no toilet or tank-top evidence, so this bathroom-target clue is weak."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        18,
+        19,
+        25,
+        40,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "warm gold-ceiling lounge area beside the tufted upholstered wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "target_found": {
+    "0": true,
+    "1": false,
+    "2": true,
+    "3": false,
+    "4": false,
+    "5": true,
+    "6": true,
+    "7": true
+  }
+}

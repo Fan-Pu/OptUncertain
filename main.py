@@ -2396,10 +2396,28 @@ def run_scenario(
         graph_thinking=mllm_config.get("graph_thinking"),
         graph_thinking_format=mllm_config.get("graph_thinking_format"),
         graph_reasoning_split=mllm_config.get("graph_reasoning_split", False),
+        graph_extra_body_enabled=mllm_config.get("graph_extra_body_enabled", True),
+        graph_presence_penalty_enabled=mllm_config.get(
+            "graph_presence_penalty_enabled", True
+        ),
         detection_reasoning_effort=mllm_config.get("detection_reasoning_effort"),
         graph_reasoning_effort=mllm_config.get("graph_reasoning_effort"),
         detection_service_tier=mllm_config.get("detection_service_tier"),
         graph_service_tier=mllm_config.get("graph_service_tier"),
+        scan_id=scan_id,
+        case_id=test_case,
+        batch_id=str(scenario.get("batch_id", "default")),
+        detection_cache_enabled=mllm_config.get("detection_cache_enabled", False),
+        detection_cache_dir=mllm_config.get(
+            "detection_cache_dir",
+            "mllm_detection_cache",
+        ),
+        detection_cache_read=mllm_config.get("detection_cache_read", True),
+        detection_cache_write=mllm_config.get("detection_cache_write", True),
+        detection_cache_conflict_policy=mllm_config.get(
+            "detection_cache_conflict_policy",
+            "raise",
+        ),
     )
 
     all_targets_found = False
@@ -3108,6 +3126,7 @@ def run_batch_config(
         run_id=run_id,
     )
     for scenario in scenarios:
+        scenario["batch_id"] = str(batch_id)
         test_case = str(scenario["test_case"])
         if test_case in completed_cases:
             tqdm.write("Skipping previously completed batch case %s.\n" % test_case)

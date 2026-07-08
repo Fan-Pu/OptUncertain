@@ -1,0 +1,108 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 47,
+      "viewpoint_id": 25
+    },
+    {
+      "new_assigned_region_id": 48,
+      "viewpoint_id": 7
+    },
+    {
+      "new_assigned_region_id": 50,
+      "viewpoint_id": 14
+    }
+  ],
+  "visible_region_nodes": [],
+  "viewpoint_target_scores": [
+    {
+      "id": 20,
+      "target_scores": {
+        "5": {
+          "raw_score": 0.04,
+          "evidence_strength": "low",
+          "basis": "Living area with sofa where an armchair is plausible, but no brown armchair or green pillow visible"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "target_scores": {
+        "5": {
+          "raw_score": 0.03,
+          "evidence_strength": "low",
+          "basis": "Bedroom suite area with seating, but target object not confirmed"
+        }
+      }
+    },
+    {
+      "id": 26,
+      "target_scores": {
+        "5": {
+          "raw_score": 0.03,
+          "evidence_strength": "low",
+          "basis": "Bedroom area near bed and TV, armchair not visually present"
+        }
+      }
+    },
+    {
+      "id": 30,
+      "target_scores": {
+        "5": {
+          "raw_score": 0.04,
+          "evidence_strength": "low",
+          "basis": "Bedroom area with bed, seating present but target not identified"
+        }
+      }
+    },
+    {
+      "id": 32,
+      "target_scores": {
+        "5": {
+          "raw_score": 0.03,
+          "evidence_strength": "low",
+          "basis": "Transit area near bedroom, armchair unlikely"
+        }
+      }
+    },
+    {
+      "id": 39,
+      "target_scores": {
+        "5": {
+          "raw_score": 0.04,
+          "evidence_strength": "low",
+          "basis": "Bedroom area, seating present but target not visually confirmed"
+        }
+      }
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        15
+      ],
+      "region_node_id": 48
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        30,
+        39
+      ],
+      "region_node_id": 45
+    }
+  ],
+  "new_edges": [
+    {
+      "i": 30,
+      "j": 39,
+      "type": "vv",
+      "exist_prob": 0.8,
+      "cond_exist_prob": 0.8,
+      "distance_mean": 1.06,
+      "distance_var": 0.1
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  }
+}

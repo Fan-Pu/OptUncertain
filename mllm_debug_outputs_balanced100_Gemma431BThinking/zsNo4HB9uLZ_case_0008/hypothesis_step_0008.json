@@ -1,0 +1,368 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.333,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 14,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.645,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.552,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 14,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.561,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.991,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.944,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.851,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 41,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 8,
+      "label": "de7a74588c2842e9ba391abb153a0257",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {
+        "1": "Route toward potential bedrooms, but current view is kitchen area",
+        "4": "Visible hallway leads toward dining area where candle target is located"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "4": 0.1
+      },
+      "target_probs": {
+        "1": 0.09523809523809523,
+        "4": 0.09009009009009009
+      },
+      "target_score_basis": {
+        "1": "Hallway area is a transit space and unlikely to have a bathrobe beside a bed",
+        "4": "Hallway area is a transit space and not the dining room window location"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 14,
+      "label": "6416ac70316f44d1ae7ec5a3029b1703",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 14 is in a kitchen/dining area, which contradicts the bedroom location of the bathrobe.",
+        "4": "Viewpoint 14 is near the dining area, matching the location of the candle by the window."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "a80acc2328154455965a8be4133dee71",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.5,
+        "4": 0.01
+      },
+      "target_probs": {
+        "1": 0.47619047619047616,
+        "4": 0.009009009009009009
+      },
+      "target_score_basis": {
+        "1": "Located in a small white bathroom area, which is a plausible location for a bathrobe hanging on wall hooks",
+        "4": "Bathroom area contradicts the dining room window location specified for the candle"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 3,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "487a4cc75db94e56aa4d1d35866736fc",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.05,
+        "4": 0.7
+      },
+      "target_probs": {
+        "1": 0.047619047619047616,
+        "4": 0.6306306306306305
+      },
+      "target_score_basis": {
+        "1": "Kitchen area is unlikely to have a bathrobe hanging beside a bed",
+        "4": "Kitchen area is adjacent to dining areas and likely contains windows where a candle could be placed"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {
+        "1": "Kitchen area is unlikely to have a bathrobe hanging by a bed.",
+        "4": "Kitchen area is near the dining room, but less likely than viewpoint 21 for window access."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 31,
+      "label": "320c0ec6c0a343fea6227a2699d0eb7a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "4": 0.1
+      },
+      "target_probs": {
+        "1": 0.09523809523809523,
+        "4": 0.09009009009009009
+      },
+      "target_score_basis": {
+        "1": "Hallway area is a transit space and unlikely to have a bathrobe beside a bed",
+        "4": "Hallway area is a transit space and not the dining room window location"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "5340c12f388446b589bf2c082c39bd5e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "4": 0.1
+      },
+      "target_probs": {
+        "1": 0.09523809523809523,
+        "4": 0.09009009009009009
+      },
+      "target_score_basis": {
+        "1": "Hallway area is a transit space and unlikely to have a bathrobe beside a bed",
+        "4": "Hallway area is a transit space and not the dining room window location"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "e1f88263b98d46909c3e00e9250b6a4b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.2,
+        "4": 0.1
+      },
+      "target_probs": {
+        "1": 0.19047619047619047,
+        "4": 0.09009009009009009
+      },
+      "target_score_basis": {
+        "1": "Hallway area is a transit space, though may lead to bedrooms",
+        "4": "Hallway area is a transit space and not the dining room window location"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        14,
+        20,
+        21,
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "modern white kitchen with dark shelving",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "small white bathroom area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        31,
+        39,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "bright white hallway with dark accent wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 7,
+  "target_found": {
+    "1": false,
+    "4": false,
+    "6": true,
+    "7": true
+  }
+}

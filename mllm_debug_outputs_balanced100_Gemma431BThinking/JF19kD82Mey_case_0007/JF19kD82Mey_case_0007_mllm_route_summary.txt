@@ -1,0 +1,66 @@
+{
+  "test_case": "JF19kD82Mey_case_0007",
+  "agents": [
+    {
+      "agent_id": "agent0",
+      "route_node_ids": [
+        13,
+        18,
+        15,
+        33,
+        34,
+        42,
+        9,
+        42,
+        31,
+        8,
+        9,
+        42
+      ],
+      "route_viewpoint_ids": [
+        "4ea1cfa67ec145b39f90056a02a43d9f",
+        "c20f944e9c434804944b0c1251247202",
+        "1c2209fa44fc48c7b7ce7981bafc4ccf",
+        "595ef74c51bb4448ae709297121d4c10",
+        "e4a543521c44412e8f264d083ac5fc0c",
+        "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "3e8f012538474392bf311dcec2e2153a",
+        "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "6ca981e907be49749ed4aead19864515",
+        "84055072c9154370bc2a76c86daf011c",
+        "3e8f012538474392bf311dcec2e2153a",
+        "e3cf525579a04ab4b6a5cf3ea40f58f9"
+      ],
+      "edge_distances": [
+        1.3299441861221093,
+        0.9861247708322715,
+        1.4476101710754175,
+        1.5289043083411071,
+        2.4814274306664705,
+        1.5991996869997187,
+        1.5991996869997187,
+        4.345790689276233,
+        2.307923732232069,
+        2.4446388119515734,
+        1.5991996869997187
+      ],
+      "path_distance": 21.669963161496405,
+      "step_count": 11,
+      "wait_steps": 0
+    }
+  ],
+  "total_distance": 21.669963161496405,
+  "maximum_agent_distance": 21.669963161496405,
+  "target_node_ids_by_target_id": {},
+  "status": "incomplete",
+  "stop_reason": "mllm_retry_exhausted",
+  "target_found": {
+    "0": false
+  },
+  "steps_completed": 11,
+  "max_steps": 30,
+  "failed_step_index": 12,
+  "mllm_stage": "graph",
+  "mllm_attempts": 7,
+  "error": "[top-level schema] 'Unexpected top-level keys: [\\'});\\\\n  \"current_viewpoints_reassignment\": [],\\\\n  \"visible_region_nodes\": [],\\\\n  \"viewpoint_target_scores\": [\\\\n    {\\\\n      \"id\": 0,\\\\n      \"target_scores\": {\\\\n        \"0\": {\\\\n          \"basis\": \"Prior low score remains as no current visual evidence from the corridor suggests the presence of a glass dining table with flowers at this distant node.\",\\\\n          \"evidence_strength\": \"low\",\\\\n          \"raw_score\": 0.01\\\\n        }\\\\n      }\\\\n    },\\\\n    {\\\\n      \"id\": 22,\\\\n      \"target_scores\": {\\\\n        \"0\": {\\\\n          \"basis\": \"Prior low score remains; the candidate is in the corridor region which lacks the dining furniture described in the target.\",\\\\n          \"evidence_strength\": \"low\",\\\\n          \"raw_score\": 0.01\\\\n        }\\\\n      }\\\\n    },\\\\n    {\\\\n      \"id\": 44,\\\\n      \"target_scores\": {\\\\n        \"0\": {\\\\n          \"basis\": \"Prior low score remains; no evidence of a dining table or flowers at this corridor viewpoint.\",\\\\n          \"evidence_strength\": \"low\",\\\\n          \"raw_score\": 0.01\\\\n        }\\\\n      }\\\\n    }\\\\n  ],\\\\n  \"viewpoint_node_assigns\": [],\\\\n  \"new_edges\": [],\\\\n  \"edge_distance_variances\": {\\\\n    \"viewpoint_viewpoint\": 1.0\\\\n  }\\\\n}\\']'\nDetails: {\"error_type\": \"KeyError\", \"required_top_level_keys\": [\"current_viewpoints_reassignment\", \"edge_distance_variances\", \"new_edges\", \"viewpoint_node_assigns\", \"viewpoint_target_scores\", \"visible_region_nodes\"], \"returned_top_level_keys\": [\"current_viewpoints_reassignment\", \"edge_distance_variances\", \"new_edges\", \"viewpoint_node_assigns\", \"viewpoint_target_scores\", \"visible_region_nodes\", \"});\\n  \\\"current_viewpoints_reassignment\\\": [],\\n  \\\"visible_region_nodes\\\": [],\\n  \\\"viewpoint_target_scores\\\": [\\n    {\\n      \\\"id\\\": 0,\\n      \\\"target_scores\\\": {\\n        \\\"0\\\": {\\n          \\\"basis\\\": \\\"Prior low score remains as no current visual evidence from the corridor suggests the presence of a glass dining table with flowers at this distant node.\\\",\\n          \\\"evidence_strength\\\": \\\"low\\\",\\n          \\\"raw_score\\\": 0.01\\n        }\\n      }\\n    },\\n    {\\n      \\\"id\\\": 22,\\n      \\\"target_scores\\\": {\\n        \\\"0\\\": {\\n          \\\"basis\\\": \\\"Prior low score remains; the candidate is in the corridor region which lacks the dining furniture described in the target.\\\",\\n          \\\"evidence_strength\\\": \\\"low\\\",\\n          \\\"raw_score\\\": 0.01\\n        }\\n      }\\n    },\\n    {\\n      \\\"id\\\": 44,\\n      \\\"target_scores\\\": {\\n        \\\"0\\\": {\\n          \\\"basis\\\": \\\"Prior low score remains; no evidence of a dining table or flowers at this corridor viewpoint.\\\",\\n          \\\"evidence_strength\\\": \\\"low\\\",\\n          \\\"raw_score\\\": 0.01\\n        }\\n      }\\n    }\\n  ],\\n  \\\"viewpoint_node_assigns\\\": [],\\n  \\\"new_edges\\\": [],\\n  \\\"edge_distance_variances\\\": {\\n    \\\"viewpoint_viewpoint\\\": 1.0\\n  }\\n}\"], \"semantic_payload_contract\": \"graph_mllm\", \"target_ids\": [\"0\"]}\nRetry guidance: Return exactly the required graph JSON top-level keys. Remove extra top-level keys and add every missing required top-level key."
+}

@@ -1,0 +1,122 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 43
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 36,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 43,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 43,
+      "j": 51,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        43
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 36,
+      "label": "41fef0822d3f4b5581d3954dbcacad41",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        36,
+        45,
+        51
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 43,
+      "label": "82cb4105387a4ab5a09d82d7ff02a41c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        43
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "f45d421d04e34220b2aaf9246b6dcdd1",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        43
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 51,
+      "label": "6c627071aa3448a19a45b0b35ed305b7",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        43,
+        51
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "tiled bathroom area with sink and vanity",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        36,
+        45
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "beige tiled hallway area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "region_to_viewpoints": {
+    "61": [
+      43,
+      51
+    ],
+    "62": [
+      36,
+      45
+    ]
+  },
+  "viewpoint_to_region": {
+    "36": 62,
+    "43": 61,
+    "45": 62,
+    "51": 61
+  }
+}

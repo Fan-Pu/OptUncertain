@@ -1,0 +1,350 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.991,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.944,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.851,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.061,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 39,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "6": 0.1,
+        "7": 0.8
+      },
+      "target_probs": {
+        "0": 0.24390243902439024,
+        "1": 0.32258064516129026,
+        "4": 0.32258064516129026,
+        "5": 0.09009009009009009,
+        "6": 0.09009009009009009,
+        "7": 0.7920792079207921
+      },
+      "target_score_basis": {
+        "0": "Hallway area lacks desk or map evidence",
+        "1": "Hallway area lacks bed or wall hooks",
+        "4": "Hallway area lacks dining room window",
+        "5": "Hallway area lacks kitchen counter or stove",
+        "6": "Hallway area lacks television or wall shelf",
+        "7": "Located in entrance hallway where a console table with vase is likely"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "4": 0.1,
+        "5": 0.9,
+        "6": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.24390243902439024,
+        "1": 0.32258064516129026,
+        "4": 0.32258064516129026,
+        "5": 0.8108108108108107,
+        "6": 0.09009009009009009,
+        "7": 0.09900990099009901
+      },
+      "target_score_basis": {
+        "0": "Kitchen area lacks desk or map",
+        "1": "Kitchen area lacks bed or wall hooks",
+        "4": "Kitchen area lacks dining room window",
+        "5": "Located in kitchen area where counter and stove are expected",
+        "6": "Kitchen area lacks television or wall shelf",
+        "7": "Kitchen area is far from the entrance console table"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 26 is in a hallway, which is a transit area and not a likely location for a desk with a radio",
+        "1": "Viewpoint 26 is in a hallway, not a bedroom where a bathrobe would be hanging",
+        "4": "Viewpoint 26 is in a hallway, not a dining room window area",
+        "5": "Viewpoint 26 is in a hallway, not a kitchen counter area",
+        "6": "Viewpoint 26 is in a hallway, not a living area with a television",
+        "7": "Viewpoint 26 is located in the hallway near the entrance, which matches the location cue for the console table with a vase"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "320c0ec6c0a343fea6227a2699d0eb7a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "5340c12f388446b589bf2c082c39bd5e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.01,
+        "1": 0.01,
+        "4": 0.01,
+        "5": 0.01,
+        "6": 0.01,
+        "7": 0.01
+      },
+      "target_probs": {
+        "0": 0.024390243902439022,
+        "1": 0.032258064516129024,
+        "4": 0.032258064516129024,
+        "5": 0.009009009009009009,
+        "6": 0.009009009009009009,
+        "7": 0.009900990099009901
+      },
+      "target_score_basis": {
+        "0": "Bathroom area contradicts desk/map location",
+        "1": "Bathroom area contradicts bed/wall hooks location",
+        "4": "Bathroom area contradicts dining room window location",
+        "5": "Bathroom area contradicts kitchen counter location",
+        "6": "Bathroom area contradicts television location",
+        "7": "Bathroom area contradicts entrance console location"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "e1f88263b98d46909c3e00e9250b6a4b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.2,
+        "1": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "6": 0.9,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.4878048780487805,
+        "1": 0.32258064516129026,
+        "4": 0.32258064516129026,
+        "5": 0.09009009009009009,
+        "6": 0.8108108108108107,
+        "7": 0.09900990099009901
+      },
+      "target_score_basis": {
+        "0": "Living room may have a desk, but no map visible yet",
+        "1": "Living room lacks bed or wall hooks",
+        "4": "Living room lacks dining room window",
+        "5": "Living room lacks kitchen counter",
+        "6": "Located in living room where television and wall shelves are expected",
+        "7": "Living room is separate from the entrance console area"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        31,
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "modern bathroom with newspaper-patterned wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "white tiled hallway corridor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "white tiled entrance hallway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 56,
+      "label": "modern living room with grey rug",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 57,
+      "label": "modern kitchen with black shelving",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": true,
+    "3": true,
+    "4": false,
+    "5": false,
+    "6": false,
+    "7": false
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        24,
+        29,
+        37
+      ],
+      "region_node_id": 54
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 8,
+      "raw_target_probs": {
+        "1": 0.0006,
+        "3": 0.205,
+        "4": 0.0005,
+        "7": 0.0043
+      },
+      "target_probs": {
+        "1": 0.075,
+        "3": 0.1653225806451613,
+        "4": 0.030864197530864192,
+        "7": 0.10831234256926953
+      }
+    },
+    {
+      "id": 11,
+      "raw_target_probs": {
+        "1": 0.0018,
+        "3": 0.218,
+        "4": 0.0008,
+        "7": 0.0056
+      },
+      "target_probs": {
+        "1": 0.22499999999999998,
+        "3": 0.17580645161290326,
+        "4": 0.04938271604938271,
+        "7": 0.14105793450881612
+      }
+    },
+    {
+      "id": 24,
+      "raw_target_probs": {
+        "1": 0.0007,
+        "3": 0.182,
+        "4": 0.0025,
+        "7": 0.0042
+      },
+      "target_probs": {
+        "1": 0.0875,
+        "3": 0.1467741935483871,
+        "4": 0.15432098765432098,
+        "7": 0.10579345088161209
+      }
+    },
+    {
+      "id": 29,
+      "raw_target_probs": {
+        "1": 0.0005,
+        "3": 0.194,
+        "4": 0.0034,
+        "7": 0.0068
+      },
+      "target_probs": {
+        "1": 0.0625,
+        "3": 0.15645161290322585,
+        "4": 0.2098765432098765,
+        "7": 0.1712846347607053
+      }
+    },
+    {
+      "id": 31,
+      "raw_target_probs": {
+        "1": 0.0011,
+        "3": 0.081,
+        "4": 0.0008,
+        "7": 0.0032
+      },
+      "target_probs": {
+        "1": 0.1375,
+        "3": 0.0653225806451613,
+        "4": 0.04938271604938271,
+        "7": 0.0806045340050378
+      }
+    },
+    {
+      "id": 37,
+      "raw_target_probs": {
+        "1": 0.0014,
+        "3": 0.236,
+        "4": 0.0071,
+        "7": 0.011
+      },
+      "target_probs": {
+        "1": 0.175,
+        "3": 0.1903225806451613,
+        "4": 0.43827160493827155,
+        "7": 0.2770780856423174
+      }
+    },
+    {
+      "id": 39,
+      "raw_target_probs": {
+        "1": 0.0019,
+        "3": 0.124,
+        "4": 0.0011,
+        "7": 0.0046
+      },
+      "target_probs": {
+        "1": 0.2375,
+        "3": 0.10000000000000002,
+        "4": 0.06790123456790123,
+        "7": 0.11586901763224182
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 8,
+      "score_basis": {}
+    },
+    {
+      "id": 11,
+      "score_basis": {}
+    },
+    {
+      "id": 24,
+      "score_basis": {
+        "1": "Marker sits in the same hallway region, which contradicts the bed-and-wall-hooks bedroom cue; only slight residual chance from a nearby unseen room off the hall.",
+        "3": "Assigned to the hallway region, so this viewpoint can plausibly cover hallway wall surfaces matching a black framed eye chart, though no chart is directly visible.",
+        "4": "This is a hallway viewpoint without dining-room, window, or candle-holder evidence; only a weak possibility if the hall connects onward to dining space.",
+        "7": "Hallway context gives slight entrance-adjacent plausibility for a console table, but there is no direct entrance or table evidence at this marker."
+      }
+    },
+    {
+      "id": 29,
+      "score_basis": {
+        "1": "The marker is very close within the same hallway region, which does not fit the beside-the-bed bathrobe cue.",
+        "3": "Close continuation of the hallway region makes a hallway-wall target plausible here, with slightly better local wall-view potential than a bedroom or dining target.",
+        "4": "Still a hallway viewpoint and lacks dining-room window or candle-holder cues, so support for the dining target remains weak.",
+        "7": "As a nearby hallway continuation, it has modestly more entrance-transition potential than the other side of the hall, but no direct console-table evidence."
+      }
+    },
+    {
+      "id": 31,
+      "score_basis": {}
+    },
+    {
+      "id": 37,
+      "score_basis": {
+        "1": "Farther down the same hallway, this still contradicts the explicit bed-and-wall-hooks cue, with only small residual mass for an unseen bedroom beyond.",
+        "3": "Farthest hallway continuation among the new markers, so it is the strongest new candidate for a framed object mounted on a hallway wall.",
+        "4": "This farther hallway endpoint could lead toward a larger common room, but the viewpoint itself lacks dining-room window and candle-holder evidence.",
+        "7": "The farther corridor position gives the best weak entrance-transition fit among new viewpoints, but there is still no direct entrance or console-table evidence."
+      }
+    },
+    {
+      "id": 39,
+      "score_basis": {}
+    }
+  ],
+  "visible_region_nodes": []
+}

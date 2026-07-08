@@ -1,0 +1,84 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        19,
+        25
+      ],
+      "region_node_id": 44
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "1": 0.18,
+        "3": 0.22,
+        "4": 0.16
+      },
+      "target_probs": {
+        "1": 0.5625,
+        "3": 0.5641025641025641,
+        "4": 0.5517241379310345
+      }
+    },
+    {
+      "id": 25,
+      "raw_target_probs": {
+        "1": 0.11,
+        "3": 0.13,
+        "4": 0.1
+      },
+      "target_probs": {
+        "1": 0.34375,
+        "3": 0.3333333333333333,
+        "4": 0.3448275862068965
+      }
+    },
+    {
+      "id": 40,
+      "raw_target_probs": {
+        "1": 0.03,
+        "3": 0.04,
+        "4": 0.03
+      },
+      "target_probs": {
+        "1": 0.09375,
+        "3": 0.10256410256410256,
+        "4": 0.10344827586206895
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 19,
+      "score_basis": {
+        "1": "Marker 19 is farthest from the current lounge cluster, so it has weak next-room potential, but no shower niche or bathroom fixtures are visible.",
+        "3": "Marker 19 is the best exit-side candidate among the eligible viewpoints, yet no kitchen shelf or bottled-water evidence is visible there.",
+        "4": "This farther side marker could lead beyond the lounge, but the viewpoint itself shows no toilet or toilet-tank cue."
+      }
+    },
+    {
+      "id": 25,
+      "score_basis": {
+        "1": "Marker 25 appears close to the current lounge area and lacks any visible shower niche or bathroom-surface evidence.",
+        "3": "Marker 25 is a nearby continuation within the same open area, with no visible kitchen shelving or bottled-water support cue.",
+        "4": "Marker 25 remains in lounge-like space near the current viewpoint, and no toilet or tank-top cue is visible."
+      }
+    },
+    {
+      "id": 40,
+      "score_basis": {
+        "1": "Viewpoint 40 is very close to the current lounge viewpoint in the same region, so its prior generic score should drop because no shower niche or bathroom evidence is present.",
+        "3": "Viewpoint 40 sits inside the same lounge region and shows only route/lounge context, not a kitchen shelf or bottled-water placement.",
+        "4": "Viewpoint 40 is essentially lounge-core continuation, so the prior score should be lowered because no toilet or toilet-tank cue is visible."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

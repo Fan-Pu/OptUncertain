@@ -1,0 +1,120 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 50,
+      "viewpoint_id": 20
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        41
+      ],
+      "region_node_id": 50
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        28
+      ],
+      "region_node_id": 56
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 11,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "2": 0.3333333333333333,
+        "7": 0.3333333333333333
+      }
+    },
+    {
+      "id": 28,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.16666666666666666,
+        "2": 0.16666666666666666,
+        "7": 0.16666666666666666
+      }
+    },
+    {
+      "id": 41,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.16666666666666666,
+        "2": 0.16666666666666666,
+        "7": 0.16666666666666666
+      }
+    },
+    {
+      "id": 44,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "2": 0.3333333333333333,
+        "7": 0.3333333333333333
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 11,
+      "score_basis": {
+        "0": "Prior corridor assignment is a transition space, less likely than specific room areas.",
+        "2": "Prior corridor assignment is a transition space, less likely than specific room areas.",
+        "7": "Prior corridor assignment is a transition space, less likely than specific room areas."
+      }
+    },
+    {
+      "id": 28,
+      "score_basis": {
+        "0": "Viewpoint 28 is in a bathroom area with a bathtub, which contradicts the glass dining table requirement for target 0.",
+        "2": "Bathroom area is unlikely to contain a built-in kitchen appliance nook for target 2.",
+        "7": "Bathroom area is unlikely to contain a kitchen counter with a stovetop for target 7."
+      }
+    },
+    {
+      "id": 41,
+      "score_basis": {
+        "0": "Viewpoint 41 is in a transition area/bathroom entrance, not a dining area.",
+        "2": "Transition area does not match the kitchen appliance nook description.",
+        "7": "Transition area does not match the kitchen counter description."
+      }
+    },
+    {
+      "id": 44,
+      "score_basis": {
+        "0": "Prior corridor assignment is a transition space, less likely than specific room areas.",
+        "2": "Prior corridor assignment is a transition space, less likely than specific room areas.",
+        "7": "Prior corridor assignment is a transition space, less likely than specific room areas."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 56,
+      "label": "modern bathroom with white bathtub"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 18
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 9,
+      "j": 18,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        18
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 9,
+      "label": "85c23efeaecd4d43a7dcd5b90137179e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 18,
+      "label": "f4d03f729dfc49068db327584455e975",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "lounge area with tufted walls and window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "hallway area with white walls near doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "44": [
+      18
+    ],
+    "45": [
+      9
+    ]
+  },
+  "viewpoint_to_region": {
+    "9": 45,
+    "18": 44
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 34
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 2,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 34,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        34
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        34
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 5,
+      "label": "4c78adff490c4973aa3e09bfe14217aa",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        2,
+        5
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 34,
+      "label": "e6ba61dd42c64410877149cc11766a8b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        5,
+        34
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "spacious white hallway with wooden flooring",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "53": [
+      2,
+      5,
+      34
+    ]
+  },
+  "viewpoint_to_region": {
+    "2": 53,
+    "5": 53,
+    "34": 53
+  }
+}

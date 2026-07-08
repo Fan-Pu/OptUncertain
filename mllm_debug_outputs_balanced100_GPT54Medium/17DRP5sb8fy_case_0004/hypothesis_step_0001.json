@@ -1,0 +1,173 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.87,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.767,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.666,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 9,
+      "label": "85c23efeaecd4d43a7dcd5b90137179e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.72,
+        "2": 0.06,
+        "5": 2.34
+      },
+      "target_probs": {
+        "0": 0.18508997429305912,
+        "2": 0.10526315789473685,
+        "5": 0.6802325581395349
+      },
+      "target_score_basis": {
+        "0": "Marker lies in the tufted lounge seating area with pillows, but this side shows sofa seating rather than a clear headboard zone.",
+        "2": "This marker is in a lounge alcove, which contradicts the bathroom-wall hanging-robe cue.",
+        "5": "Marker sits beside lounge seating with visible throw pillows near the window, making it the best visible match for a pillow-on-chair style target."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.09,
+        "2": 0.43,
+        "5": 0.08
+      },
+      "target_probs": {
+        "0": 0.02313624678663239,
+        "2": 0.7543859649122807,
+        "5": 0.023255813953488372
+      },
+      "target_score_basis": {
+        "0": "Marker is in the bright entry foyer by the door and console, which poorly matches a pillow near a headboard.",
+        "2": "Marker is by wooden wall panels and interior doors in the foyer; that is the closest visible cue to a hanging robe, but no bathroom evidence is seen.",
+        "5": "The foyer lacks lounge seating or an armchair, so it is a weak fit for the throw-pillow target."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 40,
+      "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "194bef4cbba641dc9860ba7f43a0c16a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 3.08,
+        "2": 0.08,
+        "5": 1.02
+      },
+      "target_probs": {
+        "0": 0.7917737789203084,
+        "2": 0.14035087719298248,
+        "5": 0.29651162790697677
+      },
+      "target_score_basis": {
+        "0": "Marker lies in the padded alcove beside the upholstered wall and bed-like banquette, the strongest visible match to a small pillow near a headboard.",
+        "2": "This marker remains inside the tufted lounge alcove, not a bathroom with a wooden wall for a hanging robe.",
+        "5": "Marker is in the same lounge seating alcove with cushions, but it is nearer the banquette/headboard side than a distinct brown armchair."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        40,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "dark tufted sitting alcove around the curved banquette by the left window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "bright entry foyer with white door and console beyond the central opening",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "5": false,
+    "6": true
+  }
+}

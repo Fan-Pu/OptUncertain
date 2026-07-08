@@ -1,0 +1,103 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "i": 11,
+      "j": 15,
+      "type": "vv",
+      "exist_prob": 0.75,
+      "cond_exist_prob": 0.75,
+      "distance_mean": 1.35,
+      "distance_var": 0.2
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        11,
+        20
+      ],
+      "region_node_id": 56
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 4,
+      "target_scores": {
+        "1": {
+          "basis": "dark walls and bookshelf area, no bed visible for bathrobe target",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "4": {
+          "basis": "desk and bookshelf area, contradicts dining room window location",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 11,
+      "target_scores": {
+        "1": {
+          "basis": "near bedroom doorway, possible access to bed area but not direct",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        },
+        "4": {
+          "basis": "hallway/doorway transition, not dining room",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 15,
+      "target_scores": {
+        "1": {
+          "basis": "bedroom with bed and nightstand visible, directly matches target location beside bed",
+          "evidence_strength": "high",
+          "raw_score": 0.8
+        },
+        "4": {
+          "basis": "bedroom area with windows, contradicts dining room window location",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 20,
+      "target_scores": {
+        "1": {
+          "basis": "closet doors in bedroom, indirect access to bed area",
+          "evidence_strength": "low",
+          "raw_score": 0.2
+        },
+        "4": {
+          "basis": "bedroom closet area, contradicts dining room window location",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 26,
+      "target_scores": {
+        "1": {
+          "basis": "hallway with framed picture, transit area not near bed",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "4": {
+          "basis": "hallway area, not dining room",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    }
+  ]
+}

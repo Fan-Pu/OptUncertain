@@ -1,0 +1,32 @@
+\ Model _copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+\ Signature: 0xe084cdfa0bacd7d9
+Maximize multi-objectives
+  target_directed_reward: Priority=2 Weight=1 AbsTol=0 RelTol=0
+  
+  target_directed_route_cost: Priority=1 Weight=1 AbsTol=0 RelTol=0
+   - 0.00334655428854735 x_25_37_agent2 - 0.0042117005453644 x_25_39_agent2
+Subject To
+ first_hop_grounded_vv_agent2: x_25_37_agent2 + x_25_39_agent2 = 1
+ flow_in_37_agent2: x_25_37_agent2 - y_37_agent2 = 0
+ flow_in_39_agent2: x_25_39_agent2 - y_39_agent2 = 0
+ target_reward_visit_0_37_agent2: z_0_37_agent2 - y_37_agent2 <= 0
+ target_reward_visit_3_39_agent2: z_3_39_agent2 - y_39_agent2 <= 0
+ target_reward_positive_0_8_agent0: z_0_8_agent0 = 0
+ target_reward_positive_0_42_agent0: z_0_42_agent0 = 0
+ target_reward_positive_0_28_agent1: z_0_28_agent1 = 0
+ target_reward_positive_0_39_agent2: z_0_39_agent2 = 0
+ target_reward_positive_3_8_agent0: z_3_8_agent0 = 0
+ target_reward_positive_3_42_agent0: z_3_42_agent0 = 0
+ target_reward_positive_3_28_agent1: z_3_28_agent1 = 0
+ target_reward_positive_3_37_agent2: z_3_37_agent2 = 0
+ target_reward_unique_0: z_0_37_agent2 + z_0_8_agent0 + z_0_42_agent0
+   + z_0_28_agent1 + z_0_39_agent2 = 1
+ target_reward_unique_3: z_3_39_agent2 + z_3_8_agent0 + z_3_42_agent0
+   + z_3_28_agent1 + z_3_37_agent2 = 1
+Bounds
+Binaries
+ z_0_37_agent2 z_3_39_agent2 x_25_37_agent2 x_25_39_agent2 z_0_8_agent0
+ z_3_8_agent0 z_0_42_agent0 z_3_42_agent0 z_0_28_agent1 z_3_28_agent1
+ y_37_agent2 y_39_agent2 z_3_37_agent2 z_0_39_agent2
+End

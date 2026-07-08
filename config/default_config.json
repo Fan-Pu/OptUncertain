@@ -17,17 +17,22 @@
     "graph_api_key_env": "HF_TOKEN",
     "detection_reasoning_effort": "medium",
     "detection_service_tier": "flex",
-    "graph_service_tier": "flex",
+    "graph_service_tier": null,
     "graph_thinking": "enabled",
     "request_timeout": 900,
     "read_saved_raw_outputs": true,
+    "detection_cache_enabled": true,
+    "detection_cache_dir": "mllm_detection_cache",
+    "detection_cache_read": true,
+    "detection_cache_write": true,
+    "detection_cache_conflict_policy": "quarantine",
     "max_validation_retries": 6
   },
   "bayes": {
     "sigma_vv2": 4.0,
     "kappa_vv": 1.0,
     "varrho": 0.7,
-    "epsilon": 1e-6
+    "epsilon": 1e-06
   },
   "optimizer": {
     "goal_weight": 0.45,
@@ -45,7 +50,7 @@
     "sample_balance": "param_config",
     "hide_agent_views": true,
     "run_id_prefix": "balanced100",
-    "selected_graph_model_label": "GPT54Medium",
+    "selected_graph_model_label": "Qwen36_35BA3BThinking",
     "graph_models": [
       {
         "label": "GPT54Medium",
@@ -54,7 +59,7 @@
         "graph_base_url": "",
         "graph_api_key_env": "OPENAI_API_KEY",
         "graph_reasoning_effort": "medium",
-        "graph_service_tier": "flex"
+        "graph_service_tier": null
       },
       {
         "label": "Gemma431BThinking",
@@ -62,7 +67,8 @@
         "graph_api_type": "chat_completions",
         "graph_base_url": "https://router.huggingface.co/v1",
         "graph_api_key_env": "HF_TOKEN",
-        "graph_thinking": "enabled"
+        "graph_extra_body_enabled": false,
+        "graph_presence_penalty_enabled": false
       },
       {
         "label": "Qwen36_35BA3BThinking",
@@ -70,7 +76,8 @@
         "graph_api_type": "chat_completions",
         "graph_base_url": "https://router.huggingface.co/v1",
         "graph_api_key_env": "HF_TOKEN",
-        "graph_thinking": "enabled"
+        "graph_extra_body_enabled": false,
+        "graph_presence_penalty_enabled": false
       }
     ]
   }

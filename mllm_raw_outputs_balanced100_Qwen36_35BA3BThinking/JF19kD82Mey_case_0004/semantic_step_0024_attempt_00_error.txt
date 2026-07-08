@@ -1,0 +1,125 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 52,
+      "viewpoint_id": 36
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 57,
+      "label": "dining area with glass table"
+    },
+    {
+      "id": 58,
+      "label": "entryway with dark wall and circular art"
+    },
+    {
+      "id": 59,
+      "label": "kitchen counter area"
+    },
+    {
+      "id": 60,
+      "label": "living area with sofa and bookshelf"
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 5,
+      "target_scores": {
+        "0": {
+          "raw_score": 0.8,
+          "evidence_strength": "high",
+          "basis": "marker 5 is at the glass dining table matching target 0 flowers and vase location"
+        },
+        "7": {
+          "raw_score": 0.0,
+          "evidence_strength": "low",
+          "basis": "dining table contradicts kitchen counter target 7 location"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "target_scores": {
+        "0": {
+          "raw_score": 0.0,
+          "evidence_strength": "low",
+          "basis": "kitchen counter contradicts dining table target 0 location"
+        },
+        "7": {
+          "raw_score": 0.8,
+          "evidence_strength": "high",
+          "basis": "marker 14 is at the kitchen counter beside stovetop matching target 7 lemons location"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "target_scores": {
+        "0": {
+          "raw_score": 0.01,
+          "evidence_strength": "low",
+          "basis": "hallway is transit space, contradicts dining table constraint"
+        },
+        "7": {
+          "raw_score": 0.01,
+          "evidence_strength": "low",
+          "basis": "hallway is transit space, contradicts kitchen counter constraint"
+        }
+      }
+    },
+    {
+      "id": 40,
+      "target_scores": {
+        "0": {
+          "raw_score": 0.05,
+          "evidence_strength": "low",
+          "basis": "living area is transit space, contradicts dining table constraint"
+        },
+        "7": {
+          "raw_score": 0.05,
+          "evidence_strength": "low",
+          "basis": "living area is transit space, contradicts kitchen counter constraint"
+        }
+      }
+    },
+    {
+      "id": 48,
+      "target_scores": {
+        "0": {
+          "raw_score": 0.0,
+          "evidence_strength": "low",
+          "basis": "bookshelf area contradicts dining table target 0 location"
+        },
+        "7": {
+          "raw_score": 0.0,
+          "evidence_strength": "low",
+          "basis": "bookshelf area contradicts kitchen counter target 7 location"
+        }
+      }
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [5],
+      "region_node_id": 57
+    },
+    {
+      "assigned_viewpoint_node_indices": [6],
+      "region_node_id": 58
+    },
+    {
+      "assigned_viewpoint_node_indices": [14],
+      "region_node_id": 59
+    },
+    {
+      "assigned_viewpoint_node_indices": [17, 48],
+      "region_node_id": 60
+    }
+  ],
+  "new_edges": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  }
+}

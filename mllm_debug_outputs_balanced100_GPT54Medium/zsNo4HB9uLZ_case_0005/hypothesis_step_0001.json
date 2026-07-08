@@ -1,0 +1,221 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.127,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 0,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.912,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 12,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.224,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 15,
+      "j": 22,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 0,
+      "label": "213f4f2f0d204758bc51252aed60cf82",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.52,
+        "2": 0.08,
+        "3": 0.14,
+        "4": 0.13,
+        "5": 0.05,
+        "6": 0.26,
+        "7": 0.07
+      },
+      "target_probs": {
+        "0": 0.5306122448979591,
+        "2": 0.17777777777777778,
+        "3": 0.12612612612612611,
+        "4": 0.2096774193548387,
+        "5": 0.09090909090909091,
+        "6": 0.20634920634920637,
+        "7": 0.13725490196078433
+      },
+      "target_score_basis": {
+        "0": "Marker 0 lies in the bedroom near furniture and wall decor, which fits a desk-and-map setup better than the hallway viewpoint.",
+        "2": "Marker 0 is inside a bedroom, which contradicts the kitchen shelf cue for the scale.",
+        "3": "Bedroom marker 0 is not on a hallway wall, so it weakly matches the eye-chart hallway cue.",
+        "4": "Marker 0 is by windows but still in a bedroom, not a dining-room window area.",
+        "5": "Bedroom viewpoint 0 conflicts with the kitchen counter beside stove cue.",
+        "6": "From the bedroom, the adjacent TV-side area is only indirectly suggested, so shelf-beside-television evidence is weak here.",
+        "7": "Marker 0 is deep in the bedroom and does not fit an entrance console-table location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 12,
+      "label": "5e966f4bdbc849f4b2b200e2f8cc49a0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.29,
+        "2": 0.06,
+        "3": 0.09,
+        "4": 0.15,
+        "5": 0.04,
+        "6": 0.18,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.2959183673469387,
+        "2": 0.13333333333333333,
+        "3": 0.08108108108108107,
+        "4": 0.2419354838709677,
+        "5": 0.07272727272727272,
+        "6": 0.14285714285714285,
+        "7": 0.09803921568627451
+      },
+      "target_score_basis": {
+        "0": "Marker 12 is also in the bedroom, but closer to the bed/window side than to any likely desk-and-map area.",
+        "2": "Bedroom marker 12 poorly matches the kitchen top-shelf cue.",
+        "3": "Marker 12 sits in the bedroom rather than on a hallway wall.",
+        "4": "Marker 12 is nearest the windows, but the room still reads as bedroom rather than dining room.",
+        "5": "The bed-side bedroom position contradicts a kitchen counter by the stove.",
+        "6": "The television-related area is farther from marker 12 than from the hallway marker, so support is limited.",
+        "7": "Bedroom marker 12 does not fit a console table near the entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "11bdfcf0a0984901a1d6f60fdd8ee4a6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.17,
+        "2": 0.31,
+        "3": 0.88,
+        "4": 0.34,
+        "5": 0.46,
+        "6": 0.82,
+        "7": 0.39
+      },
+      "target_probs": {
+        "0": 0.17346938775510204,
+        "2": 0.6888888888888889,
+        "3": 0.7927927927927927,
+        "4": 0.5483870967741935,
+        "5": 0.8363636363636363,
+        "6": 0.6507936507936507,
+        "7": 0.7647058823529412
+      },
+      "target_score_basis": {
+        "0": "Marker 15 is in the hall outside the bedroom, offering less direct support for a desk below a map than the bedroom markers.",
+        "2": "The hallway marker leads toward other common rooms, so it is less contradictory to a kitchen shelf than the bedroom markers, but still route-only.",
+        "3": "Marker 15 sits in the tiled hallway itself, directly matching the hallway-wall cue for the eye chart.",
+        "4": "Hallway marker 15 opens toward common areas and windows beyond, which is more compatible with a dining-room window than the bedroom markers.",
+        "5": "Marker 15 is the only candidate oriented toward non-bedroom living spaces where a kitchen counter and stove could plausibly be reached, but the cue remains indirect.",
+        "6": "From marker 15, the adjacent area with a visible television is closest, matching the shelf-beside-television cue better than the bedroom markers.",
+        "7": "A hallway just outside the bedroom is more consistent with an approach toward the entrance console-table area than either bedroom marker, though no entrance furniture is directly shown."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 22,
+      "label": "94432dd9d465486b8acfb7013ffc3fca",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        12,
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "blue-walled carpeted bedroom with tall windows along the outer wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "bright tiled hallway just outside the bedroom doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "1": true,
+    "2": false,
+    "3": false,
+    "4": false,
+    "5": false,
+    "6": false,
+    "7": false
+  }
+}

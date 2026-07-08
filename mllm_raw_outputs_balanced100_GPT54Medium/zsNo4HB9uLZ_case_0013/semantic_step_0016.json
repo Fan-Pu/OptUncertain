@@ -1,0 +1,134 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        8
+      ],
+      "region_node_id": 53
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        19
+      ],
+      "region_node_id": 54
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 8,
+      "raw_target_probs": {
+        "4": 0.012,
+        "6": 0.11
+      },
+      "target_probs": {
+        "4": 0.14634146341463414,
+        "6": 0.7857142857142857
+      }
+    },
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "4": 0.024,
+        "6": 0.005
+      },
+      "target_probs": {
+        "4": 0.2926829268292683,
+        "6": 0.03571428571428571
+      }
+    },
+    {
+      "id": 31,
+      "raw_target_probs": {
+        "4": 0.015,
+        "6": 0.007
+      },
+      "target_probs": {
+        "4": 0.18292682926829268,
+        "6": 0.049999999999999996
+      }
+    },
+    {
+      "id": 38,
+      "raw_target_probs": {
+        "4": 0.002,
+        "6": 0.001
+      },
+      "target_probs": {
+        "4": 0.024390243902439025,
+        "6": 0.007142857142857143
+      }
+    },
+    {
+      "id": 39,
+      "raw_target_probs": {
+        "4": 0.013,
+        "6": 0.008
+      },
+      "target_probs": {
+        "4": 0.15853658536585363,
+        "6": 0.05714285714285714
+      }
+    },
+    {
+      "id": 41,
+      "raw_target_probs": {
+        "4": 0.016,
+        "6": 0.009
+      },
+      "target_probs": {
+        "4": 0.1951219512195122,
+        "6": 0.06428571428571428
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 8,
+      "score_basis": {
+        "4": "Marker is close to the current sitting-room area in region 53, but there is no direct dining-room or window evidence for the candle target.",
+        "6": "Marker appears in the same sitting-room region 53 as the current camera, which fits a television-and-wall-shelf setting better than the visible hallway candidates."
+      }
+    },
+    {
+      "id": 19,
+      "score_basis": {
+        "4": "Marker lies far beyond the left-side opening in hallway region 54; it may lead toward other rooms, but the visible evidence is still transit-only and not dining-window specific.",
+        "6": "Marker is in the deeper hallway region 54, which is weak evidence for a wall shelf beside a television."
+      }
+    },
+    {
+      "id": 31,
+      "score_basis": {
+        "4": "Current panorama reinforces that region 54 is an arched hallway/transition space, so this prior hall candidate is weaker for a candle by a dining-room window.",
+        "6": "This viewpoint remains in the hallway region 54, so prior score is reduced because the target calls for a TV-side wall shelf rather than a transit space."
+      }
+    },
+    {
+      "id": 38,
+      "score_basis": {
+        "4": "Only hallway-region context is available for this candidate, with no dining-room or window-bearing evidence.",
+        "6": "Only hallway-route context is supported here, which is poor evidence for a television-adjacent wall shelf."
+      }
+    },
+    {
+      "id": 39,
+      "score_basis": {
+        "4": "This candidate stays in hallway region 54; the current observation supports it as access space rather than the dining-room window area named in the target.",
+        "6": "Hallway-region evidence makes this weaker for the black number 8 ornament than the nearby sitting-room-side candidate."
+      }
+    },
+    {
+      "id": 41,
+      "score_basis": {
+        "4": "Although previously scored higher, the present observation supports region 54 as hallway access space, so this is downgraded for the dining-room-window candle target.",
+        "6": "Previously elevated score is reduced because the current evidence still places this in hallway region 54, not in a TV-and-shelf area."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

@@ -5,15 +5,22 @@ import io
 import json
 import os
 import re
+from email.utils import parsedate_to_datetime
 from textwrap import dedent
 import time
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Dict, List, Optional
 import debugpy
 import numpy as np
-from openai import APITimeoutError, BadRequestError, OpenAI
+from openai import APITimeoutError, BadRequestError, OpenAI, RateLimitError
 from PIL import Image
 
 import Helper
+from semantic_persistence.detection_cache import (
+    DETECTION_PROMPT_VERSION,
+    DetectionCache,
+    DetectionCacheConflictError,
+)
 
 # for detection only: conservative, reduce false target detections
 DETECTION_TEMPERATURE = 0.1
@@ -42,6 +49,9 @@ THINKING_FORMATS = {"thinking_type", "enable_thinking"}
 REASONING_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh"}
 OPENAI_RESPONSE_SERVICE_TIERS = {"auto", "flex", "priority"}
 API_TYPES = {"chat_completions", "openai_responses", "google_genai"}
+RATE_LIMIT_DEFAULT_COOLDOWN_SECONDS = 300.0
+RATE_LIMIT_MIN_COOLDOWN_SECONDS = 10.0
+RATE_LIMIT_MAX_COOLDOWN_SECONDS = 3600.0
 
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
@@ -140,10 +150,20 @@ class MLLMClient:
         graph_thinking: str | None = None,
         graph_thinking_format: str | None = None,
         graph_reasoning_split: bool = False,
+        graph_extra_body_enabled: bool = True,
+        graph_presence_penalty_enabled: bool = True,
         detection_reasoning_effort: str | None = None,
         graph_reasoning_effort: str | None = None,
         detection_service_tier: str | None = None,
         graph_service_tier: str | None = None,
+        scan_id: str = "",
+        case_id: str = "default",
+        batch_id: str = "default",
+        detection_cache_enabled: bool = False,
+        detection_cache_dir: str = "mllm_detection_cache",
+        detection_cache_read: bool = True,
+        detection_cache_write: bool = True,
+        detection_cache_conflict_policy: str = "raise",
     ):
         self.graph_model_name = graph_model_name
         self.detection_model_name = detection_model_name
@@ -154,6 +174,9 @@ class MLLMClient:
         self.read_saved_raw_outputs = bool(read_saved_raw_outputs)
         self.raw_output_dir = str(raw_output_dir)
         self.raw_debug_dir = str(raw_debug_dir)
+        self.scan_id = str(scan_id)
+        self.case_id = str(case_id)
+        self.batch_id = str(batch_id or "default")
         self.max_validation_retries = max(0, int(max_validation_retries))
         self.max_request_timeout_retries = max(0, int(max_request_timeout_retries))
         self.semantic_raw_output_index = 1
@@ -181,6 +204,14 @@ class MLLMClient:
             graph_reasoning_split,
             "graph_reasoning_split",
         )
+        self.graph_extra_body_enabled = self._normalize_bool(
+            graph_extra_body_enabled,
+            "graph_extra_body_enabled",
+        )
+        self.graph_presence_penalty_enabled = self._normalize_bool(
+            graph_presence_penalty_enabled,
+            "graph_presence_penalty_enabled",
+        )
         self.detection_reasoning_effort = self._normalize_reasoning_effort(
             detection_reasoning_effort,
             "detection_reasoning_effort",
@@ -196,6 +227,35 @@ class MLLMClient:
         self.graph_service_tier = self._normalize_service_tier(
             graph_service_tier,
             "graph_service_tier",
+        )
+        self.detection_cache_enabled = self._normalize_bool(
+            detection_cache_enabled,
+            "detection_cache_enabled",
+        )
+        self.detection_cache_read = self._normalize_bool(
+            detection_cache_read,
+            "detection_cache_read",
+        )
+        self.detection_cache_write = self._normalize_bool(
+            detection_cache_write,
+            "detection_cache_write",
+        )
+        self.detection_cache_conflict_policy = str(
+            detection_cache_conflict_policy or "raise"
+        ).strip().lower()
+        if self.detection_cache_conflict_policy not in {"raise", "quarantine"}:
+            raise ValueError(
+                "detection_cache_conflict_policy must be exactly 'raise' "
+                "or 'quarantine'."
+            )
+        self.detection_cache = (
+            DetectionCache(
+                cache_dir=str(detection_cache_dir),
+                batch_id=self.batch_id,
+                conflict_policy=self.detection_cache_conflict_policy,
+            )
+            if self.detection_cache_enabled
+            else None
         )
         self.graph_client = self._create_api_client(
             api_type=self.graph_api_type,
@@ -600,6 +660,8 @@ class MLLMClient:
         thinking_mode: str | None,
         thinking_format: str = "thinking_type",
         reasoning_split: bool = False,
+        extra_body_enabled: bool = True,
+        presence_penalty_enabled: bool = True,
         use_response_format: bool = True,
     ) -> Dict[str, object]:
         if request_type == "detection":
@@ -620,32 +682,34 @@ class MLLMClient:
             "messages": messages,
             "temperature": temperature,
             "top_p": top_p,
-            "presence_penalty": presence_penalty,
             "max_tokens": max_tokens,
-            "extra_body": {
+        }
+        if presence_penalty_enabled:
+            request_kwargs["presence_penalty"] = presence_penalty
+        if extra_body_enabled:
+            request_kwargs["extra_body"] = {
                 "top_k": top_k,
                 "min_p": MIN_P,
                 "repetition_penalty": REPETITION_PENALTY,
-            },
-        }
-        if thinking_mode is not None:
-            normalized_thinking_format = self._normalize_thinking_format(
-                thinking_format,
-                "%s_thinking_format" % request_type,
-            )
-            if normalized_thinking_format == "thinking_type":
-                request_kwargs["extra_body"]["thinking"] = {"type": thinking_mode}
-            elif thinking_mode in {"enabled", "disabled"}:
-                request_kwargs["extra_body"]["enable_thinking"] = (
-                    thinking_mode == "enabled"
+            }
+            if thinking_mode is not None:
+                normalized_thinking_format = self._normalize_thinking_format(
+                    thinking_format,
+                    "%s_thinking_format" % request_type,
                 )
-            else:
-                raise ValueError(
-                    "%s_thinking=%r cannot use thinking format %r."
-                    % (request_type, thinking_mode, normalized_thinking_format)
-                )
-        if reasoning_split:
-            request_kwargs["extra_body"]["reasoning_split"] = True
+                if normalized_thinking_format == "thinking_type":
+                    request_kwargs["extra_body"]["thinking"] = {"type": thinking_mode}
+                elif thinking_mode in {"enabled", "disabled"}:
+                    request_kwargs["extra_body"]["enable_thinking"] = (
+                        thinking_mode == "enabled"
+                    )
+                else:
+                    raise ValueError(
+                        "%s_thinking=%r cannot use thinking format %r."
+                        % (request_type, thinking_mode, normalized_thinking_format)
+                    )
+            if reasoning_split:
+                request_kwargs["extra_body"]["reasoning_split"] = True
 
         if use_response_format:
             request_kwargs["response_format"] = {"type": "json_object"}
@@ -690,7 +754,12 @@ class MLLMClient:
             "retrying without that request restriction."
             % (router_name.capitalize(), model_name)
         )
-        completion = client.chat.completions.create(**request_kwargs)
+        completion = self._request_with_rate_limit_cooldown(
+            lambda: client.chat.completions.create(**request_kwargs),
+            request_type=response_format_key[0],
+            router_name=router_name,
+            model_name=model_name,
+        )
         print("usage:", self._format_completion_usage(completion.usage))
         print("model:", completion.model)
         print("finish_reason:", completion.choices[0].finish_reason)
@@ -842,6 +911,98 @@ class MLLMClient:
                         chunks.append(str(text))
         return "\n".join(chunks).strip()
 
+    @staticmethod
+    def _duration_seconds_from_header(value: object) -> float | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        if not text:
+            return None
+        if re.fullmatch(r"\d+(?:\.\d+)?", text):
+            return float(text)
+
+        units = {"ms": 0.001, "s": 1.0, "m": 60.0, "h": 3600.0}
+        total = 0.0
+        position = 0
+        for match in re.finditer(r"(\d+(?:\.\d+)?)(ms|s|m|h)", text):
+            if match.start() != position:
+                total = 0.0
+                break
+            total += float(match.group(1)) * units[match.group(2)]
+            position = match.end()
+        if position == len(text) and total > 0.0:
+            return total
+
+        try:
+            parsed = parsedate_to_datetime(text)
+        except (TypeError, ValueError):
+            return None
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return max(0.0, (parsed - datetime.now(timezone.utc)).total_seconds())
+
+    @classmethod
+    def _rate_limit_cooldown_seconds(cls, exc: RateLimitError) -> float:
+        response = getattr(exc, "response", None)
+        headers = getattr(response, "headers", None)
+        values = []
+        if headers is not None:
+            for header_name in (
+                "retry-after-ms",
+                "retry-after",
+                "x-ratelimit-reset-requests",
+                "x-ratelimit-reset-tokens",
+                "x-ratelimit-reset-input-tokens",
+                "x-ratelimit-reset-output-tokens",
+                "x-ratelimit-reset-project-tokens",
+            ):
+                header_value = headers.get(header_name)
+                seconds = cls._duration_seconds_from_header(header_value)
+                if seconds is not None:
+                    values.append(seconds)
+
+        cooldown = max(values) if values else RATE_LIMIT_DEFAULT_COOLDOWN_SECONDS
+        return min(
+            RATE_LIMIT_MAX_COOLDOWN_SECONDS,
+            max(RATE_LIMIT_MIN_COOLDOWN_SECONDS, cooldown),
+        )
+
+    def _request_with_rate_limit_cooldown(
+        self,
+        request_call,
+        request_type: str,
+        router_name: str,
+        model_name: str,
+    ):
+        rate_limit_attempt = 1
+        while True:
+            try:
+                return request_call()
+            except RateLimitError as exc:
+                provider_credit_error = self._provider_credit_error_from_exception(
+                    exc=exc,
+                    stage=request_type,
+                    router=router_name,
+                    model=model_name,
+                )
+                if provider_credit_error is not None:
+                    raise provider_credit_error from exc
+                cooldown_seconds = self._rate_limit_cooldown_seconds(exc)
+                print(
+                    "%s %s request hit rate limit on attempt %s; cooling down "
+                    "for %.1f seconds before retrying."
+                    % (
+                        router_name,
+                        request_type,
+                        rate_limit_attempt,
+                        cooldown_seconds,
+                    )
+                )
+                print(str(exc))
+                print()
+                time.sleep(cooldown_seconds)
+                rate_limit_attempt += 1
+
     def _request_responses_completion(
         self,
         messages,
@@ -861,7 +1022,12 @@ class MLLMClient:
         )
 
         try:
-            response = client.responses.create(**request_kwargs)
+            response = self._request_with_rate_limit_cooldown(
+                lambda: client.responses.create(**request_kwargs),
+                request_type=request_type,
+                router_name=router_name,
+                model_name=model_name,
+            )
         except BadRequestError as exc:
             provider_credit_error = self._provider_credit_error_from_exception(
                 exc=exc,
@@ -1060,6 +1226,8 @@ class MLLMClient:
             thinking_mode = None
             thinking_format = "thinking_type"
             reasoning_split = False
+            extra_body_enabled = True
+            presence_penalty_enabled = True
             reasoning_effort = self.detection_reasoning_effort
             service_tier = self.detection_service_tier
             api_type = self.detection_api_type
@@ -1070,6 +1238,8 @@ class MLLMClient:
             thinking_mode = self.graph_thinking
             thinking_format = self.graph_thinking_format
             reasoning_split = self.graph_reasoning_split
+            extra_body_enabled = self.graph_extra_body_enabled
+            presence_penalty_enabled = self.graph_presence_penalty_enabled
             reasoning_effort = self.graph_reasoning_effort
             service_tier = self.graph_service_tier
             api_type = self.graph_api_type
@@ -1121,11 +1291,18 @@ class MLLMClient:
             thinking_mode=thinking_mode,
             thinking_format=thinking_format,
             reasoning_split=reasoning_split,
+            extra_body_enabled=extra_body_enabled,
+            presence_penalty_enabled=presence_penalty_enabled,
             use_response_format=use_response_format,
         )
 
         try:
-            completion = client.chat.completions.create(**request_kwargs)
+            completion = self._request_with_rate_limit_cooldown(
+                lambda: client.chat.completions.create(**request_kwargs),
+                request_type=request_type,
+                router_name=router_name,
+                model_name=model_name,
+            )
 
             print("usage:", self._format_completion_usage(completion.usage))
             print("model:", completion.model)
@@ -1208,6 +1385,18 @@ class MLLMClient:
             "detection_step_%04d_attempt_%02d_error.txt"
             % (int(step_index), int(attempt_index)),
         )
+
+    def _detection_retry_error_raw_output_exists(self, step_index: int) -> bool:
+        max_validation_retries = getattr(self, "max_validation_retries", 0)
+        for attempt_index in range(int(max_validation_retries) + 1):
+            if os.path.exists(
+                self._detection_attempt_error_raw_output_path(
+                    step_index,
+                    attempt_index,
+                )
+            ):
+                return True
+        return False
 
     def _user_message_raw_output_path(self, step_index: int) -> str:
         return os.path.join(
@@ -1759,6 +1948,10 @@ class MLLMClient:
                 }
                 for image_index, observation in enumerate(agent_observations)
             ]
+        prompt_detection_image_records = [
+            self._prompt_detection_image_record(record)
+            for record in detection_image_records
+        ]
 
         system_message = dedent("""
             You are doing direct visual target detection from indoor panorama images.
@@ -1828,7 +2021,7 @@ class MLLMClient:
             .format(
                 targets_json=json.dumps(target_records, indent=2, sort_keys=True),
                 detection_images_json=json.dumps(
-                    detection_image_records,
+                    prompt_detection_image_records,
                     indent=2,
                     sort_keys=True,
                 ),
@@ -2307,6 +2500,18 @@ class MLLMClient:
         )
 
     @staticmethod
+    def _prompt_detection_image_record(
+        record: Dict[str, object],
+    ) -> Dict[str, object]:
+        return {
+            "agent_id": str(record["agent_id"]),
+            "current_viewpoint_index": int(record["current_viewpoint_index"]),
+            "image_index": int(record["image_index"]),
+            "image_role": str(record["image_role"]),
+            "x_range": list(record["x_range"]),
+        }
+
+    @staticmethod
     def _detection_image_text(record: Dict[str, object]) -> str:
         return (
             "Detection image index {image_index}. Agent {agent_id}. "
@@ -2350,10 +2555,12 @@ class MLLMClient:
         for image_index, observation in enumerate(agent_observations):
             agent_id = str(observation["agent_id"])
             current_viewpoint_index = int(observation["current_viewpoint_index"])
+            current_viewpoint_id = str(observation["current_viewpoint_id"])
             raw_panorama = observation["raw_panorama"]
 
             full_record = {
                 "agent_id": agent_id,
+                "current_viewpoint_id": current_viewpoint_id,
                 "current_viewpoint_index": current_viewpoint_index,
                 "image_index": image_index,
                 "image_role": "full_raw_panorama",
@@ -2364,6 +2571,7 @@ class MLLMClient:
                 max_width=DETECTION_IMAGE_MAX_WIDTH,
                 jpeg_quality=DETECTION_IMAGE_JPEG_QUALITY,
             )
+            full_record["image_sha256"] = DetectionCache.sha256_bytes(full_bytes)
             self._write_detection_input_image(
                 step_index=step_index,
                 agent_id=agent_id,
@@ -2428,6 +2636,60 @@ class MLLMClient:
             )
         return image_content
 
+    def _lookup_detection_cache(
+        self,
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        detection_image_records: List[Dict[str, object]],
+    ) -> Optional[List[Dict[str, object]]]:
+        if (
+            not self.detection_cache_enabled
+            or not self.detection_cache_read
+            or self.detection_cache is None
+        ):
+            return None
+
+        return self.detection_cache.lookup_step(
+            scan_id=self.scan_id,
+            agent_observations=agent_observations,
+            targets=targets,
+            detection_image_records=detection_image_records,
+            detection_model=self.detection_model_name,
+            prompt_version=DETECTION_PROMPT_VERSION,
+        )
+
+    def _append_detection_cache_step(
+        self,
+        step_index: int,
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        detection_image_records: List[Dict[str, object]],
+        detections: List[Dict[str, object]],
+    ) -> None:
+        if (
+            not self.detection_cache_enabled
+            or not self.detection_cache_write
+            or self.detection_cache is None
+        ):
+            return
+
+        appended = self.detection_cache.append_step(
+            scan_id=self.scan_id,
+            case_id=self.case_id,
+            step_index=int(step_index),
+            agent_observations=agent_observations,
+            targets=targets,
+            detection_image_records=detection_image_records,
+            detections=detections,
+            detection_model=self.detection_model_name,
+            prompt_version=DETECTION_PROMPT_VERSION,
+            service_tier=self.detection_service_tier,
+        )
+        print(
+            "Detection cache updated with %s new entries for step %s."
+            % (appended, int(step_index))
+        )
+
     def _detect_targets(
         self,
         agent_observations: List[Dict[str, object]],
@@ -2469,7 +2731,23 @@ class MLLMClient:
                             step_index,
                             json.dumps(payload, indent=2, sort_keys=True),
                         )
+                    if self._detection_retry_error_raw_output_exists(step_index):
+                        print(
+                            "Skipping detection cache update for step %s because "
+                            "the saved detection output came from a retry prompt."
+                            % step_index
+                        )
+                    else:
+                        self._append_detection_cache_step(
+                            step_index=step_index,
+                            agent_observations=agent_observations,
+                            targets=targets,
+                            detection_image_records=detection_image_records or [],
+                            detections=detections,
+                        )
                     return detections
+                except DetectionCacheConflictError:
+                    raise
                 except Exception as exc:
                     print(
                         "Saved detection raw output for step %s is invalid. "
@@ -2478,8 +2756,39 @@ class MLLMClient:
             else:
                 print(
                     "Saved detection raw output for step %s was not found. "
-                    "Requesting MLLM instead." % step_index
+                    "Checking shared detection cache." % step_index
                 )
+
+        if detection_image_records is not None:
+            cached_detections = self._lookup_detection_cache(
+                agent_observations=agent_observations,
+                targets=targets,
+                detection_image_records=detection_image_records,
+            )
+            if cached_detections is not None:
+                cached_detections = self._validate_detection_payload(
+                    payload={"detections": cached_detections},
+                    agent_observations=agent_observations,
+                    targets=targets,
+                )
+                self._write_detection_raw_output(
+                    step_index,
+                    json.dumps(
+                        {"detections": cached_detections},
+                        indent=2,
+                        sort_keys=True,
+                    ),
+                )
+                print(
+                    "Reading shared detection cache for step %s; no MLLM "
+                    "detection call was made." % step_index
+                )
+                return cached_detections
+
+        print(
+            "Shared detection cache miss for step %s. Requesting MLLM instead."
+            % step_index
+        )
 
         for attempt_index in range(max_validation_retries + 1):
             if attempt_index == 0:
@@ -2526,7 +2835,23 @@ class MLLMClient:
                         else decoded
                     ),
                 )
+                if attempt_index == 0:
+                    self._append_detection_cache_step(
+                        step_index=step_index,
+                        agent_observations=agent_observations,
+                        targets=targets,
+                        detection_image_records=detection_image_records or [],
+                        detections=detections,
+                    )
+                else:
+                    print(
+                        "Skipping detection cache update for step %s because "
+                        "the detection output came from retry prompt %s."
+                        % (step_index, attempt_index)
+                    )
                 return detections
+            except DetectionCacheConflictError:
+                raise
             except MLLMProviderCreditError as exc:
                 exc.step_index = int(step_index)
                 self.semantic_raw_output_index = step_index + 1

@@ -1,0 +1,1 @@
+{"cmd":"python3 - <<'PY'\nimport os,glob\nfor root,dirs,files in os.walk('/mnt/data'):\n    for f in files[:10]:\n        pass\nprint('listing')\nfor path in glob.glob('/mnt/data/*')[:50]:\n    print(path)\nPY"}{"detections":[]}

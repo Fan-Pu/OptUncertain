@@ -1,0 +1,83 @@
+{
+  "solver": {
+    "name": "oracle_shortest_walk",
+    "status": "OPTIMAL"
+  },
+  "target_assignments": [
+    {
+      "target_id": "3",
+      "node_id": 41,
+      "agent_id": "agent1"
+    },
+    {
+      "target_id": "4",
+      "node_id": 45,
+      "agent_id": "agent2"
+    },
+    {
+      "target_id": "5",
+      "node_id": 8,
+      "agent_id": "agent1"
+    },
+    {
+      "target_id": "7",
+      "node_id": 10,
+      "agent_id": "agent1"
+    }
+  ],
+  "agents": [
+    {
+      "agent_id": "agent0",
+      "route_node_ids": [
+        7
+      ],
+      "objective_terms": {
+        "raw": {
+          "distance": 0.0
+        },
+        "normalized_contribution": {},
+        "weighted_contribution": {
+          "distance": 0.0
+        }
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "route_node_ids": [
+        33,
+        1,
+        2,
+        41,
+        26,
+        10,
+        26,
+        20,
+        8
+      ],
+      "objective_terms": {
+        "raw": {
+          "distance": 15.8715079950768
+        },
+        "normalized_contribution": {},
+        "weighted_contribution": {
+          "distance": 15.8715079950768
+        }
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "route_node_ids": [
+        45
+      ],
+      "objective_terms": {
+        "raw": {
+          "distance": 0.0
+        },
+        "normalized_contribution": {},
+        "weighted_contribution": {
+          "distance": 0.0
+        }
+      }
+    }
+  ]
+}

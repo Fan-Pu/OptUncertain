@@ -1,0 +1,77 @@
+{
+  "test_case": "r47D5H71a5s_case_0010",
+  "agents": [
+    {
+      "agent_id": "agent0",
+      "route_node_ids": [
+        50,
+        34,
+        28,
+        25,
+        46,
+        42,
+        18,
+        2,
+        1,
+        2,
+        18,
+        50
+      ],
+      "route_viewpoint_ids": [
+        "a9aa7ad5b14e499082ed36083484cfa8",
+        "a5d7dd600de549a0a7c626f8c2c6c3e3",
+        "1a9eaf7e67c444ffbec01b999b40c5a2",
+        "d60f3399b4d24c21a494ed4430f27ce9",
+        "d0f90601ac1b46fdb7258c230495f8a0",
+        "d8f7db8824674725a8334d3554cda5bf",
+        "e2d51e6321224b5aae0a84c8a90c2dd2",
+        "bd624a2988bf4a94839472180cc1b3d5",
+        "4eb2befc7e974e45a1956695ca4342e2",
+        "bd624a2988bf4a94839472180cc1b3d5",
+        "e2d51e6321224b5aae0a84c8a90c2dd2",
+        "a9aa7ad5b14e499082ed36083484cfa8"
+      ],
+      "edge_distances": [
+        1.5351458785405385,
+        1.5027342289639907,
+        4.510722193052904,
+        2.4115903727208736,
+        1.0865727945241401,
+        3.888080116599966,
+        2.9932453160073607,
+        1.1772174414695022,
+        1.1772174414695022,
+        2.9932453160073607,
+        2.875417414863449
+      ],
+      "path_distance": 26.151188514219587,
+      "step_count": 11,
+      "wait_steps": 0
+    }
+  ],
+  "total_distance": 26.151188514219587,
+  "maximum_agent_distance": 26.151188514219587,
+  "target_node_ids_by_target_id": {
+    "4": 18,
+    "6": 18,
+    "7": 18
+  },
+  "status": "incomplete",
+  "stop_reason": "mllm_retry_exhausted",
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": false,
+    "3": false,
+    "4": true,
+    "5": false,
+    "6": true,
+    "7": true
+  },
+  "steps_completed": 11,
+  "max_steps": 30,
+  "failed_step_index": 12,
+  "mllm_stage": "graph",
+  "mllm_attempts": 7,
+  "error": "[top-level schema] \"Unexpected top-level keys: ['\\\\n', '>%']\"\nDetails: {\"error_type\": \"KeyError\", \"required_top_level_keys\": [\"current_viewpoints_reassignment\", \"edge_distance_variances\", \"new_edges\", \"viewpoint_node_assigns\", \"viewpoint_target_scores\", \"visible_region_nodes\"], \"returned_top_level_keys\": [\"\\n\", \">%\", \"current_viewpoints_reassignment\", \"edge_distance_variances\", \"new_edges\", \"viewpoint_node_assigns\", \"viewpoint_target_scores\", \"visible_region_nodes\"], \"semantic_payload_contract\": \"graph_mllm\", \"target_ids\": [\"0\", \"1\", \"2\", \"3\", \"5\"]}\nRetry guidance: Return exactly the required graph JSON top-level keys. Remove extra top-level keys and add every missing required top-level key."
+}

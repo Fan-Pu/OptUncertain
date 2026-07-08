@@ -1,0 +1,319 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.991,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.944,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.851,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.061,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 39,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.44,
+        "4": 0.05,
+        "5": 0.03,
+        "6": 0.04,
+        "7": 0.06
+      },
+      "target_probs": {
+        "1": 0.88,
+        "4": 0.06944444444444445,
+        "5": 0.0303030303030303,
+        "6": 0.04395604395604396,
+        "7": 0.06451612903225806
+      },
+      "target_score_basis": {
+        "1": "Marker 10 sits in the left-side passage closest to a bedroom-like opening with visible furnishings, matching the bed-adjacent cue better than the other candidates.",
+        "4": "This side passage shows no dining setup and no clear dining-room window evidence.",
+        "5": "Passage location contradicts the kitchen-counter-beside-stove cue.",
+        "6": "No television or wall-shelf evidence appears around the marker in this passage branch.",
+        "7": "This is not an entrance console area; only a corridor-like branch is visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.02,
+        "4": 0.41,
+        "5": 0.93,
+        "6": 0.03,
+        "7": 0.08
+      },
+      "target_probs": {
+        "1": 0.04,
+        "4": 0.5694444444444444,
+        "5": 0.9393939393939393,
+        "6": 0.03296703296703297,
+        "7": 0.08602150537634409
+      },
+      "target_score_basis": {
+        "1": "The marker is in a kitchen zone, which contradicts the beside-the-bed bedroom cue.",
+        "4": "Marker 20 lies in a bright kitchen that likely adjoins the eating area, making it the best visible route to a dining-window candle even though the marker itself is not in the dining room.",
+        "5": "Marker 20 is inside the visible galley kitchen with counters and cooking area, directly matching the cookbook-on-counter-beside-stove cue.",
+        "6": "Kitchen evidence conflicts with a television-side wall-shelf ornament.",
+        "7": "Kitchen placement does not match a console table near the entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "1": "The marker is outside the bathroom and closer to adjacent rooms, but no bed, wall hooks, or hanging robe are visible here.",
+        "4": "There is brighter room light ahead that could indicate a windowed room, but no dining setup or candle holder is visible at this marker.",
+        "5": "Among the candidates, this passage viewpoint has the strongest direct view toward counter-like space consistent with a kitchen counter area, though no stove or cookbook is seen.",
+        "6": "Shelving is visible from this passage marker, which fits the wall-shelf part of the clue better than the bathroom, but no television or number ornament appears.",
+        "7": "This passage could lead toward an entrance zone, but the marker itself shows no console table or reed-filled vase."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "320c0ec6c0a343fea6227a2699d0eb7a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "5340c12f388446b589bf2c082c39bd5e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.01,
+        "4": 0.02,
+        "5": 0.01,
+        "6": 0.02,
+        "7": 0.03
+      },
+      "target_probs": {
+        "1": 0.02,
+        "4": 0.02777777777777778,
+        "5": 0.0101010101010101,
+        "6": 0.02197802197802198,
+        "7": 0.03225806451612903
+      },
+      "target_score_basis": {
+        "1": "Marker 39 is in the sink bathroom area, contradicting the bathrobe-beside-bed bedroom cue.",
+        "4": "Bathroom placement strongly contradicts a dining-room window candle, so the prior high value should drop.",
+        "5": "Bathroom sink zone conflicts with a cookbook on a kitchen counter by the stove.",
+        "6": "No television-side shelf evidence is present in this bathroom viewpoint.",
+        "7": "Bathroom location contradicts an entrance console table with vase, so the prior score should be reduced sharply."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "e1f88263b98d46909c3e00e9250b6a4b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.03,
+        "4": 0.24,
+        "5": 0.02,
+        "6": 0.82,
+        "7": 0.76
+      },
+      "target_probs": {
+        "1": 0.06,
+        "4": 0.3333333333333333,
+        "5": 0.0202020202020202,
+        "6": 0.9010989010989011,
+        "7": 0.8172043010752689
+      },
+      "target_score_basis": {
+        "1": "This front living area does not match a bedroom wall-hook location beside a bed.",
+        "4": "The room has tall windows, but it reads as a sitting area rather than a dining room.",
+        "5": "Living-room evidence conflicts with a kitchen counter and stove.",
+        "6": "Marker 41 sits in the dark-accent living area with a media-wall context, best matching an ornament on a wall shelf beside the television.",
+        "7": "This front room near the tall entry-side windows/doors is the strongest visible match for a console table near the entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        31,
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "compact newspaper-wall bathroom with curved white sink on the right",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "bright doorway passage with dark shelving leading away from the bathroom",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "bright white galley kitchen beyond the dark open shelving on the right",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 56,
+      "label": "dark-accent front living room with tall narrow windows past the tiled opening",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": true,
+    "1": false,
+    "2": true,
+    "3": true,
+    "4": false,
+    "5": false,
+    "6": false,
+    "7": false
+  }
+}

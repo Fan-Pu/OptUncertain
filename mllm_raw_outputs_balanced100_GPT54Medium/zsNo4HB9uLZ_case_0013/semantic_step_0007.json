@@ -1,0 +1,112 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 0.9
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        16,
+        38,
+        52
+      ],
+      "region_node_id": 54
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 16,
+      "raw_target_probs": {
+        "4": 0.019,
+        "6": 0.011
+      },
+      "target_probs": {
+        "4": 0.2835820895522388,
+        "6": 0.1896551724137931
+      }
+    },
+    {
+      "id": 26,
+      "raw_target_probs": {
+        "4": 0.003,
+        "6": 0.002
+      },
+      "target_probs": {
+        "4": 0.04477611940298507,
+        "6": 0.034482758620689655
+      }
+    },
+    {
+      "id": 29,
+      "raw_target_probs": {
+        "4": 0.004,
+        "6": 0.003
+      },
+      "target_probs": {
+        "4": 0.05970149253731343,
+        "6": 0.05172413793103448
+      }
+    },
+    {
+      "id": 38,
+      "raw_target_probs": {
+        "4": 0.01,
+        "6": 0.028
+      },
+      "target_probs": {
+        "4": 0.14925373134328357,
+        "6": 0.48275862068965514
+      }
+    },
+    {
+      "id": 52,
+      "raw_target_probs": {
+        "4": 0.031,
+        "6": 0.014
+      },
+      "target_probs": {
+        "4": 0.46268656716417905,
+        "6": 0.24137931034482757
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 16,
+      "score_basis": {
+        "4": "Assigned with the hallway region and positioned on the deeper branch away from the current hall center, so it is only a weak lead toward a possible dining-room window area beyond, with no direct candle or holder cue.",
+        "6": "This remains a hallway-branch viewpoint; it may lead to a room later, but it does not itself match a wall shelf beside a television."
+      }
+    },
+    {
+      "id": 26,
+      "score_basis": {
+        "4": "Prior score is reduced because this existing candidate is still only a hallway-region hypothesis, which conflicts with the dining-room window cue for the candle target.",
+        "6": "Prior score is reduced because a hallway transit viewpoint is a poor fit for a wall shelf beside a television."
+      }
+    },
+    {
+      "id": 29,
+      "score_basis": {
+        "4": "This visible existing node remains a hallway candidate and lacks dining-room, window-side, or support-surface evidence for the candle.",
+        "6": "This hallway node does not match the room-wall shelf and television cues, so its earlier target mass should drop."
+      }
+    },
+    {
+      "id": 38,
+      "score_basis": {
+        "4": "Although this is the closest side-offset unvisited neighbor, it is still assigned to the hallway region and shows no dining-room window cue for the candle target.",
+        "6": "Among eligible nodes, this side-offset neighbor is the least transit-like and is slightly more compatible with a room wall that could hold a television and adjacent shelf, though no direct TV or shelf evidence is visible."
+      }
+    },
+    {
+      "id": 52,
+      "score_basis": {
+        "4": "This farthest unvisited point on the off-hall branch is the strongest weak candidate for a room beyond the corridor, making it slightly more compatible with a dining-room window location than the other hallway nodes.",
+        "6": "This deeper branch endpoint could reach a room, but it still lacks the direct wall-shelf and television cues named in the ornament target."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

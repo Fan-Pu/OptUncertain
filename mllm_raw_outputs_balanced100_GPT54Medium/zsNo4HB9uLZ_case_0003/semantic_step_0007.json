@@ -1,0 +1,138 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        4,
+        15,
+        19,
+        26
+      ],
+      "region_node_id": 54
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 4,
+      "raw_target_probs": {
+        "1": 0.018,
+        "3": 0.17,
+        "4": 0.012,
+        "7": 0.061
+      },
+      "target_probs": {
+        "1": 0.18749999999999997,
+        "3": 0.1634615384615385,
+        "4": 0.2608695652173913,
+        "7": 0.15326633165829145
+      }
+    },
+    {
+      "id": 15,
+      "raw_target_probs": {
+        "1": 0.024,
+        "3": 0.19,
+        "4": 0.009,
+        "7": 0.109
+      },
+      "target_probs": {
+        "1": 0.25,
+        "3": 0.18269230769230774,
+        "4": 0.19565217391304346,
+        "7": 0.2738693467336683
+      }
+    },
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "1": 0.029,
+        "3": 0.22,
+        "4": 0.008,
+        "7": 0.128
+      },
+      "target_probs": {
+        "1": 0.3020833333333333,
+        "3": 0.21153846153846156,
+        "4": 0.17391304347826086,
+        "7": 0.32160804020100503
+      }
+    },
+    {
+      "id": 26,
+      "raw_target_probs": {
+        "1": 0.021,
+        "3": 0.15,
+        "4": 0.014,
+        "7": 0.074
+      },
+      "target_probs": {
+        "1": 0.21875,
+        "3": 0.14423076923076925,
+        "4": 0.30434782608695654,
+        "7": 0.185929648241206
+      }
+    },
+    {
+      "id": 33,
+      "raw_target_probs": {
+        "1": 0.004,
+        "3": 0.31,
+        "4": 0.003,
+        "7": 0.026
+      },
+      "target_probs": {
+        "1": 0.041666666666666664,
+        "3": 0.29807692307692313,
+        "4": 0.06521739130434782,
+        "7": 0.06532663316582914
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 4,
+      "score_basis": {
+        "1": "Assigned to the same hallway region as the current pose; no bed or wall-hook evidence, so this only weakly supports the bathrobe target.",
+        "3": "This marker lies in the hallway region, which matches the eye-chart-on-hallway-wall cue, but there is no direct chart-specific wall evidence.",
+        "4": "Hallway placement lacks dining-room and window evidence, so it is a poor match for the candle by the dining room window.",
+        "7": "A hallway viewpoint can still be near an entrance zone, but there is no visible console-table or vase evidence at this marker."
+      }
+    },
+    {
+      "id": 15,
+      "score_basis": {
+        "1": "This farther hallway marker could be nearer a room transition than the others, but it still lacks bedroom, bed, and wall-hook evidence.",
+        "3": "Located along the hallway branch, so it fits the hallway cue for the eye chart better than room-specific targets, without direct chart evidence.",
+        "4": "Still assigned to hallway rather than a dining room or window-side area, so dining-window candle evidence is weak here.",
+        "7": "As a farther hallway endpoint candidate, it is somewhat more compatible with an entrance-adjacent console table, but no entrance object evidence is visible."
+      }
+    },
+    {
+      "id": 19,
+      "score_basis": {
+        "1": "This hallway-side marker may approach another doorway, yet it does not show the bedroom, bed, or wall hooks named in the bathrobe description.",
+        "3": "A non-current viewpoint in the hallway region with plausible wall exposure, making it one of the better matches for a hallway-mounted eye chart.",
+        "4": "The assigned hallway context contradicts the dining-room-window cue, so this remains a very weak candle candidate.",
+        "7": "This hall-side branch is slightly more compatible with an entrance-adjacent location than the other new markers, but it still lacks console-table evidence."
+      }
+    },
+    {
+      "id": 26,
+      "score_basis": {
+        "1": "Although this marker is off the current hallway node, it still lacks any direct bedroom, bed, or hook evidence for the bathrobe target.",
+        "3": "Assigned to hallway, so it matches the eye-chart room cue, but there is no direct sight of a framed chart on the wall.",
+        "4": "No dining-room or window-side support evidence is present; this hallway viewpoint is only a weak fallback for the candle.",
+        "7": "Hallway placement keeps some entrance adjacency potential, but there is no visible console table or vase cue at this marker."
+      }
+    },
+    {
+      "id": 33,
+      "score_basis": {}
+    }
+  ],
+  "visible_region_nodes": []
+}

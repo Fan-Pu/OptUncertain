@@ -1,0 +1,180 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.29,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.156,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 50,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 3,
+      "label": "1bfb89f3a44a419a9cf1fdc9d38a2800",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 40,
+      "label": "34c20d99605545a885983a9b004f27a2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.24,
+        "1": 0.03,
+        "2": 0.12,
+        "5": 0.09,
+        "6": 0.79,
+        "7": 0.61
+      },
+      "target_probs": {
+        "0": 0.75,
+        "1": 0.375,
+        "2": 0.12,
+        "5": 0.08823529411764705,
+        "6": 0.8229166666666666,
+        "7": 0.7625
+      },
+      "target_score_basis": {
+        "0": "Marker 40 lies in the lounge side with wall art and furniture nearby, but no clear wooden desk below a map; only weakly more compatible than the kitchen-side view.",
+        "1": "Marker 40 is in an open lounge area, not a bedroom and not beside a bed or wall hooks.",
+        "2": "Marker 40 is outside the kitchen zone, so it weakly fits a kitchen shelf target.",
+        "5": "Marker 40 is in the lounge area rather than at a kitchen counter or stove.",
+        "6": "Marker 40 sits in the living/lounge zone facing the television wall, making a wall shelf beside the TV most plausible here.",
+        "7": "Marker 40 is adjacent to the dining-entry side where the console wall and tall reed decor are visible, fitting an entrance console-table target better than the kitchen-side view."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 50,
+      "label": "0753202108e24c0094f09c60b8f36127",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.08,
+        "1": 0.05,
+        "2": 0.88,
+        "5": 0.93,
+        "6": 0.17,
+        "7": 0.19
+      },
+      "target_probs": {
+        "0": 0.25,
+        "1": 0.625,
+        "2": 0.88,
+        "5": 0.9117647058823529,
+        "6": 0.17708333333333334,
+        "7": 0.2375
+      },
+      "target_score_basis": {
+        "0": "Marker 50 is in the kitchen-side passage with counters, not a wooden desk below a map.",
+        "1": "Marker 50 is still a non-bedroom passage/kitchen opening, so the beside-bed bathrobe cue is largely contradicted.",
+        "2": "Marker 50 lies in the kitchen-side area with counter and cabinetry context, the strongest visible match for a kitchen item kept on a top shelf.",
+        "5": "Marker 50 is at the kitchen opening where countertop workspace is visible, best matching an open cookbook on a counter beside the stove.",
+        "6": "Marker 50 is away from the television wall and wall-shelf cue, so it is weaker than the lounge-side viewpoint.",
+        "7": "Marker 50 is farther into the kitchen-side passage and away from the entrance console-table cue."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bright dining area beside the curved yard-facing window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "open lounge area near the fireplace and patio opening",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "white kitchen passage area beside the counter opening",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": false,
+    "3": true,
+    "4": true,
+    "5": false,
+    "6": false,
+    "7": false
+  }
+}

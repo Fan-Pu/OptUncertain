@@ -1,0 +1,194 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 0.64
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        43,
+        46,
+        50
+      ],
+      "region_node_id": 53
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        23,
+        30
+      ],
+      "region_node_id": 54
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "4": 0.00011,
+        "6": 0.00023
+      },
+      "target_probs": {
+        "4": 0.013630731102850064,
+        "6": 0.01563562202583277
+      }
+    },
+    {
+      "id": 23,
+      "raw_target_probs": {
+        "4": 0.00042,
+        "6": 0.00051
+      },
+      "target_probs": {
+        "4": 0.05204460966542752,
+        "6": 0.03467029231815092
+      }
+    },
+    {
+      "id": 30,
+      "raw_target_probs": {
+        "4": 0.00027,
+        "6": 0.00033
+      },
+      "target_probs": {
+        "4": 0.033457249070631974,
+        "6": 0.022433718558803536
+      }
+    },
+    {
+      "id": 31,
+      "raw_target_probs": {
+        "4": 6e-05,
+        "6": 0.00014
+      },
+      "target_probs": {
+        "4": 0.007434944237918217,
+        "6": 0.009517335146159074
+      }
+    },
+    {
+      "id": 38,
+      "raw_target_probs": {
+        "4": 1e-05,
+        "6": 2e-05
+      },
+      "target_probs": {
+        "4": 0.0012391573729863695,
+        "6": 0.0013596193065941538
+      }
+    },
+    {
+      "id": 39,
+      "raw_target_probs": {
+        "4": 5e-05,
+        "6": 0.00012
+      },
+      "target_probs": {
+        "4": 0.0061957868649318475,
+        "6": 0.008157715839564922
+      }
+    },
+    {
+      "id": 41,
+      "raw_target_probs": {
+        "4": 7e-05,
+        "6": 0.00015
+      },
+      "target_probs": {
+        "4": 0.008674101610904586,
+        "6": 0.010197144799456152
+      }
+    },
+    {
+      "id": 43,
+      "raw_target_probs": {
+        "4": 0.00234,
+        "6": 0.00418
+      },
+      "target_probs": {
+        "4": 0.28996282527881045,
+        "6": 0.2841604350781781
+      }
+    },
+    {
+      "id": 46,
+      "raw_target_probs": {
+        "4": 0.00291,
+        "6": 0.00376
+      },
+      "target_probs": {
+        "4": 0.36059479553903345,
+        "6": 0.2556084296397009
+      }
+    },
+    {
+      "id": 50,
+      "raw_target_probs": {
+        "4": 0.00183,
+        "6": 0.00527
+      },
+      "target_probs": {
+        "4": 0.2267657992565056,
+        "6": 0.3582596872875595
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 19,
+      "score_basis": {}
+    },
+    {
+      "id": 23,
+      "score_basis": {
+        "4": "Marker 23 is assigned to the existing hallway region, which does not match the explicit dining-room window cue; only weak nearby-room spillover plausibility remains.",
+        "6": "Marker 23 lies in the hallway-side region and lacks the wall-shelf-beside-television room cue, so this is weaker than the sitting-room-side candidates."
+      }
+    },
+    {
+      "id": 30,
+      "score_basis": {
+        "4": "Marker 30 is farther into the hallway-side region and does not satisfy the dining-room window cue, so it gets only a very weak score.",
+        "6": "Marker 30 is a farther hallway candidate without television or wall-shelf evidence, making it weaker than the sitting-room-side viewpoints."
+      }
+    },
+    {
+      "id": 31,
+      "score_basis": {}
+    },
+    {
+      "id": 38,
+      "score_basis": {}
+    },
+    {
+      "id": 39,
+      "score_basis": {}
+    },
+    {
+      "id": 41,
+      "score_basis": {}
+    },
+    {
+      "id": 43,
+      "score_basis": {
+        "4": "Marker 43 stays in the same sitting-room region as the current viewpoint; it still lacks direct dining-room or window evidence, but it is more plausible than the hallway markers.",
+        "6": "Marker 43 is in the sitting-room region, which fits a television-and-wall-shelf target better than the hallway side, though no direct TV or shelf is evidenced at the marker."
+      }
+    },
+    {
+      "id": 46,
+      "score_basis": {
+        "4": "Marker 46 is a farther sitting-room-side candidate; while it does not show a dining-room window cue, it is a better adjacent-room prospect than the hallway viewpoints.",
+        "6": "Marker 46 remains in the sitting-room region and is somewhat compatible with a TV-wall area, but there is still no direct wall shelf or television evidence."
+      }
+    },
+    {
+      "id": 50,
+      "score_basis": {
+        "4": "Marker 50 is the closest same-room continuation, but the target explicitly calls for a dining-room window and that cue is still unmet here.",
+        "6": "Marker 50 is the closest sitting-room-side wall candidate, making it the best weak match for a wall shelf beside a television despite no direct TV or shelf evidence."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

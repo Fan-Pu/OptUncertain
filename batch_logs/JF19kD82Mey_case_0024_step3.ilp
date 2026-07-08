@@ -1,0 +1,150 @@
+\ Model _copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+\ Signature: 0x492bbf531913cdb5
+Maximize multi-objectives
+  target_directed_reward: Priority=2 Weight=1 AbsTol=0 RelTol=0
+  
+  target_directed_route_cost: Priority=1 Weight=1 AbsTol=0 RelTol=0
+   - 0.00219697619447866 x_1_28_agent0 - 0.00236669216808983 x_7_20_agent0
+   - 0.00233811456428589 x_16_37_agent0 - 0.00236669216808983 x_20_7_agent0
+   - 0.00138747182550165 x_20_28_agent0
+   - 0.00149536686027164 x_20_41_agent0
+   - 0.00157468429123769 x_25_37_agent0
+   - 0.00198176934134284 x_25_39_agent0
+   - 0.00183596524030231 x_27_39_agent0 - 0.00219697619447866 x_28_1_agent0
+   - 0.00138747182550165 x_28_20_agent0
+   - 0.00114602023417854 x_28_41_agent0
+   - 0.00190245191037679 x_29_37_agent0
+   - 0.00163592201367471 x_29_39_agent0
+   - 0.00213515525563747 x_35_39_agent0
+   - 0.00233811456428589 x_37_16_agent0
+   - 0.00157468429123769 x_37_25_agent0
+   - 0.00190245191037679 x_37_29_agent0
+   - 0.00159043113415007 x_37_39_agent0
+   - 0.00198176934134284 x_39_25_agent0
+   - 0.00183596524030231 x_39_27_agent0
+   - 0.00163592201367471 x_39_29_agent0
+   - 0.00213515525563747 x_39_35_agent0
+   - 0.00159043113415007 x_39_37_agent0
+   - 0.00166391640107449 x_39_45_agent0
+   - 0.00149536686027164 x_41_20_agent0
+   - 0.00114602023417854 x_41_28_agent0
+   - 0.00166391640107449 x_45_39_agent0 - 0.0125 y_1_agent0
+   - 0.0125 y_20_agent0 - 0.0125 y_25_agent0 - 0.0125 y_28_agent0
+   - 0.0125 y_37_agent0 - 0.0125 y_39_agent0
+Subject To
+ flow_out_1_agent0: x_1_28_agent0 - y_1_agent0 <= 0
+ no_revisit_grounded_leaf_1_agent0: y_1_agent0 = 0
+ flow_in_7_agent0: x_20_7_agent0 - y_7_agent0 = 0
+ flow_out_7_agent0: x_7_20_agent0 - y_7_agent0 <= 0
+ flow_in_16_agent0: x_37_16_agent0 - y_16_agent0 = 0
+ flow_out_16_agent0: x_16_37_agent0 - y_16_agent0 <= 0
+ flow_in_20_agent0: x_7_20_agent0 + x_28_20_agent0 + x_41_20_agent0
+   - y_20_agent0 = 0
+ flow_out_20_agent0: x_20_7_agent0 + x_20_28_agent0 + x_20_41_agent0
+   - y_20_agent0 <= 0
+ flow_in_25_agent0: x_37_25_agent0 + x_39_25_agent0 - y_25_agent0 = 0
+ flow_out_25_agent0: x_25_37_agent0 + x_25_39_agent0 - y_25_agent0 <= 0
+ flow_in_27_agent0: x_39_27_agent0 - y_27_agent0 = 0
+ flow_out_27_agent0: x_27_39_agent0 - y_27_agent0 <= 0
+ flow_in_28_agent0: x_1_28_agent0 + x_20_28_agent0 + x_41_28_agent0
+   - y_28_agent0 = 0
+ flow_out_28_agent0: x_28_1_agent0 + x_28_20_agent0 + x_28_41_agent0
+   - y_28_agent0 <= 0
+ flow_in_29_agent0: x_37_29_agent0 + x_39_29_agent0 - y_29_agent0 = 0
+ flow_out_29_agent0: x_29_37_agent0 + x_29_39_agent0 - y_29_agent0 <= 0
+ flow_in_35_agent0: x_39_35_agent0 - y_35_agent0 = 0
+ flow_out_35_agent0: x_35_39_agent0 - y_35_agent0 <= 0
+ flow_in_37_agent0: x_16_37_agent0 + x_25_37_agent0 + x_29_37_agent0
+   + x_39_37_agent0 - y_37_agent0 = 0
+ flow_out_37_agent0: x_37_16_agent0 + x_37_25_agent0 + x_37_29_agent0
+   + x_37_39_agent0 - y_37_agent0 <= 0
+ flow_in_39_agent0: x_25_39_agent0 + x_27_39_agent0 + x_29_39_agent0
+   + x_35_39_agent0 + x_37_39_agent0 + x_45_39_agent0 - y_39_agent0 = 0
+ flow_out_39_agent0: x_39_25_agent0 + x_39_27_agent0 + x_39_29_agent0
+   + x_39_35_agent0 + x_39_37_agent0 + x_39_45_agent0 - y_39_agent0 <= 0
+ flow_in_41_agent0: x_20_41_agent0 + x_28_41_agent0 - y_41_agent0 = 0
+ flow_in_45_agent0: x_39_45_agent0 - y_45_agent0 = 0
+ flow_out_45_agent0: x_45_39_agent0 - y_45_agent0 <= 0
+ target_reward_visit_0_16_agent0: z_0_16_agent0 - y_16_agent0 <= 0
+ target_reward_visit_1_16_agent0: z_1_16_agent0 - y_16_agent0 <= 0
+ target_reward_visit_3_16_agent0: z_3_16_agent0 - y_16_agent0 <= 0
+ target_reward_visit_0_27_agent0: z_0_27_agent0 - y_27_agent0 <= 0
+ target_reward_visit_1_27_agent0: z_1_27_agent0 - y_27_agent0 <= 0
+ target_reward_visit_3_27_agent0: z_3_27_agent0 - y_27_agent0 <= 0
+ target_reward_visit_0_29_agent0: z_0_29_agent0 - y_29_agent0 <= 0
+ target_reward_visit_1_29_agent0: z_1_29_agent0 - y_29_agent0 <= 0
+ target_reward_visit_3_29_agent0: z_3_29_agent0 - y_29_agent0 <= 0
+ target_reward_visit_0_35_agent0: z_0_35_agent0 - y_35_agent0 <= 0
+ target_reward_visit_1_35_agent0: z_1_35_agent0 - y_35_agent0 <= 0
+ target_reward_visit_3_35_agent0: z_3_35_agent0 - y_35_agent0 <= 0
+ target_reward_visit_3_41_agent0: z_3_41_agent0 - y_41_agent0 <= 0
+ target_reward_visit_0_45_agent0: z_0_45_agent0 - y_45_agent0 <= 0
+ target_reward_visit_1_45_agent0: z_1_45_agent0 - y_45_agent0 <= 0
+ target_reward_visit_3_45_agent0: z_3_45_agent0 - y_45_agent0 <= 0
+ mtz_16_37_agent0: 24 x_16_37_agent0 + u_16_agent0 - u_37_agent0 <= 23
+ mtz_20_28_agent0: 24 x_20_28_agent0 - u_28_agent0 + u_20_agent0 <= 23
+ mtz_20_41_agent0: 24 x_20_41_agent0 + u_20_agent0 - u_41_agent0 <= 23
+ mtz_25_37_agent0: 24 x_25_37_agent0 - u_37_agent0 + u_25_agent0 <= 23
+ mtz_25_39_agent0: 24 x_25_39_agent0 + u_25_agent0 - u_39_agent0 <= 23
+ mtz_27_39_agent0: 24 x_27_39_agent0 - u_39_agent0 + u_27_agent0 <= 23
+ mtz_28_20_agent0: 24 x_28_20_agent0 + u_28_agent0 - u_20_agent0 <= 23
+ mtz_28_41_agent0: 24 x_28_41_agent0 + u_28_agent0 - u_41_agent0 <= 23
+ mtz_29_37_agent0: 24 x_29_37_agent0 - u_37_agent0 + u_29_agent0 <= 23
+ mtz_29_39_agent0: 24 x_29_39_agent0 - u_39_agent0 + u_29_agent0 <= 23
+ mtz_35_39_agent0: 24 x_35_39_agent0 - u_39_agent0 + u_35_agent0 <= 23
+ mtz_37_16_agent0: 24 x_37_16_agent0 - u_16_agent0 + u_37_agent0 <= 23
+ mtz_37_25_agent0: 24 x_37_25_agent0 + u_37_agent0 - u_25_agent0 <= 23
+ mtz_37_29_agent0: 24 x_37_29_agent0 + u_37_agent0 - u_29_agent0 <= 23
+ mtz_37_39_agent0: 24 x_37_39_agent0 + u_37_agent0 - u_39_agent0 <= 23
+ mtz_39_25_agent0: 24 x_39_25_agent0 - u_25_agent0 + u_39_agent0 <= 23
+ mtz_39_27_agent0: 24 x_39_27_agent0 + u_39_agent0 - u_27_agent0 <= 23
+ mtz_39_29_agent0: 24 x_39_29_agent0 + u_39_agent0 - u_29_agent0 <= 23
+ mtz_39_35_agent0: 24 x_39_35_agent0 + u_39_agent0 - u_35_agent0 <= 23
+ mtz_39_37_agent0: 24 x_39_37_agent0 - u_37_agent0 + u_39_agent0 <= 23
+ mtz_39_45_agent0: 24 x_39_45_agent0 + u_39_agent0 - u_45_agent0 <= 23
+ mtz_41_20_agent0: 24 x_41_20_agent0 - u_20_agent0 + u_41_agent0 <= 23
+ mtz_41_28_agent0: 24 x_41_28_agent0 - u_28_agent0 + u_41_agent0 <= 23
+ mtz_45_39_agent0: 24 x_45_39_agent0 - u_39_agent0 + u_45_agent0 <= 23
+ target_reward_positive_0_7_agent0: z_0_7_agent0 = 0
+ target_reward_positive_0_41_agent0: z_0_41_agent0 = 0
+ target_reward_positive_0_42_agent0: z_0_42_agent0 = 0
+ target_reward_positive_1_7_agent0: z_1_7_agent0 = 0
+ target_reward_positive_1_41_agent0: z_1_41_agent0 = 0
+ target_reward_positive_1_42_agent0: z_1_42_agent0 = 0
+ target_reward_positive_3_7_agent0: z_3_7_agent0 = 0
+ target_reward_positive_3_42_agent0: z_3_42_agent0 = 0
+ target_directed_agent_assignment_agent0: z_0_16_agent0 + z_1_16_agent0
+   + z_3_16_agent0 + z_0_27_agent0 + z_1_27_agent0 + z_3_27_agent0
+   + z_0_29_agent0 + z_1_29_agent0 + z_3_29_agent0 + z_0_35_agent0
+   + z_1_35_agent0 + z_3_35_agent0 + z_3_41_agent0 + z_0_45_agent0
+   + z_1_45_agent0 + z_3_45_agent0 + z_0_7_agent0 + z_1_7_agent0
+   + z_3_7_agent0 + z_0_41_agent0 + z_1_41_agent0 + z_0_42_agent0
+   + z_1_42_agent0 + z_3_42_agent0 >= 1
+Bounds
+ u_28_agent0 free
+ u_20_agent0 free
+ u_16_agent0 free
+ u_37_agent0 free
+ u_41_agent0 free
+ u_25_agent0 free
+ u_39_agent0 free
+ u_27_agent0 free
+ u_29_agent0 free
+ u_35_agent0 free
+ u_45_agent0 free
+Binaries
+ z_0_16_agent0 z_1_16_agent0 z_3_16_agent0 z_0_27_agent0 z_1_27_agent0
+ z_3_27_agent0 z_0_29_agent0 z_1_29_agent0 z_3_29_agent0 z_0_35_agent0
+ z_1_35_agent0 z_3_35_agent0 z_3_41_agent0 z_0_45_agent0 z_1_45_agent0
+ z_3_45_agent0 x_1_28_agent0 x_7_20_agent0 x_16_37_agent0 x_20_7_agent0
+ x_20_28_agent0 x_20_41_agent0 x_25_37_agent0 x_25_39_agent0 x_27_39_agent0
+ x_28_1_agent0 x_28_20_agent0 x_28_41_agent0 x_29_37_agent0 x_29_39_agent0
+ x_35_39_agent0 x_37_16_agent0 x_37_25_agent0 x_37_29_agent0 x_37_39_agent0
+ x_39_25_agent0 x_39_27_agent0 x_39_29_agent0 x_39_35_agent0 x_39_37_agent0
+ x_39_45_agent0 x_41_20_agent0 x_41_28_agent0 x_45_39_agent0 y_1_agent0
+ y_20_agent0 y_25_agent0 y_28_agent0 y_37_agent0 y_39_agent0 y_7_agent0
+ y_16_agent0 y_27_agent0 y_29_agent0 y_35_agent0 y_41_agent0 y_45_agent0
+ z_0_7_agent0 z_1_7_agent0 z_3_7_agent0 z_0_41_agent0 z_1_41_agent0
+ z_0_42_agent0 z_1_42_agent0 z_3_42_agent0
+End

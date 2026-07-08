@@ -1,0 +1,146 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.071,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 24,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.829,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 24,
+      "j": 49,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.31,
+        "4": 0.56,
+        "6": 0.22,
+        "7": 1.42
+      },
+      "target_probs": {
+        "0": 0.62,
+        "4": 0.8358208955223881,
+        "6": 0.0672782874617737,
+        "7": 0.8068181818181818
+      },
+      "target_score_basis": {
+        "0": "Marker 10 sits in the arched hall-side area; this is only a weak fit for a desk below a map because no desk or map is visible.",
+        "4": "The brighter opening-side area is slightly more compatible with a dining-window location than the TV-side room, but no dining furniture or window is confirmed.",
+        "6": "Marker 10 is across the arch from the visible television-side room, so it weakly matches a wall shelf beside the television.",
+        "7": "Marker 10 lies in the arched hall or foyer-like zone, which best matches a console table near an entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 24,
+      "label": "b6ca0cc195da4688ba67fa53f0345b98",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 49,
+      "label": "935e0f6088a54fba87990835d1997d9a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.19,
+        "4": 0.11,
+        "6": 3.05,
+        "7": 0.34
+      },
+      "target_probs": {
+        "0": 0.38,
+        "4": 0.16417910447761194,
+        "6": 0.9327217125382262,
+        "7": 0.1931818181818182
+      },
+      "target_score_basis": {
+        "0": "Marker 49 remains in the sitting room by an interior wall, with no visible desk, map, or study-style support surface.",
+        "4": "This TV-side sitting room area lacks dining-room and window cues, so it is a poor fit for the candle by the dining window.",
+        "6": "Marker 49 stays in the same room as the visible television wall, strongly matching an ornament on a wall shelf beside the television.",
+        "7": "Marker 49 is in the sitting room rather than the arch-side entry zone, so it is less consistent with a console table near the entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        24,
+        49
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "wood-slat ceiling sitting room area along the right-side wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "bright arched hallway area beyond the left-front opening",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "4": false,
+    "6": false,
+    "7": false
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 62,
+      "viewpoint_id": 23
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 62,
+      "label": "hallway with license plates and Christmas decorations"
+    },
+    {
+      "id": 63,
+      "label": "bathroom with snowman rug and shower curtain"
+    },
+    {
+      "id": 64,
+      "label": "bedroom with pink bedding and white trim"
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 11,
+      "target_scores": {
+        "7": {
+          "raw_score": 0.7,
+          "evidence_strength": "high",
+          "basis": "bedroom region with blue walls matches target bedroom constraint, closet area visible"
+        }
+      }
+    },
+    {
+      "id": 47,
+      "target_scores": {
+        "7": {
+          "raw_score": 0.6,
+          "evidence_strength": "medium",
+          "basis": "pink bedroom matches target bedroom constraint, closet area potentially nearby"
+        }
+      }
+    },
+    {
+      "id": 0,
+      "target_scores": {
+        "7": {
+          "raw_score": 0.5,
+          "evidence_strength": "medium",
+          "basis": "prior bedroom assignment with closet cues, but current observation lacks direct sign evidence"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "target_scores": {
+        "7": {
+          "raw_score": 0.1,
+          "evidence_strength": "low",
+          "basis": "hallway doorway is transit-only, no bedroom or workbench cues"
+        }
+      }
+    },
+    {
+      "id": 55,
+      "target_scores": {
+        "7": {
+          "raw_score": 0.1,
+          "evidence_strength": "low",
+          "basis": "hallway straight is route-only, contradicts bedroom location"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "target_scores": {
+        "7": {
+          "raw_score": 0.05,
+          "evidence_strength": "low",
+          "basis": "living room contradicts explicit bedroom constraint"
+        }
+      }
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        17,
+        55
+      ],
+      "region_node_id": 62
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        45
+      ],
+      "region_node_id": 63
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        47
+      ],
+      "region_node_id": 64
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        1
+      ],
+      "region_node_id": 61
+    }
+  ],
+  "new_edges": [
+    {
+      "i": 17,
+      "j": 55,
+      "cond_exist_prob": 0.8,
+      "distance_mean": 1.5,
+      "distance_var": 0.5,
+      "exist_prob": 0.8,
+      "type": "vv"
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  }
+}

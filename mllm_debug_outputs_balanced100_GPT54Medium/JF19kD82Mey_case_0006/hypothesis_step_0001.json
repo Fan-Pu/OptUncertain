@@ -1,0 +1,162 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.118,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 13,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.33,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 13,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.429,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 13,
+      "j": 44,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 13,
+      "label": "4ea1cfa67ec145b39f90056a02a43d9f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "4": 0.0
+      },
+      "target_probs": {
+        "4": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "1c2209fa44fc48c7b7ce7981bafc4ccf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.04
+      },
+      "target_probs": {
+        "4": 0.007142857142857143
+      },
+      "target_score_basis": {
+        "4": "Marker 15 sits in the mosaic-tiled bathroom, which contradicts the upstairs bedroom beside-bed cue."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "c20f944e9c434804944b0c1251247202",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.36
+      },
+      "target_probs": {
+        "4": 0.06428571428571428
+      },
+      "target_score_basis": {
+        "4": "Marker 18 appears in the bright tiled hallway next to the bedroom area, so it is only an adjacent access viewpoint rather than a bed-side bedroom location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 44,
+      "label": "8844f8fdc366462587b70fb7ede46242",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 5.2
+      },
+      "target_probs": {
+        "4": 0.9285714285714285
+      },
+      "target_score_basis": {
+        "4": "Marker 44 lies in the dark-carpet bedroom with the bed visible beside it, directly matching the upstairs bedroom and beside-bed cues."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        13,
+        18
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "bright tiled hallway area beside the curtain wall and bathroom entry",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "light mosaic-tiled bathroom area left of the hallway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 52,
+      "label": "dark-carpet bedroom area beyond the curtain wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "4": false
+  }
+}

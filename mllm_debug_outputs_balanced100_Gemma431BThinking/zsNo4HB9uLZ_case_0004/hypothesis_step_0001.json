@@ -1,0 +1,184 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.303,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 30,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.496,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 21,
+      "j": 30,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.839,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 30,
+      "j": 32,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "7d1391357299496cbb82840960d05a66",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.6,
+        "5": 0.7,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.25,
+        "2": 0.75,
+        "5": 0.7777777777777778,
+        "7": 0.125
+      },
+      "target_score_basis": {
+        "0": "transit area near kitchen, no desk or map visible",
+        "2": "near kitchen cabinetry, potential for high shelf storage",
+        "5": "adjacent to kitchen counter area where cookbooks are typically kept",
+        "7": "not near entrance console table"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "487a4cc75db94e56aa4d1d35866736fc",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.2,
+        "2": 0.1,
+        "5": 0.1,
+        "7": 0.5
+      },
+      "target_probs": {
+        "0": 0.5,
+        "2": 0.12500000000000003,
+        "5": 0.11111111111111113,
+        "7": 0.625
+      },
+      "target_score_basis": {
+        "0": "leads to other rooms, but no immediate desk visible",
+        "2": "away from main kitchen cabinetry",
+        "5": "away from kitchen counter and stove",
+        "7": "transit area leading toward potential entrance zones"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 30,
+      "label": "65eefaf93e6249908e6389eb4eabf0f5",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 32,
+      "label": "6472b7993a6e440a9d0e12b560ff4616",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "5": 0.1,
+        "7": 0.2
+      },
+      "target_probs": {
+        "0": 0.25,
+        "2": 0.12500000000000003,
+        "5": 0.11111111111111113,
+        "7": 0.25
+      },
+      "target_score_basis": {
+        "0": "hallway area, no desk visible",
+        "2": "away from kitchen",
+        "5": "away from kitchen",
+        "7": "hallway near potential entrance, but no console table visible"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        30
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "modern kitchen area with dark cabinetry and sink",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        21,
+        32
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "white walled interior corridor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "5": false,
+    "7": false
+  }
+}

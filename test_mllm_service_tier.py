@@ -58,3 +58,22 @@ def test_explicit_responses_service_tier_is_still_sent():
     )
 
     assert fake_client.responses.kwargs["service_tier"] == "flex"
+
+
+def test_detection_responses_service_tier_flex_is_sent():
+    client = _responses_client(
+        detection_model_name="gpt-5.4-2026-03-05",
+        detection_api_type="openai_responses",
+        detection_api_key_env="OPENAI_API_KEY",
+        detection_service_tier="flex",
+    )
+    fake_client = _FakeResponsesClient()
+    client.detection_client = fake_client
+
+    client._request_completion(
+        [{"role": "user", "content": "Return an empty JSON object."}],
+        model_name="gpt-5.4-2026-03-05",
+        request_type="detection",
+    )
+
+    assert fake_client.responses.kwargs["service_tier"] == "flex"

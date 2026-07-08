@@ -1,0 +1,85 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_probs": [
+    {
+      "id": 16,
+      "raw_target_probs": {
+        "4": 0.0019,
+        "6": 0.0012
+      },
+      "target_probs": {
+        "4": 0.11515151515151514,
+        "6": 0.0857142857142857
+      }
+    },
+    {
+      "id": 26,
+      "raw_target_probs": {
+        "4": 0.0027,
+        "6": 0.0018
+      },
+      "target_probs": {
+        "4": 0.16363636363636364,
+        "6": 0.12857142857142856
+      }
+    },
+    {
+      "id": 29,
+      "raw_target_probs": {
+        "4": 0.0068,
+        "6": 0.0036
+      },
+      "target_probs": {
+        "4": 0.41212121212121205,
+        "6": 0.2571428571428571
+      }
+    },
+    {
+      "id": 38,
+      "raw_target_probs": {
+        "4": 0.0051,
+        "6": 0.0074
+      },
+      "target_probs": {
+        "4": 0.3090909090909091,
+        "6": 0.5285714285714286
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 16,
+      "score_basis": {
+        "4": "Assigned hallway region; the visible marker is a close transit viewpoint with no dining-room window or candle-holder evidence.",
+        "6": "Assigned hallway region; this close corridor viewpoint shows route context only and no wall-shelf or television cue."
+      }
+    },
+    {
+      "id": 26,
+      "score_basis": {
+        "4": "Graph history keeps this node in the same hallway region, so it weakly fits a dining-room-window target at best.",
+        "6": "Historical hallway assignment gives only weak room-adjacency potential and no direct shelf-beside-television evidence."
+      }
+    },
+    {
+      "id": 29,
+      "score_basis": {
+        "4": "Farther hallway marker could border another room, but its own region evidence is still corridor rather than dining-room window area.",
+        "6": "This farther corridor frontier is slightly more room-adjacent than the close hall nodes, but still lacks television or wall-shelf evidence."
+      }
+    },
+    {
+      "id": 38,
+      "score_basis": {
+        "4": "Unvisited branch-end hallway node may approach a room boundary, yet current graph context still lacks dining-room window or candle-holder cues there.",
+        "6": "Among eligible nodes this branch-end hallway viewpoint is the least purely transit-like, but it still has no direct wall-shelf-beside-television evidence."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

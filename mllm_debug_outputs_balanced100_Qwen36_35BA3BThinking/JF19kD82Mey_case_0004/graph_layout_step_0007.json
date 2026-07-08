@@ -1,0 +1,174 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 34
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 8,
+      "j": 9,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 8,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 9,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 31,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 33,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 34,
+      "j": 42,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        9,
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 8,
+      "label": "84055072c9154370bc2a76c86daf011c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        8,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 9,
+      "label": "3e8f012538474392bf311dcec2e2153a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        8,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "6ca981e907be49749ed4aead19864515",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        34
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "595ef74c51bb4448ae709297121d4c10",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        33,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 34,
+      "label": "e4a543521c44412e8f264d083ac5fc0c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9,
+        31,
+        34
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 42,
+      "label": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        9,
+        31,
+        42
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "upstairs bedroom with bed and desk",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        33,
+        34
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 51,
+      "label": "hallway with kitchen and laundry area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 7,
+  "region_to_viewpoints": {
+    "50": [
+      8,
+      9,
+      31,
+      42
+    ],
+    "51": [
+      33,
+      34
+    ]
+  },
+  "viewpoint_to_region": {
+    "8": 50,
+    "9": 50,
+    "31": 50,
+    "33": 51,
+    "34": 51,
+    "42": 50
+  }
+}

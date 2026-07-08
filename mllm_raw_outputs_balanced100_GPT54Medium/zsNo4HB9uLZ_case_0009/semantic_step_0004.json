@@ -1,0 +1,85 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_probs": [
+    {
+      "id": 27,
+      "raw_target_probs": {
+        "3": 1.12,
+        "5": 0.012,
+        "6": 0.018,
+        "7": 0.41
+      },
+      "target_probs": {
+        "3": 0.459016393442623,
+        "5": 0.4444444444444444,
+        "6": 0.29508196721311475,
+        "7": 0.1576923076923077
+      }
+    },
+    {
+      "id": 28,
+      "raw_target_probs": {
+        "3": 0.94,
+        "5": 0.009,
+        "6": 0.014,
+        "7": 0.57
+      },
+      "target_probs": {
+        "3": 0.38524590163934425,
+        "5": 0.33333333333333326,
+        "6": 0.22950819672131148,
+        "7": 0.2192307692307692
+      }
+    },
+    {
+      "id": 48,
+      "raw_target_probs": {
+        "3": 0.38,
+        "5": 0.006,
+        "6": 0.029,
+        "7": 1.62
+      },
+      "target_probs": {
+        "3": 0.1557377049180328,
+        "5": 0.2222222222222222,
+        "6": 0.4754098360655738,
+        "7": 0.6230769230769231
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 27,
+      "score_basis": {
+        "3": "Unvisited segment of region 54 beyond checked viewpoint 42; this still matches the hallway-wall cue better than the entrance-adjacent candidate 48.",
+        "5": "Assigned to the entrance hallway region with no kitchen, counter, or stove evidence at this candidate viewpoint.",
+        "6": "Hallway-region candidate lacks television and wall-shelf evidence, so the living-room ornament cue is only weakly supported here.",
+        "7": "This hallway node is farther from the front entrance side of region 54, so it weakly fits the near-entrance console-table cue."
+      }
+    },
+    {
+      "id": 28,
+      "score_basis": {
+        "3": "Also an unvisited hallway-region node off viewpoint 42, matching the hallway-wall cue, though slightly less strongly than deeper hallway node 27.",
+        "5": "Still a hallway candidate with no direct kitchen, stove, or counter support, so only trace score remains.",
+        "6": "Region 54 hallway context does not provide television or wall-shelf evidence for the ornament target.",
+        "7": "Some entrance-hallway compatibility remains, but this candidate is less specifically near the entrance than node 48."
+      }
+    },
+    {
+      "id": 48,
+      "score_basis": {
+        "3": "Although in the hallway region, it sits right by already checked viewpoint 51 near the entrance, so it is a weaker remaining hallway-wall candidate.",
+        "5": "Entrance-adjacent hallway placement contradicts the explicit kitchen-counter-beside-stove cue.",
+        "6": "Closest eligible node to the front sitting area, but it is still a hallway candidate without direct television or wall-shelf evidence.",
+        "7": "One edge beyond visible hallway viewpoint 51 at the front of region 54, making it the best remaining match to a console table near the entrance."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

@@ -1,0 +1,184 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.303,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 30,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.496,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 21,
+      "j": 30,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.839,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 30,
+      "j": 32,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "7d1391357299496cbb82840960d05a66",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.8,
+        "5": 0.75,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.125,
+        "2": 0.8888888888888888,
+        "5": 0.8823529411764705,
+        "7": 0.14285714285714288
+      },
+      "target_score_basis": {
+        "0": "kitchen area lacks desk or map cue for target",
+        "2": "kitchen area with visible top shelf above dark cabinets matches target support surface and room cue",
+        "5": "kitchen counter visible in foreground matches target support surface and room cue",
+        "7": "kitchen area is not near entrance or console table for target"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "487a4cc75db94e56aa4d1d35866736fc",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.3,
+        "2": 0.05,
+        "5": 0.05,
+        "7": 0.25
+      },
+      "target_probs": {
+        "0": 0.37499999999999994,
+        "2": 0.05555555555555555,
+        "5": 0.058823529411764705,
+        "7": 0.35714285714285715
+      },
+      "target_score_basis": {
+        "0": "bright room through arch may contain desk or map area",
+        "2": "bright room through arch does not show kitchen shelves for target",
+        "5": "bright room through arch does not show kitchen counter for target",
+        "7": "adjacent room may contain console table near entrance"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 30,
+      "label": "65eefaf93e6249908e6389eb4eabf0f5",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 32,
+      "label": "6472b7993a6e440a9d0e12b560ff4616",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.4,
+        "2": 0.05,
+        "5": 0.05,
+        "7": 0.35
+      },
+      "target_probs": {
+        "0": 0.5,
+        "2": 0.05555555555555555,
+        "5": 0.058823529411764705,
+        "7": 0.5
+      },
+      "target_score_basis": {
+        "0": "hallway with framed pictures may correspond to map cue near target location",
+        "2": "hallway area lacks kitchen shelves for target",
+        "5": "hallway area lacks kitchen counter for target",
+        "7": "hallway area near entrance matches target relative-location cue"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        30,
+        32
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "kitchen area with sink and dark wood cabinets",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "bright room through arched doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "5": false,
+    "7": false
+  }
+}

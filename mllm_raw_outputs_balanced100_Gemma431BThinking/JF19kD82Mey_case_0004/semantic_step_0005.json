@@ -1,0 +1,78 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 53,
+      "viewpoint_id": 34
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        33
+      ],
+      "region_node_id": 53
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 31,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.05,
+        "4": 0.8,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "2": 0.07692307692307693,
+        "4": 0.9876543209876543,
+        "7": 0.07692307692307693
+      }
+    },
+    {
+      "id": 33,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.6,
+        "4": 0.01,
+        "7": 0.6
+      },
+      "target_probs": {
+        "0": 0.6666666666666666,
+        "2": 0.923076923076923,
+        "4": 0.012345679012345678,
+        "7": 0.923076923076923
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 31,
+      "score_basis": {
+        "0": "No visual evidence of dining table or vase here; bedroom area",
+        "2": "No kitchen appliance nook here; bedroom area",
+        "4": "Upstairs bedroom area matches target location; prior high score maintained",
+        "7": "No kitchen counter or stovetop here; bedroom area"
+      }
+    },
+    {
+      "id": 33,
+      "score_basis": {
+        "0": "Current area is a kitchen/utility zone, not a dining room",
+        "2": "Viewpoint 33 is in a kitchen area with built-in appliances, matching target description",
+        "4": "This is a ground floor kitchen area, contradicting the upstairs bedroom requirement",
+        "7": "Viewpoint 33 is near a stovetop and kitchen counter, matching target description"
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 53,
+      "label": "modern kitchen and utility area with white cabinetry"
+    }
+  ]
+}

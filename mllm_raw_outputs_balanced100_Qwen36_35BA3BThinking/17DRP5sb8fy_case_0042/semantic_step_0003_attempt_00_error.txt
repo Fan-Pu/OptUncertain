@@ -1,0 +1,120 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 49,
+      "viewpoint_id": 11
+    }
+  ],
+  "visible_region_nodes": [],
+  "viewpoint_target_scores": [
+    {
+      "id": 36,
+      "target_scores": {
+        "3": {
+          "raw_score": 0.8,
+          "evidence_strength": "high",
+          "basis": "kitchen counter and shelving visible in assigned region matches target location"
+        }
+      }
+    },
+    {
+      "id": 28,
+      "target_scores": {
+        "3": {
+          "raw_score": 0.1,
+          "evidence_strength": "low",
+          "basis": "dining area adjacent to kitchen, route-only access"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "target_scores": {
+        "3": {
+          "raw_score": 0.1,
+          "evidence_strength": "low",
+          "basis": "dining area adjacent to kitchen, route-only access"
+        }
+      }
+    },
+    {
+      "id": 0,
+      "target_scores": {
+        "3": {
+          "raw_score": 0.1,
+          "evidence_strength": "low",
+          "basis": "dining area adjacent to kitchen, route-only access"
+        }
+      }
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        0,
+        16,
+        21,
+        26
+      ],
+      "region_node_id": 49
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        5,
+        28,
+        36
+      ],
+      "region_node_id": 48
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        8
+      ],
+      "region_node_id": 47
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        19
+      ],
+      "region_node_id": 46
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        25
+      ],
+      "region_node_id": 45
+    }
+  ],
+  "new_edges": [
+    {
+      "i": 0,
+      "j": 16,
+      "exist_prob": 0.8,
+      "cond_exist_prob": 0.8,
+      "distance_mean": 1.0,
+      "distance_var": 0.1,
+      "type": "vv"
+    },
+    {
+      "i": 5,
+      "j": 28,
+      "exist_prob": 0.9,
+      "cond_exist_prob": 0.9,
+      "distance_mean": 1.5,
+      "distance_var": 0.1,
+      "type": "vv"
+    },
+    {
+      "i": 36,
+      "j": 28,
+      "exist_prob": 0.85,
+      "cond_exist_prob": 0.85,
+      "distance_mean": 1.2,
+      "distance_var": 0.1,
+      "type": "vv"
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  }
+}

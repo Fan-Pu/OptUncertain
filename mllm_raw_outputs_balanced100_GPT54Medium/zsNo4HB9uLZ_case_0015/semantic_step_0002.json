@@ -1,0 +1,149 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        10
+      ],
+      "region_node_id": 54
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        20
+      ],
+      "region_node_id": 55
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        41
+      ],
+      "region_node_id": 56
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 10,
+      "raw_target_probs": {
+        "1": 0.44,
+        "4": 0.05,
+        "5": 0.03,
+        "6": 0.04,
+        "7": 0.06
+      },
+      "target_probs": {
+        "1": 0.88,
+        "4": 0.06944444444444445,
+        "5": 0.0303030303030303,
+        "6": 0.04395604395604395,
+        "7": 0.06451612903225806
+      }
+    },
+    {
+      "id": 20,
+      "raw_target_probs": {
+        "1": 0.02,
+        "4": 0.41,
+        "5": 0.93,
+        "6": 0.03,
+        "7": 0.08
+      },
+      "target_probs": {
+        "1": 0.04,
+        "4": 0.5694444444444444,
+        "5": 0.9393939393939393,
+        "6": 0.03296703296703297,
+        "7": 0.08602150537634408
+      }
+    },
+    {
+      "id": 39,
+      "raw_target_probs": {
+        "1": 0.01,
+        "4": 0.02,
+        "5": 0.01,
+        "6": 0.02,
+        "7": 0.03
+      },
+      "target_probs": {
+        "1": 0.02,
+        "4": 0.02777777777777778,
+        "5": 0.0101010101010101,
+        "6": 0.021978021978021976,
+        "7": 0.03225806451612903
+      }
+    },
+    {
+      "id": 41,
+      "raw_target_probs": {
+        "1": 0.03,
+        "4": 0.24,
+        "5": 0.02,
+        "6": 0.82,
+        "7": 0.76
+      },
+      "target_probs": {
+        "1": 0.06,
+        "4": 0.3333333333333333,
+        "5": 0.0202020202020202,
+        "6": 0.901098901098901,
+        "7": 0.8172043010752688
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 10,
+      "score_basis": {
+        "1": "Marker 10 sits in the left-side passage closest to a bedroom-like opening with visible furnishings, matching the bed-adjacent cue better than the other candidates.",
+        "4": "This side passage shows no dining setup and no clear dining-room window evidence.",
+        "5": "Passage location contradicts the kitchen-counter-beside-stove cue.",
+        "6": "No television or wall-shelf evidence appears around the marker in this passage branch.",
+        "7": "This is not an entrance console area; only a corridor-like branch is visible."
+      }
+    },
+    {
+      "id": 20,
+      "score_basis": {
+        "1": "The marker is in a kitchen zone, which contradicts the beside-the-bed bedroom cue.",
+        "4": "Marker 20 lies in a bright kitchen that likely adjoins the eating area, making it the best visible route to a dining-window candle even though the marker itself is not in the dining room.",
+        "5": "Marker 20 is inside the visible galley kitchen with counters and cooking area, directly matching the cookbook-on-counter-beside-stove cue.",
+        "6": "Kitchen evidence conflicts with a television-side wall-shelf ornament.",
+        "7": "Kitchen placement does not match a console table near the entrance."
+      }
+    },
+    {
+      "id": 39,
+      "score_basis": {
+        "1": "Marker 39 is in the sink bathroom area, contradicting the bathrobe-beside-bed bedroom cue.",
+        "4": "Bathroom placement strongly contradicts a dining-room window candle, so the prior high value should drop.",
+        "5": "Bathroom sink zone conflicts with a cookbook on a kitchen counter by the stove.",
+        "6": "No television-side shelf evidence is present in this bathroom viewpoint.",
+        "7": "Bathroom location contradicts an entrance console table with vase, so the prior score should be reduced sharply."
+      }
+    },
+    {
+      "id": 41,
+      "score_basis": {
+        "1": "This front living area does not match a bedroom wall-hook location beside a bed.",
+        "4": "The room has tall windows, but it reads as a sitting area rather than a dining room.",
+        "5": "Living-room evidence conflicts with a kitchen counter and stove.",
+        "6": "Marker 41 sits in the dark-accent living area with a media-wall context, best matching an ornament on a wall shelf beside the television.",
+        "7": "This front room near the tall entry-side windows/doors is the strongest visible match for a console table near the entrance."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 55,
+      "label": "bright white galley kitchen beyond the dark open shelving on the right"
+    },
+    {
+      "id": 56,
+      "label": "dark-accent front living room with tall narrow windows past the tiled opening"
+    }
+  ]
+}

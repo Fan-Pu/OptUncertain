@@ -1,0 +1,184 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.128,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 2,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.523,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.093,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.08,
+        "2": 0.36,
+        "6": 0.39,
+        "7": 0.47
+      },
+      "target_probs": {
+        "0": 0.08695652173913045,
+        "2": 0.6101694915254238,
+        "6": 0.5571428571428572,
+        "7": 0.6184210526315789
+      },
+      "target_score_basis": {
+        "0": "Marker 2 is deeper in the bright hallway, which lacks the desk-and-map bedroom-style support cues from the target text.",
+        "2": "Marker 2 is the farthest hall candidate toward common rooms, making it the least contradictory option for a kitchen top-shelf target.",
+        "6": "Marker 2 looks farther along the corridor toward other rooms where a television area could exist, but the marker itself is still in transit space.",
+        "7": "Marker 2 is the strongest visible lead away from the bedroom toward a possible entrance zone, though no console table or vase is visible there."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.71,
+        "2": 0.04,
+        "6": 0.17,
+        "7": 0.06
+      },
+      "target_probs": {
+        "0": 0.7717391304347826,
+        "2": 0.06779661016949153,
+        "6": 0.24285714285714285,
+        "7": 0.07894736842105263
+      },
+      "target_score_basis": {
+        "0": "Marker 33 remains in the furnished bedroom area with wall decor and small furniture, a better match for a wooden desk below wall art than the hallway markers.",
+        "2": "Marker 33 stays inside the bedroom, which conflicts with the kitchen and top-shelf cues.",
+        "6": "Marker 33 is in a decorated bedroom-side area with shelving furniture nearby, but no television or wall shelf evidence is visible.",
+        "7": "Marker 33 is in the bedroom rather than near an entrance, so it weakly fits the console-table target."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 36,
+      "label": "ead481533f834704bd489d3d44b6a03a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.13,
+        "2": 0.19,
+        "6": 0.14,
+        "7": 0.23
+      },
+      "target_probs": {
+        "0": 0.14130434782608697,
+        "2": 0.3220338983050848,
+        "6": 0.2,
+        "7": 0.3026315789473684
+      },
+      "target_score_basis": {
+        "0": "Marker 36 sits just outside the bedroom door in the tiled hall, offering only weak spillover support for a desk-below-map target.",
+        "2": "Marker 36 is at the hallway threshold toward common spaces, but it is still a transit viewpoint without direct kitchen shelf evidence.",
+        "6": "Marker 36 is only a doorway-side hall position with no visible television or wall shelf beside it.",
+        "7": "Marker 36 is hallway access just outside the bedroom, slightly closer to a possible entrance path but still lacking direct console-table evidence."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        33
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "carpeted bedroom with dark upholstered bed near the window wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "bright tiled hallway outside the bedroom doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "6": false,
+    "7": false
+  }
+}

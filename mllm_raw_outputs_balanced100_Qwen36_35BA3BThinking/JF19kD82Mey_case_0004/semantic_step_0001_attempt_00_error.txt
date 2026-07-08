@@ -1,0 +1,89 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 50,
+      "viewpoint_id": 9
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        9,
+        8
+      ],
+      "region_node_id": 50
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        42
+      ],
+      "region_node_id": 51
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 8,
+      "target_scores": {
+        "0": {
+          "basis": "Viewpoint 8 is in the bedroom, not near a dining table, so low probability for flowers.",
+          "evidence_strength": "low",
+          "raw_score": 0.0
+        },
+        "2": {
+          "basis": "Viewpoint 8 is in the bedroom, not a kitchen, so low probability for coffee machine.",
+          "evidence_strength": "low",
+          "raw_score": 0.0
+        },
+        "4": {
+          "basis": "Viewpoint 8 is in the upstairs bedroom near the bed, matching the target location for the blue chair.",
+          "evidence_strength": "high",
+          "raw_score": 0.8
+        },
+        "7": {
+          "basis": "Viewpoint 8 is in the bedroom, not a kitchen, so low probability for lemons.",
+          "evidence_strength": "low",
+          "raw_score": 0.0
+        }
+      }
+    },
+    {
+      "id": 42,
+      "target_scores": {
+        "0": {
+          "basis": "Viewpoint 42 is in the hallway, not near a dining table, so low probability for flowers.",
+          "evidence_strength": "low",
+          "raw_score": 0.0
+        },
+        "2": {
+          "basis": "Viewpoint 42 is in the hallway, not a kitchen, so low probability for coffee machine.",
+          "evidence_strength": "low",
+          "raw_score": 0.0
+        },
+        "4": {
+          "basis": "Viewpoint 42 is in the hallway, not beside the bed, so lower probability for the blue chair.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        },
+        "7": {
+          "basis": "Viewpoint 42 is in the hallway, not a kitchen, so low probability for lemons.",
+          "evidence_strength": "low",
+          "raw_score": 0.0
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 50,
+      "label": "upstairs bedroom with bed and desk"
+    },
+    {
+      "id": 51,
+      "label": "hallway with tiled floor near bedroom"
+    }
+  ]
+}

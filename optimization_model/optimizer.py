@@ -159,6 +159,20 @@ class RollingHorizonOptimizer:
             and grounded_vv_degree[node_id] == 1
         }
 
+        if self.target_directed_mode:
+            reward_node_ids_by_agent = {
+                agent_id: self._reachable_reward_endpoint_ids(
+                    hypothesis_graph=hypothesis_graph,
+                    start_node_id=int(agent_current_vp_ids[agent_id]),
+                    directed_edges=directed_edges,
+                    reward_node_ids=reward_node_ids_by_agent[agent_id],
+                    blocked_revisit_viewpoint_node_ids=(
+                        blocked_revisit_viewpoint_node_ids
+                    ),
+                )
+                for agent_id in agent_ids
+            }
+
         node_reward = {}
         for node_id in all_node_ids:
             node = hypothesis_graph.nodes[node_id]
@@ -556,6 +570,11 @@ class RollingHorizonOptimizer:
                         target_assignment_sum == 0,
                         name="target_reward_found_%s" % target_id,
                     )
+                elif self.target_directed_mode:
+                    model.addConstr(
+                        target_assignment_sum <= 1,
+                        name="target_reward_unique_%s" % target_id,
+                    )
                 else:
                     model.addConstr(
                         target_assignment_sum == 1,
@@ -568,16 +587,21 @@ class RollingHorizonOptimizer:
             and self.target_directed_each_agent_when_possible
             and len(active_target_ids) >= len(agent_ids)
         ):
-            agents_with_positive_target_candidates = [
-                agent_id
-                for agent_id in agent_ids
-                if any(
-                    node_reward[node_id][target_id] > 0.0
-                    for node_id in reward_node_ids_by_agent[agent_id]
+            positive_target_candidates_by_agent = {
+                agent_id: {
+                    target_id
                     for target_id in active_target_ids
-                )
-            ]
-            if len(agents_with_positive_target_candidates) == len(agent_ids):
+                    if any(
+                        node_reward[node_id][target_id] > 0.0
+                        for node_id in reward_node_ids_by_agent[agent_id]
+                    )
+                }
+                for agent_id in agent_ids
+            }
+            if self._has_full_agent_target_matching(
+                agent_ids=agent_ids,
+                target_candidates_by_agent=positive_target_candidates_by_agent,
+            ):
                 for agent_id in agent_ids:
                     agent_target_assignment_sum = quicksum(
                         target_reward_assignment[(target_id, node_id, agent_id)]
@@ -594,6 +618,11 @@ class RollingHorizonOptimizer:
                             agent_target_assignment_sum >= 1,
                             name="target_directed_agent_assignment_%s" % agent_id,
                         )
+            else:
+                print(
+                    "Skipping per-agent target-directed assignment constraints "
+                    "because no distinct positive target matching covers all agents."
+                )
 
         viewpoint_node_ids = [
             node_id
@@ -773,6 +802,30 @@ class RollingHorizonOptimizer:
             GRB.MEM_LIMIT: "MEM_LIMIT",
         }
         return status_names.get(int(status), str(int(status)))
+
+    @staticmethod
+    def _has_full_agent_target_matching(
+        *,
+        agent_ids: List[str],
+        target_candidates_by_agent: Dict[str, set[str]],
+    ) -> bool:
+        matched_agent_by_target: Dict[str, str] = {}
+
+        def assign(agent_id: str, visited_targets: set[str]) -> bool:
+            for target_id in sorted(target_candidates_by_agent.get(agent_id, set())):
+                if target_id in visited_targets:
+                    continue
+                visited_targets.add(target_id)
+                matched_agent = matched_agent_by_target.get(target_id)
+                if matched_agent is None or assign(matched_agent, visited_targets):
+                    matched_agent_by_target[target_id] = agent_id
+                    return True
+            return False
+
+        for agent_id in agent_ids:
+            if not assign(agent_id, set()):
+                return False
+        return True
 
     @classmethod
     def _solver_metadata(cls, model) -> Dict[str, object]:
@@ -1088,6 +1141,48 @@ class RollingHorizonOptimizer:
             directed_edges.append((target_id, source_id))
 
         return sorted(set(directed_edges))
+
+    def _reachable_reward_endpoint_ids(
+        self,
+        hypothesis_graph,
+        start_node_id: int,
+        directed_edges: List[Tuple[int, int]],
+        reward_node_ids: List[int],
+        blocked_revisit_viewpoint_node_ids: set[int],
+    ) -> List[int]:
+        reward_node_id_set = {int(node_id) for node_id in reward_node_ids}
+        blocked_node_ids = {int(node_id) for node_id in blocked_revisit_viewpoint_node_ids}
+        adjacency = {}
+        for source_id, target_id in directed_edges:
+            adjacency.setdefault(int(source_id), []).append(int(target_id))
+
+        queue = []
+        seen = {int(start_node_id)}
+        for source_id, target_id in directed_edges:
+            if int(source_id) != int(start_node_id):
+                continue
+            if int(target_id) in blocked_node_ids:
+                continue
+            if not self._is_grounded_vv_edge(hypothesis_graph, source_id, target_id):
+                continue
+            queue.append(int(target_id))
+            seen.add(int(target_id))
+
+        reachable_reward_node_ids = []
+        while queue:
+            node_id = queue.pop(0)
+            if node_id in reward_node_id_set:
+                reachable_reward_node_ids.append(node_id)
+
+            for next_node_id in adjacency.get(node_id, []):
+                if next_node_id in seen:
+                    continue
+                if next_node_id in blocked_node_ids:
+                    continue
+                seen.add(next_node_id)
+                queue.append(next_node_id)
+
+        return sorted(set(reachable_reward_node_ids))
 
     def _action_at_viewpoint_expression(
         self,

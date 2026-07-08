@@ -1,0 +1,82 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        26,
+        29,
+        37
+      ],
+      "region_node_id": 54
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 26,
+      "raw_target_probs": {
+        "0": 0.18
+      },
+      "target_probs": {
+        "0": 0.17307692307692307
+      }
+    },
+    {
+      "id": 29,
+      "raw_target_probs": {
+        "0": 0.34
+      },
+      "target_probs": {
+        "0": 0.3269230769230769
+      }
+    },
+    {
+      "id": 37,
+      "raw_target_probs": {
+        "0": 0.49
+      },
+      "target_probs": {
+        "0": 0.47115384615384615
+      }
+    },
+    {
+      "id": 49,
+      "raw_target_probs": {
+        "0": 0.03
+      },
+      "target_probs": {
+        "0": 0.028846153846153844
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 26,
+      "score_basis": {
+        "0": "Same bright interior region as the current viewpoint and not in the hallway, so it is somewhat more compatible with a wooden desk and wall map, but no desk or map is directly evidenced at the marker."
+      }
+    },
+    {
+      "id": 29,
+      "score_basis": {
+        "0": "Close non-hallway interior candidate in the bright adjacent area; a desk-below-map setup is more plausible here than in the transit hallway, though the marker itself gives no direct desk or map cue."
+      }
+    },
+    {
+      "id": 37,
+      "score_basis": {
+        "0": "Farthest interior candidate extending away from the known hallway region, making it the strongest room-like viewpoint for a wooden desk with a map above it, even though the evidence is still indirect."
+      }
+    },
+    {
+      "id": 49,
+      "score_basis": {
+        "0": "This node remains in the wood-slat-ceiling hallway area, which is transit space and weakly matches the target's desk-and-wall-map support cues, so its prior score should be reduced."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

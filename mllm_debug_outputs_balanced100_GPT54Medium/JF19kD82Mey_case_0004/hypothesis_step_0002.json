@@ -1,0 +1,222 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.445,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 9,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.599,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.346,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.481,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 34,
+      "j": 42,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "84055072c9154370bc2a76c86daf011c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.014,
+        "2": 0.011,
+        "4": 3.6,
+        "7": 0.009
+      },
+      "target_probs": {
+        "0": 0.2413793103448276,
+        "2": 0.2972972972972973,
+        "4": 0.31551270815074495,
+        "7": 0.28125
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 8 is already grouped in the upstairs bedroom region, which conflicts with the glass dining table and vase cue.",
+        "2": "Existing bedroom-region assignment for viewpoint 8 contradicts the built-in kitchen appliance nook cue.",
+        "4": "Viewpoint 8 remains in the upstairs bedroom region, but marker 31 appears more directly tied to the bed-side area than this alternate bedroom viewpoint.",
+        "7": "Bedroom-region context for viewpoint 8 conflicts with a kitchen counter beside the stovetop."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 9,
+      "label": "3e8f012538474392bf311dcec2e2153a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 31,
+      "label": "6ca981e907be49749ed4aead19864515",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.018,
+        "2": 0.007,
+        "4": 7.4,
+        "7": 0.006
+      },
+      "target_probs": {
+        "0": 0.3103448275862069,
+        "2": 0.1891891891891892,
+        "4": 0.6485539000876425,
+        "7": 0.1875
+      },
+      "target_score_basis": {
+        "0": "Marker 31 sits inside the bedroom near the bed, not at a glass dining table with a white vase.",
+        "2": "Marker 31 is in the bedroom across the doorway, contradicting the built-in kitchen appliance nook cue.",
+        "4": "Marker 31 lies deep in the upstairs bedroom region beside the visible bed, best matching the bed-side bedroom cue.",
+        "7": "Marker 31 is in the bedroom rather than at a kitchen counter beside a stovetop."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 34,
+      "label": "e4a543521c44412e8f264d083ac5fc0c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.026,
+        "2": 0.019,
+        "4": 0.41,
+        "7": 0.017
+      },
+      "target_probs": {
+        "0": 0.4482758620689655,
+        "2": 0.5135135135135135,
+        "4": 0.035933391761612615,
+        "7": 0.53125
+      },
+      "target_score_basis": {
+        "0": "Marker 34 appears in the tiled hallway/landing area, which lacks the target-bearing glass dining table evidence.",
+        "2": "Marker 34 is in the hallway region, not inside a built-in kitchen appliance nook.",
+        "4": "Marker 34 is outside the upstairs bedroom in the hall, so it is only adjacent-route evidence rather than bed-side evidence.",
+        "7": "Marker 34 is a hallway viewpoint and does not show a kitchen counter beside a stovetop."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 42,
+      "label": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Marker 42 is in a hallway outside the bedroom; it does not show a dining table or vase, but it is less contradictory to a dining-area target than the bedroom.",
+        "2": "Marker 42 lies in a hallway transition space with no built-in appliance nook visible; it only weakly preserves access toward a kitchen area.",
+        "4": "Marker 42 is outside the bedroom doorway, so it contradicts the target's beside-the-bed bedroom location despite being nearby.",
+        "7": "Marker 42 is a hallway viewpoint with no counter or stovetop evidence, only weakly less contradictory to a kitchen target than the bedroom."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        9,
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "sunlit carpeted bedroom with white bed beside balcony doors on the left",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        34,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 51,
+      "label": "light tile hallway outside the bedroom doorway on the right",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "4": false,
+    "7": false
+  }
+}

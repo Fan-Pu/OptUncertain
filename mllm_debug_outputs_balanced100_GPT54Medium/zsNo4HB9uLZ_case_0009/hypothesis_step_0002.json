@@ -1,0 +1,266 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.452,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 7,
+      "j": 9,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.065,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.254,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 51,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.535,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 27,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.647,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 28,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.139,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 42,
+      "j": 51,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 7,
+      "label": "38342af67f5d4b73ad4cff4402f52d83",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.08,
+        "5": 0.11,
+        "6": 1.85,
+        "7": 0.16
+      },
+      "target_probs": {
+        "3": 0.024464831804281342,
+        "5": 0.5238095238095238,
+        "6": 0.8604651162790699,
+        "7": 0.031746031746031744
+      },
+      "target_score_basis": {
+        "3": "Vp7 is in the front sitting area by the arched curtained window, which is weaker than hallway-wall evidence for the eye-chart target.",
+        "7": "Vp7's front sitting area lacks the entrance-side console-table cue described for the vase with tall green reeds."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 9,
+      "label": "faad06c7cb2b4a6f9220e7f6f87c800b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "3": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "2c687aab96b7498b92023a4888c6e7ab",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.93,
+        "5": 0.03,
+        "6": 0.07,
+        "7": 1.28
+      },
+      "target_probs": {
+        "3": 0.2844036697247706,
+        "5": 0.14285714285714285,
+        "6": 0.03255813953488373,
+        "7": 0.25396825396825395
+      },
+      "target_score_basis": {
+        "3": "Marker 27 lies farther along the same entrance hallway region as vp42, matching a hallway-wall target better than room-specific alternatives.",
+        "5": "Assigned to the entrance hallway region, with no kitchen, counter, or stove evidence for the cookbook target.",
+        "6": "This hallway-region viewpoint lacks the television and wall-shelf cues required by the black number 8 ornament target.",
+        "7": "Being in the entrance-side hallway region makes a console table near the entrance plausible, though the vase or table is not directly seen."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 28,
+      "label": "2e349b06dd94494ea4b887458e4ab4a3",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.78,
+        "5": 0.02,
+        "6": 0.05,
+        "7": 1.46
+      },
+      "target_probs": {
+        "3": 0.2385321100917431,
+        "5": 0.09523809523809525,
+        "6": 0.023255813953488375,
+        "7": 0.28968253968253965
+      },
+      "target_score_basis": {
+        "3": "Marker 28 is very close and remains in the same entrance hallway region, supporting a hallway-wall eye-chart location.",
+        "5": "This viewpoint stays in the hallway-entry zone, contradicting the kitchen counter beside stove description.",
+        "6": "No television-side wall-shelf evidence is supported at this hallway marker.",
+        "7": "Closest new marker within the entrance hallway region, so it is a plausible location for a console table near the entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 42,
+      "label": "aabf649f606a48a1b16d5bdcd5970602",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "3": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "3": "Marker 42 lies farther into the arched hallway region, matching a black framed eye chart placed on a hallway wall.",
+        "5": "This hallway viewpoint could lead deeper indoors, but it lacks kitchen, counter, or stove evidence at the marker location.",
+        "6": "A hallway region is a weak fit for a wall shelf beside a television, and no TV-related furnishings are visible there.",
+        "7": "The entrance-side hallway region is compatible with a console table near the entrance, though the vase and table are not directly seen."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "38260e04f02546a6af3dcaf8689546a2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 1.48,
+        "5": 0.05,
+        "6": 0.18,
+        "7": 2.14
+      },
+      "target_probs": {
+        "3": 0.4525993883792048,
+        "5": 0.2380952380952381,
+        "6": 0.08372093023255814,
+        "7": 0.42460317460317465
+      },
+      "target_score_basis": {
+        "5": "Vp51 remains in the entrance hallway region, and current context gives no kitchen counter or stove evidence.",
+        "6": "Its hallway placement conflicts with the television-side wall-shelf cue, so the prior ornament score should drop."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        7,
+        9
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bright front sitting area by the large arched curtained window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        27,
+        28,
+        42,
+        51
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "bright arched entrance hallway just right of the curtained front room",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "3": false,
+    "5": false,
+    "6": false,
+    "7": false
+  }
+}

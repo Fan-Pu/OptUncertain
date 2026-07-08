@@ -1,0 +1,166 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.29,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.156,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 50,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 3,
+      "label": "1bfb89f3a44a419a9cf1fdc9d38a2800",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 40,
+      "label": "34c20d99605545a885983a9b004f27a2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "5": 0.1,
+        "6": 0.2,
+        "7": 0.2
+      },
+      "target_probs": {
+        "0": 0.5,
+        "1": 0.5,
+        "2": 0.14285714285714288,
+        "5": 0.11111111111111112,
+        "6": 0.6666666666666666,
+        "7": 0.6666666666666666
+      },
+      "target_score_basis": {
+        "0": "located in a dining/living area, no wooden desk with map visible",
+        "1": "not a bedroom area, no bed or wall hooks visible",
+        "2": "not a kitchen area, no shelves visible",
+        "5": "not a kitchen area, no stove or counter visible",
+        "6": "near living area, but no television or wall shelf visible",
+        "7": "near dining/entrance area, but no console table with vase visible"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 50,
+      "label": "0753202108e24c0094f09c60b8f36127",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.6,
+        "5": 0.8,
+        "6": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.5,
+        "1": 0.5,
+        "2": 0.8571428571428572,
+        "5": 0.888888888888889,
+        "6": 0.3333333333333333,
+        "7": 0.3333333333333333
+      },
+      "target_score_basis": {
+        "0": "located further into the house, no wooden desk with map visible",
+        "1": "not a bedroom area",
+        "2": "appears to be near a kitchen/counter area, possible shelf location",
+        "5": "appears to be near a kitchen counter and stove area",
+        "6": "not near a television area",
+        "7": "far from entrance console table"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3,
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "modern dining and living area with large window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "open kitchen and utility area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": false,
+    "3": true,
+    "4": true,
+    "5": false,
+    "6": false,
+    "7": false
+  }
+}

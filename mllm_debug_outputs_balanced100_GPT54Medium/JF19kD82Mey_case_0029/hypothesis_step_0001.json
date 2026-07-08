@@ -1,0 +1,460 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.767,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 28,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.405,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 5,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.308,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.201,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 12,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.877,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 21,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.589,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 27,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.346,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.08,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 35,
+      "j": 43,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "17d80d20c75b45e89949666e40f8df7e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 5,
+      "label": "db0e4e7b77c04948b581a11f633df145",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 1.9,
+        "3": 0.2,
+        "7": 1.6
+      },
+      "target_probs": {
+        "2": 0.16740088105726875,
+        "3": 0.02047082906857728,
+        "7": 0.13828867761452032
+      },
+      "target_score_basis": {
+        "2": "Marker lies in the same open dining-side zone adjacent to cabinetry, giving partial access to a possible kitchen appliance nook but not a direct built-in nook view.",
+        "3": "Dining-side open area lacks an office desk and monitor pairing for the keyboard target.",
+        "7": "Open-plan viewpoint is near the dining edge beside kitchen-facing counters, but the marker is not clearly at a stovetop-side counter."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "84055072c9154370bc2a76c86daf011c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.2,
+        "3": 5.2,
+        "7": 0.18
+      },
+      "target_probs": {
+        "2": 0.017621145374449344,
+        "3": 0.5322415557830092,
+        "7": 0.015557476231633534
+      },
+      "target_score_basis": {
+        "2": "Bedroom viewpoint with bed and balcony cues contradicts the kitchen appliance-nook target.",
+        "3": "Marker stays inside the bedroom office setup where the large monitor and desk surface are directly present, matching the keyboard-beside-monitor clue.",
+        "7": "Bedroom area contradicts a kitchen counter beside stovetop location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 12,
+      "label": "7dbbeb8448f94a0ca912bb73561fb1f7",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.5,
+        "3": 2.8,
+        "7": 0.3
+      },
+      "target_probs": {
+        "2": 0.04405286343612336,
+        "3": 0.2865916069600819,
+        "7": 0.025929127052722555
+      },
+      "target_score_basis": {
+        "2": "Study nook shelving and drawers do not match a kitchen appliance nook, though built-in cabinetry makes a weak alternative hypothesis.",
+        "3": "Marker is inside a compact study nook with desk drawers and shelving, matching an office-desk clue but with weaker monitor evidence than the bedroom office.",
+        "7": "Desk-and-shelving study nook conflicts with the kitchen-counter-by-stovetop description."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "68f5cd251e4c457894ea04e8184286d0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 1.2,
+        "3": 0.15,
+        "7": 1.0
+      },
+      "target_probs": {
+        "2": 0.10572687224669605,
+        "3": 0.015353121801432957,
+        "7": 0.08643042350907519
+      },
+      "target_score_basis": {
+        "2": "Dining-table viewpoint is adjacent to the kitchen side of the open plan, but the marker itself sits in dining space rather than inside an appliance nook.",
+        "3": "Dining area lacks office desk and monitor support for the keyboard target.",
+        "7": "Dining-side marker is near the kitchen zone but not clearly on a counter beside a stovetop."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "a34ec23dd5284d8fbca553acefd49c03",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 4.6,
+        "3": 0.18,
+        "7": 3.9
+      },
+      "target_probs": {
+        "2": 0.40528634361233484,
+        "3": 0.01842374616171955,
+        "7": 0.33707865168539325
+      },
+      "target_score_basis": {
+        "2": "Marker sits at the cabinetry edge by the wood divider where built-in kitchen appliances are most plausible, strongly matching the appliance-nook clue.",
+        "3": "Living-side cabinet area does not provide office-desk-beside-monitor evidence.",
+        "7": "Marker is at the kitchen-facing cabinet and counter side of the open plan, giving the strongest counter-side evidence short of a direct stovetop sighting."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 28,
+      "label": "8b29770bf446475b814d254d9b2670f6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.15,
+        "3": 0.12,
+        "7": 0.12
+      },
+      "target_probs": {
+        "2": 0.013215859030837006,
+        "3": 0.012282497441146366,
+        "7": 0.010371650821089023
+      },
+      "target_score_basis": {
+        "2": "Glazed terrace or sitting area beyond the bathroom opening contradicts a kitchen appliance nook.",
+        "3": "Terrace-side viewpoint lacks office desk and monitor cues.",
+        "7": "Terrace-side area contradicts a kitchen counter beside stovetop location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "6ca981e907be49749ed4aead19864515",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "2dd65c204fd64835b8cd417df5aa4149",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 2.7,
+        "3": 0.22,
+        "7": 4.4
+      },
+      "target_probs": {
+        "2": 0.23788546255506615,
+        "3": 0.022517911975435005,
+        "7": 0.3802938634399309
+      },
+      "target_score_basis": {
+        "2": "Marker is in the living-side zone nearest the kitchen divider and cabinetry, giving partial support for a nearby built-in appliance nook.",
+        "3": "Living lounge viewpoint does not match an office desk beside a monitor.",
+        "7": "Marker is closest to the kitchen-facing counter edge in the open-plan space, best matching a bowl on the counter beside the stovetop."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 42,
+      "label": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.1,
+        "3": 0.9,
+        "7": 0.07
+      },
+      "target_probs": {
+        "2": 0.008810572687224672,
+        "3": 0.09211873080859775,
+        "7": 0.0060501296456352644
+      },
+      "target_score_basis": {
+        "2": "Entry corridor outside the bedroom doorway contradicts the kitchen appliance-nook target.",
+        "3": "Corridor marker is outside the bedroom office, so it has only indirect access to the desk-and-monitor area.",
+        "7": "Bedroom-entry corridor contradicts a kitchen counter beside stovetop."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 43,
+      "label": "1227344eaa1f424b83db585fd665fb2a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        5,
+        21,
+        43
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "bright dining area beside open stair void and glass wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        27,
+        35
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "open living lounge beside wood divider and dark sofa",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        12
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 52,
+      "label": "compact study nook with desk drawers and shelving through right doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bedroom with wall monitor desk beside bed and balcony doors",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "narrow bedroom-entry corridor with wall decor outside the doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 55,
+      "label": "bright bathroom with double-sink vanity and towel warmers",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        28
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 56,
+      "label": "glazed terrace sitting area beyond bathroom opening with city view",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "2": false,
+    "3": false,
+    "6": true,
+    "7": false
+  }
+}

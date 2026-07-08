@@ -1,0 +1,329 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.071,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 24,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.044,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 29,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.256,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.703,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.829,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 24,
+      "j": 49,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.274,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 29,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.693,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 37,
+      "j": 38,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.382,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 37,
+      "j": 52,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {
+        "4": "The brighter opening-side area is slightly more compatible with a dining-window location than the TV-side room, but no dining furniture or window is confirmed.",
+        "6": "Marker 10 is across the arch from the visible television-side room, so it weakly matches a wall shelf beside the television."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 16,
+      "label": "ed8645386a0a4de2bfc486e0a1d02468",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.019,
+        "6": 0.011
+      },
+      "target_probs": {
+        "4": 0.2835820895522388,
+        "6": 0.1896551724137931
+      },
+      "target_score_basis": {
+        "4": "Assigned with the hallway region and positioned on the deeper branch away from the current hall center, so it is only a weak lead toward a possible dining-room window area beyond, with no direct candle or holder cue.",
+        "6": "This remains a hallway-branch viewpoint; it may lead to a room later, but it does not itself match a wall shelf beside a television."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 24,
+      "label": "b6ca0cc195da4688ba67fa53f0345b98",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 3,
+      "raw_target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.003,
+        "6": 0.002
+      },
+      "target_probs": {
+        "4": 0.04477611940298507,
+        "6": 0.03448275862068966
+      },
+      "target_score_basis": {
+        "4": "Prior score is reduced because this existing candidate is still only a hallway-region hypothesis, which conflicts with the dining-room window cue for the candle target.",
+        "6": "Prior score is reduced because a hallway transit viewpoint is a poor fit for a wall shelf beside a television."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 29,
+      "label": "ab993d543aed47fe9360f05eb03f301b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.004,
+        "6": 0.003
+      },
+      "target_probs": {
+        "4": 0.05970149253731343,
+        "6": 0.05172413793103449
+      },
+      "target_score_basis": {
+        "4": "This visible existing node remains a hallway candidate and lacks dining-room, window-side, or support-surface evidence for the candle.",
+        "6": "This hallway node does not match the room-wall shelf and television cues, so its earlier target mass should drop."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 37,
+      "label": "dc046de639fa43e29b3da505c030f58f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {
+        "4": "Marker 37 is the farthest hallway endpoint in region 54 and could open toward another room, but the viewpoint itself still lacks dining-window evidence.",
+        "6": "Marker 37 is farther along the hallway with no visible television, wall shelf, or media-wall cue at the marker."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 38,
+      "label": "f237319a500640d8ac172db225a3ce9c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.01,
+        "6": 0.028
+      },
+      "target_probs": {
+        "4": 0.14925373134328357,
+        "6": 0.4827586206896552
+      },
+      "target_score_basis": {
+        "4": "Although this is the closest side-offset unvisited neighbor, it is still assigned to the hallway region and shows no dining-room window cue for the candle target.",
+        "6": "Among eligible nodes, this side-offset neighbor is the least transit-like and is slightly more compatible with a room wall that could hold a television and adjacent shelf, though no direct TV or shelf evidence is visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 49,
+      "label": "935e0f6088a54fba87990835d1997d9a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 52,
+      "label": "2caadd7bc71c43d5ad10f4e7f10a3455",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.031,
+        "6": 0.014
+      },
+      "target_probs": {
+        "4": 0.46268656716417905,
+        "6": 0.2413793103448276
+      },
+      "target_score_basis": {
+        "4": "This farthest unvisited point on the off-hall branch is the strongest weak candidate for a room beyond the corridor, making it slightly more compatible with a dining-room window location than the other hallway nodes.",
+        "6": "This deeper branch endpoint could reach a room, but it still lacks the direct wall-shelf and television cues named in the ornament target."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        24,
+        49
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "wood-slat ceiling sitting room area along the right-side wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        16,
+        26,
+        29,
+        37,
+        38,
+        52
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "bright arched hallway area beyond the left-front opening",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 7,
+  "target_found": {
+    "0": true,
+    "4": false,
+    "6": false,
+    "7": true
+  }
+}

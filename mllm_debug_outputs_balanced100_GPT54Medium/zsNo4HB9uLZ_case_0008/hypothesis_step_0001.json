@@ -1,0 +1,198 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.645,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.561,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.991,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "de7a74588c2842e9ba391abb153a0257",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.024,
+        "4": 0.74,
+        "6": 0.46,
+        "7": 0.14
+      },
+      "target_probs": {
+        "1": 0.049586776859504134,
+        "4": 0.9046454767726162,
+        "6": 0.782312925170068,
+        "7": 0.14127144298688196
+      },
+      "target_score_basis": {
+        "1": "Marker 8 remains in the kitchen among counters and appliances, which poorly matches a bathrobe hanging beside a bed.",
+        "4": "Marker 8 is at the brighter end of the kitchen opening toward the windowed social space, making it the best visible candidate for a dining-room-window item.",
+        "6": "Marker 8 is nearest the open-plan social side of the kitchen, so it is a better weak candidate for a TV-adjacent wall shelf than the bathroom-side markers.",
+        "7": "Marker 8 sits past the kitchen opening toward a larger shared area, giving only a weak chance of an entrance-side console table."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "a80acc2328154455965a8be4133dee71",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.37,
+        "4": 0.061,
+        "6": 0.11,
+        "7": 0.83
+      },
+      "target_probs": {
+        "1": 0.7644628099173554,
+        "4": 0.0745721271393643,
+        "6": 0.18707482993197277,
+        "7": 0.8375378405650857
+      },
+      "target_score_basis": {
+        "1": "Marker 19 is farther down the corridor beyond the service doorway, a better route toward private rooms than the kitchen or bathroom, but no bed cues are visible.",
+        "4": "Marker 19 lies in a corridor rather than a windowed dining space, so it is a weak match for a candle by the dining-room window.",
+        "6": "The corridor marker could connect to living spaces, but it does not itself show a television wall or shelf.",
+        "7": "Marker 19 is deepest in the hall-like area beyond the kitchen, the best visible match for an entrance-adjacent console table location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.09,
+        "4": 0.017,
+        "6": 0.018,
+        "7": 0.021
+      },
+      "target_probs": {
+        "1": 0.1859504132231405,
+        "4": 0.020782396088019562,
+        "6": 0.030612244897959176,
+        "7": 0.021190716448032294
+      },
+      "target_score_basis": {
+        "1": "Marker 26 sits in a small vanity bathroom, which conflicts with the target being beside a bed.",
+        "4": "The vanity bathroom does not match a dining-room window setting.",
+        "6": "The bathroom viewpoint lacks living-room cues such as a television wall shelf.",
+        "7": "A bathroom vanity area is strongly mismatched with a console table near the entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "open galley kitchen with dark shelving around the center prep sink",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "small white vanity bathroom through the right-side doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "bright white corridor beyond the right-side doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "1": false,
+    "4": false,
+    "6": false,
+    "7": false
+  }
+}

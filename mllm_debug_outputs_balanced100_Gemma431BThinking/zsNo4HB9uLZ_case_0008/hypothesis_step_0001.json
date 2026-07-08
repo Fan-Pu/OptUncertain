@@ -1,0 +1,184 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.645,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.561,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.991,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "de7a74588c2842e9ba391abb153a0257",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "4": 0.5,
+        "6": 0.1,
+        "7": 0.4
+      },
+      "target_probs": {
+        "1": 0.1,
+        "4": 0.6666666666666666,
+        "6": 0.4,
+        "7": 0.47058823529411764
+      },
+      "target_score_basis": {
+        "1": "Route toward potential bedrooms, but current view is kitchen area",
+        "4": "Visible hallway leads toward dining area where candle target is located",
+        "6": "Route toward living area, but no direct evidence of TV shelf",
+        "7": "Viewpoint is within the kitchen/entrance transition zone"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "a80acc2328154455965a8be4133dee71",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.8,
+        "4": 0.05,
+        "6": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "1": 0.8,
+        "4": 0.06666666666666667,
+        "6": 0.2,
+        "7": 0.058823529411764705
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 19 is inside a bathroom/dressing area, potential for bathrobe on wall",
+        "4": "Located in a bathroom area, contradictory to dining room window location",
+        "6": "Located in a bathroom area, contradictory to TV shelf location",
+        "7": "Located in a bathroom area, contradictory to entrance console location"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "4": 0.2,
+        "6": 0.1,
+        "7": 0.4
+      },
+      "target_probs": {
+        "1": 0.1,
+        "4": 0.26666666666666666,
+        "6": 0.4,
+        "7": 0.47058823529411764
+      },
+      "target_score_basis": {
+        "1": "Route toward bedrooms, but currently in kitchen zone",
+        "4": "Route toward dining area, but currently in kitchen zone",
+        "6": "Route toward living area, but currently in kitchen zone",
+        "7": "Viewpoint is in the kitchen/entrance transition zone"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        20,
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "modern white kitchen with dark shelving",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "small white bathroom area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "1": false,
+    "4": false,
+    "6": false,
+    "7": false
+  }
+}
