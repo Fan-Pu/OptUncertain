@@ -1,0 +1,416 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.333,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 14,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.645,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.561,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.991,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.944,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.851,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.061,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 39,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 8,
+      "label": "de7a74588c2842e9ba391abb153a0257",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "1": "No bedroom or bed hooks visible; transit space only.",
+        "4": "Dining room window not visible here; no candle holder evidence.",
+        "6": "No television or wall shelf with ornament visible at this viewpoint's marker location.",
+        "7": "Entrance area visible through doorway but console table and vase are not clearly present at the marker location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.05,
+        "4": 0.02,
+        "6": 0.02,
+        "7": 0.02
+      },
+      "target_probs": {
+        "1": 0.2631578947368421,
+        "4": 0.02127659574468085,
+        "6": 0.09523809523809525,
+        "7": 0.02702702702702703
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 10 is in the bathroom suite (region 53). Target 1 is a bathrobe beside a bed. Bathroom contradicts bedroom location; score lowered from prior high.",
+        "4": "Bathroom area contradicts dining room window constraint for target 4.",
+        "6": "Bathroom lacks television and wall shelf support surfaces required for target 6.",
+        "7": "Bathroom vanity is not the console table near entrance specified for target 7."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 14,
+      "label": "6416ac70316f44d1ae7ec5a3029b1703",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.02,
+        "4": 0.8,
+        "6": 0.02,
+        "7": 0.5
+      },
+      "target_probs": {
+        "1": 0.10526315789473684,
+        "4": 0.851063829787234,
+        "6": 0.09523809523809525,
+        "7": 0.6756756756756757
+      },
+      "target_score_basis": {
+        "1": "Hallway/kitchen transit area contradicts upstairs bedroom location for target 1.",
+        "4": "Dining area visible through hallway opening matches target 4 dining room window cue. Strong evidence.",
+        "6": "Transit hallway lacks television support surface for target 6.",
+        "7": "Kitchen/dining transit path matches 'near entrance' relative location for target 7."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "a80acc2328154455965a8be4133dee71",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.05,
+        "4": 0.05,
+        "6": 0.05,
+        "7": 0.1
+      },
+      "target_probs": {
+        "1": 0.2631578947368421,
+        "4": 0.05319148936170213,
+        "6": 0.2380952380952381,
+        "7": 0.13513513513513514
+      },
+      "target_score_basis": {
+        "1": "Transit junction leads toward bedroom but lacks bed or hooks. Route-only evidence.",
+        "4": "Transit junction leads toward kitchen/dining. Route-only evidence.",
+        "6": "No television visible at transit junction.",
+        "7": "Junction near entrance/kitchen supports target 7 location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "1": "Hallway location contradicts the upstairs-bedroom constraint of target 1.",
+        "4": "Located in the hallway adjacent to the dining area with windows visible, providing route-continuation evidence for target 4.",
+        "6": "Hallway location contradicts the television-wall-shelf constraint of target 6.",
+        "7": "Located at the entrance hallway/console table area matching target 7's relative-location cue."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "1": "Transit hallway space; lacks bedroom, bed, and wall hooks required by target description.",
+        "4": "Interior hallway lacks window and dining room context specified in target text.",
+        "6": "Wall shelf present but no television nearby; contradicts the specific relative-location cue.",
+        "7": "No console table or entrance foyer features visible; only generic shelving and framed art."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "320c0ec6c0a343fea6227a2699d0eb7a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "5340c12f388446b589bf2c082c39bd5e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.02,
+        "4": 0.02,
+        "6": 0.02,
+        "7": 0.02
+      },
+      "target_probs": {
+        "1": 0.10526315789473684,
+        "4": 0.02127659574468085,
+        "6": 0.09523809523809525,
+        "7": 0.02702702702702703
+      },
+      "target_score_basis": {
+        "1": "Bathroom suite contradicts bedroom location for target 1.",
+        "4": "Bathroom contradicts dining room window constraint for target 4.",
+        "6": "Bathroom lacks television and wall shelf support surfaces.",
+        "7": "Bathroom vanity is not the console table near entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "e1f88263b98d46909c3e00e9250b6a4b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.05,
+        "4": 0.05,
+        "6": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "1": 0.2631578947368421,
+        "4": 0.05319148936170213,
+        "6": 0.4761904761904762,
+        "7": 0.13513513513513514
+      },
+      "target_score_basis": {
+        "1": "Home office contains desk and dark walls, not a bed. Contradicts bedroom constraint.",
+        "4": "Office has windows but is not a dining room. Contradicts room constraint.",
+        "6": "Wall shelf present, but no television nearby. Partial match on support surface only.",
+        "7": "Desk/console-like furniture present, but no reeds or vase visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        26,
+        31,
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bathroom suite with newspaper wallpaper and curved vanity",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        14,
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "bright tiled hallway near kitchen and dining areas",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "dark-walled home office with window and desk",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 57,
+      "label": "transit hallway junction near bathroom and kitchen areas",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 6,
+  "target_found": {
+    "0": true,
+    "1": false,
+    "2": true,
+    "3": true,
+    "4": false,
+    "5": true,
+    "6": false,
+    "7": false
+  }
+}

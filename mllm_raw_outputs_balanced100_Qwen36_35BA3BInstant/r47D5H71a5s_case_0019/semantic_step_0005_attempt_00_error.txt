@@ -1,0 +1,203 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "cond_exist_prob": 0.6,
+      "distance_mean": 2.5,
+      "distance_var": 0.5,
+      "exist_prob": 0.6,
+      "i": 11,
+      "j": 38,
+      "type": "vv"
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        11,
+        35
+      ],
+      "region_node_id": 61
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        13,
+        32,
+        38,
+        49,
+        56
+      ],
+      "region_node_id": 67
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        29,
+        33,
+        53,
+        57
+      ],
+      "region_node_id": 63
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 11,
+      "target_scores": {
+        "3": {
+          "basis": "Route-only hallway candidate near massage room; no target-bearing furniture or floor-level vase evidence visible.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "5": {
+          "basis": "Transit viewpoint in corridor with no counter or water dispenser features present.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 13,
+      "target_scores": {
+        "3": {
+          "basis": "Located on a tiled bathroom floor near a bench and wall partition; contradicts the vase-on-floor-near-door constraint as it is a transit area without the specified door.",
+          "evidence_strength": "low",
+          "raw_score": 0.02
+        },
+        "5": {
+          "basis": "Adjacent to salon/bathroom transition; lacks the required counter and water dispenser support surfaces.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 32,
+      "target_scores": {
+        "3": {
+          "basis": "Located at a doorway threshold between rooms; potential access point for a floor-vase but no direct visual confirmation of the vase itself.",
+          "evidence_strength": "medium",
+          "raw_score": 0.15
+        },
+        "5": {
+          "basis": "Doorway location does not contain the specific counter and water dispenser setup required by the target description.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 38,
+      "target_scores": {
+        "3": {
+          "basis": "Inside a tiled room with a bench and wooden screen; visually similar to a bathroom where a small vase might be placed on the floor, matching relative-location cues better than hallways.",
+          "evidence_strength": "medium",
+          "raw_score": 0.25
+        },
+        "5": {
+          "basis": "Room contains benches and screens but no visible water dispenser or kitchen-style counter.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 49,
+      "target_scores": {
+        "3": {
+          "basis": "Located within the hammam room containing a central stone platform and marble walls; no floor-space vase or nearby door boundary is clearly defined here.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "5": {
+          "basis": "Hammam environment lacks the necessary counter and water dispenser infrastructure.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 56,
+      "target_scores": {
+        "3": {
+          "basis": "Located in an open tiled area near a glass display cabinet and exit door; plausible floor space for a small vase, offering better surface support evidence than hallways.",
+          "evidence_strength": "medium",
+          "raw_score": 0.20
+        },
+        "5": {
+          "basis": "Glass cabinet and open tiled floor do not match the water dispenser and counter constraints.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 29,
+      "target_scores": {
+        "3": {
+          "basis": "Tiled bathroom area with benches and curved walls; strong match for floor-level placement near a door boundary compared to transit zones.",
+          "evidence_strength": "medium",
+          "raw_score": 0.20
+        },
+        "5": {
+          "basis": "Bathroom setting lacks the specific counter and water dispenser targets.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 33,
+      "target_scores": {
+        "3": {
+          "basis": "Viewpoint 33 looks into a salon area with styling chairs and mirrors; contradicts the floor/vase/door cue as the target is likely on the floor, whereas this is a standing-room zone.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        },
+        "5": {
+          "basis": "Salon area does not contain the required water dispenser or counter.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 53,
+      "target_scores": {
+        "3": {
+          "basis": "Located inside the tiled bathroom near the double sink and wooden screen; matches the room-type and floor-level constraints well.",
+          "evidence_strength": "high",
+          "raw_score": 0.40
+        },
+        "5": {
+          "basis": "Double sink and tiled counter are present, but lack the specific water dispenser feature.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 57,
+      "target_scores": {
+        "3": {
+          "basis": "Tiled bathroom with sinks; potential floor space available, though less specific than other bathroom candidates.",
+          "evidence_strength": "medium",
+          "raw_score": 0.15
+        },
+        "5": {
+          "basis": "Sink area is close to a counter but missing the water dispenser.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 67,
+      "label": "open tiled room with glass display cabinet and exit door"
+    }
+  ]
+}

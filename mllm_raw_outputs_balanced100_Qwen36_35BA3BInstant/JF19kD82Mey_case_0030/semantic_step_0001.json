@@ -1,0 +1,243 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        25,
+        27,
+        29,
+        35,
+        37,
+        39,
+        45
+      ],
+      "region_node_id": 50
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        8,
+        31,
+        42
+      ],
+      "region_node_id": 51
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        1,
+        28
+      ],
+      "region_node_id": 52
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 8,
+      "raw_target_probs": {
+        "1": 0.6,
+        "3": 0.05,
+        "4": 0.9
+      },
+      "target_probs": {
+        "1": 0.15584415584415584,
+        "3": 0.11111111111111113,
+        "4": 0.41860465116279083
+      }
+    },
+    {
+      "id": 25,
+      "raw_target_probs": {
+        "1": 0.9,
+        "3": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "1": 0.23376623376623376,
+        "3": 0.11111111111111113,
+        "4": 0.02325581395348838
+      }
+    },
+    {
+      "id": 27,
+      "raw_target_probs": {
+        "1": 0.4,
+        "3": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "1": 0.1038961038961039,
+        "3": 0.11111111111111113,
+        "4": 0.02325581395348838
+      }
+    },
+    {
+      "id": 28,
+      "raw_target_probs": {
+        "1": 0.1,
+        "3": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "1": 0.025974025974025976,
+        "3": 0.11111111111111113,
+        "4": 0.02325581395348838
+      }
+    },
+    {
+      "id": 29,
+      "raw_target_probs": {
+        "1": 0.5,
+        "3": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "1": 0.12987012987012986,
+        "3": 0.11111111111111113,
+        "4": 0.02325581395348838
+      }
+    },
+    {
+      "id": 35,
+      "raw_target_probs": {
+        "1": 0.15,
+        "3": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "1": 0.03896103896103896,
+        "3": 0.11111111111111113,
+        "4": 0.02325581395348838
+      }
+    },
+    {
+      "id": 37,
+      "raw_target_probs": {
+        "1": 0.1,
+        "3": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "1": 0.025974025974025976,
+        "3": 0.11111111111111113,
+        "4": 0.02325581395348838
+      }
+    },
+    {
+      "id": 42,
+      "raw_target_probs": {
+        "1": 0.6,
+        "3": 0.05,
+        "4": 0.9
+      },
+      "target_probs": {
+        "1": 0.15584415584415584,
+        "3": 0.11111111111111113,
+        "4": 0.41860465116279083
+      }
+    },
+    {
+      "id": 45,
+      "raw_target_probs": {
+        "1": 0.5,
+        "3": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "1": 0.12987012987012986,
+        "3": 0.11111111111111113,
+        "4": 0.02325581395348838
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 8,
+      "score_basis": {
+        "1": "Location is a bedroom with patio access; matches upstairs target floor but lacks specific cabinet evidence for the bust.",
+        "3": "No office desk or monitor visible in this bedroom area; contradicts target room and support surface.",
+        "4": "This is an upstairs bedroom environment matching the target location constraints; search value for small blue chair is high."
+      }
+    },
+    {
+      "id": 25,
+      "score_basis": {
+        "1": "Viewpoint faces the patio window directly; spatially closest to the 'near the patio window' constraint for the bust.",
+        "3": "Located in the dining/living transition space near the patio; no office desk present, contradicting target constraints.",
+        "4": "Ground-floor open area; explicitly contradicts the 'upstairs bedroom' requirement for the blue chair."
+      }
+    },
+    {
+      "id": 27,
+      "score_basis": {
+        "1": "Visible near the living area TV console; potential cabinet surface, though not explicitly a patio-window cabinet.",
+        "3": "Living area without an office desk or monitor setup; contradicts target room and furniture constraints.",
+        "4": "Ground-floor living area; contradicts the 'upstairs bedroom' location constraint for the blue chair."
+      }
+    },
+    {
+      "id": 28,
+      "score_basis": {
+        "1": "Bathroom vanity provides a counter surface, but contradicts the 'wooden cabinet' and 'patio window' proximity cues.",
+        "3": "Bathroom setting completely contradicts the office desk and monitor constraints for the keyboard.",
+        "4": "Bathroom setting contradicts the 'bedroom' and 'upstairs' constraints for the blue chair."
+      }
+    },
+    {
+      "id": 29,
+      "score_basis": {
+        "1": "Kitchen island is a counter surface; close to the patio door, making it a plausible transit route for the bust.",
+        "3": "Kitchen environment does not contain an office desk or monitor; contradicts target constraints.",
+        "4": "Ground-floor kitchen; contradicts the 'upstairs bedroom' constraint for the blue chair."
+      }
+    },
+    {
+      "id": 35,
+      "score_basis": {
+        "1": "Hallway leading towards other rooms; transit-only evidence for the bust's location.",
+        "3": "Hallway/transition space; lacks the specific office desk and monitor required for the keyboard.",
+        "4": "Transit space; contradicts the 'upstairs bedroom' constraint for the blue chair."
+      }
+    },
+    {
+      "id": 37,
+      "score_basis": {
+        "1": "Dining table area; no wooden cabinet or patio window immediately adjacent to the camera viewpoint.",
+        "3": "Dining area; contradicts the office desk and monitor constraints for the keyboard.",
+        "4": "Ground-floor dining area; contradicts the 'upstairs bedroom' constraint for the blue chair."
+      }
+    },
+    {
+      "id": 42,
+      "score_basis": {
+        "1": "Bedroom with skateboards on wall; similar room type to agent1's location but lacks specific bust cabinet evidence.",
+        "3": "Bedroom environment; contradicts the office desk and monitor constraints for the keyboard.",
+        "4": "Upstairs bedroom environment; matches the target room and floor constraints for the blue chair."
+      }
+    },
+    {
+      "id": 45,
+      "score_basis": {
+        "1": "Kitchen counter area; close to patio access, acting as a transit zone for the bust.",
+        "3": "Kitchen environment; contradicts the office desk and monitor constraints for the keyboard.",
+        "4": "Ground-floor kitchen; contradicts the 'upstairs bedroom' constraint for the blue chair."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 50,
+      "label": "open plan kitchen, dining, and living area with patio access"
+    },
+    {
+      "id": 51,
+      "label": "upstairs bedroom suite with white decor and wall-mounted skateboards"
+    },
+    {
+      "id": 52,
+      "label": "modern bathroom with double sinks and large slatted window"
+    }
+  ]
+}

@@ -1,0 +1,199 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.128,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 2,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.523,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.093,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.146,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.576,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 5,
+      "j": 36,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "6": 0.0
+      },
+      "target_probs": {
+        "6": 0.0
+      },
+      "target_score_basis": {
+        "6": "Viewpoint 1 is located in the bedroom area adjacent to the current viewpoint; however, the target requires a television and wall shelf which are not visible at this location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "6": 0.05
+      },
+      "target_probs": {
+        "6": 0.125
+      },
+      "target_score_basis": {
+        "6": "Tiled landing corridor (region 54) is a transit area; contradicts target support surface and room cues."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 5,
+      "label": "4c78adff490c4973aa3e09bfe14217aa",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "6": 0.05
+      },
+      "target_probs": {
+        "6": 0.125
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "6": 0.3
+      },
+      "target_probs": {
+        "6": 0.7499999999999999
+      },
+      "target_score_basis": {
+        "6": "Carpeted bedroom area with shelving furniture (region 53) matches target room and nearby object constraints."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 36,
+      "label": "ead481533f834704bd489d3d44b6a03a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "6": 0.0
+      },
+      "target_probs": {
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        33,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "carpeted bedroom area with bed and grey walls",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "white tiled landing corridor area near window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        5
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "bathroom area with vanity and sink",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "6": false
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "endpoints": [
+        9,
+        29
+      ],
+      "exist_prob": 0.65,
+      "reasoning": "Both viewpoints are visible in agent1's panorama within the kitchen area and appear spatially contiguous across the room without clear obstacles blocking a direct path."
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        3,
+        12,
+        50,
+        56
+      ],
+      "region_node_id": 59
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        23,
+        17,
+        32,
+        45,
+        47,
+        55
+      ],
+      "region_node_id": 60
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        9,
+        15,
+        29,
+        36,
+        44,
+        51
+      ],
+      "region_node_id": 61
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 15,
+      "target_scores": {
+        "2": {
+          "basis": "Viewpoint is located directly inside the kitchen (white stove, white cabinets) where the black coffee maker target is expected.",
+          "evidence_strength": "high",
+          "raw_score": 8.5
+        }
+      }
+    },
+    {
+      "id": 36,
+      "target_scores": {
+        "2": {
+          "basis": "Viewpoint is adjacent to the kitchen counter and stove area, providing strong support for finding the target on the stove.",
+          "evidence_strength": "medium",
+          "raw_score": 4.2
+        }
+      }
+    },
+    {
+      "id": 9,
+      "target_scores": {
+        "2": {
+          "basis": "Viewpoint is in the kitchen near the stove and refrigerator, supporting the target location constraints.",
+          "evidence_strength": "medium",
+          "raw_score": 3.8
+        }
+      }
+    },
+    {
+      "id": 29,
+      "target_scores": {
+        "2": {
+          "basis": "Viewpoint is visible from the kitchen but positioned slightly further back; still within the target-bearing kitchen area.",
+          "evidence_strength": "low",
+          "raw_score": 1.5
+        }
+      }
+    },
+    {
+      "id": 44,
+      "target_scores": {
+        "2": {
+          "basis": "Viewpoint is at the edge of the kitchen/dining transition; lower likelihood than central kitchen views.",
+          "evidence_strength": "low",
+          "raw_score": 0.8
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 59,
+      "label": "living room with large Christmas tree and sofa"
+    },
+    {
+      "id": 60,
+      "label": "hallway with snowman wreath door and bathroom entrance"
+    },
+    {
+      "id": 61,
+      "label": "kitchen with white appliances and dining table"
+    }
+  ]
+}

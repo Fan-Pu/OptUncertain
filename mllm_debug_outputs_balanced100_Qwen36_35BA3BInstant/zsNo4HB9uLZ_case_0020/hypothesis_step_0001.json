@@ -1,0 +1,340 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.523,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.117,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 17,
+      "j": 27,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.712,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.531,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "3": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.1,
+        "1": 0.25,
+        "2": 0.07692307692307693,
+        "3": 0.25,
+        "4": 0.08333333333333333,
+        "5": 0.07692307692307693,
+        "7": 0.2
+      },
+      "target_score_basis": {
+        "0": "Route-only transit viewpoint; no target evidence.",
+        "1": "Adjacent to bedroom area (Vp 33) where the target is located; route-only access.",
+        "2": "Route-only transit viewpoint; no target evidence.",
+        "3": "Route-only transit viewpoint; no target evidence.",
+        "4": "Route-only transit viewpoint; no target evidence.",
+        "5": "Route-only transit viewpoint; no target evidence.",
+        "7": "Route-only transit viewpoint; no target evidence."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 17,
+      "label": "4c0aab63a4434cf4878e6f5b3ce9a70b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "f04ae8ebf8254168814bc669635b3775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.5,
+        "1": 0.1,
+        "2": 0.2,
+        "3": 0.1,
+        "4": 0.9,
+        "5": 0.2,
+        "7": 0.2
+      },
+      "target_probs": {
+        "0": 0.5,
+        "1": 0.25,
+        "2": 0.15384615384615385,
+        "3": 0.25,
+        "4": 0.7499999999999999,
+        "5": 0.15384615384615385,
+        "7": 0.4
+      },
+      "target_score_basis": {
+        "0": "Located in living area near dining room window (visible through opening); supports candle location.",
+        "1": "Contradicts upstairs-bedroom floor/room constraint.",
+        "2": "Visible kitchen/dining zone but lacks specific top-shelf counter evidence for scale.",
+        "3": "Living area, not hallway.",
+        "4": "Visible dining room window with curtains provides strong spatial match for candle target.",
+        "5": "Adjacent to kitchen/living space but marker is in open plan living area.",
+        "7": "Near entrance/living area but lacks console table or vase evidence at this specific viewpoint."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "76c7a665d2b242bfa203e7f394b1353e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.3,
+        "1": 0.1,
+        "2": 0.9,
+        "3": 0.1,
+        "4": 0.1,
+        "5": 0.9,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.3,
+        "1": 0.25,
+        "2": 0.6923076923076923,
+        "3": 0.25,
+        "4": 0.08333333333333333,
+        "5": 0.6923076923076923,
+        "7": 0.2
+      },
+      "target_score_basis": {
+        "0": "Kitchen counter visible; potential support surface for radio, but no map visible.",
+        "1": "Contradicts upstairs-bedroom floor/room constraint.",
+        "2": "Directly on kitchen counter/shelving unit; matches top shelf and kitchen context.",
+        "3": "Kitchen/living area, not hallway.",
+        "4": "In kitchen area, distant from dining window.",
+        "5": "On kitchen counter beside stove area; matches support surface and relative location.",
+        "7": "Kitchen area, unlikely for entrance console table."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "2c687aab96b7498b92023a4888c6e7ab",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "3": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.1,
+        "1": 0.25,
+        "2": 0.07692307692307693,
+        "3": 0.25,
+        "4": 0.08333333333333333,
+        "5": 0.07692307692307693,
+        "7": 0.2
+      },
+      "target_score_basis": {
+        "0": "Bathroom/toilet area contradicts desk/map constraints.",
+        "1": "Contradicts upstairs-bedroom floor/room constraint.",
+        "2": "Bathroom area contradicts kitchen/top-shelf constraints.",
+        "3": "Inside bathroom/toilet area; contradicts hallway wall constraint.",
+        "4": "Bathroom area contradicts dining window constraint.",
+        "5": "Bathroom area contradicts kitchen/stove constraint.",
+        "7": "Bathroom area contradicts entrance/console table constraint."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "d48feeed33774f64adb093679b9fcebf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        33
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "master bedroom with large curved window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        17,
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "bathroom and toilet alcove",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18,
+        25,
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 55,
+      "label": "open-plan living and kitchen area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": false,
+    "3": false,
+    "4": false,
+    "5": false,
+    "6": true,
+    "7": false
+  }
+}

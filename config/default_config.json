@@ -42,7 +42,8 @@
     "visit_weight": 0.3,
     "target_directed_mode": true,
     "target_directed_each_agent_when_possible": true,
-    "target_directed_use_raw_target_probs": false
+    "target_directed_use_raw_target_probs": false,
+    "write_model_lp": false
   },
   "batch_sweep": {
     "sample_count": 100,
@@ -50,7 +51,7 @@
     "sample_balance": "param_config",
     "hide_agent_views": true,
     "run_id_prefix": "balanced100",
-    "selected_graph_model_label": "Qwen36_35BA3BThinking",
+    "selected_graph_model_label": "Qwen36_35BA3BInstant",
     "graph_models": [
       {
         "label": "GPT54Medium",
@@ -78,6 +79,16 @@
         "graph_api_key_env": "HF_TOKEN",
         "graph_extra_body_enabled": false,
         "graph_presence_penalty_enabled": false
+      },
+      {
+        "label": "Qwen36_35BA3BInstant",
+        "graph_model_name": "Qwen/Qwen3.6-35B-A3B",
+        "graph_api_type": "chat_completions",
+        "graph_base_url": "https://api.deepinfra.com/v1/openai",
+        "graph_api_key_env": "DEEPINFRA_TOKEN",
+        "graph_thinking": "disabled",
+        "graph_thinking_format": "chat_template_kwargs",
+        "graph_extra_body_enabled": true
       }
     ]
   }

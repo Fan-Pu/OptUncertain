@@ -1,0 +1,97 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        13
+      ],
+      "region_node_id": 56
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 13,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.05,
+        "5": 0.05,
+        "7": 0.4
+      },
+      "target_probs": {
+        "0": 0.25,
+        "2": 0.2,
+        "5": 0.047619047619047616,
+        "7": 0.6666666666666666
+      }
+    },
+    {
+      "id": 21,
+      "raw_target_probs": {
+        "0": 0.15,
+        "2": 0.1,
+        "5": 0.5,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.37499999999999994,
+        "2": 0.4,
+        "5": 0.47619047619047616,
+        "7": 0.16666666666666666
+      }
+    },
+    {
+      "id": 50,
+      "raw_target_probs": {
+        "0": 0.15,
+        "2": 0.1,
+        "5": 0.5,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.37499999999999994,
+        "2": 0.4,
+        "5": 0.47619047619047616,
+        "7": 0.16666666666666666
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 13,
+      "score_basis": {
+        "0": "Target is a black vintage radio on a wooden desk below a map. Viewpoint 13 shows an open room with carpet and a console table near the entrance (from panorama), but no wooden desk or map visible directly at the marker location.",
+        "2": "Target is a red vintage kitchen scale on a top shelf. Viewpoint 13 is in a carpeted living/entrance area, not a kitchen. No shelves visible.",
+        "5": "Target is an open cookbook on a kitchen counter beside a stove. Viewpoint 13 is not in a kitchen; no stove or counter visible.",
+        "7": "Target is a glass vase with tall green reeds on a console table near the entrance. Panorama shows a console table near the entrance to the right (around 315 deg). Viewpoint 13 is located near this entrance area."
+      }
+    },
+    {
+      "id": 21,
+      "score_basis": {
+        "0": "Target is a black vintage radio on a wooden desk below a map. Viewpoint 21 marker is inside the large open living space/kitchen area. A wooden island/desk is visible, but no map above it.",
+        "2": "Target is a red vintage kitchen scale on a top shelf. Viewpoint 21 is in the kitchen/living transition. Kitchen cabinets are visible, but they are lower units, not clearly 'top shelves'.",
+        "5": "Target is an open cookbook on a kitchen counter beside a stove. Viewpoint 21 is adjacent to the kitchen island. The stove is likely nearby or part of the cabinetry seen to the left. This is the most plausible kitchen location.",
+        "7": "Target is a glass vase with tall green reeds on a console table near the entrance. Viewpoint 21 is further into the living space, away from the immediate entrance corridor where such a table would be."
+      }
+    },
+    {
+      "id": 50,
+      "score_basis": {
+        "0": "Viewpoint 50 is in the same region as 21 (kitchen/living transition). Evidence is similar: potential for radio on a surface, but no specific map evidence.",
+        "2": "Same region as 21. Potential kitchen shelf location.",
+        "5": "Same region as 21. Kitchen counter proximity makes this a candidate for the cookbook.",
+        "7": "Same region as 21. Not near the entrance console."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 56,
+      "label": "carpeted living area near entrance with console table"
+    }
+  ]
+}

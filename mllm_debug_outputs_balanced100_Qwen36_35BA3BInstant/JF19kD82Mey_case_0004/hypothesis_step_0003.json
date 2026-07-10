@@ -1,0 +1,179 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.445,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 9,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.308,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.599,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 42,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 8,
+      "label": "84055072c9154370bc2a76c86daf011c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 8 is located in the kitchen/dining area (near the glass dining table) matching target 0's location; route context only for upstairs targets.",
+        "2": "Viewpoint 8 is in the kitchen area with built-in appliance nooks suitable for a coffee machine, though not directly visible from current panorama center.",
+        "4": "Target 4 requires an upstairs bedroom; viewpoint 8 is on the ground floor near the dining/kitchen area, contradicting the floor constraint.",
+        "7": "Viewpoint 8 is in the kitchen/counter area where a bowl of lemons might be found, supporting the nearby stovetop cue."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 9,
+      "label": "3e8f012538474392bf311dcec2e2153a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 31,
+      "label": "6ca981e907be49749ed4aead19864515",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.2,
+        "2": 0.1,
+        "4": 0.05,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.8,
+        "2": 0.6666666666666666,
+        "4": 0.7142857142857143,
+        "7": 0.6666666666666666
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 42,
+      "label": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.05,
+        "4": 0.02,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.2,
+        "2": 0.3333333333333333,
+        "4": 0.2857142857142857,
+        "7": 0.3333333333333333
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 42 is in an adjacent corridor/transition space (region 51), which contradicts the target's location on a dining table; route-only context justifies low score.",
+        "2": "Target requires a kitchen appliance nook. Viewpoint 42 is a transition space/corridor lacking specific kitchen appliances or built-in cabinetry evidence.",
+        "4": "Target is explicitly in an upstairs bedroom. Viewpoint 42 is a corridor/transitional area with no bed or bedroom furniture visible.",
+        "7": "Target is on a kitchen counter beside a stovetop. Viewpoint 42 is a white-walled corridor without counters or stovetops."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        9,
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "white-walled open area adjacent to the glass door",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "adjacent white-walled corridor or transition space",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "4": false,
+    "7": false
+  }
+}

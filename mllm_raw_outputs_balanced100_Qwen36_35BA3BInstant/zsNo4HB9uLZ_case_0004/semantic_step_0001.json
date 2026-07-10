@@ -1,0 +1,118 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        30
+      ],
+      "region_node_id": 53
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        6,
+        21
+      ],
+      "region_node_id": 54
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        32
+      ],
+      "region_node_id": 55
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 6,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.2,
+        "5": 0.3,
+        "7": 0.5
+      },
+      "target_probs": {
+        "0": 0.16666666666666669,
+        "2": 0.16666666666666669,
+        "5": 0.21428571428571425,
+        "7": 0.625
+      }
+    },
+    {
+      "id": 21,
+      "raw_target_probs": {
+        "0": 0.4,
+        "2": 0.1,
+        "5": 0.2,
+        "7": 0.2
+      },
+      "target_probs": {
+        "0": 0.6666666666666667,
+        "2": 0.08333333333333334,
+        "5": 0.14285714285714285,
+        "7": 0.25
+      }
+    },
+    {
+      "id": 32,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.9,
+        "5": 0.9,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.16666666666666669,
+        "2": 0.75,
+        "5": 0.6428571428571428,
+        "7": 0.125
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 6,
+      "score_basis": {
+        "0": "Located in a hallway; route-only context for entrance targets.",
+        "2": "Kitchen sink visible nearby; potential access to kitchen storage.",
+        "5": "Nearby kitchen counter and sink suggest proximity to stove area.",
+        "7": "Hallway is the transit path to the entrance where the console table is located."
+      }
+    },
+    {
+      "id": 21,
+      "score_basis": {
+        "0": "Large open living space visible; possible location for a desk or console table near the map.",
+        "2": "Open living/dining layout; unlikely to contain top shelf kitchen storage.",
+        "5": "Dining table visible; route continuation towards kitchen area.",
+        "7": "Visible through the doorway as part of the route to the entrance."
+      }
+    },
+    {
+      "id": 32,
+      "score_basis": {
+        "0": "Wall-mounted chalkboards visible; no evidence of a wooden desk with a radio.",
+        "2": "Adjacent to the current kitchenette; strong support surface proximity for shelf targets.",
+        "5": "Immediate vicinity of the kitchen counter and sink.",
+        "7": "No visible connection to an entrance or console table."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 53,
+      "label": "kitchenette area with dark wood cabinets and sink"
+    },
+    {
+      "id": 54,
+      "label": "transition corridor connecting kitchen to open living space"
+    },
+    {
+      "id": 55,
+      "label": "hallway area with wall-mounted chalkboards"
+    }
+  ]
+}

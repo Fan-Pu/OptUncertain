@@ -1,0 +1,116 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "cond_exist_prob": 0.7,
+      "distance_mean": 2.8,
+      "distance_var": 0.5,
+      "exist_prob": 0.7,
+      "i": 30,
+      "j": 16,
+      "type": "vv"
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        16,
+        59
+      ],
+      "region_node_id": 65
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        28,
+        30
+      ],
+      "region_node_id": 64
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 28,
+      "target_scores": {
+        "0": {
+          "basis": "Transit viewpoint in pool deck area; route to bathroom but no sink evidence.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        },
+        "2": {
+          "basis": "Route viewpoint near lounge chairs; not a wicker chair location.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        },
+        "5": {
+          "basis": "Pool deck transit; lacks counter and water dispenser.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        },
+        "6": {
+          "basis": "Directly adjacent to the indoor pool visible from current agent view.",
+          "evidence_strength": "high",
+          "raw_score": 0.6
+        }
+      }
+    },
+    {
+      "id": 30,
+      "target_scores": {
+        "0": {
+          "basis": "Located in marble bathhouse with washbasins; potential sink for hair dryer.",
+          "evidence_strength": "medium",
+          "raw_score": 0.4
+        },
+        "2": {
+          "basis": "Bathhouse area contains seating, though likely stone/marble not wicker.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        },
+        "5": {
+          "basis": "Bathhouse contains counters and basins suitable for kettle/dispenser.",
+          "evidence_strength": "medium",
+          "raw_score": 0.4
+        },
+        "6": {
+          "basis": "Indoor pool is a different room (Region 64); spatial contradiction.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 59,
+      "target_scores": {
+        "0": {
+          "basis": "Spa treatment room with massage tables; unlikely to contain bathroom sink.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        },
+        "2": {
+          "basis": "Contains massage table, not a wicker chair.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        },
+        "5": {
+          "basis": "Treatment room lacks kitchen-style counter or water dispenser.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        },
+        "6": {
+          "basis": "Spa treatment room is physically separated from the indoor pool area.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 65,
+      "label": "dim spa treatment room with massage table and fan wall art"
+    }
+  ]
+}

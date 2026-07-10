@@ -1,0 +1,85 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "cond_exist_prob": 0.7,
+      "distance_mean": 2.5,
+      "distance_var": 0.5,
+      "exist_prob": 0.7,
+      "i": 6,
+      "j": 9,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 0.7,
+      "distance_mean": 2.3,
+      "distance_var": 0.5,
+      "exist_prob": 0.7,
+      "i": 6,
+      "j": 29,
+      "type": "vv"
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        6,
+        9,
+        29,
+        36,
+        50
+      ],
+      "region_node_id": 59
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        16,
+        18,
+        21,
+        25
+      ],
+      "region_node_id": 60
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 9,
+      "target_scores": {
+        "2": {
+          "basis": "Kitchen counter area with white cabinetry and stove visible; high confidence target-bearing location.",
+          "evidence_strength": "high",
+          "raw_score": 0.9
+        }
+      }
+    },
+    {
+      "id": 36,
+      "target_scores": {
+        "2": {
+          "basis": "Direct view of kitchen stove and white cabinetry; strong visual match for target.",
+          "evidence_strength": "high",
+          "raw_score": 0.95
+        }
+      }
+    },
+    {
+      "id": 50,
+      "target_scores": {
+        "2": {
+          "basis": "View into kitchen area with cabinets; lower probability due to distance from stove compared to 36.",
+          "evidence_strength": "medium",
+          "raw_score": 0.4
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 60,
+      "label": "living room with Christmas tree and large display cabinet"
+    }
+  ]
+}

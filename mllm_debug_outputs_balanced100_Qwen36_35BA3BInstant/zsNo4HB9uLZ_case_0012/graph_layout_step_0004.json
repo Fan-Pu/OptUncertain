@@ -1,0 +1,212 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 5
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 2,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 2,
+      "j": 5,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 2,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 2,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 2,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 36,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        2,
+        33,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1,
+        5,
+        34,
+        36,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        2,
+        34,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 5,
+      "label": "4c78adff490c4973aa3e09bfe14217aa",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        2,
+        5
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 34,
+      "label": "e6ba61dd42c64410877149cc11766a8b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1,
+        2,
+        5
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 36,
+      "label": "ead481533f834704bd489d3d44b6a03a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        2
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "e1f88263b98d46909c3e00e9250b6a4b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        33
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "bedroom area with bed and wall art",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        5,
+        34,
+        36,
+        41
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "hallway and doorway area with tiled flooring",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 4,
+  "region_to_viewpoints": {
+    "53": [
+      1,
+      33
+    ],
+    "54": [
+      2,
+      5,
+      34,
+      36,
+      41
+    ]
+  },
+  "viewpoint_to_region": {
+    "1": 53,
+    "2": 54,
+    "5": 54,
+    "33": 53,
+    "34": 54,
+    "36": 54,
+    "41": 54
+  }
+}

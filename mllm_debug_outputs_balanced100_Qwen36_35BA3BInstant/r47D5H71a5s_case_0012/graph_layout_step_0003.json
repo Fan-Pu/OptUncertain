@@ -1,0 +1,144 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 35
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 3,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 6,
+      "j": 35,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 11,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 35,
+      "j": 40,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        35
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 3,
+      "label": "04dba6ce40274f9b80f8e18eb201d33b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        35
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "32ddd1485c98480f9a6ecd24ace5d49f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 11,
+      "label": "b889bb15538844beb074db42bd8d9ed4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        3,
+        6,
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 35,
+      "label": "869e52d579cc4c9a85979d3e20eb2455",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        11,
+        35
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 40,
+      "label": "7798eee8ae4a4fc483da87e8e04b659c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        11,
+        40
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "tiled bathroom or utility area with decorative fan",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3,
+        6,
+        35
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 62,
+      "label": "tiled corridor or hallway area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "region_to_viewpoints": {
+    "61": [
+      11,
+      40
+    ],
+    "62": [
+      3,
+      6,
+      35
+    ]
+  },
+  "viewpoint_to_region": {
+    "3": 62,
+    "6": 62,
+    "11": 61,
+    "35": 62,
+    "40": 61
+  }
+}

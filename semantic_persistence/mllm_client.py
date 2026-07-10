@@ -45,7 +45,7 @@ GRAPH_IMAGE_MAX_WIDTH = 1660
 GRAPH_IMAGE_JPEG_QUALITY = 85
 
 THINKING_MODES = {"enabled", "adaptive", "disabled"}
-THINKING_FORMATS = {"thinking_type", "enable_thinking"}
+THINKING_FORMATS = {"thinking_type", "enable_thinking", "chat_template_kwargs"}
 REASONING_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh"}
 OPENAI_RESPONSE_SERVICE_TIERS = {"auto", "flex", "priority"}
 API_TYPES = {"chat_completions", "openai_responses", "google_genai"}
@@ -385,6 +385,9 @@ class MLLMClient:
             "dashscope": "enable_thinking",
             "dashscope_enable_thinking": "enable_thinking",
             "enable_thinking": "enable_thinking",
+            "chat_template": "chat_template_kwargs",
+            "chat_template_kwargs": "chat_template_kwargs",
+            "qwen_chat_template": "chat_template_kwargs",
         }
         if normalized not in aliases:
             raise ValueError(
@@ -700,9 +703,15 @@ class MLLMClient:
                 if normalized_thinking_format == "thinking_type":
                     request_kwargs["extra_body"]["thinking"] = {"type": thinking_mode}
                 elif thinking_mode in {"enabled", "disabled"}:
-                    request_kwargs["extra_body"]["enable_thinking"] = (
-                        thinking_mode == "enabled"
-                    )
+                    enable_thinking = thinking_mode == "enabled"
+                    if normalized_thinking_format == "enable_thinking":
+                        request_kwargs["extra_body"]["enable_thinking"] = (
+                            enable_thinking
+                        )
+                    elif normalized_thinking_format == "chat_template_kwargs":
+                        request_kwargs["extra_body"]["chat_template_kwargs"] = {
+                            "enable_thinking": enable_thinking
+                        }
                 else:
                     raise ValueError(
                         "%s_thinking=%r cannot use thinking format %r."

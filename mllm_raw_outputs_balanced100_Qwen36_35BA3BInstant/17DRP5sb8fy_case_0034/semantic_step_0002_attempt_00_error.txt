@@ -1,0 +1,109 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "cond_exist_prob": 0.8,
+      "distance_mean": 2.5,
+      "distance_var": 0.5,
+      "exist_prob": 0.64,
+      "i": 13,
+      "j": 17,
+      "type": "vv"
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        3,
+        6
+      ],
+      "region_node_id": 48
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        13
+      ],
+      "region_node_id": 49
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        17
+      ],
+      "region_node_id": 44
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        38
+      ],
+      "region_node_id": 47
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        40,
+        41
+      ],
+      "region_node_id": 45
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 13,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint is in the dining area; target is a throw pillow on an armchair which is not present here, score is low due to lack of matching furniture.",
+          "evidence_strength": "low",
+          "raw_score": 0.02
+        }
+      }
+    },
+    {
+      "id": 17,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint is in the living room with blue rug and artwork; no brown armchair or green patterned pillow visible, but it is a potential location for such furniture.",
+          "evidence_strength": "low",
+          "raw_score": 0.03
+        }
+      }
+    },
+    {
+      "id": 38,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint is in the bathroom vanity area; target is a pillow on an armchair, completely contradictory to this environment.",
+          "evidence_strength": "low",
+          "raw_score": 0.0
+        }
+      }
+    },
+    {
+      "id": 40,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint is in the lounge area with padded walls; while it contains seating (tufted bench), it lacks the specific brown armchair described.",
+          "evidence_strength": "medium",
+          "raw_score": 0.15
+        }
+      }
+    },
+    {
+      "id": 41,
+      "target_scores": {
+        "5": {
+          "basis": "Viewpoint is in the lounge area near a doorway; similar to 40, it is part of the seating area but does not show the specific target object.",
+          "evidence_strength": "medium",
+          "raw_score": 0.15
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 49,
+      "label": "dining area with white chairs and table near kitchen"
+    }
+  ]
+}

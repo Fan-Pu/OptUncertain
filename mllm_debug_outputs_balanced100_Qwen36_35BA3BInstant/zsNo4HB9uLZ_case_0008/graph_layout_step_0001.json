@@ -1,0 +1,136 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 20
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 8,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 19,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "de7a74588c2842e9ba391abb153a0257",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "a80acc2328154455965a8be4133dee71",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        8,
+        19,
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        20
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "kitchen workspace with open shelving and tiled backsplash",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "open display shelving area adjacent to kitchen",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        26
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "bathroom entrance doorway with vanity visible inside",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "53": [
+      8,
+      20
+    ],
+    "54": [
+      19
+    ],
+    "55": [
+      26
+    ]
+  },
+  "viewpoint_to_region": {
+    "8": 53,
+    "19": 54,
+    "20": 53,
+    "26": 55
+  }
+}

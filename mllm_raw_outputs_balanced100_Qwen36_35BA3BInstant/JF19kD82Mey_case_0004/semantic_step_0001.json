@@ -1,0 +1,84 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        8,
+        9
+      ],
+      "region_node_id": 50
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        42
+      ],
+      "region_node_id": 51
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 8,
+      "raw_target_probs": {
+        "0": 0.6,
+        "2": 0.5,
+        "4": 0.1,
+        "7": 0.5
+      },
+      "target_probs": {
+        "0": 0.6666666666666667,
+        "2": 0.7142857142857143,
+        "4": 0.5,
+        "7": 0.7142857142857143
+      }
+    },
+    {
+      "id": 42,
+      "raw_target_probs": {
+        "0": 0.3,
+        "2": 0.2,
+        "4": 0.1,
+        "7": 0.2
+      },
+      "target_probs": {
+        "0": 0.33333333333333337,
+        "2": 0.28571428571428575,
+        "4": 0.5,
+        "7": 0.28571428571428575
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 8,
+      "score_basis": {
+        "0": "Viewpoint 8 is located in the kitchen/dining area (near the glass dining table) matching target 0's location; route context only for upstairs targets.",
+        "2": "Viewpoint 8 is in the kitchen area with built-in appliance nooks suitable for a coffee machine, though not directly visible from current panorama center.",
+        "4": "Target 4 requires an upstairs bedroom; viewpoint 8 is on the ground floor near the dining/kitchen area, contradicting the floor constraint.",
+        "7": "Viewpoint 8 is in the kitchen/counter area where a bowl of lemons might be found, supporting the nearby stovetop cue."
+      }
+    },
+    {
+      "id": 42,
+      "score_basis": {
+        "0": "Viewpoint 42 is across the room and separated by spatial boundaries, offering poor direct evidence for the dining table flowers compared to VP 8.",
+        "2": "Viewpoint 42 is far from the kitchen counter/nook area, making it less likely to contain the coffee machine than VP 8.",
+        "4": "Target 4 requires an upstairs bedroom; viewpoint 42 is on the ground floor, contradicting the floor constraint.",
+        "7": "Viewpoint 42 is distant from the kitchen counter/stovetop area, providing weak evidence for the lemon bowl."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 50,
+      "label": "white-walled open area adjacent to the glass door"
+    },
+    {
+      "id": 51,
+      "label": "adjacent white-walled corridor or transition space"
+    }
+  ]
+}

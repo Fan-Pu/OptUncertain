@@ -1,0 +1,148 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "i": 6,
+      "j": 9,
+      "type": "vv",
+      "exist_prob": 0.85,
+      "distance_mean": 1.2,
+      "distance_var": 0.5
+    },
+    {
+      "i": 10,
+      "j": 31,
+      "type": "vv",
+      "exist_prob": 0.75,
+      "distance_mean": 1.5,
+      "distance_var": 0.8
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        6,
+        9,
+        15,
+        29,
+        36,
+        44,
+        51
+      ],
+      "region_node_id": 60
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        10,
+        31,
+        42
+      ],
+      "region_node_id": 63
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        16,
+        21,
+        25,
+        50,
+        56
+      ],
+      "region_node_id": 61
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        19,
+        26,
+        35,
+        46
+      ],
+      "region_node_id": 62
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 9,
+      "target_scores": {
+        "7": {
+          "basis": "Located in the kitchen/dining area (Region 60), which contradicts the target location of a bedroom workbench closet.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 10,
+      "target_scores": {
+        "7": {
+          "basis": "Located in the dining area (Region 63), which is not a bedroom or closet space.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 16,
+      "target_scores": {
+        "7": {
+          "basis": "Located in the living room (Region 61) near a large Christmas tree; no bedroom or closet evidence.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 19,
+      "target_scores": {
+        "7": {
+          "basis": "Located in the blue bedroom (Region 62). Visible ceiling fan and computer desk suggest this is the main bedroom area, but the specific 'workbench closet' with a 'No Trespassing sign' is not visually confirmed at this exact viewpoint.",
+          "evidence_strength": "medium",
+          "raw_score": 0.3
+        }
+      }
+    },
+    {
+      "id": 21,
+      "target_scores": {
+        "7": {
+          "basis": "Located in the living room (Region 61); incorrect room type for a bedroom closet target.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 25,
+      "target_scores": {
+        "7": {
+          "basis": "Located in the living room (Region 61); incorrect room type for a bedroom closet target.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 26,
+      "target_scores": {
+        "7": {
+          "basis": "Located in the blue bedroom (Region 62). Viewpoint marker is near a wooden door/closet area. This matches the 'bedroom' and 'closet' constraints of the target description.",
+          "evidence_strength": "high",
+          "raw_score": 0.8
+        }
+      }
+    },
+    {
+      "id": 35,
+      "target_scores": {
+        "7": {
+          "basis": "Located in the blue bedroom (Region 62). Farther away from the camera than other candidates, but still within the correct semantic region containing potential closet areas.",
+          "evidence_strength": "medium",
+          "raw_score": 0.3
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

@@ -1,0 +1,284 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.177,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 2,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.593,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.361,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 54,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.993,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.352,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 19,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.542,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 20,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.079,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.715,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 54,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.337,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 58,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "4eb2befc7e974e45a1956695ca4342e2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.0
+      },
+      "target_probs": {
+        "3": 0.0
+      },
+      "target_score_basis": {
+        "3": "Located in the spa treatment room (blue damask wallpaper) adjacent to a doorway; consistent with a target beside a door."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 2,
+      "label": "bd624a2988bf4a94839472180cc1b3d5",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.0
+      },
+      "target_probs": {
+        "3": 0.0
+      },
+      "target_score_basis": {
+        "3": "Viewpoint 2 is located in the adjacent exercise room visible through the doorway; this area contradicts the target cue 'beside the door' as it lacks a door immediately next to the viewpoint location and has no dark red vase."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "e2d51e6321224b5aae0a84c8a90c2dd2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.05
+      },
+      "target_probs": {
+        "3": 0.043478260869565216
+      },
+      "target_score_basis": {
+        "3": "Prior assignment to Region 62 (poolside deck) contradicts the 'beside the door' constraint of the target text which implies an interior room context. Route-only transit evidence is insufficient for high score."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 19,
+      "label": "458b288354be4060a2e6cf582d959d0f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "raw_target_probs": {
+        "3": 0.0
+      },
+      "target_probs": {
+        "3": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "954fc1d65dba428eb808fb9dce1b8a97",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.2
+      },
+      "target_probs": {
+        "3": 0.17391304347826086
+      },
+      "target_score_basis": {
+        "3": "Prior assignment to Region 61 matches the target room. However, without current visual confirmation of a doorway or vase, this remains a lower-confidence hypothesis compared to the currently observed doorway at Viewpoint 22."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 22,
+      "label": "77c8ac324e6e422faac5ffb32bd62c86",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.8
+      },
+      "target_probs": {
+        "3": 0.6956521739130435
+      },
+      "target_score_basis": {
+        "3": "Viewpoint 22 is in the spa treatment room (Region 61), matching the target location cue 'beside the door'. The panorama shows a doorway at ~90 deg with dark trim and floor space beside it, providing direct support surface and relative-location evidence for a vase on the floor."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "ce525fada36b41c3a89a4e77e83e4e5f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.1
+      },
+      "target_probs": {
+        "3": 0.08695652173913043
+      },
+      "target_score_basis": {
+        "3": "Viewpoint 54 is in the poolside deck area (Region 62). While it has floor space, it lacks the specific 'beside the door' constraint of the target description and is physically separated from the treatment room by a clear spatial boundary."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 58,
+      "label": "5d943867a94a46e1a7d2a4d077855a57",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.0
+      },
+      "target_probs": {
+        "3": 0.0
+      },
+      "target_score_basis": {
+        "3": "Viewpoint 58 is positioned within the same spa treatment room as the current viewpoint, near a massage bed and mural wall, making it spatially plausible for finding a small object on the floor nearby."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        2,
+        19,
+        20,
+        22,
+        58
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "spa treatment room with massage beds and blue damask wallpaper",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18,
+        54
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "poolside deck with exercise equipment",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 5,
+  "target_found": {
+    "3": false
+  }
+}

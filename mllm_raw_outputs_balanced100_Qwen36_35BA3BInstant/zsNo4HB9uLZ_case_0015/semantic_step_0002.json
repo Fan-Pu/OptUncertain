@@ -1,0 +1,161 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        10
+      ],
+      "region_node_id": 53
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        20
+      ],
+      "region_node_id": 54
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        41
+      ],
+      "region_node_id": 55
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 10,
+      "raw_target_probs": {
+        "0": 0.4,
+        "1": 0.8,
+        "4": 0.05,
+        "5": 0.05,
+        "6": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.27586206896551724,
+        "1": 0.8421052631578946,
+        "4": 0.07692307692307693,
+        "5": 0.07692307692307693,
+        "6": 0.25,
+        "7": 0.047619047619047616
+      }
+    },
+    {
+      "id": 20,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.05,
+        "4": 0.5,
+        "5": 0.5,
+        "6": 0.05,
+        "7": 0.9
+      },
+      "target_probs": {
+        "0": 0.06896551724137931,
+        "1": 0.05263157894736841,
+        "4": 0.7692307692307692,
+        "5": 0.7692307692307692,
+        "6": 0.25,
+        "7": 0.8571428571428571
+      }
+    },
+    {
+      "id": 39,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.05,
+        "4": 0.05,
+        "5": 0.05,
+        "6": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.034482758620689655,
+        "1": 0.05263157894736841,
+        "4": 0.07692307692307693,
+        "5": 0.07692307692307693,
+        "6": 0.25,
+        "7": 0.047619047619047616
+      }
+    },
+    {
+      "id": 41,
+      "raw_target_probs": {
+        "0": 0.9,
+        "1": 0.05,
+        "4": 0.05,
+        "5": 0.05,
+        "6": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.6206896551724137,
+        "1": 0.05263157894736841,
+        "4": 0.07692307692307693,
+        "5": 0.07692307692307693,
+        "6": 0.25,
+        "7": 0.047619047619047616
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 10,
+      "score_basis": {
+        "0": "Viewpoint is in a bedroom; matches upstairs-bedroom and nearby-bed constraints for target 1.",
+        "1": "Directly inside the bedroom area where the bed is located, matching target 1's room constraint.",
+        "4": "Bedroom location contradicts the dining-room-window constraint of target 4.",
+        "5": "Bedroom location contradicts the kitchen-counter constraint of target 5.",
+        "6": "Bedroom location contradicts the television-wall-shelf constraint of target 6.",
+        "7": "Bedroom location contradicts the entrance-console-table constraint of target 7."
+      }
+    },
+    {
+      "id": 20,
+      "score_basis": {
+        "0": "Located in a hallway near the kitchen; transit-only access to target 0.",
+        "1": "Hallway location contradicts the upstairs-bedroom constraint of target 1.",
+        "4": "Located in the hallway adjacent to the dining area with windows visible, providing route-continuation evidence for target 4.",
+        "5": "Located in the hallway adjacent to the kitchen counter/stove area, providing route-continuation evidence for target 5.",
+        "6": "Hallway location contradicts the television-wall-shelf constraint of target 6.",
+        "7": "Located at the entrance hallway/console table area matching target 7's relative-location cue."
+      }
+    },
+    {
+      "id": 39,
+      "score_basis": {
+        "0": "Bathroom environment contradicts the wooden-desk constraint of target 0.",
+        "1": "Bathroom environment contradicts the upstairs-bedroom constraint of target 1.",
+        "4": "Bathroom environment contradicts the dining-room-window constraint of target 4.",
+        "5": "Bathroom environment contradicts the kitchen-counter constraint of target 5.",
+        "6": "Bathroom environment contradicts the television-wall-shelf constraint of target 6.",
+        "7": "Bathroom environment contradicts the entrance-console-table constraint of target 7."
+      }
+    },
+    {
+      "id": 41,
+      "score_basis": {
+        "0": "Located in an office/study with a desk and map, directly matching the wooden-desk and map constraints for target 0.",
+        "1": "Office environment contradicts the upstairs-bedroom constraint of target 1.",
+        "4": "Office environment contradicts the dining-room-window constraint of target 4.",
+        "5": "Office environment contradicts the kitchen-counter constraint of target 5.",
+        "6": "Office environment contradicts the television-wall-shelf constraint of target 6.",
+        "7": "Office environment contradicts the entrance-console-table constraint of target 7."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 54,
+      "label": "bright tiled hallway near kitchen and dining areas"
+    },
+    {
+      "id": 55,
+      "label": "dark-walled home office with window and desk"
+    }
+  ]
+}

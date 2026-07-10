@@ -1,0 +1,288 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.593,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.079,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.147,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 5,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.622,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.135,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 22,
+      "j": 24,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 1,
+      "label": "4eb2befc7e974e45a1956695ca4342e2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.45,
+        "3": 0.05,
+        "4": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "1": 0.31034482758620685,
+        "3": 0.037037037037037035,
+        "4": 0.2,
+        "5": 0.09090909090909093
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 1 is inside the fitness room with large mirrors and exercise equipment; glass display cabinets are commonly placed in such wellness areas for decorative items like vases.",
+        "3": "Route-only context; viewpoint 1 is in an open fitness area without floor-doorway proximity evidence.",
+        "4": "Fitness room layout does not match massage table support surface or white flower visual attributes required by target text.",
+        "5": "No water dispenser or counter visible at viewpoint 1; contradicts target support-surface and nearby-object constraints."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "bd624a2988bf4a94839472180cc1b3d5",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.4,
+        "3": 0.75,
+        "4": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "1": 0.27586206896551724,
+        "3": 0.5555555555555555,
+        "4": 0.2,
+        "5": 0.09090909090909093
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 2 is adjacent to the fitness room entrance through a doorway; spatially close to potential cabinet locations in the connected room.",
+        "3": "Located directly beside a closed dark door on the left side of the corridor, matching 'beside the door' relative location constraint.",
+        "4": "Corridor location lacks massage tables and floral arrangements specified in target description.",
+        "5": "No water dispenser or kitchen-style counter present at this corridor viewpoint."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 5,
+      "label": "7dcc99131ec74b968cb9d728c49220e0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.4,
+        "3": 0.35,
+        "4": 0.05,
+        "5": 0.35
+      },
+      "target_probs": {
+        "1": 0.27586206896551724,
+        "3": 0.25925925925925924,
+        "4": 0.2,
+        "5": 0.6363636363636364
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 5 is located in a grooming/salon area (indicated by styling chair); salons often have glass cabinets for products/decor.",
+        "3": "Located near multiple doorways within the salon/grooming suite, satisfying proximity-to-door constraint.",
+        "4": "Salon chair and sink present, but no massage tables or white flowers visible to satisfy target support/visual attributes.",
+        "5": "Sink and counter area visible; plausible support surface for a kettle, though specific appliance not confirmed."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "954fc1d65dba428eb808fb9dce1b8a97",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "3": 0.1,
+        "4": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "1": 0.06896551724137931,
+        "3": 0.07407407407407407,
+        "4": 0.2,
+        "5": 0.09090909090909093
+      },
+      "target_score_basis": {
+        "1": "Located in the transition hallway between the salon and the corridor; route-only access to target rooms.",
+        "3": "Hallway position offers transit access but lacks specific floor-doorway placement evidence.",
+        "4": "Transit space only; no massage tables or flowers visible.",
+        "5": "No water dispenser or counter visible in the hallway junction."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 22,
+      "label": "77c8ac324e6e422faac5ffb32bd62c86",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 24,
+      "label": "4ed50a2f86384de599f06df862d17b10",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "3": 0.1,
+        "4": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "1": 0.06896551724137931,
+        "3": 0.07407407407407407,
+        "4": 0.2,
+        "5": 0.09090909090909093
+      },
+      "target_score_basis": {
+        "1": "Deep in a side corridor; unlikely to contain display cabinets compared to main activity rooms.",
+        "3": "Corridor location provides general access but lacks specific door-proximity cues.",
+        "4": "Empty corridor section; no furniture supporting massage tables or flowers.",
+        "5": "No counters or dispensers visible in the narrow corridor."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "tiled hallway with wavy wallpaper and pendant lights",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        2
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "fitness room with exercise equipment and wall mirrors",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        5,
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 63,
+      "label": "salon grooming area with styling chair and vanity sink",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        24
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 64,
+      "label": "narrow corridor section with dark wood trim and arched doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "1": false,
+    "3": false,
+    "4": false,
+    "5": false
+  }
+}

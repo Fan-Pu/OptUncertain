@@ -1,0 +1,118 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        7,
+        9
+      ],
+      "region_node_id": 53
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        42
+      ],
+      "region_node_id": 54
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        51
+      ],
+      "region_node_id": 55
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 7,
+      "raw_target_probs": {
+        "3": 0.1,
+        "5": 0.01,
+        "6": 0.01,
+        "7": 0.01
+      },
+      "target_probs": {
+        "3": 0.1,
+        "5": 0.33333333333333337,
+        "6": 0.33333333333333337,
+        "7": 0.03125
+      }
+    },
+    {
+      "id": 42,
+      "raw_target_probs": {
+        "3": 0.1,
+        "5": 0.01,
+        "6": 0.01,
+        "7": 0.01
+      },
+      "target_probs": {
+        "3": 0.1,
+        "5": 0.33333333333333337,
+        "6": 0.33333333333333337,
+        "7": 0.03125
+      }
+    },
+    {
+      "id": 51,
+      "raw_target_probs": {
+        "3": 0.8,
+        "5": 0.01,
+        "6": 0.01,
+        "7": 0.3
+      },
+      "target_probs": {
+        "3": 0.8,
+        "5": 0.33333333333333337,
+        "6": 0.33333333333333337,
+        "7": 0.9375
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 7,
+      "score_basis": {
+        "3": "Viewpoint 7 is in the bedroom area; target 3 is a hallway wall object, so this route-only location receives a low score.",
+        "5": "Target 5 is in the kitchen; viewpoint 7 shows a bedroom and large window, contradicting the target room.",
+        "6": "Target 6 is near a television on a shelf; no TV or shelf is visible at viewpoint 7.",
+        "7": "Target 7 is on a console table near an entrance; viewpoint 7 is in a bedroom with a bed, not near an entrance."
+      }
+    },
+    {
+      "id": 42,
+      "score_basis": {
+        "3": "Viewpoint 42 is inside the bedroom near the bed; target 3 is on a hallway wall, making this a weak match.",
+        "5": "Target 5 is in the kitchen; viewpoint 42 is clearly inside a bedroom.",
+        "6": "Target 6 is near a television; viewpoint 42 is next to a bed but no TV is visible.",
+        "7": "Target 7 is near an entrance on a console table; viewpoint 42 is in the bedroom interior."
+      }
+    },
+    {
+      "id": 51,
+      "score_basis": {
+        "3": "Viewpoint 51 is directly in the hallway facing the wall where the eye chart (target 3) is located.",
+        "5": "Target 5 is in the kitchen; viewpoint 51 is in a hallway.",
+        "6": "Target 6 is near a television; viewpoint 51 is in a hallway.",
+        "7": "Target 7 is on a console table near an entrance; viewpoint 51 is in the hallway, which may lead to the entrance."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 53,
+      "label": "bedroom area with dark accent wall and large window"
+    },
+    {
+      "id": 54,
+      "label": "hallway area with mirrored closet doors"
+    },
+    {
+      "id": 55,
+      "label": "hallway area facing black framed artwork"
+    }
+  ]
+}

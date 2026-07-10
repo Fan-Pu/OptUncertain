@@ -1,0 +1,93 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        15,
+        33
+      ],
+      "region_node_id": 50
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 15,
+      "raw_target_probs": {
+        "3": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "3": 0.35714285714285715,
+        "4": 0.35714285714285715
+      }
+    },
+    {
+      "id": 27,
+      "raw_target_probs": {
+        "3": 0.02,
+        "4": 0.02
+      },
+      "target_probs": {
+        "3": 0.14285714285714285,
+        "4": 0.14285714285714285
+      }
+    },
+    {
+      "id": 33,
+      "raw_target_probs": {
+        "3": 0.05,
+        "4": 0.05
+      },
+      "target_probs": {
+        "3": 0.35714285714285715,
+        "4": 0.35714285714285715
+      }
+    },
+    {
+      "id": 35,
+      "raw_target_probs": {
+        "3": 0.02,
+        "4": 0.02
+      },
+      "target_probs": {
+        "3": 0.14285714285714285,
+        "4": 0.14285714285714285
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 15,
+      "score_basis": {
+        "3": "Viewpoint 15 is located in the open plan kitchen/living area (Region 50), which contradicts the target description for target 3 (office desk). No office furniture or workspace evidence is visible.",
+        "4": "Viewpoint 15 is on the ground floor patio/kitchen area, contradicting the upstairs bedroom constraint for target 4. Only route-continuation cues are present."
+      }
+    },
+    {
+      "id": 27,
+      "score_basis": {
+        "3": "Viewpoint 27 is a hallway/landing with route-only access to an office. Contradicts explicit room constraints; lower score from prior.",
+        "4": "Viewpoint 27 is a hallway/landing with route-only access to a bedroom. Contradicts explicit room constraints; lower score from prior."
+      }
+    },
+    {
+      "id": 33,
+      "score_basis": {
+        "3": "Viewpoint 33 is located in the modern bathroom (Region 54) based on its proximity and alignment with agent 1's current viewpoint 34. Bathroom environment contradicts office desk target 3.",
+        "4": "Viewpoint 33 is located in the modern bathroom (Region 54). Contradicts the upstairs bedroom constraint for target 4."
+      }
+    },
+    {
+      "id": 35,
+      "score_basis": {
+        "3": "Viewpoint 35 is a transit hallway/landing. Route-only evidence contradicts explicit room constraints for target 3.",
+        "4": "Viewpoint 35 is a transit hallway/landing. Route-only evidence contradicts explicit room constraints for target 4."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

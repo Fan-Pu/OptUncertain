@@ -1,0 +1,65 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [
+    {
+      "i": 2,
+      "j": 5,
+      "type": "vv",
+      "exist_prob": 0.7,
+      "cond_exist_prob": 0.85,
+      "distance_mean": 0.96,
+      "distance_var": 0.2
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        5,
+        10,
+        17
+      ],
+      "region_node_id": 59
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 2,
+      "target_scores": {
+        "5": {
+          "basis": "Hallway transit viewpoint leading to kitchen; contradicts target location constraints (not a counter/stove area), so score is lowered from prior.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 10,
+      "target_scores": {
+        "5": {
+          "basis": "Visible through doorway as adjacent room with dark walls and furniture; no clear kitchen or stove evidence visible at this viewpoint.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 17,
+      "target_scores": {
+        "5": {
+          "basis": "Located inside the bathroom area with tiled walls and vanity; spatially contradictory to the target's kitchen counter location.",
+          "evidence_strength": "low",
+          "raw_score": 0.0
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 59,
+      "label": "bathroom transition corridor with grey tiled walls"
+    }
+  ]
+}

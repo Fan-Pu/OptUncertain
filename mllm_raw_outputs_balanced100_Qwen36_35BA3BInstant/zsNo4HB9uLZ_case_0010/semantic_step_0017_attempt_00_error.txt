@@ -1,0 +1,80 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        38,
+        43,
+        50
+      ],
+      "region_node_id": 57
+    }
+  ],
+  "viewpoint_target_scores": [
+    {
+      "id": 38,
+      "target_scores": {
+        "0": {
+          "basis": "Located in the kitchen workspace area; contradicts target's wooden desk and map location, so score lowered from prior.",
+          "evidence_strength": "low",
+          "raw_score": 0.02
+        },
+        "1": {
+          "basis": "Kitchen workspace does not match bedroom or bathrobe context.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        },
+        "2": {
+          "basis": "Located in a kitchen workspace with shelves and cabinetry that could plausibly hold a vintage scale, supporting the high prior probability.",
+          "evidence_strength": "high",
+          "raw_score": 0.9
+        }
+      }
+    },
+    {
+      "id": 43,
+      "target_scores": {
+        "0": {
+          "basis": "Living room environment with sofas and TV cabinet does not match the required wooden desk and map.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        },
+        "1": {
+          "basis": "Living room area is inconsistent with a bedroom setting for a hanging bathrobe.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        },
+        "2": {
+          "basis": "Living room furniture (sofas, coffee table) does not match the top shelf requirement for a kitchen scale.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    },
+    {
+      "id": 50,
+      "target_scores": {
+        "0": {
+          "basis": "Dining room with a long wooden table matches the 'wooden desk' support cue, providing moderate evidence for the radio.",
+          "evidence_strength": "medium",
+          "raw_score": 0.15
+        },
+        "1": {
+          "basis": "Dining room is not a bedroom, contradicting the bathrobe target location.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        },
+        "2": {
+          "basis": "Dining room lacks the 'top shelf' and 'kitchen' cues specified for the scale.",
+          "evidence_strength": "low",
+          "raw_score": 0.01
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

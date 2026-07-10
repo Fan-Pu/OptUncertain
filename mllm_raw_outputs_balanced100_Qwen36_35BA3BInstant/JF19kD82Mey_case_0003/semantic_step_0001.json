@@ -1,0 +1,175 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        3,
+        19,
+        23,
+        48
+      ],
+      "region_node_id": 50
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        6,
+        40
+      ],
+      "region_node_id": 51
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        17
+      ],
+      "region_node_id": 52
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 3,
+      "raw_target_probs": {
+        "0": 0.1,
+        "5": 0.05,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.07407407407407407,
+        "5": 0.03571428571428571,
+        "7": 0.15384615384615383
+      }
+    },
+    {
+      "id": 6,
+      "raw_target_probs": {
+        "0": 0.1,
+        "5": 0.6,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.07407407407407407,
+        "5": 0.4285714285714285,
+        "7": 0.15384615384615383
+      }
+    },
+    {
+      "id": 17,
+      "raw_target_probs": {
+        "0": 0.9,
+        "5": 0.05,
+        "7": 0.2
+      },
+      "target_probs": {
+        "0": 0.6666666666666666,
+        "5": 0.03571428571428571,
+        "7": 0.30769230769230765
+      }
+    },
+    {
+      "id": 23,
+      "raw_target_probs": {
+        "0": 0.05,
+        "5": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.037037037037037035,
+        "5": 0.03571428571428571,
+        "7": 0.07692307692307691
+      }
+    },
+    {
+      "id": 40,
+      "raw_target_probs": {
+        "0": 0.1,
+        "5": 0.6,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.07407407407407407,
+        "5": 0.4285714285714285,
+        "7": 0.15384615384615383
+      }
+    },
+    {
+      "id": 48,
+      "raw_target_probs": {
+        "0": 0.1,
+        "5": 0.05,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.07407407407407407,
+        "5": 0.03571428571428571,
+        "7": 0.15384615384615383
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 3,
+      "score_basis": {
+        "0": "Viewpoint is in the living room with patio access; no dining table or flowers visible.",
+        "5": "Viewpoint is on the ground floor near a patio, contradicting the upstairs bedroom location for target 5.",
+        "7": "Viewpoint is in the living room, not the kitchen where lemons are expected."
+      }
+    },
+    {
+      "id": 6,
+      "score_basis": {
+        "0": "Red marker is at the entrance of a hallway/foyer area; route to other rooms but no dining table visible.",
+        "5": "Located at the base of stairs leading to the upper level, which matches the 'upstairs' constraint for target 5.",
+        "7": "Located at the entrance of a hallway/foyer area; no kitchen counter or stovetop visible."
+      }
+    },
+    {
+      "id": 17,
+      "score_basis": {
+        "0": "Red marker is directly above a glass dining table with a white vase containing pink and white flowers, matching target 0 perfectly.",
+        "5": "Located on the ground floor dining area, contradicting the upstairs bedroom requirement for target 5.",
+        "7": "Located in the dining area; while close to a kitchen, the specific target (lemons on counter) is not visible here."
+      }
+    },
+    {
+      "id": 23,
+      "score_basis": {
+        "0": "Viewpoint faces an exterior stone wall and garden through glass doors; no indoor furniture or targets.",
+        "5": "Ground floor exterior view, contradicting the upstairs bedroom requirement for target 5.",
+        "7": "Exterior view with no kitchen counters or stovetops."
+      }
+    },
+    {
+      "id": 40,
+      "score_basis": {
+        "0": "Red marker is near the staircase landing; no dining table visible.",
+        "5": "Red marker is at the base of the stairs leading to the upper level, providing access to the upstairs bedroom for target 5.",
+        "7": "Near the staircase and hallway; no kitchen counter or stovetop visible."
+      }
+    },
+    {
+      "id": 48,
+      "score_basis": {
+        "0": "Viewpoint is in the living room near a fireplace and large window; no dining table or flowers visible.",
+        "5": "Ground floor living room, contradicting the upstairs bedroom requirement for target 5.",
+        "7": "Living room area with no kitchen counters or stovetops."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 50,
+      "label": "ground floor living room with curved sofa and large windows"
+    },
+    {
+      "id": 51,
+      "label": "foyer and staircase base area"
+    },
+    {
+      "id": 52,
+      "label": "dining area with glass table and artwork"
+    }
+  ]
+}

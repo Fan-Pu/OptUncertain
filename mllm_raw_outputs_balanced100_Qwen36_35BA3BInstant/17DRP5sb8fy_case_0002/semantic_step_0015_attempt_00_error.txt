@@ -1,0 +1,41 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_scores": [
+    {
+      "id": 33,
+      "target_scores": {
+        "4": {
+          "basis": "Viewpoint 33 is in the bathroom dressing and vanity area (Region 48), same region as current viewpoint 24. The target is a toilet paper roll on a toilet tank. While this region contains a sink/vanity, it is physically connected to the shower stall/toilet room (Region 46) where the toilet likely resides. However, without direct visual evidence of the toilet or TP at VP 33 itself, and given its prior high score likely reflected proximity to the bathroom zone, we lower it from route-only/transit context to reflect that it is a specific sub-area (vanity) not containing the toilet. It remains a candidate due to adjacency.",
+          "evidence_strength": "low",
+          "raw_score": 0.1
+        }
+      }
+    },
+    {
+      "id": 10,
+      "target_scores": {
+        "4": {
+          "basis": "Viewpoint 10 is visible nearby within the same bathroom dressing and vanity area (Region 48). It shares the same semantic context as the current viewpoint 24. No direct visual evidence of the toilet/TP is present at VP 10's marker location in the panorama (which shows striped walls and part of the vanity/shower boundary). Score reflects proximity but lack of direct target-bearing surface visibility.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    },
+    {
+      "id": 38,
+      "target_scores": {
+        "4": {
+          "basis": "Viewpoint 38 is also within the same bathroom dressing and vanity area (Region 48), showing the vanity and robe. Similar to VP 10 and 24, it does not show the toilet tank directly. Score is low, reflecting shared region membership but absence of target-specific visual cues at the marker.",
+          "evidence_strength": "low",
+          "raw_score": 0.05
+        }
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

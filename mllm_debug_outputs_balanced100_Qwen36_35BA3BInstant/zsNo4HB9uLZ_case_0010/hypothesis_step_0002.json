@@ -1,0 +1,446 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.29,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.156,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.623,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.992,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.64,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 21,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.261,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 43,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.33,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 44,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.805,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 46,
+      "j": 50,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 3,
+      "label": "1bfb89f3a44a419a9cf1fdc9d38a2800",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "7d1391357299496cbb82840960d05a66",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.05,
+        "5": 0.1,
+        "6": 0.1
+      },
+      "target_probs": {
+        "0": 0.16666666666666669,
+        "1": 0.25000000000000006,
+        "2": 0.047619047619047616,
+        "5": 0.1111111111111111,
+        "6": 0.058823529411764705
+      },
+      "target_score_basis": {
+        "0": "Hallway transit viewpoint; route to target but no specific desk or radio evidence visible.",
+        "1": "Hallway transit viewpoint; route to bedrooms but no bed or hooks visible.",
+        "2": "Hallway transit viewpoint; no kitchen or shelf evidence.",
+        "5": "Hallway transit viewpoint; leads to kitchen but is not the counter itself.",
+        "6": "Hallway transit viewpoint; route to living area but no TV/shelf visible here."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "f04ae8ebf8254168814bc669635b3775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.05,
+        "2": 0.05,
+        "5": 0.05,
+        "6": 0.9
+      },
+      "target_probs": {
+        "0": 0.16666666666666669,
+        "1": 0.12500000000000003,
+        "2": 0.047619047619047616,
+        "5": 0.05555555555555555,
+        "6": 0.5294117647058824
+      },
+      "target_score_basis": {
+        "0": "Living room seating area; no desk or radio present.",
+        "1": "Living room area; contradicts bedroom target location.",
+        "2": "Living room area; contradicts kitchen target location.",
+        "5": "Living room area; contradicts kitchen target location.",
+        "6": "Black sofa and television are clearly visible in this region, matching the target's nearby object cue."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "487a4cc75db94e56aa4d1d35866736fc",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.05,
+        "2": 0.4,
+        "5": 0.2,
+        "6": 0.05
+      },
+      "target_probs": {
+        "0": 0.16666666666666669,
+        "1": 0.12500000000000003,
+        "2": 0.38095238095238093,
+        "5": 0.2222222222222222,
+        "6": 0.029411764705882353
+      },
+      "target_score_basis": {
+        "0": "Kitchen corridor view; potential access to desk but none visible.",
+        "1": "Kitchen/Utility transition space; contradicts bedroom target location.",
+        "2": "Kitchen utility area with shelving/cabinetry visible on the left, consistent with storage shelves.",
+        "5": "Kitchen side-aisle; close to cooking area but not the main counter/stove.",
+        "6": "Kitchen utility area; contradicts living room/TV target location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 40,
+      "label": "34c20d99605545a885983a9b004f27a2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.05,
+        "2": 0.05,
+        "5": 0.05,
+        "6": 0.05
+      },
+      "target_probs": {
+        "0": 0.08333333333333334,
+        "1": 0.12500000000000003,
+        "2": 0.047619047619047616,
+        "5": 0.05555555555555555,
+        "6": 0.029411764705882353
+      },
+      "target_score_basis": {
+        "0": "Route continuation through open plan; no desk visible.",
+        "1": "Route continuation through open plan; no bedroom visible.",
+        "2": "Route continuation through open plan; no kitchen shelves visible.",
+        "5": "Route continuation through open plan; no stove/counter visible.",
+        "6": "Route continuation through open plan; no TV visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 43,
+      "label": "3493ecf114864afc99d568421c0b42f6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.05,
+        "2": 0.05,
+        "5": 0.05,
+        "6": 0.5
+      },
+      "target_probs": {
+        "0": 0.16666666666666669,
+        "1": 0.12500000000000003,
+        "2": 0.047619047619047616,
+        "5": 0.05555555555555555,
+        "6": 0.2941176470588235
+      },
+      "target_score_basis": {
+        "0": "Living room seating area; no desk or radio present.",
+        "1": "Living room area; contradicts bedroom target location.",
+        "2": "Living room area; contradicts kitchen target location.",
+        "5": "Living room area; contradicts kitchen target location.",
+        "6": "Visible near the television and seating area, matching target cues."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 44,
+      "label": "145a35f5ca544943b8bc2f997e5f9978",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.05,
+        "2": 0.4,
+        "5": 0.4,
+        "6": 0.05
+      },
+      "target_probs": {
+        "0": 0.16666666666666669,
+        "1": 0.12500000000000003,
+        "2": 0.38095238095238093,
+        "5": 0.4444444444444444,
+        "6": 0.029411764705882353
+      },
+      "target_score_basis": {
+        "0": "Kitchen workspace view; no desk or radio visible.",
+        "1": "Kitchen workspace; contradicts bedroom target location.",
+        "2": "Kitchen workspace with counter and upper cabinets/shelving visible; plausible for shelf targets.",
+        "5": "Kitchen workspace; counter visible but stove not immediately adjacent to marker.",
+        "6": "Kitchen workspace; contradicts living room/TV target location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "84f05044aa1542a18b082255100f2c39",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.05,
+        "2": 0.05,
+        "5": 0.05,
+        "6": 0.05
+      },
+      "target_probs": {
+        "0": 0.08333333333333334,
+        "1": 0.12500000000000003,
+        "2": 0.047619047619047616,
+        "5": 0.05555555555555555,
+        "6": 0.029411764705882353
+      },
+      "target_score_basis": {
+        "0": "Patio/Outdoor transition; contradicts indoor furniture targets.",
+        "1": "Patio/Outdoor transition; contradicts indoor bedroom target.",
+        "2": "Patio/Outdoor transition; contradicts indoor kitchen target.",
+        "5": "Patio/Outdoor transition; contradicts indoor kitchen target.",
+        "6": "Patio/Outdoor transition; contradicts indoor living room target."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "0753202108e24c0094f09c60b8f36127",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "5": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {
+        "0": "Dining room area with large wooden table and wall decor; potential support surface for desk-like targets, but lacks specific map context.",
+        "1": "Dining room area is not a bedroom; contradicts target location constraints.",
+        "2": "Dining room area visible in background may lead to kitchen; lacks direct top-shelf evidence.",
+        "5": "Dining room area adjacent to visible kitchen zone; route-continuation cue toward stove/counter.",
+        "6": "Dining room area with wall art and open layout; potential proximity to living area where TV might be located."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3,
+        40,
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "dining room area with long wooden table and white tiled floor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "kitchen utility corridor with white cabinetry and tiled floor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        46
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "outdoor patio deck area with wooden flooring and garden view",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18,
+        43
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 56,
+      "label": "living room area with black sofas and television",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        44
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 57,
+      "label": "kitchen workspace area with white island and pendant lights",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": false,
+    "3": true,
+    "4": true,
+    "5": false,
+    "6": false,
+    "7": true
+  }
+}

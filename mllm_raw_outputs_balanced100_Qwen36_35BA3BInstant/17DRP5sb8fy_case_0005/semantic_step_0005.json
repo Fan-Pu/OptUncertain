@@ -1,0 +1,209 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        6
+      ],
+      "region_node_id": 46
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        22
+      ],
+      "region_node_id": 47
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        28
+      ],
+      "region_node_id": 48
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 5,
+      "raw_target_probs": {
+        "1": 0.02,
+        "2": 0.02,
+        "5": 0.05,
+        "7": 0.35
+      },
+      "target_probs": {
+        "1": 0.012121212121212123,
+        "2": 0.016666666666666666,
+        "5": 0.08620689655172413,
+        "7": 0.5555555555555555
+      }
+    },
+    {
+      "id": 6,
+      "raw_target_probs": {
+        "1": 0.85,
+        "2": 0.45,
+        "5": 0.01,
+        "7": 0.01
+      },
+      "target_probs": {
+        "1": 0.5151515151515151,
+        "2": 0.375,
+        "5": 0.017241379310344827,
+        "7": 0.015873015873015872
+      }
+    },
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "1": 0.05,
+        "2": 0.05,
+        "5": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "1": 0.030303030303030307,
+        "2": 0.04166666666666667,
+        "5": 0.08620689655172413,
+        "7": 0.07936507936507937
+      }
+    },
+    {
+      "id": 22,
+      "raw_target_probs": {
+        "1": 0.55,
+        "2": 0.5,
+        "5": 0.01,
+        "7": 0.01
+      },
+      "target_probs": {
+        "1": 0.33333333333333337,
+        "2": 0.4166666666666667,
+        "5": 0.017241379310344827,
+        "7": 0.015873015873015872
+      }
+    },
+    {
+      "id": 28,
+      "raw_target_probs": {
+        "1": 0.15,
+        "2": 0.15,
+        "5": 0.4,
+        "7": 0.15
+      },
+      "target_probs": {
+        "1": 0.09090909090909091,
+        "2": 0.125,
+        "5": 0.689655172413793,
+        "7": 0.23809523809523808
+      }
+    },
+    {
+      "id": 37,
+      "raw_target_probs": {
+        "1": 0.02,
+        "2": 0.02,
+        "5": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "1": 0.012121212121212123,
+        "2": 0.016666666666666666,
+        "5": 0.08620689655172413,
+        "7": 0.07936507936507937
+      }
+    },
+    {
+      "id": 40,
+      "raw_target_probs": {
+        "1": 0.01,
+        "2": 0.01,
+        "5": 0.01,
+        "7": 0.01
+      },
+      "target_probs": {
+        "1": 0.0060606060606060615,
+        "2": 0.008333333333333333,
+        "5": 0.017241379310344827,
+        "7": 0.015873015873015872
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 5,
+      "score_basis": {
+        "1": "Prior low score retained; route-only context for bathroom targets.",
+        "2": "Prior low score retained; route-only context for bathroom targets.",
+        "5": "Prior low score retained; no living room armchair visible in current hallway view.",
+        "7": "Prior high score lowered to medium due to lack of dining table evidence in current hallway view."
+      }
+    },
+    {
+      "id": 6,
+      "score_basis": {
+        "1": "Viewpoint 6 is a red marker in the shower niche area containing toiletry bottles (Target 1). High match for target-bearing support surface and visual attribute.",
+        "2": "Viewpoint 6 is in the bathroom area where bathrobes are typically hung near showers (Target 2). Medium-high match for room cue.",
+        "5": "Bathroom location contradicts the requirement for an armchair and throw pillow (Target 5). Very low score.",
+        "7": "Bathroom location contradicts the requirement for a dining table (Target 7). Very low score."
+      }
+    },
+    {
+      "id": 19,
+      "score_basis": {
+        "1": "Hallway viewpoint near bathroom entrance. Low probability for shower niche contents.",
+        "2": "Hallway viewpoint near bathroom entrance. Low probability for hanging bathrobe.",
+        "5": "Hallway viewpoint lacks armchair or pillow cues.",
+        "7": "Hallway viewpoint lacks dining table cues."
+      }
+    },
+    {
+      "id": 22,
+      "score_basis": {
+        "1": "Red marker 22 is inside the bathroom adjacent to the vanity. Matches Target 1 room cue (bathroom), though it is outside the shower niche itself.",
+        "2": "Red marker 22 is inside the bathroom. Strongly matches Target 2 room cue for a bathrobe.",
+        "5": "Bathroom location contradicts the requirement for an armchair and throw pillow (Target 5).",
+        "7": "Bathroom location contradicts the requirement for a dining table (Target 7)."
+      }
+    },
+    {
+      "id": 28,
+      "score_basis": {
+        "1": "Marker 28 is across a doorway into a dark room. Bathroom targets (1, 2) have lower likelihood here compared to the bright bathroom.",
+        "2": "Marker 28 is across a doorway into a dark room. Lower likelihood than bathroom for bathrobe.",
+        "5": "Marker 28 is across a doorway into a dark room. Dark rooms may contain furniture like armchairs (Target 5), giving a higher relative score than bathroom targets.",
+        "7": "Marker 28 is across a doorway into a dark room. No dining table visible."
+      }
+    },
+    {
+      "id": 37,
+      "score_basis": {
+        "1": "Prior low score retained; distant from current observation.",
+        "2": "Prior low score retained; distant from current observation.",
+        "5": "Prior low score retained; distant from current observation.",
+        "7": "Prior low score retained; distant from current observation."
+      }
+    },
+    {
+      "id": 40,
+      "score_basis": {
+        "1": "Prior low score retained; distant from current observation.",
+        "2": "Prior low score retained; distant from current observation.",
+        "5": "Prior low score retained; distant from current observation.",
+        "7": "Prior low score retained; distant from current observation."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 47,
+      "label": "bright white bathroom area with vanity and mirror"
+    },
+    {
+      "id": 48,
+      "label": "dark adjacent room area near bathroom doorway"
+    }
+  ]
+}

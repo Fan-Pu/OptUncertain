@@ -1,0 +1,113 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        15
+      ],
+      "region_node_id": 61
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 9,
+      "raw_target_probs": {
+        "0": 0.2,
+        "1": 0.05,
+        "5": 0.02
+      },
+      "target_probs": {
+        "0": 0.21052631578947364,
+        "1": 0.3125,
+        "5": 0.13333333333333333
+      }
+    },
+    {
+      "id": 15,
+      "raw_target_probs": {
+        "0": 0.4,
+        "1": 0.05,
+        "5": 0.02
+      },
+      "target_probs": {
+        "0": 0.4210526315789473,
+        "1": 0.3125,
+        "5": 0.13333333333333333
+      }
+    },
+    {
+      "id": 18,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.02,
+        "5": 0.05
+      },
+      "target_probs": {
+        "0": 0.05263157894736841,
+        "1": 0.125,
+        "5": 0.33333333333333337
+      }
+    },
+    {
+      "id": 59,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.02,
+        "5": 0.04
+      },
+      "target_probs": {
+        "0": 0.05263157894736841,
+        "1": 0.125,
+        "5": 0.26666666666666666
+      }
+    },
+    {
+      "id": 60,
+      "raw_target_probs": {
+        "0": 0.25,
+        "1": 0.02,
+        "5": 0.02
+      },
+      "target_probs": {
+        "0": 0.26315789473684204,
+        "1": 0.125,
+        "5": 0.13333333333333333
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 9,
+      "score_basis": {
+        "0": "Viewpoint 9 is in the bathroom/massage area (region 61). Target 0 is a hair dryer beside a sink, which is plausible in this room. Score lowered from prior as it is not the current viewpoint and no direct evidence of the target exists here.",
+        "1": "Target 1 is in a glass display cabinet with plant stems. No such furniture is visible or implied at viewpoint 9 in the bathroom area.",
+        "5": "Target 5 is a kettle on a counter by a water dispenser. This is unlikely in a bathroom/massage room context compared to kitchen areas."
+      }
+    },
+    {
+      "id": 15,
+      "score_basis": {
+        "0": "Viewpoint 15 is close to viewpoint 8 (distance 1.396) and likely within the same bathroom space. High probability for bathroom-specific target.",
+        "1": "No visual evidence of a display cabinet at viewpoint 15.",
+        "5": "Bathroom location contradicts kitchen target constraints."
+      }
+    },
+    {
+      "id": 18,
+      "score_basis": {}
+    },
+    {
+      "id": 59,
+      "score_basis": {}
+    },
+    {
+      "id": 60,
+      "score_basis": {}
+    }
+  ],
+  "visible_region_nodes": []
+}

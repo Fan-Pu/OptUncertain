@@ -1,0 +1,61 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [],
+  "viewpoint_target_probs": [
+    {
+      "id": 31,
+      "raw_target_probs": {
+        "0": 0.45,
+        "2": 0.02,
+        "4": 0.01,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.8490566037735849,
+        "2": 0.5,
+        "4": 0.5,
+        "7": 0.5
+      }
+    },
+    {
+      "id": 42,
+      "raw_target_probs": {
+        "0": 0.08,
+        "2": 0.02,
+        "4": 0.01,
+        "7": 0.02
+      },
+      "target_probs": {
+        "0": 0.1509433962264151,
+        "2": 0.5,
+        "4": 0.5,
+        "7": 0.5
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 31,
+      "score_basis": {
+        "0": "Viewpoint 31 is in the same open white-walled area as the current viewpoint (dining/living zone), consistent with the target being on a glass dining table; prior score adjusted upward to reflect direct spatial presence in the likely room.",
+        "2": "The region is an open living/dining space, not a kitchen appliance nook; target location contradicts the area type.",
+        "4": "Target requires an upstairs bedroom; this is a ground-floor open area.",
+        "7": "Target requires a kitchen counter near a stovetop; this is a dining/open area."
+      }
+    },
+    {
+      "id": 42,
+      "score_basis": {
+        "0": "Located in a corridor/transition space, physically separated from the main open area where the dining table is likely located.",
+        "2": "Corridor or transition space does not match the built-in kitchen nook constraint.",
+        "4": "Contradicts explicit upstairs bedroom requirement.",
+        "7": "Corridor does not match kitchen counter/stovetop context."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

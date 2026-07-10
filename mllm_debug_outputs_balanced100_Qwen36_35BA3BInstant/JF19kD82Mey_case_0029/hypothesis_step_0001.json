@@ -1,0 +1,432 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.767,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 28,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.405,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 5,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.308,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.201,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 12,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.877,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 21,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.589,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 27,
+      "j": 43,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.346,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.08,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 35,
+      "j": 43,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "17d80d20c75b45e89949666e40f8df7e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 5,
+      "label": "db0e4e7b77c04948b581a11f633df145",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.6,
+        "3": 0.1,
+        "7": 0.9
+      },
+      "target_probs": {
+        "2": 0.3157894736842105,
+        "3": 0.04999999999999999,
+        "7": 0.5294117647058822
+      },
+      "target_score_basis": {
+        "2": "Located in the open kitchen area; supports 'built-in kitchen appliance nook' with medium likelihood due to proximity to cabinetry.",
+        "3": "Kitchen/dining environment lacks office desk or monitor context; score is low.",
+        "7": "Kitchen counter space is visible and plausible for 'bowl of yellow lemons'; matches support surface constraints."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "84055072c9154370bc2a76c86daf011c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.1,
+        "3": 0.5,
+        "7": 0.1
+      },
+      "target_probs": {
+        "2": 0.05263157894736842,
+        "3": 0.24999999999999994,
+        "7": 0.0588235294117647
+      },
+      "target_score_basis": {
+        "2": "Bedroom location contradicts 'kitchen appliance nook'; score is low.",
+        "3": "Proximity to computer screen on wall suggests potential workspace; matches 'office desk' relative-location cue.",
+        "7": "Bedroom lacks kitchen counter/stovetop evidence; score is low."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 12,
+      "label": "7dbbeb8448f94a0ca912bb73561fb1f7",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.4,
+        "3": 0.9,
+        "7": 0.1
+      },
+      "target_probs": {
+        "2": 0.21052631578947367,
+        "3": 0.4499999999999999,
+        "7": 0.0588235294117647
+      },
+      "target_score_basis": {
+        "2": "Home office room with desk and monitor; strongly supports 'built-in kitchen appliance nook' only if interpreted as utility room, but primarily an office.",
+        "3": "Directly shows an office desk and monitor; high match for 'black keyboard on the office desk'.",
+        "7": "Office environment contradicts 'kitchen counter beside stovetop'; score is low."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "68f5cd251e4c457894ea04e8184286d0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.2,
+        "3": 0.1,
+        "7": 0.2
+      },
+      "target_probs": {
+        "2": 0.10526315789473684,
+        "3": 0.04999999999999999,
+        "7": 0.1176470588235294
+      },
+      "target_score_basis": {
+        "2": "Dining/living transition area; no specific kitchen nook evidence.",
+        "3": "Living/dining area does not contain office desk; score is low.",
+        "7": "Dining table is a support surface, but no kitchen/stovetop context nearby; score is low."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "a34ec23dd5284d8fbca553acefd49c03",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.2,
+        "3": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "2": 0.10526315789473684,
+        "3": 0.04999999999999999,
+        "7": 0.0588235294117647
+      },
+      "target_score_basis": {
+        "2": "Near sofa and sideboard; route-only evidence for kitchen access, no target-bearing cues.",
+        "3": "Living area lacks office equipment; score is low.",
+        "7": "No kitchen counter or stovetop visible; score is low."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 28,
+      "label": "8b29770bf446475b814d254d9b2670f6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.1,
+        "3": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "2": 0.05263157894736842,
+        "3": 0.04999999999999999,
+        "7": 0.0588235294117647
+      },
+      "target_score_basis": {
+        "2": "Bathroom setting contradicts kitchen/office targets; score is low.",
+        "3": "Bathroom contradicts office desk target; score is low.",
+        "7": "Bathroom contradicts kitchen counter target; score is low."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "6ca981e907be49749ed4aead19864515",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "2dd65c204fd64835b8cd417df5aa4149",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.2,
+        "3": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "2": 0.10526315789473684,
+        "3": 0.04999999999999999,
+        "7": 0.0588235294117647
+      },
+      "target_score_basis": {
+        "2": "Near living area furniture; no kitchen nook evidence.",
+        "3": "Living area lacks office desk; score is low.",
+        "7": "No kitchen counter visible; score is low."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 42,
+      "label": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.1,
+        "3": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "2": 0.05263157894736842,
+        "3": 0.04999999999999999,
+        "7": 0.0588235294117647
+      },
+      "target_score_basis": {
+        "2": "Bedroom location contradicts kitchen target; score is low.",
+        "3": "Bedroom location contradicts office desk target; score is low.",
+        "7": "Bedroom location contradicts kitchen counter target; score is low."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 43,
+      "label": "1227344eaa1f424b83db585fd665fb2a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "3": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        5,
+        21,
+        27,
+        35,
+        43
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "open-plan dining and living area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        12
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "home office with built-in shelving",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 52,
+      "label": "master bedroom with large digital display",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 53,
+      "label": "secondary bedroom with skateboard decor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        28
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "modern bathroom with double vanity",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "2": false,
+    "3": false,
+    "6": true,
+    "7": false
+  }
+}

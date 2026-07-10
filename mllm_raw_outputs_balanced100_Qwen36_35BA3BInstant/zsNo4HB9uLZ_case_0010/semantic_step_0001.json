@@ -1,0 +1,87 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        3,
+        40,
+        50
+      ],
+      "region_node_id": 53
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 40,
+      "raw_target_probs": {
+        "0": 0.01,
+        "1": 0.01,
+        "2": 0.01,
+        "5": 0.01,
+        "6": 0.01,
+        "7": 0.01
+      },
+      "target_probs": {
+        "0": 0.0625,
+        "1": 0.5,
+        "2": 0.16666666666666666,
+        "5": 0.0625,
+        "6": 0.0625,
+        "7": 0.012345679012345678
+      }
+    },
+    {
+      "id": 50,
+      "raw_target_probs": {
+        "0": 0.15,
+        "1": 0.01,
+        "2": 0.05,
+        "5": 0.15,
+        "6": 0.15,
+        "7": 0.8
+      },
+      "target_probs": {
+        "0": 0.9375,
+        "1": 0.5,
+        "2": 0.8333333333333333,
+        "5": 0.9375,
+        "6": 0.9375,
+        "7": 0.9876543209876543
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 40,
+      "score_basis": {
+        "0": "Route-only transition space (patio) with no desk or map evidence; contradicts target location.",
+        "1": "Route-only transition space (patio) with no bed or hooks evidence; contradicts target location.",
+        "2": "Route-only transition space (patio) with no shelves or scale evidence; contradicts target location.",
+        "5": "Route-only transition space (patio) with no stove or counter evidence; contradicts target location.",
+        "6": "Route-only transition space (patio) with no TV or shelf evidence; contradicts target location.",
+        "7": "Route-only transition space (patio) with no console table or entrance evidence; contradicts target location."
+      }
+    },
+    {
+      "id": 50,
+      "score_basis": {
+        "0": "Dining room area with large wooden table and wall decor; potential support surface for desk-like targets, but lacks specific map context.",
+        "1": "Dining room area is not a bedroom; contradicts target location constraints.",
+        "2": "Dining room area visible in background may lead to kitchen; lacks direct top-shelf evidence.",
+        "5": "Dining room area adjacent to visible kitchen zone; route-continuation cue toward stove/counter.",
+        "6": "Dining room area with wall art and open layout; potential proximity to living area where TV might be located.",
+        "7": "Visible console table with framed prints matches 'console table' support surface constraint near the viewpoint marker."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 53,
+      "label": "dining room area with long wooden table and white tiled floor"
+    }
+  ]
+}

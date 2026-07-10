@@ -1,0 +1,212 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 15
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 7,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 7,
+      "j": 15,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 7,
+      "j": 28,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 7,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 19,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 27,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 21,
+      "j": 27,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 28,
+      "j": 42,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        7
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 5,
+      "label": "da5fa65c13e643719a20cbb818c9a85d",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        5,
+        15,
+        28,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 7,
+      "label": "08c774f20c984008882da2b8547850eb",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        7,
+        19,
+        27,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 15,
+      "label": "5e9f4f8654574e699480e90ecdd150c8",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "77a1a11978b04e9cbf74914c98578ab8",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        15,
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 27,
+      "label": "b185432bf33645aca813ac2a961b4140",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        7,
+        42
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 28,
+      "label": "1a41339ece1846eda6a924cdb4c417dd",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        7,
+        15,
+        28
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 42,
+      "label": "abe20dd6e5194f579dfc6b63a612c150",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        5,
+        7,
+        15,
+        19,
+        21,
+        27,
+        28,
+        42
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "open plan living and dining area with kitchen pass-through",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 5,
+  "region_to_viewpoints": {
+    "44": [
+      5,
+      7,
+      15,
+      19,
+      21,
+      27,
+      28,
+      42
+    ]
+  },
+  "viewpoint_to_region": {
+    "5": 44,
+    "7": 44,
+    "15": 44,
+    "19": 44,
+    "21": 44,
+    "27": 44,
+    "28": 44,
+    "42": 44
+  }
+}

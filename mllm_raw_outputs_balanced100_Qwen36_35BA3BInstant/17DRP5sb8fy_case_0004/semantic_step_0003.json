@@ -1,0 +1,132 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        3,
+        5,
+        37
+      ],
+      "region_node_id": 48
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 3,
+      "raw_target_probs": {
+        "0": 0.8,
+        "2": 2.5,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.19512195121951223,
+        "2": 0.8620689655172413,
+        "5": 0.2
+      }
+    },
+    {
+      "id": 5,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.02439024390243903,
+        "2": 0.034482758620689655,
+        "5": 0.2
+      }
+    },
+    {
+      "id": 9,
+      "raw_target_probs": {
+        "0": 3.0,
+        "2": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.7317073170731708,
+        "2": 0.034482758620689655,
+        "5": 0.2
+      }
+    },
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.02439024390243903,
+        "2": 0.034482758620689655,
+        "5": 0.2
+      }
+    },
+    {
+      "id": 37,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.02439024390243903,
+        "2": 0.034482758620689655,
+        "5": 0.2
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 3,
+      "score_basis": {
+        "0": "Viewpoint 3 is inside the bathroom visible through the doorway; matches target location for bathrobe (target 2).",
+        "2": "Directly inside the bathroom area where a wooden wall and hanging robe are expected.",
+        "5": "Bathroom does not match bedroom or armchair constraints for target 5."
+      }
+    },
+    {
+      "id": 5,
+      "score_basis": {
+        "0": "Visible kitchen counter with appliances; contradicts upstairs/bedroom target 0.",
+        "2": "Kitchen area lacks bathroom features like wooden walls or robes.",
+        "5": "Kitchen area contradicts bedroom/armchair constraints for target 5."
+      }
+    },
+    {
+      "id": 9,
+      "score_basis": {
+        "0": "Located in sleeping alcove near window; matches headboard/pillow target 0.",
+        "2": "Bedroom area contradicts bathroom location constraint for target 2.",
+        "5": "Sleeping alcove is distinct from living room armchair area for target 5."
+      }
+    },
+    {
+      "id": 19,
+      "score_basis": {
+        "0": "Hallway is transit space; route continuation only, low probability for specific item 0.",
+        "2": "Hallway leads to bathroom but is not the bathroom itself.",
+        "5": "Transit hallway does not contain armchair or throw pillow evidence."
+      }
+    },
+    {
+      "id": 37,
+      "score_basis": {
+        "0": "Kitchen area visible at viewpoint 37; contradicts bedroom/headboard constraint for target 0.",
+        "2": "Kitchen environment does not match bathroom wall/robe constraints for target 2.",
+        "5": "Kitchen area contradicts bedroom/armchair constraints for target 5."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 48,
+      "label": "kitchenette and small adjacent bathroom area"
+    }
+  ]
+}

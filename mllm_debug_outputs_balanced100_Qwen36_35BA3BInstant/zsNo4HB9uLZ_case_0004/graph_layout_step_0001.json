@@ -1,0 +1,136 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 30
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 6,
+      "j": 30,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 21,
+      "j": 30,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 30,
+      "j": 32,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        30
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "7d1391357299496cbb82840960d05a66",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        30
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "487a4cc75db94e56aa4d1d35866736fc",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        6,
+        21,
+        32
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 30,
+      "label": "65eefaf93e6249908e6389eb4eabf0f5",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        30
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 32,
+      "label": "6472b7993a6e440a9d0e12b560ff4616",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        30
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "kitchenette area with dark wood cabinets and sink",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        21
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "transition corridor connecting kitchen to open living space",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        32
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "hallway area with wall-mounted chalkboards",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "53": [
+      30
+    ],
+    "54": [
+      6,
+      21
+    ],
+    "55": [
+      32
+    ]
+  },
+  "viewpoint_to_region": {
+    "6": 54,
+    "21": 54,
+    "30": 53,
+    "32": 55
+  }
+}

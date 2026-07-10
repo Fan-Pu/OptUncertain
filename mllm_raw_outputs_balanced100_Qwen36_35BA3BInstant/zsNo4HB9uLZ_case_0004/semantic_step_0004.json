@@ -1,0 +1,88 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        23,
+        50
+      ],
+      "region_node_id": 54
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 21,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.05,
+        "5": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "2": 0.3333333333333333,
+        "5": 0.3333333333333333,
+        "7": 0.3333333333333333
+      }
+    },
+    {
+      "id": 23,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.05,
+        "5": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "2": 0.3333333333333333,
+        "5": 0.3333333333333333,
+        "7": 0.3333333333333333
+      }
+    },
+    {
+      "id": 50,
+      "raw_target_probs": {
+        "0": 0.05,
+        "2": 0.05,
+        "5": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "2": 0.3333333333333333,
+        "5": 0.3333333333333333,
+        "7": 0.3333333333333333
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 21,
+      "score_basis": {}
+    },
+    {
+      "id": 23,
+      "score_basis": {
+        "0": "Viewpoint 23 is in the transition corridor (visible area with abstract art), which contradicts target 0's location on a desk below a map; score lowered from prior.",
+        "2": "Route-only transit space with no kitchen shelving evidence; score lowered from prior.",
+        "5": "Route-only transit space without counter/stove evidence; score lowered from prior.",
+        "7": "Route-only transit space without entrance/console evidence; score lowered from prior."
+      }
+    },
+    {
+      "id": 50,
+      "score_basis": {
+        "0": "Visible through doorway as dining/living space, contradicting target 0's desk/map location.",
+        "2": "Dining room visible area, contradicting target 2's kitchen shelf location.",
+        "5": "Kitchen counter/stove not visible; route continuation only.",
+        "7": "Dining table visible but no console table or vase detected."
+      }
+    }
+  ],
+  "visible_region_nodes": []
+}

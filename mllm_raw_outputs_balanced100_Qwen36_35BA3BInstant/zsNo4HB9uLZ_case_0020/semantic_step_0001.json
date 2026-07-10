@@ -1,0 +1,181 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        1,
+        33
+      ],
+      "region_node_id": 53
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        17,
+        27
+      ],
+      "region_node_id": 54
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        18,
+        25,
+        45
+      ],
+      "region_node_id": 55
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 1,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "3": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.1,
+        "1": 0.25,
+        "2": 0.07692307692307693,
+        "3": 0.25,
+        "4": 0.08333333333333333,
+        "5": 0.07692307692307693,
+        "7": 0.2
+      }
+    },
+    {
+      "id": 18,
+      "raw_target_probs": {
+        "0": 0.5,
+        "1": 0.1,
+        "2": 0.2,
+        "3": 0.1,
+        "4": 0.9,
+        "5": 0.2,
+        "7": 0.2
+      },
+      "target_probs": {
+        "0": 0.5,
+        "1": 0.25,
+        "2": 0.15384615384615385,
+        "3": 0.25,
+        "4": 0.7499999999999999,
+        "5": 0.15384615384615385,
+        "7": 0.4
+      }
+    },
+    {
+      "id": 25,
+      "raw_target_probs": {
+        "0": 0.3,
+        "1": 0.1,
+        "2": 0.9,
+        "3": 0.1,
+        "4": 0.1,
+        "5": 0.9,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.3,
+        "1": 0.25,
+        "2": 0.6923076923076923,
+        "3": 0.25,
+        "4": 0.08333333333333333,
+        "5": 0.6923076923076923,
+        "7": 0.2
+      }
+    },
+    {
+      "id": 27,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "2": 0.1,
+        "3": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.1,
+        "1": 0.25,
+        "2": 0.07692307692307693,
+        "3": 0.25,
+        "4": 0.08333333333333333,
+        "5": 0.07692307692307693,
+        "7": 0.2
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 1,
+      "score_basis": {
+        "0": "Route-only transit viewpoint; no target evidence.",
+        "1": "Adjacent to bedroom area (Vp 33) where the target is located; route-only access.",
+        "2": "Route-only transit viewpoint; no target evidence.",
+        "3": "Route-only transit viewpoint; no target evidence.",
+        "4": "Route-only transit viewpoint; no target evidence.",
+        "5": "Route-only transit viewpoint; no target evidence.",
+        "7": "Route-only transit viewpoint; no target evidence."
+      }
+    },
+    {
+      "id": 18,
+      "score_basis": {
+        "0": "Located in living area near dining room window (visible through opening); supports candle location.",
+        "1": "Contradicts upstairs-bedroom floor/room constraint.",
+        "2": "Visible kitchen/dining zone but lacks specific top-shelf counter evidence for scale.",
+        "3": "Living area, not hallway.",
+        "4": "Visible dining room window with curtains provides strong spatial match for candle target.",
+        "5": "Adjacent to kitchen/living space but marker is in open plan living area.",
+        "7": "Near entrance/living area but lacks console table or vase evidence at this specific viewpoint."
+      }
+    },
+    {
+      "id": 25,
+      "score_basis": {
+        "0": "Kitchen counter visible; potential support surface for radio, but no map visible.",
+        "1": "Contradicts upstairs-bedroom floor/room constraint.",
+        "2": "Directly on kitchen counter/shelving unit; matches top shelf and kitchen context.",
+        "3": "Kitchen/living area, not hallway.",
+        "4": "In kitchen area, distant from dining window.",
+        "5": "On kitchen counter beside stove area; matches support surface and relative location.",
+        "7": "Kitchen area, unlikely for entrance console table."
+      }
+    },
+    {
+      "id": 27,
+      "score_basis": {
+        "0": "Bathroom/toilet area contradicts desk/map constraints.",
+        "1": "Contradicts upstairs-bedroom floor/room constraint.",
+        "2": "Bathroom area contradicts kitchen/top-shelf constraints.",
+        "3": "Inside bathroom/toilet area; contradicts hallway wall constraint.",
+        "4": "Bathroom area contradicts dining window constraint.",
+        "5": "Bathroom area contradicts kitchen/stove constraint.",
+        "7": "Bathroom area contradicts entrance/console table constraint."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 53,
+      "label": "master bedroom with large curved window"
+    },
+    {
+      "id": 54,
+      "label": "bathroom and toilet alcove"
+    },
+    {
+      "id": 55,
+      "label": "open-plan living and kitchen area"
+    }
+  ]
+}

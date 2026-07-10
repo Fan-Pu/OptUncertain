@@ -1,0 +1,177 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        22
+      ],
+      "region_node_id": 61
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        1,
+        2
+      ],
+      "region_node_id": 62
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        5,
+        20
+      ],
+      "region_node_id": 63
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        24
+      ],
+      "region_node_id": 64
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 1,
+      "raw_target_probs": {
+        "1": 0.45,
+        "3": 0.05,
+        "4": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "1": 0.31034482758620685,
+        "3": 0.037037037037037035,
+        "4": 0.2,
+        "5": 0.09090909090909093
+      }
+    },
+    {
+      "id": 2,
+      "raw_target_probs": {
+        "1": 0.4,
+        "3": 0.75,
+        "4": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "1": 0.27586206896551724,
+        "3": 0.5555555555555555,
+        "4": 0.2,
+        "5": 0.09090909090909093
+      }
+    },
+    {
+      "id": 5,
+      "raw_target_probs": {
+        "1": 0.4,
+        "3": 0.35,
+        "4": 0.05,
+        "5": 0.35
+      },
+      "target_probs": {
+        "1": 0.27586206896551724,
+        "3": 0.25925925925925924,
+        "4": 0.2,
+        "5": 0.6363636363636364
+      }
+    },
+    {
+      "id": 20,
+      "raw_target_probs": {
+        "1": 0.1,
+        "3": 0.1,
+        "4": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "1": 0.06896551724137931,
+        "3": 0.07407407407407407,
+        "4": 0.2,
+        "5": 0.09090909090909093
+      }
+    },
+    {
+      "id": 24,
+      "raw_target_probs": {
+        "1": 0.1,
+        "3": 0.1,
+        "4": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "1": 0.06896551724137931,
+        "3": 0.07407407407407407,
+        "4": 0.2,
+        "5": 0.09090909090909093
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 1,
+      "score_basis": {
+        "1": "Viewpoint 1 is inside the fitness room with large mirrors and exercise equipment; glass display cabinets are commonly placed in such wellness areas for decorative items like vases.",
+        "3": "Route-only context; viewpoint 1 is in an open fitness area without floor-doorway proximity evidence.",
+        "4": "Fitness room layout does not match massage table support surface or white flower visual attributes required by target text.",
+        "5": "No water dispenser or counter visible at viewpoint 1; contradicts target support-surface and nearby-object constraints."
+      }
+    },
+    {
+      "id": 2,
+      "score_basis": {
+        "1": "Viewpoint 2 is adjacent to the fitness room entrance through a doorway; spatially close to potential cabinet locations in the connected room.",
+        "3": "Located directly beside a closed dark door on the left side of the corridor, matching 'beside the door' relative location constraint.",
+        "4": "Corridor location lacks massage tables and floral arrangements specified in target description.",
+        "5": "No water dispenser or kitchen-style counter present at this corridor viewpoint."
+      }
+    },
+    {
+      "id": 5,
+      "score_basis": {
+        "1": "Viewpoint 5 is located in a grooming/salon area (indicated by styling chair); salons often have glass cabinets for products/decor.",
+        "3": "Located near multiple doorways within the salon/grooming suite, satisfying proximity-to-door constraint.",
+        "4": "Salon chair and sink present, but no massage tables or white flowers visible to satisfy target support/visual attributes.",
+        "5": "Sink and counter area visible; plausible support surface for a kettle, though specific appliance not confirmed."
+      }
+    },
+    {
+      "id": 20,
+      "score_basis": {
+        "1": "Located in the transition hallway between the salon and the corridor; route-only access to target rooms.",
+        "3": "Hallway position offers transit access but lacks specific floor-doorway placement evidence.",
+        "4": "Transit space only; no massage tables or flowers visible.",
+        "5": "No water dispenser or counter visible in the hallway junction."
+      }
+    },
+    {
+      "id": 24,
+      "score_basis": {
+        "1": "Deep in a side corridor; unlikely to contain display cabinets compared to main activity rooms.",
+        "3": "Corridor location provides general access but lacks specific door-proximity cues.",
+        "4": "Empty corridor section; no furniture supporting massage tables or flowers.",
+        "5": "No counters or dispensers visible in the narrow corridor."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 61,
+      "label": "tiled hallway with wavy wallpaper and pendant lights"
+    },
+    {
+      "id": 62,
+      "label": "fitness room with exercise equipment and wall mirrors"
+    },
+    {
+      "id": 63,
+      "label": "salon grooming area with styling chair and vanity sink"
+    },
+    {
+      "id": 64,
+      "label": "narrow corridor section with dark wood trim and arched doorway"
+    }
+  ]
+}

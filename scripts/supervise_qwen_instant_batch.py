@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+import scripts.supervise_graph_batch_runs as supervisor
+
+
+def main() -> int:
+    supervisor.MODELS = ["Qwen36_35BA3BInstant"]
+    return supervisor.main()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,109 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        40,
+        41
+      ],
+      "region_node_id": 44
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        9
+      ],
+      "region_node_id": 45
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        25
+      ],
+      "region_node_id": 46
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 9,
+      "raw_target_probs": {
+        "0": 1.5,
+        "2": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.46875,
+        "2": 0.2,
+        "5": 0.3333333333333333
+      }
+    },
+    {
+      "id": 25,
+      "raw_target_probs": {
+        "0": 0.2,
+        "2": 0.3,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.0625,
+        "2": 0.6,
+        "5": 0.3333333333333333
+      }
+    },
+    {
+      "id": 41,
+      "raw_target_probs": {
+        "0": 1.5,
+        "2": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.46875,
+        "2": 0.2,
+        "5": 0.3333333333333333
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 9,
+      "score_basis": {
+        "0": "Target is a pillow on a bed; VP9 marker is at the head of a bed with tufted upholstery matching the target description.",
+        "2": "Target is a bathrobe in a bathroom; VP9 is clearly inside a bedroom area.",
+        "5": "Target is a throw pillow on an armchair; VP9 shows a bed, not an armchair."
+      }
+    },
+    {
+      "id": 25,
+      "score_basis": {
+        "0": "Target is a pillow on a bed; VP25 is a hallway/entry point, route-only context for the bedroom.",
+        "2": "Target is a bathrobe in a bathroom; VP25 is a hallway leading to doors, potential transit to bathroom but no direct evidence.",
+        "5": "Target is a throw pillow on an armchair; VP25 is a hallway."
+      }
+    },
+    {
+      "id": 41,
+      "score_basis": {
+        "0": "Target is a pillow on a bed; VP41 is immediately adjacent to the current viewpoint inside the same bedroom.",
+        "2": "Target is a bathrobe in a bathroom; VP41 is inside the bedroom.",
+        "5": "Target is a throw pillow on an armchair; VP41 is inside the bedroom."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 44,
+      "label": "bedroom with silver tufted walls and built-in seating"
+    },
+    {
+      "id": 45,
+      "label": "bedroom sleeping alcove near window"
+    },
+    {
+      "id": 46,
+      "label": "hallway with console table and sunburst mirror"
+    }
+  ]
+}

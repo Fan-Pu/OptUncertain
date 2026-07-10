@@ -1,0 +1,187 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.87,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.767,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.666,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 9,
+      "label": "85c23efeaecd4d43a7dcd5b90137179e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 1.5,
+        "2": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.46875,
+        "2": 0.2,
+        "5": 0.3333333333333333
+      },
+      "target_score_basis": {
+        "0": "Target is a pillow on a bed; VP9 marker is at the head of a bed with tufted upholstery matching the target description.",
+        "2": "Target is a bathrobe in a bathroom; VP9 is clearly inside a bedroom area.",
+        "5": "Target is a throw pillow on an armchair; VP9 shows a bed, not an armchair."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.2,
+        "2": 0.3,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.0625,
+        "2": 0.6,
+        "5": 0.3333333333333333
+      },
+      "target_score_basis": {
+        "0": "Target is a pillow on a bed; VP25 is a hallway/entry point, route-only context for the bedroom.",
+        "2": "Target is a bathrobe in a bathroom; VP25 is a hallway leading to doors, potential transit to bathroom but no direct evidence.",
+        "5": "Target is a throw pillow on an armchair; VP25 is a hallway."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 40,
+      "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "194bef4cbba641dc9860ba7f43a0c16a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 1.5,
+        "2": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.46875,
+        "2": 0.2,
+        "5": 0.3333333333333333
+      },
+      "target_score_basis": {
+        "0": "Target is a pillow on a bed; VP41 is immediately adjacent to the current viewpoint inside the same bedroom.",
+        "2": "Target is a bathrobe in a bathroom; VP41 is inside the bedroom.",
+        "5": "Target is a throw pillow on an armchair; VP41 is inside the bedroom."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        40,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "bedroom with silver tufted walls and built-in seating",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "bedroom sleeping alcove near window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "hallway with console table and sunburst mirror",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "5": false,
+    "6": true
+  }
+}

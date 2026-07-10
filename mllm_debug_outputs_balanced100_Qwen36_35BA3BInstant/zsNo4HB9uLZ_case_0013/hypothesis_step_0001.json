@@ -1,0 +1,132 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.071,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 24,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.829,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 24,
+      "j": 49,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "4": 0.05,
+        "6": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.6666666666666666,
+        "4": 0.5,
+        "6": 0.5,
+        "7": 0.5
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 10 is in the same open space as current viewpoint 24; no specific furniture or surface evidence visible to support a desk or map target.",
+        "4": "No dining room window or table visible near viewpoint 10; only plain walls and ceiling structure are present.",
+        "6": "Viewpoint 10 shows only architectural features like wall curves and ceiling wood panels, with no television or shelf visible.",
+        "7": "No console table or entrance area visible at viewpoint 10; the location appears to be an interior transition zone rather than a target-bearing surface."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 24,
+      "label": "b6ca0cc195da4688ba67fa53f0345b98",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 49,
+      "label": "935e0f6088a54fba87990835d1997d9a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "4": 0.05,
+        "6": 0.05,
+        "7": 0.05
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "4": 0.5,
+        "6": 0.5,
+        "7": 0.5
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 49 is adjacent to the main viewing area but shows dark vertical surfaces (likely doors or cabinets) without clear desk or map evidence.",
+        "4": "The dark vertical elements near viewpoint 49 do not resemble a dining room window; lack of light source suggests it is not the target location.",
+        "6": "Viewpoint 49 marker is positioned against a dark background feature that does not clearly show a television or shelf unit.",
+        "7": "No console table or decorative reeds visible near viewpoint 49; the area appears to be a boundary or corridor edge."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        24,
+        49
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "open upper-level hallway with wooden arched ceiling",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "4": false,
+    "6": false,
+    "7": false
+  }
+}
