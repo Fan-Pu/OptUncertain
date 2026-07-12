@@ -1,0 +1,91 @@
+{
+  "active_targets": [
+    {
+      "description": "the small blue chair beside the bed in the upstairs bedroom",
+      "target_id": "4"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "28",
+        "41"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "7",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "8b29770bf446475b814d254d9b2670f6",
+        "41": "c4ce11a276904bf38fe049e67b6c5f7a",
+        "7": "0672a86275c14b148e8618ecde714e06"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "45",
+        "35",
+        "29",
+        "27",
+        "25",
+        "37"
+      ],
+      "reserved_before": [
+        "7"
+      ],
+      "selected": {
+        "next_viewpoint_id": "35",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "25": "d512f07e48aa4fe9a559a1a708ab3c02",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "29": "856a21dd20ce41c3ac1c2a160cec9a0f",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "37": "ff43ac7b797541b5a89ce2373de329a4",
+        "45": "219e774e6cf942a5af295147d7bf945e"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "9",
+        "31"
+      ],
+      "reserved_before": [
+        "35",
+        "7"
+      ],
+      "selected": {
+        "next_viewpoint_id": "31",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "31": "6ca981e907be49749ed4aead19864515",
+        "9": "3e8f012538474392bf311dcec2e2153a"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "31",
+    "35",
+    "7"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 2
+}

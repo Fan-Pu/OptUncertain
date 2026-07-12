@@ -1,0 +1,94 @@
+{
+  "active_targets": [
+    {
+      "description": "the red coffee machine in the built-in kitchen appliance nook",
+      "target_id": "2"
+    },
+    {
+      "description": "the bowl of yellow lemons on the kitchen counter beside the stovetop",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "20",
+        "28"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "28",
+        "promising_target_ids": [
+          "2",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "20": "27b904430e4e48acb818e2ab80f183e3",
+        "28": "8b29770bf446475b814d254d9b2670f6"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "49",
+        "40",
+        "2",
+        "36",
+        "5"
+      ],
+      "reserved_before": [
+        "28"
+      ],
+      "selected": {
+        "next_viewpoint_id": "40",
+        "promising_target_ids": [
+          "2",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "9190dd5ec42f47c5bc064f49ee6bf12d",
+        "36": "a33fe858085149e8908942d0bf98767f",
+        "40": "1d383b2f6a454cdbb4d942b127a12320",
+        "49": "00a7d1bfbbdd4e9e92a9586f3a4f5540",
+        "5": "db0e4e7b77c04948b581a11f633df145"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "33",
+        "42"
+      ],
+      "reserved_before": [
+        "28",
+        "40"
+      ],
+      "selected": {
+        "next_viewpoint_id": "33",
+        "promising_target_ids": [
+          "2",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "33": "595ef74c51bb4448ae709297121d4c10",
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "28",
+    "33",
+    "40"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 9
+}

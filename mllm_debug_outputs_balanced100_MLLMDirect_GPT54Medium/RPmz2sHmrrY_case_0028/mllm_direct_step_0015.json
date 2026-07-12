@@ -1,0 +1,94 @@
+{
+  "active_targets": [
+    {
+      "description": "the Santa snow globe on top of the TV in the bedroom",
+      "target_id": "4"
+    },
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "57",
+        "5"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "57",
+        "promising_target_ids": [
+          "4",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "5": "f18d8c88c8c045caaefc4ebc3484b0bf",
+        "57": "ac157f000adf41dcb2d2f5c9e3ac7a7c"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "37",
+        "26"
+      ],
+      "reserved_before": [
+        "57"
+      ],
+      "selected": {
+        "next_viewpoint_id": "26",
+        "promising_target_ids": [
+          "4",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "37": "2bafa1c7dfc84001beaddf532feb612f"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "6",
+        "36",
+        "51",
+        "29",
+        "9"
+      ],
+      "reserved_before": [
+        "26",
+        "57"
+      ],
+      "selected": {
+        "next_viewpoint_id": "9",
+        "promising_target_ids": [
+          "4",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "36": "4a9dca1a243c4c03b8f1016cbf8dd369",
+        "51": "662a6b43a43b47eca87d91c09afd2ad6",
+        "6": "46502cfe06804adeafc0782798dedaa8",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "26",
+    "57",
+    "9"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 15
+}

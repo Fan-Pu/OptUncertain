@@ -1,0 +1,83 @@
+{
+  "active_targets": [
+    {
+      "description": "the black vintage radio on the wooden desk below the map",
+      "target_id": "0"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "21",
+        "32",
+        "6"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "21",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "21": "487a4cc75db94e56aa4d1d35866736fc",
+        "32": "6472b7993a6e440a9d0e12b560ff4616",
+        "6": "7d1391357299496cbb82840960d05a66"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "48",
+        "23"
+      ],
+      "reserved_before": [
+        "21"
+      ],
+      "selected": {
+        "next_viewpoint_id": "48",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "23": "b5f873817a0b4b60b8447e96b0b4e955",
+        "48": "61c98135870e449a846737f610d0e969"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "14",
+        "20"
+      ],
+      "reserved_before": [
+        "21",
+        "48"
+      ],
+      "selected": {
+        "next_viewpoint_id": "14",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "6416ac70316f44d1ae7ec5a3029b1703",
+        "20": "9b1e2472265c46989eb1c3911aa5971b"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "14",
+    "21",
+    "48"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 22
+}

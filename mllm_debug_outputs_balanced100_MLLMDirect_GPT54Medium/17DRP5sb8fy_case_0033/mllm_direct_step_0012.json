@@ -1,0 +1,136 @@
+{
+  "active_targets": [
+    {
+      "description": "the bottled water on the kitchen shelf",
+      "target_id": "3"
+    },
+    {
+      "description": "the green patterned throw pillow on the brown armchair",
+      "target_id": "5"
+    },
+    {
+      "description": "the black floor lamp with a folded black shade beside the tufted wall",
+      "target_id": "6"
+    },
+    {
+      "description": "the green plant centerpiece on the glass dining table",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "41",
+        "40",
+        "18"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "18",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "18": "f4d03f729dfc49068db327584455e975",
+        "40": "5efaa5e4a30e481f9dadc1bac5e56a21",
+        "41": "194bef4cbba641dc9860ba7f43a0c16a"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "13",
+        "31"
+      ],
+      "reserved_before": [
+        "18"
+      ],
+      "selected": {
+        "next_viewpoint_id": "31",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "c429b363fd3145fe8a7631bbe9644066",
+        "31": "d65b6505904448d1940e679c9a098047"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "38",
+        "10"
+      ],
+      "reserved_before": [
+        "18",
+        "31"
+      ],
+      "selected": {
+        "next_viewpoint_id": "10",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "d160d2229e4148839ef3a43dbc0ecdc4",
+        "38": "8ccf449f599a4cd88648e1d0ff39fdd0"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "6",
+        "3",
+        "12"
+      ],
+      "reserved_before": [
+        "10",
+        "18",
+        "31"
+      ],
+      "selected": {
+        "next_viewpoint_id": "6",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "e693b5de8ad84d4cb61a79ece2e66d11",
+        "3": "558ba0761bf24428b9cf91e60333ea25",
+        "6": "00ebbf3782c64d74aaf7dd39cd561175"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "11",
+        "17"
+      ],
+      "reserved_before": [
+        "10",
+        "18",
+        "31",
+        "6"
+      ],
+      "selected": {
+        "next_viewpoint_id": "17",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "11": "6800f98e9e67463e9928a4253253bc2f",
+        "17": "df211c2c55f94b87a717ce1469577456"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "10",
+    "17",
+    "18",
+    "31",
+    "6"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0"
+  ],
+  "step_index": 12
+}

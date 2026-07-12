@@ -1,0 +1,81 @@
+{
+  "active_targets": [
+    {
+      "description": "the small blue chair beside the bed in the upstairs bedroom",
+      "target_id": "4"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "8",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "8": "84055072c9154370bc2a76c86daf011c"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "20",
+        "10"
+      ],
+      "reserved_before": [
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "20",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "837b0a58fa8b4820a3c07e0c89ccfc60",
+        "20": "27b904430e4e48acb818e2ab80f183e3"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "38",
+        "0"
+      ],
+      "reserved_before": [
+        "20",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "0",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "0": "f1b191033043441987b8ebf1bb55002c",
+        "38": "96490c4da78240058d1f76a07ed95c9d"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "0",
+    "20",
+    "8"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 11
+}

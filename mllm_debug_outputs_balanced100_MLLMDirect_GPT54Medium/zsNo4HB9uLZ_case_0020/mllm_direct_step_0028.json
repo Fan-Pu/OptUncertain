@@ -1,0 +1,83 @@
+{
+  "active_targets": [
+    {
+      "description": "the red-and-white striped bathrobe hanging on the wall hooks beside the bed",
+      "target_id": "1"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "2",
+        "33",
+        "36"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "33",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "b8c7c025564d4c8391833236f4f782c0",
+        "33": "c74a7da1a0e04e7b8b14e1cdab613653",
+        "36": "ead481533f834704bd489d3d44b6a03a"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "51",
+        "7",
+        "42"
+      ],
+      "reserved_before": [
+        "33"
+      ],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "aabf649f606a48a1b16d5bdcd5970602",
+        "51": "38260e04f02546a6af3dcaf8689546a2",
+        "7": "38342af67f5d4b73ad4cff4402f52d83"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "11"
+      ],
+      "reserved_before": [
+        "33",
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "11",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "11": "19b2aa3137ae44f19821ec0f3da4a836"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "11",
+    "33",
+    "42"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 28
+}

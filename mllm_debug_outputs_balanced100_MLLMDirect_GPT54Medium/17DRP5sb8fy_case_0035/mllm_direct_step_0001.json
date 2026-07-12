@@ -1,0 +1,156 @@
+{
+  "active_targets": [
+    {
+      "description": "the small beige rectangular pillow near the headboard",
+      "target_id": "0"
+    },
+    {
+      "description": "the small toiletry bottles in the shower wall niche",
+      "target_id": "1"
+    },
+    {
+      "description": "the white belted bathrobe hanging on the wooden bathroom wall",
+      "target_id": "2"
+    },
+    {
+      "description": "the bottled water on the kitchen shelf",
+      "target_id": "3"
+    },
+    {
+      "description": "the green patterned throw pillow on the brown armchair",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "26",
+        "23",
+        "2",
+        "34",
+        "8",
+        "33"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "33",
+        "promising_target_ids": [
+          "1",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "51857544c192476faebf212acb1b3d90",
+        "23": "30c97842da204e6290ac32904c924e17",
+        "26": "23ec8bbec8eb40478411cba2e55b732e",
+        "33": "e0ce09f0178c48e2bbe649d2bf659702",
+        "34": "8a0f2f1a8ea441658501561e5dc34a3e",
+        "8": "cb66d4266148455bbddf5d059a483711"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "9"
+      ],
+      "reserved_before": [
+        "33"
+      ],
+      "selected": {
+        "next_viewpoint_id": "9",
+        "promising_target_ids": [
+          "0",
+          "1",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "9": "85c23efeaecd4d43a7dcd5b90137179e"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "29"
+      ],
+      "reserved_before": [
+        "33",
+        "9"
+      ],
+      "selected": {
+        "next_viewpoint_id": "29",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "29": "701f7128272a4bb2acd9dbd89b5cdf6f"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "6",
+        "22"
+      ],
+      "reserved_before": [
+        "29",
+        "33",
+        "9"
+      ],
+      "selected": {
+        "next_viewpoint_id": "6",
+        "promising_target_ids": [
+          "1",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "22": "28db29e8c72c4a68bfdf5bb2b454443d",
+        "6": "00ebbf3782c64d74aaf7dd39cd561175"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "28",
+        "15"
+      ],
+      "reserved_before": [
+        "29",
+        "33",
+        "6",
+        "9"
+      ],
+      "selected": {
+        "next_viewpoint_id": "7",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "5e9f4f8654574e699480e90ecdd150c8",
+        "28": "1a41339ece1846eda6a924cdb4c417dd",
+        "7": "08c774f20c984008882da2b8547850eb"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "29",
+    "33",
+    "6",
+    "7",
+    "9"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 1
+}

@@ -1,0 +1,173 @@
+{
+  "active_targets": [
+    {
+      "description": "the black coffee maker on the kitchen stove",
+      "target_id": "2"
+    },
+    {
+      "description": "the EIX 6488 license plate above the bedroom doorway",
+      "target_id": "5"
+    },
+    {
+      "description": "the white stuffed bear below the window blinds in the bedroom",
+      "target_id": "6"
+    },
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "10",
+        "1",
+        "8",
+        "42",
+        "31"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "8",
+        "promising_target_ids": [
+          "5",
+          "6",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "0470d39378714812bef259ea6cd22978",
+        "10": "03415d3735154bd3bf7074fd7b343992",
+        "31": "6138d958efc44eab810630671597637f",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "8": "056a847fc47746c797b4d5868466193c"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "33",
+        "48",
+        "58"
+      ],
+      "reserved_before": [
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "33",
+        "promising_target_ids": [
+          "2",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59",
+        "58": "f65d4fa347954fa0ba90f535f6b9bda3"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "19",
+        "38",
+        "53",
+        "26",
+        "35"
+      ],
+      "reserved_before": [
+        "33",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "53",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "6abe3777358941b59001f6ec84bb530b",
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "35": "f2ebe400037746b7aea07343fb529e0a",
+        "38": "80ec436f323345928cc44f360962a175",
+        "53": "af020019b43e4ab883dcae79d24fe47f"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "42",
+        "20",
+        "54",
+        "6",
+        "31",
+        "34",
+        "13",
+        "44",
+        "9"
+      ],
+      "reserved_before": [
+        "33",
+        "53",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "6",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "96066e55b9c94b23a956ffeaa7e0ad17",
+        "20": "15fe7aadc86f4b77a6ca637e5edb559a",
+        "31": "6138d958efc44eab810630671597637f",
+        "34": "9512857da0d140a881a306870b2596d5",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "54": "3f3121206d654a95bb6c198291adbfcf",
+        "6": "46502cfe06804adeafc0782798dedaa8",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "56",
+        "12"
+      ],
+      "reserved_before": [
+        "33",
+        "53",
+        "6",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "12",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "d53b33e89133452899d757c2eebc5f18",
+        "3": "02aa36d91ebf4d3b987d54c601bd785a",
+        "56": "53db5931a8864b769bf57ddea79a812e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "12",
+    "33",
+    "53",
+    "6",
+    "8"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent3",
+    "agent4",
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 4
+}

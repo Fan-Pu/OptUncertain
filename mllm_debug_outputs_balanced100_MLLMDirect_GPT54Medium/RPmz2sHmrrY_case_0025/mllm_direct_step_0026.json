@@ -1,0 +1,101 @@
+{
+  "active_targets": [
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "47",
+        "23",
+        "18",
+        "17"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "47",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "18": "aabfafee82d0432e91b92338032c1f3f",
+        "23": "a98242f074ce428cb9c28aa4c92d610c",
+        "47": "7471dc409d314c818e34f6799b654af7"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "45",
+        "33",
+        "2",
+        "48",
+        "52",
+        "23",
+        "17",
+        "58"
+      ],
+      "reserved_before": [
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "45",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "2": "7108351fe9ce4e5d94cb61fc609203bc",
+        "23": "a98242f074ce428cb9c28aa4c92d610c",
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "45": "3d401cc04c8f4bbeb175defee2a64006",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59",
+        "52": "9203bc8c7d2648adac338ddfd854589c",
+        "58": "f65d4fa347954fa0ba90f535f6b9bda3"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "19",
+        "38",
+        "53",
+        "26",
+        "35"
+      ],
+      "reserved_before": [
+        "45",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "35",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "6abe3777358941b59001f6ec84bb530b",
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "35": "f2ebe400037746b7aea07343fb529e0a",
+        "38": "80ec436f323345928cc44f360962a175",
+        "53": "af020019b43e4ab883dcae79d24fe47f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "35",
+    "45",
+    "47"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 26
+}

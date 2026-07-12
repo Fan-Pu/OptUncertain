@@ -1,0 +1,160 @@
+{
+  "active_targets": [
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "47",
+        "23",
+        "18",
+        "17"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "47",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "18": "aabfafee82d0432e91b92338032c1f3f",
+        "23": "a98242f074ce428cb9c28aa4c92d610c",
+        "47": "7471dc409d314c818e34f6799b654af7"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42",
+        "20",
+        "49",
+        "31",
+        "29",
+        "44",
+        "9",
+        "15"
+      ],
+      "reserved_before": [
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "15",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "dfb6bfa10a1b49c989d10277a7f2dd46",
+        "20": "15fe7aadc86f4b77a6ca637e5edb559a",
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "31": "6138d958efc44eab810630671597637f",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "49": "2731de0b62e14fcb8d742205fcf2948f",
+        "8": "056a847fc47746c797b4d5868466193c",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "10",
+        "42",
+        "56",
+        "25",
+        "16",
+        "12"
+      ],
+      "reserved_before": [
+        "15",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "03415d3735154bd3bf7074fd7b343992",
+        "12": "d53b33e89133452899d757c2eebc5f18",
+        "16": "d1d78bc07d8a409bbdb3235f00d13046",
+        "25": "a4cb33ffee054744ad6f6a43ae894b3e",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "56": "53db5931a8864b769bf57ddea79a812e"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "19",
+        "26",
+        "35",
+        "0"
+      ],
+      "reserved_before": [
+        "15",
+        "42",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "26",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "0": "f4fb96ce8e874f609dab60c35534d9d9",
+        "19": "6abe3777358941b59001f6ec84bb530b",
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "35": "f2ebe400037746b7aea07343fb529e0a"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "55",
+        "40"
+      ],
+      "reserved_before": [
+        "15",
+        "26",
+        "42",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "55",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "40": "fde84ed437a748d28c11023eea0d8416",
+        "55": "5663953a83614d9b98093f65a7ae9804"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "15",
+    "26",
+    "42",
+    "47",
+    "55"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 6
+}

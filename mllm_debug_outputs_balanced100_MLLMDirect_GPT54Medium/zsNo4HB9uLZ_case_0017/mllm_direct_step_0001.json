@@ -1,0 +1,79 @@
+{
+  "active_targets": [
+    {
+      "description": "the white candle on the black holder by the dining room window",
+      "target_id": "4"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "27",
+        "42"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "27": "2c687aab96b7498b92023a4888c6e7ab",
+        "42": "aabf649f606a48a1b16d5bdcd5970602"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "1"
+      ],
+      "reserved_before": [
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "1",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "997b813443c64de5b38312642e937223"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "25",
+        "18"
+      ],
+      "reserved_before": [
+        "1",
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "18",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "18": "f04ae8ebf8254168814bc669635b3775",
+        "25": "76c7a665d2b242bfa203e7f394b1353e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "1",
+    "18",
+    "42"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

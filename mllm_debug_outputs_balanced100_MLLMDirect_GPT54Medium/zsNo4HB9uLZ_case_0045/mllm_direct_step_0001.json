@@ -1,0 +1,158 @@
+{
+  "active_targets": [
+    {
+      "description": "the black vintage radio on the wooden desk below the map",
+      "target_id": "0"
+    },
+    {
+      "description": "the red vintage kitchen scale on the top shelf",
+      "target_id": "2"
+    },
+    {
+      "description": "the black framed eye chart on the hallway wall",
+      "target_id": "3"
+    },
+    {
+      "description": "the white candle on the black holder by the dining room window",
+      "target_id": "4"
+    },
+    {
+      "description": "the open cookbook on the kitchen counter beside the stove",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "13",
+        "21",
+        "6"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "21",
+        "promising_target_ids": [
+          "2",
+          "4",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "38e0c09ac7a748dbadea6471861b30c3",
+        "21": "487a4cc75db94e56aa4d1d35866736fc",
+        "6": "7d1391357299496cbb82840960d05a66"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "1"
+      ],
+      "reserved_before": [
+        "21"
+      ],
+      "selected": {
+        "next_viewpoint_id": "1",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "997b813443c64de5b38312642e937223"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "29",
+        "37",
+        "16"
+      ],
+      "reserved_before": [
+        "1",
+        "21"
+      ],
+      "selected": {
+        "next_viewpoint_id": "29",
+        "promising_target_ids": [
+          "2",
+          "4",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "16": "ed8645386a0a4de2bfc486e0a1d02468",
+        "29": "ab993d543aed47fe9360f05eb03f301b",
+        "37": "dc046de639fa43e29b3da505c030f58f"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "15",
+        "0",
+        "22"
+      ],
+      "reserved_before": [
+        "1",
+        "21",
+        "29"
+      ],
+      "selected": {
+        "next_viewpoint_id": "22",
+        "promising_target_ids": [
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "0": "213f4f2f0d204758bc51252aed60cf82",
+        "15": "11bdfcf0a0984901a1d6f60fdd8ee4a6",
+        "22": "94432dd9d465486b8acfb7013ffc3fca"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "25",
+        "18"
+      ],
+      "reserved_before": [
+        "1",
+        "21",
+        "22",
+        "29"
+      ],
+      "selected": {
+        "next_viewpoint_id": "18",
+        "promising_target_ids": [
+          "2",
+          "4",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "18": "f04ae8ebf8254168814bc669635b3775",
+        "25": "76c7a665d2b242bfa203e7f394b1353e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "1",
+    "18",
+    "21",
+    "22",
+    "29"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 1
+}

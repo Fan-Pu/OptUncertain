@@ -1,0 +1,154 @@
+{
+  "active_targets": [
+    {
+      "description": "the black hair dryer beside the bathroom sink",
+      "target_id": "0"
+    },
+    {
+      "description": "the small decorative vase with green plant stems in the glass display cabinet",
+      "target_id": "1"
+    },
+    {
+      "description": "the light blue cushion on the wicker chair",
+      "target_id": "2"
+    },
+    {
+      "description": "the small dark red vase on the floor beside the door",
+      "target_id": "3"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "5",
+        "20",
+        "7",
+        "17",
+        "33",
+        "45"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "5",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "e4a808c94c004bc7b2e3101c316bb02c",
+        "20": "954fc1d65dba428eb808fb9dce1b8a97",
+        "33": "e6e19fd376c544b58035a32bd44ed8d4",
+        "45": "f45d421d04e34220b2aaf9246b6dcdd1",
+        "5": "7dcc99131ec74b968cb9d728c49220e0",
+        "7": "96d3ea8a25b347e4b097f070a1cba15e"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "40"
+      ],
+      "reserved_before": [
+        "5"
+      ],
+      "selected": {
+        "next_viewpoint_id": "40",
+        "promising_target_ids": [
+          "0",
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "40": "7798eee8ae4a4fc483da87e8e04b659c"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "60",
+        "46",
+        "25",
+        "42"
+      ],
+      "reserved_before": [
+        "40",
+        "5"
+      ],
+      "selected": {
+        "next_viewpoint_id": "25",
+        "promising_target_ids": [
+          "1",
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "25": "d60f3399b4d24c21a494ed4430f27ce9",
+        "42": "d8f7db8824674725a8334d3554cda5bf",
+        "46": "d0f90601ac1b46fdb7258c230495f8a0",
+        "60": "c72099534821414c956a08c899742eb8"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "52",
+        "47",
+        "44"
+      ],
+      "reserved_before": [
+        "25",
+        "40",
+        "5"
+      ],
+      "selected": {
+        "next_viewpoint_id": "52",
+        "promising_target_ids": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "44": "cc94b5dda437408a9a166fcdbafa2a48",
+        "47": "656ab180c21645e0a4cef70b95341e0a",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "19"
+      ],
+      "reserved_before": [
+        "25",
+        "40",
+        "5",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "19",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "458b288354be4060a2e6cf582d959d0f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "19",
+    "25",
+    "40",
+    "5",
+    "52"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 1
+}

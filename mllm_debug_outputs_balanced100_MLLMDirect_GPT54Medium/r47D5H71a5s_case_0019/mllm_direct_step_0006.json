@@ -1,0 +1,103 @@
+{
+  "active_targets": [
+    {
+      "description": "the white kettle on the counter beside the water dispenser",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "27",
+        "53",
+        "26",
+        "24",
+        "29"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "24",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "24": "4ed50a2f86384de599f06df862d17b10",
+        "26": "2b67ab047ee949538c9d5d89046d985f",
+        "27": "01c9d419c8fa4879a362aad71ea7000c",
+        "29": "f41c2851f4b241fcad3f8f15378da53b",
+        "53": "0beedadd4d2c4b4ab488cf246c533988"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "34",
+        "12",
+        "60",
+        "25",
+        "42",
+        "14",
+        "18"
+      ],
+      "reserved_before": [
+        "24"
+      ],
+      "selected": {
+        "next_viewpoint_id": "60",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "afbf203a70f14a40b9bcd78001734083",
+        "14": "d950fc211fc745d9a8e2080f6ce747d2",
+        "18": "e2d51e6321224b5aae0a84c8a90c2dd2",
+        "25": "d60f3399b4d24c21a494ed4430f27ce9",
+        "34": "a5d7dd600de549a0a7c626f8c2c6c3e3",
+        "42": "d8f7db8824674725a8334d3554cda5bf",
+        "60": "c72099534821414c956a08c899742eb8"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "38",
+        "32",
+        "52",
+        "13",
+        "30"
+      ],
+      "reserved_before": [
+        "24",
+        "60"
+      ],
+      "selected": {
+        "next_viewpoint_id": "30",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "6d4e6b71271949e7b3f9cf8120bce54a",
+        "30": "6ea742331ac84fb9ae24a1b8d76bcf8a",
+        "32": "2cb036ad9c594172abd2a9bc9d3d9159",
+        "38": "021e6fb21e5c47b587fabb26689ff55f",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "24",
+    "30",
+    "60"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 6
+}

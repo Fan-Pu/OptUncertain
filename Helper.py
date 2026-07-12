@@ -686,6 +686,22 @@ def _select_viewpoint_marker_candidates(marker_candidates):
     ]
 
 
+def _local_actions_from_marker_candidates(marker_candidates):
+    return [
+        {
+            "viewpoint_id": str(candidate["viewpoint_id"]),
+            "viewpoint_index": int(candidate["viewpoint_index"]),
+            "distance": float(candidate["distance"]),
+            "bearing": float(candidate["heading"]) % (2.0 * math.pi),
+            "xy": [
+                float(candidate["xy"][0]),
+                float(candidate["xy"][1]),
+            ],
+        }
+        for candidate in _select_viewpoint_marker_candidates(marker_candidates)
+    ]
+
+
 def _panorama_marker_origin(
     candidate,
     panorama_width,
@@ -775,6 +791,7 @@ def _scan_state_to_observation(
     frame_visible_viewpoint_indices,
     visible_viewpoints_by_index,
     viewpoint_index_by_vp,
+    semantic_crops=None,
 ):
     current_viewpoint_id = str(start_state.location.viewpointId)
     current_viewpoint_index = None
@@ -794,6 +811,9 @@ def _scan_state_to_observation(
             visible_viewpoints_by_index[index]
             for index in sorted(visible_viewpoints_by_index)
         ],
+        "local_actions": _local_actions_from_marker_candidates(
+            viewpoint_marker_candidates
+        ),
         "frame_visible_viewpoint_indices": frame_visible_viewpoint_indices,
         "best_heading_for_vp": dict(best_heading_for_vp),
         "best_score_for_vp": dict(best_score_for_vp),
@@ -814,10 +834,16 @@ def _scan_state_to_observation(
             heading_rows=horizon_heading_rows,
             elevation_rows=horizon_elevation_rows,
         ),
+        "semantic_crops": list(semantic_crops or []),
     }
 
 
-def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
+def horizon_scan_return(
+    sim,
+    agent_id,
+    viewpoint_index_by_vp=None,
+    semantic_crop_count=0,
+):
     start_state = sim.getState()[0]
     start_elevation = float(start_state.elevation)
     record = {
@@ -931,6 +957,28 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         [start_elevation - float(current_state.elevation)],
     )
 
+    semantic_crops = []
+    semantic_crop_count = int(semantic_crop_count)
+    if semantic_crop_count < 0:
+        raise ValueError("semantic_crop_count must be nonnegative.")
+    if semantic_crop_count > 0:
+        central_band_index = ELEVATION_BAND_DEGS.index(0.0)
+        central_frames = record["horizon_rgb_frames"][central_band_index]
+        central_headings = record["horizon_heading_rows"][central_band_index]
+        for crop_index in range(semantic_crop_count):
+            source_index = int(
+                math.floor(crop_index * len(central_frames) / semantic_crop_count)
+            )
+            semantic_crops.append(
+                {
+                    "crop_index": crop_index,
+                    "source_horizon_index": source_index,
+                    "center_heading": float(central_headings[source_index]),
+                    "horizontal_fov": float(HFOV),
+                    "image": central_frames[source_index],
+                }
+            )
+
     observations = _scan_state_to_observation(
         agent_id=record["agent_id"],
         start_state=record["start_state"],
@@ -944,12 +992,18 @@ def horizon_scan_return(sim, agent_id, viewpoint_index_by_vp=None):
         frame_visible_viewpoint_indices=record["frame_visible_viewpoint_indices"],
         visible_viewpoints_by_index=record["visible_viewpoints_by_index"],
         viewpoint_index_by_vp=viewpoint_index_by_vp,
+        semantic_crops=semantic_crops,
     )
 
     return observations
 
 
-def horizon_scan_individual_sims_return(sims, agent_ids, viewpoint_index_by_vp=None):
+def horizon_scan_individual_sims_return(
+    sims,
+    agent_ids,
+    viewpoint_index_by_vp=None,
+    semantic_crop_count=0,
+):
     if len(sims) != len(agent_ids):
         raise ValueError("sims and agent_ids must have the same length.")
     observations = []
@@ -958,6 +1012,7 @@ def horizon_scan_individual_sims_return(sims, agent_ids, viewpoint_index_by_vp=N
             sim=sim,
             agent_id=agent_id,
             viewpoint_index_by_vp=viewpoint_index_by_vp,
+            semantic_crop_count=semantic_crop_count,
         )
         observations.append(scan_return)
     return observations
@@ -995,16 +1050,23 @@ def execute_individual_first_hops(sims, move_specs, render=True):
     states = [sim.getState()[0] for sim in sims]
     step_plans = []
     for state, spec in zip(states, move_specs):
-        direction, step_count = compute_rotation(
-            math.degrees(state.heading),
-            math.degrees(float(spec["target_heading"])),
-            DELTA_HEADING_DEG,
-        )
+        wait = bool(spec.get("wait", False))
+        if wait:
+            direction, step_count = 1, 0
+            target_viewpoint_id = str(state.location.viewpointId)
+        else:
+            direction, step_count = compute_rotation(
+                math.degrees(state.heading),
+                math.degrees(float(spec["target_heading"])),
+                DELTA_HEADING_DEG,
+            )
+            target_viewpoint_id = str(spec["target_viewpoint_id"])
         step_plans.append(
             {
                 "direction": direction,
                 "step_count": step_count,
-                "target_viewpoint_id": str(spec["target_viewpoint_id"]),
+                "target_viewpoint_id": target_viewpoint_id,
+                "wait": wait,
             }
         )
 
@@ -1031,12 +1093,15 @@ def execute_individual_first_hops(sims, move_specs, render=True):
     if render and PAUSE_TIME > 0.0:
         time.sleep(10 * PAUSE_TIME)
     for sim, state, plan in zip(sims, rotated_states, step_plans):
-        target_viewpoint_id = plan["target_viewpoint_id"]
-        location_index = [
-            index
-            for index, location in enumerate(state.navigableLocations)
-            if str(location.viewpointId) == target_viewpoint_id
-        ][0]
+        if plan["wait"]:
+            location_index = 0
+        else:
+            target_viewpoint_id = plan["target_viewpoint_id"]
+            location_index = [
+                index
+                for index, location in enumerate(state.navigableLocations)
+                if str(location.viewpointId) == target_viewpoint_id
+            ][0]
         sim.makeAction([location_index], [0.0], [0.0])
     if render:
         render_sim_state(

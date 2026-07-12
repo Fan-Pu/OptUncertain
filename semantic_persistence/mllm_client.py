@@ -32,12 +32,18 @@ GRAPH_TEMPERATURE = 0.7
 GRAPH_TOP_P = 0.8
 GRAPH_TOP_K = 20
 GRAPH_PRESENCE_PENALTY = 1.5
+# for direct local action selection: compact, deterministic JSON
+ACTION_TEMPERATURE = 0.1
+ACTION_TOP_P = 0.9
+ACTION_TOP_K = 40
+ACTION_PRESENCE_PENALTY = 0.0
 
 MIN_P = 0.0
 REPETITION_PENALTY = 1.0
 
 DETECTION_MAX_NEW_TOKENS = 32768
 GRAPH_MAX_NEW_TOKENS = 32768
+ACTION_MAX_NEW_TOKENS = 1024
 panorama_max_width_for_prompt = 1660
 DETECTION_IMAGE_MAX_WIDTH = 1980
 DETECTION_IMAGE_JPEG_QUALITY = 85
@@ -257,19 +263,9 @@ class MLLMClient:
             if self.detection_cache_enabled
             else None
         )
-        self.graph_client = self._create_api_client(
-            api_type=self.graph_api_type,
-            base_url=self.graph_base_url,
-            api_key_env=self.graph_api_key_env,
-            router_name="graph",
-        )
-        self.detection_client = self._create_api_client(
-            api_type=self.detection_api_type,
-            base_url=self.detection_base_url,
-            api_key_env=self.detection_api_key_env,
-            router_name="detection",
-        )
-        self.client = self.graph_client
+        self.graph_client = None
+        self.detection_client = None
+        self.client = None
         self._response_format_unsupported_request_keys = (
             self.__class__._global_response_format_unsupported_request_keys
         )
@@ -291,6 +287,27 @@ class MLLMClient:
             api_key_env=api_key_env,
             router_name=router_name,
         )
+
+    def _client_for_request(self, request_type: str):
+        if request_type == "detection":
+            if self.detection_client is None:
+                self.detection_client = self._create_api_client(
+                    api_type=self.detection_api_type,
+                    base_url=self.detection_base_url,
+                    api_key_env=self.detection_api_key_env,
+                    router_name="detection",
+                )
+            return self.detection_client
+
+        if self.graph_client is None:
+            self.graph_client = self._create_api_client(
+                api_type=self.graph_api_type,
+                base_url=self.graph_base_url,
+                api_key_env=self.graph_api_key_env,
+                router_name="graph",
+            )
+            self.client = self.graph_client
+        return self.graph_client
 
     def _create_openai_client(
         self,
@@ -673,6 +690,12 @@ class MLLMClient:
             top_k = DETECTION_TOP_K
             presence_penalty = DETECTION_PRESENCE_PENALTY
             max_tokens = DETECTION_MAX_NEW_TOKENS
+        elif request_type == "action":
+            temperature = ACTION_TEMPERATURE
+            top_p = ACTION_TOP_P
+            top_k = ACTION_TOP_K
+            presence_penalty = ACTION_PRESENCE_PENALTY
+            max_tokens = ACTION_MAX_NEW_TOKENS
         else:
             temperature = GRAPH_TEMPERATURE
             top_p = GRAPH_TOP_P
@@ -870,11 +893,12 @@ class MLLMClient:
         instructions, responses_input = self._responses_input_from_chat_messages(
             messages
         )
-        max_output_tokens = (
-            DETECTION_MAX_NEW_TOKENS
-            if request_type == "detection"
-            else GRAPH_MAX_NEW_TOKENS
-        )
+        if request_type == "detection":
+            max_output_tokens = DETECTION_MAX_NEW_TOKENS
+        elif request_type == "action":
+            max_output_tokens = ACTION_MAX_NEW_TOKENS
+        else:
+            max_output_tokens = GRAPH_MAX_NEW_TOKENS
         request_kwargs = {
             "model": model_name,
             "input": responses_input,
@@ -1068,6 +1092,8 @@ class MLLMClient:
         print("usage:", self._object_get(response, "usage", None))
         print("model:", self._object_get(response, "model", model_name))
         print("status:", self._object_get(response, "status", "unknown"))
+        print("request_type:", request_type)
+        print("requested_service_tier:", request_kwargs.get("service_tier"))
         print()
         return self._responses_output_to_text(response)
 
@@ -1079,6 +1105,13 @@ class MLLMClient:
                 DETECTION_TOP_P,
                 DETECTION_TOP_K,
                 DETECTION_MAX_NEW_TOKENS,
+            )
+        if request_type == "action":
+            return (
+                ACTION_TEMPERATURE,
+                ACTION_TOP_P,
+                ACTION_TOP_K,
+                ACTION_MAX_NEW_TOKENS,
             )
         return (
             GRAPH_TEMPERATURE,
@@ -1229,7 +1262,7 @@ class MLLMClient:
         request_type: str = "graph",
     ) -> str:
         if request_type == "detection":
-            client = self.detection_client
+            client = self._client_for_request(request_type)
             api_key_env = self.detection_api_key_env
             router_name = "detection"
             thinking_mode = None
@@ -1241,9 +1274,9 @@ class MLLMClient:
             service_tier = self.detection_service_tier
             api_type = self.detection_api_type
         else:
-            client = self.graph_client
+            client = self._client_for_request(request_type)
             api_key_env = self.graph_api_key_env
-            router_name = "graph"
+            router_name = "action" if request_type == "action" else "graph"
             thinking_mode = self.graph_thinking
             thinking_format = self.graph_thinking_format
             reasoning_split = self.graph_reasoning_split
@@ -1370,6 +1403,13 @@ class MLLMClient:
                 raise
 
         return self._message_to_text(completion.choices[0].message.content)
+
+    def request_action_completion(self, messages) -> str:
+        return self._request_completion(
+            messages=messages,
+            model_name=self.graph_model_name,
+            request_type="action",
+        )
 
     def _semantic_raw_output_path(self, step_index: int) -> str:
         return os.path.join(
@@ -2890,6 +2930,57 @@ class MLLMClient:
                 )
 
         raise RuntimeError("Unexpected detection retry loop exit.")
+
+    def detect_targets(
+        self,
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        target_found: Optional[Dict[str, bool]] = None,
+    ) -> List[Dict[str, object]]:
+        active_targets = self._filter_targets_by_found_state(
+            targets=targets,
+            target_found=target_found or {},
+        )
+        if not active_targets:
+            self.last_direct_detections = []
+            return []
+
+        step_index = int(self.semantic_raw_output_index)
+        image_content, image_records = self._build_detection_image_content(
+            agent_observations=agent_observations,
+            step_index=step_index,
+        )
+        for observation in agent_observations:
+            print(
+                "Agent %s current viewpoint: %s"
+                % (observation["agent_id"], observation["current_viewpoint_index"])
+            )
+
+        detections = self._detect_targets(
+            agent_observations=agent_observations,
+            targets=active_targets,
+            image_content=image_content,
+            detection_image_records=image_records,
+            step_index=step_index,
+        )
+        self.last_direct_detections = detections
+        newly_found = self._found_targets_from_detections(
+            detections,
+            agent_observations,
+        )
+        for target_id, target_detections in newly_found.items():
+            for detection in target_detections:
+                self.found_target_trace.append(
+                    {
+                        "step_index": step_index,
+                        "target_id": str(target_id),
+                        "agent_id": str(detection["agent_id"]),
+                        "target_center_x": float(detection["target_center_x"]),
+                        "target_heading": float(detection["target_heading"]),
+                    }
+                )
+        self.semantic_raw_output_index = step_index + 1
+        return detections
 
     def _build_instruction(
         self,

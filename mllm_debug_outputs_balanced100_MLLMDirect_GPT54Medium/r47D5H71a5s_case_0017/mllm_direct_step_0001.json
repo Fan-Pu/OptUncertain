@@ -1,0 +1,81 @@
+{
+  "active_targets": [
+    {
+      "description": "the white seated statue beside the indoor pool",
+      "target_id": "6"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "52",
+        "47",
+        "44"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "52",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "44": "cc94b5dda437408a9a166fcdbafa2a48",
+        "47": "656ab180c21645e0a4cef70b95341e0a",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "40"
+      ],
+      "reserved_before": [
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "40",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "40": "7798eee8ae4a4fc483da87e8e04b659c"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "27",
+        "53"
+      ],
+      "reserved_before": [
+        "40",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "53",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "27": "01c9d419c8fa4879a362aad71ea7000c",
+        "53": "0beedadd4d2c4b4ab488cf246c533988"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "40",
+    "52",
+    "53"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

@@ -1,0 +1,99 @@
+{
+  "active_targets": [
+    {
+      "description": "the white fist-print skateboard above the bed in the upstairs bedroom",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "28",
+        "41"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "7",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "8b29770bf446475b814d254d9b2670f6",
+        "41": "c4ce11a276904bf38fe049e67b6c5f7a",
+        "7": "0672a86275c14b148e8618ecde714e06"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "43",
+        "40",
+        "17",
+        "35",
+        "46",
+        "21",
+        "36",
+        "27",
+        "14"
+      ],
+      "reserved_before": [
+        "7"
+      ],
+      "selected": {
+        "next_viewpoint_id": "36",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "c9b7a323a72141628f0c48aa7eb3430e",
+        "17": "20cebd99bcf84b1c83bc9b6abbd78102",
+        "21": "68f5cd251e4c457894ea04e8184286d0",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "36": "a33fe858085149e8908942d0bf98767f",
+        "40": "1d383b2f6a454cdbb4d942b127a12320",
+        "43": "1227344eaa1f424b83db585fd665fb2a",
+        "46": "58aeb039d7dd4fa4b26e70e77df07938"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "4",
+        "32",
+        "44"
+      ],
+      "reserved_before": [
+        "36",
+        "7"
+      ],
+      "selected": {
+        "next_viewpoint_id": "44",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "32": "75d7eb848ea84a6dbb717dc231cf2dab",
+        "4": "66cb91d800e74042bf34287a76fd36ab",
+        "44": "8844f8fdc366462587b70fb7ede46242"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "36",
+    "44",
+    "7"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 8
+}

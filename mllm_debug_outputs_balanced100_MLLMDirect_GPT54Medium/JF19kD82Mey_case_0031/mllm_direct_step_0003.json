@@ -1,0 +1,146 @@
+{
+  "active_targets": [
+    {
+      "description": "the black keyboard on the office desk besides the monitor",
+      "target_id": "3"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "20",
+        "28"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "28",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "20": "27b904430e4e48acb818e2ab80f183e3",
+        "28": "8b29770bf446475b814d254d9b2670f6"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42"
+      ],
+      "reserved_before": [
+        "28"
+      ],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "8": "84055072c9154370bc2a76c86daf011c"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "15",
+        "44",
+        "18"
+      ],
+      "reserved_before": [
+        "28",
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "18",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "1c2209fa44fc48c7b7ce7981bafc4ccf",
+        "18": "c20f944e9c434804944b0c1251247202",
+        "44": "8844f8fdc366462587b70fb7ede46242"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "26",
+        "35",
+        "16",
+        "39",
+        "27"
+      ],
+      "reserved_before": [
+        "18",
+        "28",
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "27",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "16": "6be9623980e245ce80ced0bdb70db93c",
+        "26": "16bcabb86c9546f89e60b1caf0fc0a13",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "39": "a0e680c2599e473c9d64183b65dac6b3"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "40",
+        "19",
+        "23",
+        "36",
+        "6",
+        "5"
+      ],
+      "reserved_before": [
+        "18",
+        "27",
+        "28",
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "5",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "2bc3dc4bf7cc4489a8cbcbed9d7d6b25",
+        "23": "71d49ea7d95d406d944f73ad62031b79",
+        "36": "a33fe858085149e8908942d0bf98767f",
+        "40": "1d383b2f6a454cdbb4d942b127a12320",
+        "5": "db0e4e7b77c04948b581a11f633df145",
+        "6": "c7b357a72c3d4ce2aa16f8d5c41a54ba"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "18",
+    "27",
+    "28",
+    "42",
+    "5"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

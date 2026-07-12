@@ -1,0 +1,105 @@
+{
+  "active_targets": [
+    {
+      "description": "the black hair dryer beside the bathroom sink",
+      "target_id": "0"
+    },
+    {
+      "description": "the small decorative vase with green plant stems in the glass display cabinet",
+      "target_id": "1"
+    },
+    {
+      "description": "the light blue cushion on the wicker chair",
+      "target_id": "2"
+    },
+    {
+      "description": "the small dark red vase on the floor beside the door",
+      "target_id": "3"
+    },
+    {
+      "description": "the white kettle on the counter beside the water dispenser",
+      "target_id": "5"
+    },
+    {
+      "description": "the white seated statue beside the indoor pool",
+      "target_id": "6"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "55",
+        "44"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "55",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "44": "cc94b5dda437408a9a166fcdbafa2a48",
+        "55": "a0fbf9972e79491bbcbf4a6e7cf38d8a"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "35",
+        "11"
+      ],
+      "reserved_before": [
+        "55"
+      ],
+      "selected": {
+        "next_viewpoint_id": "35",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "11": "b889bb15538844beb074db42bd8d9ed4",
+        "35": "869e52d579cc4c9a85979d3e20eb2455"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "19",
+        "1",
+        "22",
+        "20",
+        "54",
+        "18"
+      ],
+      "reserved_before": [
+        "35",
+        "55"
+      ],
+      "selected": {
+        "next_viewpoint_id": "54",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "4eb2befc7e974e45a1956695ca4342e2",
+        "18": "e2d51e6321224b5aae0a84c8a90c2dd2",
+        "19": "458b288354be4060a2e6cf582d959d0f",
+        "20": "954fc1d65dba428eb808fb9dce1b8a97",
+        "22": "77c8ac324e6e422faac5ffb32bd62c86",
+        "54": "ce525fada36b41c3a89a4e77e83e4e5f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "35",
+    "54",
+    "55"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 2
+}

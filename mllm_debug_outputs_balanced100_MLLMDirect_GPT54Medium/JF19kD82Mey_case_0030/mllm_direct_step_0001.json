@@ -1,0 +1,98 @@
+{
+  "active_targets": [
+    {
+      "description": "the small white bust with black hair on the wooden cabinet near the patio window",
+      "target_id": "1"
+    },
+    {
+      "description": "the black keyboard on the office desk besides the monitor",
+      "target_id": "3"
+    },
+    {
+      "description": "the small blue chair beside the bed in the upstairs bedroom",
+      "target_id": "4"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "45",
+        "35",
+        "29",
+        "27",
+        "25",
+        "37"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "27",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "25": "d512f07e48aa4fe9a559a1a708ab3c02",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "29": "856a21dd20ce41c3ac1c2a160cec9a0f",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "37": "ff43ac7b797541b5a89ce2373de329a4",
+        "45": "219e774e6cf942a5af295147d7bf945e"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42"
+      ],
+      "reserved_before": [
+        "27"
+      ],
+      "selected": {
+        "next_viewpoint_id": "8",
+        "promising_target_ids": [
+          "1",
+          "3",
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "8": "84055072c9154370bc2a76c86daf011c"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "28"
+      ],
+      "reserved_before": [
+        "27",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "28",
+        "promising_target_ids": [
+          "1",
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "8b29770bf446475b814d254d9b2670f6"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "27",
+    "28",
+    "8"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

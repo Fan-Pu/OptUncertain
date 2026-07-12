@@ -1,0 +1,144 @@
+{
+  "active_targets": [
+    {
+      "description": "the green patterned throw pillow on the brown armchair",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "29"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "29",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "29": "701f7128272a4bb2acd9dbd89b5cdf6f"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "24",
+        "8"
+      ],
+      "reserved_before": [
+        "29"
+      ],
+      "selected": {
+        "next_viewpoint_id": "8",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "24": "c341c46acf7044d1a712d622cbc94a27",
+        "8": "cb66d4266148455bbddf5d059a483711"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "6",
+        "28",
+        "22",
+        "25",
+        "19"
+      ],
+      "reserved_before": [
+        "29",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "28",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+        "22": "28db29e8c72c4a68bfdf5bb2b454443d",
+        "25": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+        "28": "1a41339ece1846eda6a924cdb4c417dd",
+        "6": "00ebbf3782c64d74aaf7dd39cd561175"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "26",
+        "23",
+        "2",
+        "34",
+        "32"
+      ],
+      "reserved_before": [
+        "28",
+        "29",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "23",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "51857544c192476faebf212acb1b3d90",
+        "23": "30c97842da204e6290ac32904c924e17",
+        "26": "23ec8bbec8eb40478411cba2e55b732e",
+        "32": "e34dcf54d26a4a95869cc8a0c01cd2be",
+        "34": "8a0f2f1a8ea441658501561e5dc34a3e"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "40",
+        "25",
+        "9",
+        "19"
+      ],
+      "reserved_before": [
+        "23",
+        "28",
+        "29",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "25",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+        "25": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+        "40": "5efaa5e4a30e481f9dadc1bac5e56a21",
+        "9": "85c23efeaecd4d43a7dcd5b90137179e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "23",
+    "25",
+    "28",
+    "29",
+    "8"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

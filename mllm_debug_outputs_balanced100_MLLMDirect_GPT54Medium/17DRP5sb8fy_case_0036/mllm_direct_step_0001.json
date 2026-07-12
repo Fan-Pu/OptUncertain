@@ -1,0 +1,126 @@
+{
+  "active_targets": [
+    {
+      "description": "the bottled water on the kitchen shelf",
+      "target_id": "3"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "26",
+        "2",
+        "39"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "2",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "51857544c192476faebf212acb1b3d90",
+        "26": "23ec8bbec8eb40478411cba2e55b732e",
+        "39": "5b9b2794954e4694a45fc424a8643081"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "9"
+      ],
+      "reserved_before": [
+        "2"
+      ],
+      "selected": {
+        "next_viewpoint_id": "9",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "9": "85c23efeaecd4d43a7dcd5b90137179e"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "29"
+      ],
+      "reserved_before": [
+        "2",
+        "9"
+      ],
+      "selected": {
+        "next_viewpoint_id": "29",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "29": "701f7128272a4bb2acd9dbd89b5cdf6f"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "24"
+      ],
+      "reserved_before": [
+        "2",
+        "29",
+        "9"
+      ],
+      "selected": {
+        "next_viewpoint_id": "24",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "24": "c341c46acf7044d1a712d622cbc94a27"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "4",
+        "32"
+      ],
+      "reserved_before": [
+        "2",
+        "24",
+        "29",
+        "9"
+      ],
+      "selected": {
+        "next_viewpoint_id": "32",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "32": "e34dcf54d26a4a95869cc8a0c01cd2be",
+        "4": "3577de361e1a46b1be544d37731bfde6"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "2",
+    "24",
+    "29",
+    "32",
+    "9"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 1
+}

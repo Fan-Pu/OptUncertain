@@ -1,0 +1,90 @@
+{
+  "active_targets": [
+    {
+      "description": "the pink and white flowers in the white vase on the glass dining table",
+      "target_id": "0"
+    },
+    {
+      "description": "the small blue chair beside the bed in the upstairs bedroom",
+      "target_id": "4"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "39",
+        "37"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "39",
+        "promising_target_ids": [
+          "0",
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "37": "ff43ac7b797541b5a89ce2373de329a4",
+        "39": "a0e680c2599e473c9d64183b65dac6b3"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "9",
+        "31",
+        "34"
+      ],
+      "reserved_before": [
+        "39"
+      ],
+      "selected": {
+        "next_viewpoint_id": "31",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "31": "6ca981e907be49749ed4aead19864515",
+        "34": "e4a543521c44412e8f264d083ac5fc0c",
+        "9": "3e8f012538474392bf311dcec2e2153a"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "28",
+        "41"
+      ],
+      "reserved_before": [
+        "31",
+        "39"
+      ],
+      "selected": {
+        "next_viewpoint_id": "7",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "8b29770bf446475b814d254d9b2670f6",
+        "41": "c4ce11a276904bf38fe049e67b6c5f7a",
+        "7": "0672a86275c14b148e8618ecde714e06"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "31",
+    "39",
+    "7"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 4
+}

@@ -1,0 +1,91 @@
+{
+  "active_targets": [
+    {
+      "description": "the black vintage radio on the wooden desk below the map",
+      "target_id": "0"
+    },
+    {
+      "description": "the red-and-white striped bathrobe hanging on the wall hooks beside the bed",
+      "target_id": "1"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "48",
+        "42",
+        "9"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "aabf649f606a48a1b16d5bdcd5970602",
+        "48": "61c98135870e449a846737f610d0e969",
+        "7": "38342af67f5d4b73ad4cff4402f52d83",
+        "9": "faad06c7cb2b4a6f9220e7f6f87c800b"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "14",
+        "20"
+      ],
+      "reserved_before": [
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "20",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "6416ac70316f44d1ae7ec5a3029b1703",
+        "20": "9b1e2472265c46989eb1c3911aa5971b"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "2",
+        "33",
+        "36"
+      ],
+      "reserved_before": [
+        "20",
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "33",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "b8c7c025564d4c8391833236f4f782c0",
+        "33": "c74a7da1a0e04e7b8b14e1cdab613653",
+        "36": "ead481533f834704bd489d3d44b6a03a"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "20",
+    "33",
+    "42"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 20
+}

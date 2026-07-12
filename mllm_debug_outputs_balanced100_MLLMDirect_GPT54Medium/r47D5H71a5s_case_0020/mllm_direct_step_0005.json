@@ -1,0 +1,97 @@
+{
+  "active_targets": [
+    {
+      "description": "the black hair dryer beside the bathroom sink",
+      "target_id": "0"
+    },
+    {
+      "description": "the white kettle on the counter beside the water dispenser",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "38",
+        "32",
+        "52",
+        "13",
+        "30"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "52",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "6d4e6b71271949e7b3f9cf8120bce54a",
+        "30": "6ea742331ac84fb9ae24a1b8d76bcf8a",
+        "32": "2cb036ad9c594172abd2a9bc9d3d9159",
+        "38": "021e6fb21e5c47b587fabb26689ff55f",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "28",
+        "6",
+        "50",
+        "42"
+      ],
+      "reserved_before": [
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "6",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "1a9eaf7e67c444ffbec01b999b40c5a2",
+        "42": "d8f7db8824674725a8334d3554cda5bf",
+        "50": "a9aa7ad5b14e499082ed36083484cfa8",
+        "6": "32ddd1485c98480f9a6ecd24ace5d49f"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "1",
+        "2",
+        "18"
+      ],
+      "reserved_before": [
+        "52",
+        "6"
+      ],
+      "selected": {
+        "next_viewpoint_id": "2",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "4eb2befc7e974e45a1956695ca4342e2",
+        "18": "e2d51e6321224b5aae0a84c8a90c2dd2",
+        "2": "bd624a2988bf4a94839472180cc1b3d5"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "2",
+    "52",
+    "6"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 5
+}

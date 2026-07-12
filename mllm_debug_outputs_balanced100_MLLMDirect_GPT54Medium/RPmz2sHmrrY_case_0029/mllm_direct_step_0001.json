@@ -1,0 +1,105 @@
+{
+  "active_targets": [
+    {
+      "description": "the black coffee maker on the kitchen stove",
+      "target_id": "2"
+    },
+    {
+      "description": "the Santa snow globe on top of the TV in the bedroom",
+      "target_id": "4"
+    },
+    {
+      "description": "the EIX 6488 license plate above the bedroom doorway",
+      "target_id": "5"
+    },
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "45"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "45",
+        "promising_target_ids": [
+          "4",
+          "5",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "45": "3d401cc04c8f4bbeb175defee2a64006",
+        "7": "0dc414c929d0466988a1ec272f8829a9"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "36",
+        "29",
+        "44",
+        "9",
+        "15"
+      ],
+      "reserved_before": [
+        "45"
+      ],
+      "selected": {
+        "next_viewpoint_id": "36",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "dfb6bfa10a1b49c989d10277a7f2dd46",
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "36": "4a9dca1a243c4c03b8f1016cbf8dd369",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "56",
+        "12",
+        "50"
+      ],
+      "reserved_before": [
+        "36",
+        "45"
+      ],
+      "selected": {
+        "next_viewpoint_id": "50",
+        "promising_target_ids": [
+          "4",
+          "5",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "d53b33e89133452899d757c2eebc5f18",
+        "50": "f2746351955f4214aacbf50dd12673ba",
+        "56": "53db5931a8864b769bf57ddea79a812e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "36",
+    "45",
+    "50"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

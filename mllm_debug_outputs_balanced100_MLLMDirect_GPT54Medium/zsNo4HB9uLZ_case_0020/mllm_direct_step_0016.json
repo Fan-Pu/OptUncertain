@@ -1,0 +1,91 @@
+{
+  "active_targets": [
+    {
+      "description": "the black vintage radio on the wooden desk below the map",
+      "target_id": "0"
+    },
+    {
+      "description": "the red-and-white striped bathrobe hanging on the wall hooks beside the bed",
+      "target_id": "1"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "2",
+        "33",
+        "36"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "33",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "b8c7c025564d4c8391833236f4f782c0",
+        "33": "c74a7da1a0e04e7b8b14e1cdab613653",
+        "36": "ead481533f834704bd489d3d44b6a03a"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "28",
+        "17",
+        "42"
+      ],
+      "reserved_before": [
+        "33"
+      ],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": [
+          "1",
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "4c0aab63a4434cf4878e6f5b3ce9a70b",
+        "28": "2e349b06dd94494ea4b887458e4ab4a3",
+        "42": "aabf649f606a48a1b16d5bdcd5970602"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "14",
+        "20"
+      ],
+      "reserved_before": [
+        "33",
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "20",
+        "promising_target_ids": [
+          "0",
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "6416ac70316f44d1ae7ec5a3029b1703",
+        "20": "9b1e2472265c46989eb1c3911aa5971b"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "20",
+    "33",
+    "42"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 16
+}

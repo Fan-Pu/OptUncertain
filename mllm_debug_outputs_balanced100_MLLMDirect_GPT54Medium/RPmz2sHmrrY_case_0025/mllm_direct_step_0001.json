@@ -1,0 +1,105 @@
+{
+  "active_targets": [
+    {
+      "description": "the snowman Christmas countdown decoration beside the Christmas tree",
+      "target_id": "1"
+    },
+    {
+      "description": "the black coffee maker on the kitchen stove",
+      "target_id": "2"
+    },
+    {
+      "description": "the EIX 6488 license plate above the bedroom doorway",
+      "target_id": "5"
+    },
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "1",
+        "8",
+        "42",
+        "6",
+        "34",
+        "13",
+        "9"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "8",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "0470d39378714812bef259ea6cd22978",
+        "13": "96066e55b9c94b23a956ffeaa7e0ad17",
+        "34": "9512857da0d140a881a306870b2596d5",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "6": "46502cfe06804adeafc0782798dedaa8",
+        "8": "056a847fc47746c797b4d5868466193c",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "46"
+      ],
+      "reserved_before": [
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "46",
+        "promising_target_ids": [
+          "5",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "46": "12300fc342ab4d54b9a19ff57889ce14"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "33",
+        "47",
+        "22"
+      ],
+      "reserved_before": [
+        "46",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "47",
+        "promising_target_ids": [
+          "5",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "22": "eed1d184bb7d4b9eb6b18f0755937e24",
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "47": "7471dc409d314c818e34f6799b654af7"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "46",
+    "47",
+    "8"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

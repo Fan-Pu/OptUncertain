@@ -1,0 +1,87 @@
+{
+  "active_targets": [
+    {
+      "description": "the white fist-print skateboard above the bed in the upstairs bedroom",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "44",
+        "47"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "47",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "44": "8844f8fdc366462587b70fb7ede46242",
+        "47": "b98717151b7b49f59af95a9b7111a658"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "20",
+        "10"
+      ],
+      "reserved_before": [
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "20",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "837b0a58fa8b4820a3c07e0c89ccfc60",
+        "20": "27b904430e4e48acb818e2ab80f183e3"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "35",
+        "21",
+        "12",
+        "27",
+        "5"
+      ],
+      "reserved_before": [
+        "20",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "5",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "7dbbeb8448f94a0ca912bb73561fb1f7",
+        "21": "68f5cd251e4c457894ea04e8184286d0",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "5": "db0e4e7b77c04948b581a11f633df145"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "20",
+    "47",
+    "5"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 7
+}

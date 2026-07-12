@@ -1,0 +1,152 @@
+{
+  "active_targets": [
+    {
+      "description": "the framed airplane picture beside the Christmas tree",
+      "target_id": "0"
+    },
+    {
+      "description": "the black coffee maker on the kitchen stove",
+      "target_id": "2"
+    },
+    {
+      "description": "the EIX 6488 license plate above the bedroom doorway",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "47",
+        "48",
+        "52",
+        "22",
+        "58"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "52",
+        "promising_target_ids": [
+          "5",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "22": "eed1d184bb7d4b9eb6b18f0755937e24",
+        "47": "7471dc409d314c818e34f6799b654af7",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59",
+        "52": "9203bc8c7d2648adac338ddfd854589c",
+        "58": "f65d4fa347954fa0ba90f535f6b9bda3"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "36",
+        "29",
+        "44",
+        "9",
+        "15"
+      ],
+      "reserved_before": [
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "44",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "dfb6bfa10a1b49c989d10277a7f2dd46",
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "36": "4a9dca1a243c4c03b8f1016cbf8dd369",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "56",
+        "12",
+        "50"
+      ],
+      "reserved_before": [
+        "44",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "12",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "d53b33e89133452899d757c2eebc5f18",
+        "50": "f2746351955f4214aacbf50dd12673ba",
+        "56": "53db5931a8864b769bf57ddea79a812e"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "46"
+      ],
+      "reserved_before": [
+        "12",
+        "44",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "46",
+        "promising_target_ids": [
+          "0",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "46": "12300fc342ab4d54b9a19ff57889ce14"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "43",
+        "27",
+        "41"
+      ],
+      "reserved_before": [
+        "12",
+        "44",
+        "46",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "41",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "27": "d9f19697d1524359a371bc0435213f43",
+        "41": "fee317d652db45a2a78137ada8912dd6",
+        "43": "3d6caff50ab34398ab27fd8cf87ddf9c"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "12",
+    "41",
+    "44",
+    "46",
+    "52"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 1
+}

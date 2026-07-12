@@ -1,0 +1,148 @@
+{
+  "active_targets": [
+    {
+      "description": "the white stuffed bear below the window blinds in the bedroom",
+      "target_id": "6"
+    },
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "6",
+        "36",
+        "51",
+        "29",
+        "9"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "6",
+        "promising_target_ids": [
+          "6",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "36": "4a9dca1a243c4c03b8f1016cbf8dd369",
+        "51": "662a6b43a43b47eca87d91c09afd2ad6",
+        "6": "46502cfe06804adeafc0782798dedaa8",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "54",
+        "40"
+      ],
+      "reserved_before": [
+        "6"
+      ],
+      "selected": {
+        "next_viewpoint_id": "40",
+        "promising_target_ids": [
+          "6",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "40": "fde84ed437a748d28c11023eea0d8416",
+        "54": "3f3121206d654a95bb6c198291adbfcf"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "55"
+      ],
+      "reserved_before": [
+        "40",
+        "6"
+      ],
+      "selected": {
+        "next_viewpoint_id": "55",
+        "promising_target_ids": [
+          "6",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "55": "5663953a83614d9b98093f65a7ae9804"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "14",
+        "32",
+        "17"
+      ],
+      "reserved_before": [
+        "40",
+        "55",
+        "6"
+      ],
+      "selected": {
+        "next_viewpoint_id": "14",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "3979408b43774bd183c3926a810b8465",
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "32": "a652a49834244fe18c84a617bf2fedbd"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "37",
+        "32",
+        "26",
+        "35"
+      ],
+      "reserved_before": [
+        "14",
+        "40",
+        "55",
+        "6"
+      ],
+      "selected": {
+        "next_viewpoint_id": "37",
+        "promising_target_ids": [
+          "6",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "32": "a652a49834244fe18c84a617bf2fedbd",
+        "35": "f2ebe400037746b7aea07343fb529e0a",
+        "37": "2bafa1c7dfc84001beaddf532feb612f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "14",
+    "37",
+    "40",
+    "55",
+    "6"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0"
+  ],
+  "step_index": 12
+}

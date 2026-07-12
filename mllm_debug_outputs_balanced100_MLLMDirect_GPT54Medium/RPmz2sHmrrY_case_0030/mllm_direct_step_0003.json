@@ -1,0 +1,95 @@
+{
+  "active_targets": [
+    {
+      "description": "the black coffee maker on the kitchen stove",
+      "target_id": "2"
+    },
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "33",
+        "47",
+        "48",
+        "17"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "47",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "47": "7471dc409d314c818e34f6799b654af7",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "56",
+        "12",
+        "50"
+      ],
+      "reserved_before": [
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "12",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "d53b33e89133452899d757c2eebc5f18",
+        "50": "f2746351955f4214aacbf50dd12673ba",
+        "56": "53db5931a8864b769bf57ddea79a812e"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "46",
+        "37",
+        "32",
+        "53",
+        "26"
+      ],
+      "reserved_before": [
+        "12",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "46",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "32": "a652a49834244fe18c84a617bf2fedbd",
+        "37": "2bafa1c7dfc84001beaddf532feb612f",
+        "46": "12300fc342ab4d54b9a19ff57889ce14",
+        "53": "af020019b43e4ab883dcae79d24fe47f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "12",
+    "46",
+    "47"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

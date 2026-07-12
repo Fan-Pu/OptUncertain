@@ -1,0 +1,102 @@
+{
+  "active_targets": [
+    {
+      "description": "the red coffee machine in the built-in kitchen appliance nook",
+      "target_id": "2"
+    },
+    {
+      "description": "the bowl of yellow lemons on the kitchen counter beside the stovetop",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "43",
+        "40",
+        "17",
+        "35",
+        "46",
+        "21",
+        "36",
+        "27",
+        "14"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "35",
+        "promising_target_ids": [
+          "2",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "c9b7a323a72141628f0c48aa7eb3430e",
+        "17": "20cebd99bcf84b1c83bc9b6abbd78102",
+        "21": "68f5cd251e4c457894ea04e8184286d0",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "36": "a33fe858085149e8908942d0bf98767f",
+        "40": "1d383b2f6a454cdbb4d942b127a12320",
+        "43": "1227344eaa1f424b83db585fd665fb2a",
+        "46": "58aeb039d7dd4fa4b26e70e77df07938"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "33",
+        "42"
+      ],
+      "reserved_before": [
+        "35"
+      ],
+      "selected": {
+        "next_viewpoint_id": "33",
+        "promising_target_ids": [
+          "2",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "33": "595ef74c51bb4448ae709297121d4c10",
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "20",
+        "28"
+      ],
+      "reserved_before": [
+        "33",
+        "35"
+      ],
+      "selected": {
+        "next_viewpoint_id": "28",
+        "promising_target_ids": [
+          "2",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "20": "27b904430e4e48acb818e2ab80f183e3",
+        "28": "8b29770bf446475b814d254d9b2670f6"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "28",
+    "33",
+    "35"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 13
+}

@@ -1,0 +1,83 @@
+{
+  "active_targets": [
+    {
+      "description": "the framed airplane picture beside the Christmas tree",
+      "target_id": "0"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "56",
+        "12"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "3",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "d53b33e89133452899d757c2eebc5f18",
+        "3": "02aa36d91ebf4d3b987d54c601bd785a",
+        "56": "53db5931a8864b769bf57ddea79a812e"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "46"
+      ],
+      "reserved_before": [
+        "3"
+      ],
+      "selected": {
+        "next_viewpoint_id": "46",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "46": "12300fc342ab4d54b9a19ff57889ce14"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "33",
+        "47",
+        "22"
+      ],
+      "reserved_before": [
+        "3",
+        "46"
+      ],
+      "selected": {
+        "next_viewpoint_id": "22",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "22": "eed1d184bb7d4b9eb6b18f0755937e24",
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "47": "7471dc409d314c818e34f6799b654af7"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "22",
+    "3",
+    "46"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

@@ -1,0 +1,138 @@
+{
+  "active_targets": [
+    {
+      "description": "the small decorative vase with green plant stems in the glass display cabinet",
+      "target_id": "1"
+    },
+    {
+      "description": "the white kettle on the counter beside the water dispenser",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "1",
+        "2",
+        "18"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "18",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "4eb2befc7e974e45a1956695ca4342e2",
+        "18": "e2d51e6321224b5aae0a84c8a90c2dd2",
+        "2": "bd624a2988bf4a94839472180cc1b3d5"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "52",
+        "47",
+        "44"
+      ],
+      "reserved_before": [
+        "18"
+      ],
+      "selected": {
+        "next_viewpoint_id": "52",
+        "promising_target_ids": [
+          "1",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "44": "cc94b5dda437408a9a166fcdbafa2a48",
+        "47": "656ab180c21645e0a4cef70b95341e0a",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "23",
+        "15",
+        "9"
+      ],
+      "reserved_before": [
+        "18",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "9",
+        "promising_target_ids": [
+          "1",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "6be3b190af924e26916685a57f46b775",
+        "23": "498ad4add3424a4eaf28355ded64c622",
+        "9": "dddeccce9b044629a9ffd5c61e8ea1cf"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "40"
+      ],
+      "reserved_before": [
+        "18",
+        "52",
+        "9"
+      ],
+      "selected": {
+        "next_viewpoint_id": "40",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "40": "7798eee8ae4a4fc483da87e8e04b659c"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "27",
+        "53"
+      ],
+      "reserved_before": [
+        "18",
+        "40",
+        "52",
+        "9"
+      ],
+      "selected": {
+        "next_viewpoint_id": "53",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "27": "01c9d419c8fa4879a362aad71ea7000c",
+        "53": "0beedadd4d2c4b4ab488cf246c533988"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "18",
+    "40",
+    "52",
+    "53",
+    "9"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 1
+}

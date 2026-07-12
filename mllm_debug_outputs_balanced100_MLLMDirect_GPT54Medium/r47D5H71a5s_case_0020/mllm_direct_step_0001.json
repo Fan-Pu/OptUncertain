@@ -1,0 +1,108 @@
+{
+  "active_targets": [
+    {
+      "description": "the black hair dryer beside the bathroom sink",
+      "target_id": "0"
+    },
+    {
+      "description": "the small decorative vase with green plant stems in the glass display cabinet",
+      "target_id": "1"
+    },
+    {
+      "description": "the light blue cushion on the wicker chair",
+      "target_id": "2"
+    },
+    {
+      "description": "the small dark red vase on the floor beside the door",
+      "target_id": "3"
+    },
+    {
+      "description": "the white kettle on the counter beside the water dispenser",
+      "target_id": "5"
+    },
+    {
+      "description": "the white seated statue beside the indoor pool",
+      "target_id": "6"
+    },
+    {
+      "description": "the yellow wet floor sign next to the treadmill",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "58",
+        "2"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "2",
+        "promising_target_ids": [
+          "7",
+          "5",
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "bd624a2988bf4a94839472180cc1b3d5",
+        "58": "5d943867a94a46e1a7d2a4d077855a57"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "52",
+        "47",
+        "44"
+      ],
+      "reserved_before": [
+        "2"
+      ],
+      "selected": {
+        "next_viewpoint_id": "47",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "44": "cc94b5dda437408a9a166fcdbafa2a48",
+        "47": "656ab180c21645e0a4cef70b95341e0a",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "40"
+      ],
+      "reserved_before": [
+        "2",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "40",
+        "promising_target_ids": [
+          "0",
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "40": "7798eee8ae4a4fc483da87e8e04b659c"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "2",
+    "40",
+    "47"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

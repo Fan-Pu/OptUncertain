@@ -1,0 +1,97 @@
+{
+  "active_targets": [
+    {
+      "description": "the snowman Christmas countdown decoration beside the Christmas tree",
+      "target_id": "1"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "19",
+        "26",
+        "35",
+        "0"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "35",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "0": "f4fb96ce8e874f609dab60c35534d9d9",
+        "19": "6abe3777358941b59001f6ec84bb530b",
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "35": "f2ebe400037746b7aea07343fb529e0a"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "33",
+        "48",
+        "58"
+      ],
+      "reserved_before": [
+        "35"
+      ],
+      "selected": {
+        "next_viewpoint_id": "33",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59",
+        "58": "f65d4fa347954fa0ba90f535f6b9bda3"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "10",
+        "21",
+        "4",
+        "28",
+        "25",
+        "16",
+        "50"
+      ],
+      "reserved_before": [
+        "33",
+        "35"
+      ],
+      "selected": {
+        "next_viewpoint_id": "10",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "03415d3735154bd3bf7074fd7b343992",
+        "16": "d1d78bc07d8a409bbdb3235f00d13046",
+        "21": "0a91f5605f7c45509aa530b85bf51407",
+        "25": "a4cb33ffee054744ad6f6a43ae894b3e",
+        "28": "425035102a614ca993245a6f2207b4d8",
+        "3": "02aa36d91ebf4d3b987d54c601bd785a",
+        "4": "299fc72374a2439fa5f668c48f2482e1",
+        "50": "f2746351955f4214aacbf50dd12673ba"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "10",
+    "33",
+    "35"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 2
+}

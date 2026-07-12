@@ -1,0 +1,159 @@
+{
+  "active_targets": [
+    {
+      "description": "the black vintage radio on the wooden desk below the map",
+      "target_id": "0"
+    },
+    {
+      "description": "the red vintage kitchen scale on the top shelf",
+      "target_id": "2"
+    },
+    {
+      "description": "the white candle on the black holder by the dining room window",
+      "target_id": "4"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "44",
+        "29",
+        "37",
+        "16"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "44",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "16": "ed8645386a0a4de2bfc486e0a1d02468",
+        "29": "ab993d543aed47fe9360f05eb03f301b",
+        "37": "dc046de639fa43e29b3da505c030f58f",
+        "44": "145a35f5ca544943b8bc2f997e5f9978"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "4",
+        "0",
+        "12",
+        "22",
+        "19",
+        "41"
+      ],
+      "reserved_before": [
+        "44"
+      ],
+      "selected": {
+        "next_viewpoint_id": "4",
+        "promising_target_ids": [
+          "2",
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "0": "213f4f2f0d204758bc51252aed60cf82",
+        "12": "5e966f4bdbc849f4b2b200e2f8cc49a0",
+        "19": "a80acc2328154455965a8be4133dee71",
+        "22": "94432dd9d465486b8acfb7013ffc3fca",
+        "4": "0cf178fb23754cc0ac3b93398b112ddc",
+        "41": "e1f88263b98d46909c3e00e9250b6a4b"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "50",
+        "21",
+        "25",
+        "46",
+        "18"
+      ],
+      "reserved_before": [
+        "4",
+        "44"
+      ],
+      "selected": {
+        "next_viewpoint_id": "21",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "18": "f04ae8ebf8254168814bc669635b3775",
+        "21": "487a4cc75db94e56aa4d1d35866736fc",
+        "25": "76c7a665d2b242bfa203e7f394b1353e",
+        "46": "84f05044aa1542a18b082255100f2c39",
+        "50": "0753202108e24c0094f09c60b8f36127"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "32",
+        "6"
+      ],
+      "reserved_before": [
+        "21",
+        "4",
+        "44"
+      ],
+      "selected": {
+        "next_viewpoint_id": "6",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "32": "6472b7993a6e440a9d0e12b560ff4616",
+        "6": "7d1391357299496cbb82840960d05a66"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "5",
+        "1",
+        "2"
+      ],
+      "reserved_before": [
+        "21",
+        "4",
+        "44",
+        "6"
+      ],
+      "selected": {
+        "next_viewpoint_id": "2",
+        "promising_target_ids": [
+          "0",
+          "2",
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "997b813443c64de5b38312642e937223",
+        "2": "b8c7c025564d4c8391833236f4f782c0",
+        "5": "4c78adff490c4973aa3e09bfe14217aa"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "2",
+    "21",
+    "4",
+    "44",
+    "6"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

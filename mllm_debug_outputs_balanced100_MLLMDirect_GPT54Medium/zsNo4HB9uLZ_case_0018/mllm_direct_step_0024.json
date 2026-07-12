@@ -1,0 +1,95 @@
+{
+  "active_targets": [
+    {
+      "description": "the black vintage radio on the wooden desk below the map",
+      "target_id": "0"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "50",
+        "43",
+        "14",
+        "30",
+        "46",
+        "23"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "23",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "6416ac70316f44d1ae7ec5a3029b1703",
+        "23": "b5f873817a0b4b60b8447e96b0b4e955",
+        "30": "65eefaf93e6249908e6389eb4eabf0f5",
+        "43": "3493ecf114864afc99d568421c0b42f6",
+        "46": "84f05044aa1542a18b082255100f2c39",
+        "50": "0753202108e24c0094f09c60b8f36127"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "21",
+        "32",
+        "6"
+      ],
+      "reserved_before": [
+        "23"
+      ],
+      "selected": {
+        "next_viewpoint_id": "21",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "21": "487a4cc75db94e56aa4d1d35866736fc",
+        "32": "6472b7993a6e440a9d0e12b560ff4616",
+        "6": "7d1391357299496cbb82840960d05a66"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "48",
+        "42",
+        "9"
+      ],
+      "reserved_before": [
+        "21",
+        "23"
+      ],
+      "selected": {
+        "next_viewpoint_id": "48",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "aabf649f606a48a1b16d5bdcd5970602",
+        "48": "61c98135870e449a846737f610d0e969",
+        "7": "38342af67f5d4b73ad4cff4402f52d83",
+        "9": "faad06c7cb2b4a6f9220e7f6f87c800b"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "21",
+    "23",
+    "48"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 24
+}

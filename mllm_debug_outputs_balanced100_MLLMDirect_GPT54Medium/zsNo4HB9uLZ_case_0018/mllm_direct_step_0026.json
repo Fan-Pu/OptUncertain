@@ -1,0 +1,85 @@
+{
+  "active_targets": [
+    {
+      "description": "the black vintage radio on the wooden desk below the map",
+      "target_id": "0"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "48",
+        "42",
+        "9"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "48",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "aabf649f606a48a1b16d5bdcd5970602",
+        "48": "61c98135870e449a846737f610d0e969",
+        "7": "38342af67f5d4b73ad4cff4402f52d83",
+        "9": "faad06c7cb2b4a6f9220e7f6f87c800b"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "23"
+      ],
+      "reserved_before": [
+        "48"
+      ],
+      "selected": {
+        "next_viewpoint_id": "23",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "23": "b5f873817a0b4b60b8447e96b0b4e955"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "13",
+        "21",
+        "6"
+      ],
+      "reserved_before": [
+        "23",
+        "48"
+      ],
+      "selected": {
+        "next_viewpoint_id": "13",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "38e0c09ac7a748dbadea6471861b30c3",
+        "21": "487a4cc75db94e56aa4d1d35866736fc",
+        "6": "7d1391357299496cbb82840960d05a66"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "13",
+    "23",
+    "48"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 26
+}

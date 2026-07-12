@@ -1,0 +1,160 @@
+{
+  "active_targets": [
+    {
+      "description": "the framed airplane picture beside the Christmas tree",
+      "target_id": "0"
+    },
+    {
+      "description": "the snowman Christmas countdown decoration beside the Christmas tree",
+      "target_id": "1"
+    },
+    {
+      "description": "the EIX 6488 license plate above the bedroom doorway",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "19",
+        "26",
+        "35",
+        "0"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "35",
+        "promising_target_ids": [
+          "0",
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "0": "f4fb96ce8e874f609dab60c35534d9d9",
+        "19": "6abe3777358941b59001f6ec84bb530b",
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "35": "f2ebe400037746b7aea07343fb529e0a"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "33",
+        "48",
+        "58"
+      ],
+      "reserved_before": [
+        "35"
+      ],
+      "selected": {
+        "next_viewpoint_id": "58",
+        "promising_target_ids": [
+          "0",
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59",
+        "58": "f65d4fa347954fa0ba90f535f6b9bda3"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "14",
+        "43",
+        "39",
+        "41"
+      ],
+      "reserved_before": [
+        "35",
+        "58"
+      ],
+      "selected": {
+        "next_viewpoint_id": "14",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "3979408b43774bd183c3926a810b8465",
+        "39": "92c05af082744395aa9434119ca0cde3",
+        "41": "fee317d652db45a2a78137ada8912dd6",
+        "43": "3d6caff50ab34398ab27fd8cf87ddf9c"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "45"
+      ],
+      "reserved_before": [
+        "14",
+        "35",
+        "58"
+      ],
+      "selected": {
+        "next_viewpoint_id": "45",
+        "promising_target_ids": [
+          "0",
+          "1",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "45": "3d401cc04c8f4bbeb175defee2a64006",
+        "7": "0dc414c929d0466988a1ec272f8829a9"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "6",
+        "36",
+        "51",
+        "29",
+        "9"
+      ],
+      "reserved_before": [
+        "14",
+        "35",
+        "45",
+        "58"
+      ],
+      "selected": {
+        "next_viewpoint_id": "6",
+        "promising_target_ids": [
+          "0",
+          "1",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "36": "4a9dca1a243c4c03b8f1016cbf8dd369",
+        "51": "662a6b43a43b47eca87d91c09afd2ad6",
+        "6": "46502cfe06804adeafc0782798dedaa8",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "14",
+    "35",
+    "45",
+    "58",
+    "6"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0"
+  ],
+  "step_index": 2
+}

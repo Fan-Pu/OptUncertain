@@ -1,0 +1,140 @@
+{
+  "active_targets": [
+    {
+      "description": "the white flowers in the vase between the two massage tables",
+      "target_id": "4"
+    },
+    {
+      "description": "the white seated statue beside the indoor pool",
+      "target_id": "6"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "35",
+        "21",
+        "37"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "35",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "21": "95903e1adf7e4ce9a87b9df4e9ec63e6",
+        "3": "04dba6ce40274f9b80f8e18eb201d33b",
+        "35": "869e52d579cc4c9a85979d3e20eb2455",
+        "37": "e396f6fa366b419ba059e65d728e20f1"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "52",
+        "47",
+        "44"
+      ],
+      "reserved_before": [
+        "35"
+      ],
+      "selected": {
+        "next_viewpoint_id": "44",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "44": "cc94b5dda437408a9a166fcdbafa2a48",
+        "47": "656ab180c21645e0a4cef70b95341e0a",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "27",
+        "53"
+      ],
+      "reserved_before": [
+        "35",
+        "44"
+      ],
+      "selected": {
+        "next_viewpoint_id": "27",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "27": "01c9d419c8fa4879a362aad71ea7000c",
+        "53": "0beedadd4d2c4b4ab488cf246c533988"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "23",
+        "15",
+        "9"
+      ],
+      "reserved_before": [
+        "27",
+        "35",
+        "44"
+      ],
+      "selected": {
+        "next_viewpoint_id": "9",
+        "promising_target_ids": [
+          "4",
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "6be3b190af924e26916685a57f46b775",
+        "23": "498ad4add3424a4eaf28355ded64c622",
+        "9": "dddeccce9b044629a9ffd5c61e8ea1cf"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "19"
+      ],
+      "reserved_before": [
+        "27",
+        "35",
+        "44",
+        "9"
+      ],
+      "selected": {
+        "next_viewpoint_id": "19",
+        "promising_target_ids": [
+          "4",
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "458b288354be4060a2e6cf582d959d0f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "19",
+    "27",
+    "35",
+    "44",
+    "9"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 1
+}

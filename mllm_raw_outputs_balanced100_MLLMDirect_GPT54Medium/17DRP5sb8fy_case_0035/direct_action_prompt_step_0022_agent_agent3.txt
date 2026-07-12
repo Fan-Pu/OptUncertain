@@ -1,0 +1,24 @@
+You need to find the following targets:
+[
+  {
+    "description": "the green patterned throw pillow on the brown armchair",
+    "target_id": "5"
+  }
+]
+
+Which viewpoint from the given panorama should be the next viewpoint to reach to find the most promising one or more targets?
+
+ALLOWED_SHORT_VIEWPOINT_IDS:
+["7", "3", "42", "13", "37", "5", "19"]
+
+ONE_STEP_TRAVEL_DISTANCES:
+{"13": 0.9466000199317932, "19": 2.6154088973999023, "3": 3.4519999027252197, "37": 2.149850845336914, "42": 2.671248197555542, "5": 1.367759346961975, "7": 1.010250449180603}
+
+SHORT_VIEWPOINT_IDS_RESERVED_BY_OTHER_AGENTS_THIS_ROUND:
+["23", "40"]
+
+Return valid JSON only. Return exactly:
+{
+  "next_viewpoint_id": "<one allowed ID or WAIT>",
+  "promising_target_ids": ["<zero or more target IDs>"]
+}

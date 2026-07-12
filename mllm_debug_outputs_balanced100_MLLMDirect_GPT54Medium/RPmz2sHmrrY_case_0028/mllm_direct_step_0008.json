@@ -1,0 +1,107 @@
+{
+  "active_targets": [
+    {
+      "description": "the Santa snow globe on top of the TV in the bedroom",
+      "target_id": "4"
+    },
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42",
+        "20",
+        "49",
+        "31",
+        "29",
+        "44",
+        "9",
+        "15"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "15",
+        "promising_target_ids": [
+          "4",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "dfb6bfa10a1b49c989d10277a7f2dd46",
+        "20": "15fe7aadc86f4b77a6ca637e5edb559a",
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "31": "6138d958efc44eab810630671597637f",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "49": "2731de0b62e14fcb8d742205fcf2948f",
+        "8": "056a847fc47746c797b4d5868466193c",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "54",
+        "40"
+      ],
+      "reserved_before": [
+        "15"
+      ],
+      "selected": {
+        "next_viewpoint_id": "40",
+        "promising_target_ids": [
+          "4",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "40": "fde84ed437a748d28c11023eea0d8416",
+        "54": "3f3121206d654a95bb6c198291adbfcf"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "46",
+        "37",
+        "19",
+        "38",
+        "53",
+        "35"
+      ],
+      "reserved_before": [
+        "15",
+        "40"
+      ],
+      "selected": {
+        "next_viewpoint_id": "38",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "6abe3777358941b59001f6ec84bb530b",
+        "35": "f2ebe400037746b7aea07343fb529e0a",
+        "37": "2bafa1c7dfc84001beaddf532feb612f",
+        "38": "80ec436f323345928cc44f360962a175",
+        "46": "12300fc342ab4d54b9a19ff57889ce14",
+        "53": "af020019b43e4ab883dcae79d24fe47f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "15",
+    "38",
+    "40"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 8
+}

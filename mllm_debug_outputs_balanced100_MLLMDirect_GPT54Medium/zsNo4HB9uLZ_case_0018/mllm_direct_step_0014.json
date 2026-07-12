@@ -1,0 +1,93 @@
+{
+  "active_targets": [
+    {
+      "description": "the black vintage radio on the wooden desk below the map",
+      "target_id": "0"
+    },
+    {
+      "description": "the red vintage kitchen scale on the top shelf",
+      "target_id": "2"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "48",
+        "23"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "48",
+        "promising_target_ids": [
+          "0",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "23": "b5f873817a0b4b60b8447e96b0b4e955",
+        "48": "61c98135870e449a846737f610d0e969"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "50",
+        "43",
+        "38"
+      ],
+      "reserved_before": [
+        "48"
+      ],
+      "selected": {
+        "next_viewpoint_id": "38",
+        "promising_target_ids": [
+          "0",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "38": "f237319a500640d8ac172db225a3ce9c",
+        "43": "3493ecf114864afc99d568421c0b42f6",
+        "50": "0753202108e24c0094f09c60b8f36127"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "52",
+        "10",
+        "37",
+        "16"
+      ],
+      "reserved_before": [
+        "38",
+        "48"
+      ],
+      "selected": {
+        "next_viewpoint_id": "37",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "d9d0b72a2929495cb1fc8df42c84b18a",
+        "16": "ed8645386a0a4de2bfc486e0a1d02468",
+        "37": "dc046de639fa43e29b3da505c030f58f",
+        "52": "2caadd7bc71c43d5ad10f4e7f10a3455"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "37",
+    "38",
+    "48"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 14
+}

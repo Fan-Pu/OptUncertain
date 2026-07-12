@@ -95,3 +95,46 @@ detection through Hugging Face (`HF_TOKEN`) and graph generation through
 DashScope (`DASHSCOPE_API_KEY`) in `main.py`.
 
 The optimizer requires `gurobipy` and a working Gurobi license.
+
+## Training-Free Benchmarks
+
+Install the VLFM-G assignment dependency inside the runtime environment:
+
+```bash
+python3 -m pip install -r requirements-benchmarks.txt
+```
+
+VLFM-G uses the official `Salesforce/blip2-itm-vit-g` checkpoint pinned in
+`config/default_config.json`. The checkpoint is approximately 4.69 GB and is
+downloaded by Transformers on the first semantic cache miss. The implementation
+does not substitute another encoder when the checkpoint cannot be loaded.
+
+Calibrate VLFM-G on the deterministic 20-case held-out set, then run both
+benchmarks on the exact completed GPT54Medium 100-case sample:
+
+```bash
+python3 run_benchmark_sweep.py --batch-config scenarios/batch_test.json --method vlfm_g --calibrate
+python3 run_benchmark_sweep.py --batch-config scenarios/batch_test.json --method vlfm_g
+python3 run_benchmark_sweep.py --batch-config scenarios/batch_test.json --method mllm_direct
+```
+
+The final output roots are `mllm_debug_outputs_balanced100_VLFMG` and
+`mllm_debug_outputs_balanced100_MLLMDirect_GPT54Medium`. Both methods reuse the
+shared GPT5.4 detection cache. MLLM-Direct action calls use GPT54Medium in
+standard service tier; detection calls retain flex tier.
+
+After both 100-case runs finish, add them to the existing comparison:
+
+```bash
+python3 evaluate_batch_metrics.py \
+  --batch-config scenarios/batch_test.json \
+  --generated-cases mllm_debug_outputs_balanced100_GPT54Medium/batch_test/sampled_generated_cases.json \
+  --oracle-summaries mllm_debug_outputs_balanced100_GPT54Medium/batch_test/oracle_summaries.json \
+  --method GPT54Medium=mllm_debug_outputs_balanced100_GPT54Medium \
+  --method Gemma431BThinking=mllm_debug_outputs_balanced100_Gemma431BThinking \
+  --method Qwen36_35BA3BThinking=mllm_debug_outputs_balanced100_Qwen36_35BA3BThinking \
+  --method Qwen36_35BA3BInstant=mllm_debug_outputs_balanced100_Qwen36_35BA3BInstant \
+  --method VLFM-G=mllm_debug_outputs_balanced100_VLFMG \
+  --method MLLM-Direct=mllm_debug_outputs_balanced100_MLLMDirect_GPT54Medium \
+  --out mllm_debug_outputs_balanced100_GPT54Medium/batch_test/metrics_all_methods_with_benchmarks
+```

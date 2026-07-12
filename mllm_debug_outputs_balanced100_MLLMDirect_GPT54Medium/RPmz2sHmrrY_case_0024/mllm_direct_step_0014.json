@@ -1,0 +1,85 @@
+{
+  "active_targets": [
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "19",
+        "38",
+        "53",
+        "26",
+        "35"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "53",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "6abe3777358941b59001f6ec84bb530b",
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "35": "f2ebe400037746b7aea07343fb529e0a",
+        "38": "80ec436f323345928cc44f360962a175",
+        "53": "af020019b43e4ab883dcae79d24fe47f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "47",
+        "48"
+      ],
+      "reserved_before": [
+        "53"
+      ],
+      "selected": {
+        "next_viewpoint_id": "48",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "47": "7471dc409d314c818e34f6799b654af7",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "54",
+        "40"
+      ],
+      "reserved_before": [
+        "48",
+        "53"
+      ],
+      "selected": {
+        "next_viewpoint_id": "40",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "40": "fde84ed437a748d28c11023eea0d8416",
+        "54": "3f3121206d654a95bb6c198291adbfcf"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "40",
+    "48",
+    "53"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 14
+}

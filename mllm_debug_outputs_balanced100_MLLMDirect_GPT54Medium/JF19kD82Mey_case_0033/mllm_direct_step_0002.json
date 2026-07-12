@@ -1,0 +1,152 @@
+{
+  "active_targets": [
+    {
+      "description": "the pink and white flowers in the white vase on the glass dining table",
+      "target_id": "0"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "13",
+        "4",
+        "32",
+        "47"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "13",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "4ea1cfa67ec145b39f90056a02a43d9f",
+        "32": "75d7eb848ea84a6dbb717dc231cf2dab",
+        "4": "66cb91d800e74042bf34287a76fd36ab",
+        "47": "b98717151b7b49f59af95a9b7111a658"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "45",
+        "35",
+        "29",
+        "27",
+        "25",
+        "37"
+      ],
+      "reserved_before": [
+        "13"
+      ],
+      "selected": {
+        "next_viewpoint_id": "37",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "25": "d512f07e48aa4fe9a559a1a708ab3c02",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "29": "856a21dd20ce41c3ac1c2a160cec9a0f",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "37": "ff43ac7b797541b5a89ce2373de329a4",
+        "45": "219e774e6cf942a5af295147d7bf945e"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "9",
+        "31",
+        "34"
+      ],
+      "reserved_before": [
+        "13",
+        "37"
+      ],
+      "selected": {
+        "next_viewpoint_id": "31",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "31": "6ca981e907be49749ed4aead19864515",
+        "34": "e4a543521c44412e8f264d083ac5fc0c",
+        "9": "3e8f012538474392bf311dcec2e2153a"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "48",
+        "40",
+        "17",
+        "3",
+        "23",
+        "6"
+      ],
+      "reserved_before": [
+        "13",
+        "31",
+        "37"
+      ],
+      "selected": {
+        "next_viewpoint_id": "17",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "20cebd99bcf84b1c83bc9b6abbd78102",
+        "23": "71d49ea7d95d406d944f73ad62031b79",
+        "3": "6b2856b4c9874823859788e1c35b9e5d",
+        "40": "1d383b2f6a454cdbb4d942b127a12320",
+        "48": "100d11cb989b46078ef7edb1b4dd34b9",
+        "6": "c7b357a72c3d4ce2aa16f8d5c41a54ba"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "28",
+        "41"
+      ],
+      "reserved_before": [
+        "13",
+        "17",
+        "31",
+        "37"
+      ],
+      "selected": {
+        "next_viewpoint_id": "28",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "8b29770bf446475b814d254d9b2670f6",
+        "41": "c4ce11a276904bf38fe049e67b6c5f7a",
+        "7": "0672a86275c14b148e8618ecde714e06"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "13",
+    "17",
+    "28",
+    "31",
+    "37"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0"
+  ],
+  "step_index": 2
+}

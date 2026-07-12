@@ -1,0 +1,140 @@
+{
+  "active_targets": [
+    {
+      "description": "the pink and white flowers in the white vase on the glass dining table",
+      "target_id": "0"
+    },
+    {
+      "description": "the red coffee machine in the built-in kitchen appliance nook",
+      "target_id": "2"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "20",
+        "10"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "20",
+        "promising_target_ids": [
+          "0",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "837b0a58fa8b4820a3c07e0c89ccfc60",
+        "20": "27b904430e4e48acb818e2ab80f183e3"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "44",
+        "47"
+      ],
+      "reserved_before": [
+        "20"
+      ],
+      "selected": {
+        "next_viewpoint_id": "44",
+        "promising_target_ids": [
+          "0",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "44": "8844f8fdc366462587b70fb7ede46242",
+        "47": "b98717151b7b49f59af95a9b7111a658"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "39",
+        "37"
+      ],
+      "reserved_before": [
+        "20",
+        "44"
+      ],
+      "selected": {
+        "next_viewpoint_id": "39",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "37": "ff43ac7b797541b5a89ce2373de329a4",
+        "39": "a0e680c2599e473c9d64183b65dac6b3"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42"
+      ],
+      "reserved_before": [
+        "20",
+        "39",
+        "44"
+      ],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": [
+          "0",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "8": "84055072c9154370bc2a76c86daf011c"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "48",
+        "19",
+        "23"
+      ],
+      "reserved_before": [
+        "20",
+        "39",
+        "42",
+        "44"
+      ],
+      "selected": {
+        "next_viewpoint_id": "19",
+        "promising_target_ids": [
+          "0",
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "2bc3dc4bf7cc4489a8cbcbed9d7d6b25",
+        "23": "71d49ea7d95d406d944f73ad62031b79",
+        "48": "100d11cb989b46078ef7edb1b4dd34b9"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "19",
+    "20",
+    "39",
+    "42",
+    "44"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 1
+}

@@ -1,0 +1,98 @@
+{
+  "active_targets": [
+    {
+      "description": "the black vintage radio on the wooden desk below the map",
+      "target_id": "0"
+    },
+    {
+      "description": "the red vintage kitchen scale on the top shelf",
+      "target_id": "2"
+    },
+    {
+      "description": "the white candle on the black holder by the dining room window",
+      "target_id": "4"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "27"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "27",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "27": "2c687aab96b7498b92023a4888c6e7ab"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "50",
+        "44",
+        "21",
+        "25",
+        "46",
+        "18"
+      ],
+      "reserved_before": [
+        "27"
+      ],
+      "selected": {
+        "next_viewpoint_id": "46",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "18": "f04ae8ebf8254168814bc669635b3775",
+        "21": "487a4cc75db94e56aa4d1d35866736fc",
+        "25": "76c7a665d2b242bfa203e7f394b1353e",
+        "44": "145a35f5ca544943b8bc2f997e5f9978",
+        "46": "84f05044aa1542a18b082255100f2c39",
+        "50": "0753202108e24c0094f09c60b8f36127"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "44",
+        "29",
+        "37",
+        "16"
+      ],
+      "reserved_before": [
+        "27",
+        "46"
+      ],
+      "selected": {
+        "next_viewpoint_id": "29",
+        "promising_target_ids": [
+          "2",
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "16": "ed8645386a0a4de2bfc486e0a1d02468",
+        "29": "ab993d543aed47fe9360f05eb03f301b",
+        "37": "dc046de639fa43e29b3da505c030f58f",
+        "44": "145a35f5ca544943b8bc2f997e5f9978"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "27",
+    "29",
+    "46"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 5
+}

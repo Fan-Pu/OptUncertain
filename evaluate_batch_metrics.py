@@ -21,8 +21,8 @@ class MethodSpec:
     raw_root: Path
 
 
-def main() -> int:
-    args = _parse_args()
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _parse_args(argv)
     out_dir = _resolve_path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -90,7 +90,7 @@ def main() -> int:
     return 0
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Compute batch_test evaluation metrics and plot method-comparison "
@@ -112,7 +112,7 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--out", required=True)
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def _resolve_path(path: str | Path) -> Path:
@@ -288,9 +288,15 @@ def _evaluate_detection_outputs(
     counts = {"tp": 0, "fp": 0, "fn": 0}
 
     for step_index, detection_path in detection_paths:
-        layout = _read_json(
-            debug_case_dir / ("graph_layout_step_%04d.json" % step_index)
+        episode_state_path = debug_case_dir / (
+            "episode_state_step_%04d.json" % step_index
         )
+        layout_path = (
+            episode_state_path
+            if episode_state_path.exists()
+            else debug_case_dir / ("graph_layout_step_%04d.json" % step_index)
+        )
+        layout = _read_json(layout_path)
         agent_current_vp_ids = {
             str(agent_id): int(node_id)
             for agent_id, node_id in layout["agent_current_vp_ids"].items()
@@ -756,10 +762,18 @@ def _plot_fonts() -> Dict[str, object]:
     from PIL import ImageFont
 
     return {
-        "tick": ImageFont.truetype("arial.ttf", 32),
-        "small": ImageFont.truetype("arial.ttf", 26),
-        "label": ImageFont.truetype("arial.ttf", 34),
-        "legend": ImageFont.truetype("arial.ttf", 31),
+        "tick": ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32
+        ),
+        "small": ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 26
+        ),
+        "label": ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 34
+        ),
+        "legend": ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 31
+        ),
     }
 
 

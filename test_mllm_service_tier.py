@@ -77,3 +77,21 @@ def test_detection_responses_service_tier_flex_is_sent():
     )
 
     assert fake_client.responses.kwargs["service_tier"] == "flex"
+
+
+def test_direct_action_uses_explicit_flex_and_small_output_budget():
+    client = _responses_client(
+        graph_reasoning_effort="medium",
+        graph_service_tier="flex",
+    )
+    fake_client = _FakeResponsesClient()
+    client.graph_client = fake_client
+
+    client.request_action_completion(
+        [{"role": "user", "content": "Return one action as JSON."}]
+    )
+
+    assert fake_client.responses.kwargs["model"] == "gpt-5.4-2026-03-05"
+    assert fake_client.responses.kwargs["max_output_tokens"] == 1024
+    assert fake_client.responses.kwargs["reasoning"] == {"effort": "medium"}
+    assert fake_client.responses.kwargs["service_tier"] == "flex"

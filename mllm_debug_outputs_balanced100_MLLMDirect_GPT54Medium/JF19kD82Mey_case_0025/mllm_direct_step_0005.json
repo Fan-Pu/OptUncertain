@@ -1,0 +1,91 @@
+{
+  "active_targets": [
+    {
+      "description": "the black keyboard on the office desk besides the monitor",
+      "target_id": "3"
+    },
+    {
+      "description": "the white fist-print skateboard above the bed in the upstairs bedroom",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "20",
+        "10"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "20",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "837b0a58fa8b4820a3c07e0c89ccfc60",
+        "20": "27b904430e4e48acb818e2ab80f183e3"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "26",
+        "35",
+        "16",
+        "39",
+        "27"
+      ],
+      "reserved_before": [
+        "20"
+      ],
+      "selected": {
+        "next_viewpoint_id": "35",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "16": "6be9623980e245ce80ced0bdb70db93c",
+        "26": "16bcabb86c9546f89e60b1caf0fc0a13",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "39": "a0e680c2599e473c9d64183b65dac6b3"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "44",
+        "47"
+      ],
+      "reserved_before": [
+        "20",
+        "35"
+      ],
+      "selected": {
+        "next_viewpoint_id": "44",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "44": "8844f8fdc366462587b70fb7ede46242",
+        "47": "b98717151b7b49f59af95a9b7111a658"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "20",
+    "35",
+    "44"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 5
+}

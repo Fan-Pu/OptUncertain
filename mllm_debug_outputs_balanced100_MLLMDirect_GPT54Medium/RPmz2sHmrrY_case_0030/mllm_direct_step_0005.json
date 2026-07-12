@@ -1,0 +1,99 @@
+{
+  "active_targets": [
+    {
+      "description": "the black coffee maker on the kitchen stove",
+      "target_id": "2"
+    },
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "46",
+        "37",
+        "19",
+        "38",
+        "53",
+        "35"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "37",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "19": "6abe3777358941b59001f6ec84bb530b",
+        "35": "f2ebe400037746b7aea07343fb529e0a",
+        "37": "2bafa1c7dfc84001beaddf532feb612f",
+        "38": "80ec436f323345928cc44f360962a175",
+        "46": "12300fc342ab4d54b9a19ff57889ce14",
+        "53": "af020019b43e4ab883dcae79d24fe47f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "47",
+        "23",
+        "18",
+        "17"
+      ],
+      "reserved_before": [
+        "37"
+      ],
+      "selected": {
+        "next_viewpoint_id": "47",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "18": "aabfafee82d0432e91b92338032c1f3f",
+        "23": "a98242f074ce428cb9c28aa4c92d610c",
+        "47": "7471dc409d314c818e34f6799b654af7"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "56",
+        "12"
+      ],
+      "reserved_before": [
+        "37",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "12",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "d53b33e89133452899d757c2eebc5f18",
+        "3": "02aa36d91ebf4d3b987d54c601bd785a",
+        "56": "53db5931a8864b769bf57ddea79a812e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "12",
+    "37",
+    "47"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 5
+}

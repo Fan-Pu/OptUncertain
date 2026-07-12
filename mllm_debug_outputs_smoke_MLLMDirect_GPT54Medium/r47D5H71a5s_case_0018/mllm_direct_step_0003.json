@@ -1,0 +1,68 @@
+{
+  "active_targets": [
+    {
+      "description": "the black hair dryer beside the bathroom sink",
+      "target_id": "0"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "2"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "2",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "bd624a2988bf4a94839472180cc1b3d5"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "53"
+      ],
+      "reserved_before": [
+        "2"
+      ],
+      "selected": {
+        "next_viewpoint_id": "53",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "53": "0beedadd4d2c4b4ab488cf246c533988"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [],
+      "reserved_before": [
+        "2",
+        "53"
+      ],
+      "selected": {
+        "next_viewpoint_id": "WAIT",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {}
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "2",
+    "53"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

@@ -45,6 +45,38 @@
     "target_directed_use_raw_target_probs": false,
     "write_model_lp": false
   },
+  "benchmark": {
+    "method": "proposed",
+    "sample_manifest": "mllm_debug_outputs_balanced100_GPT54Medium/batch_test/sampled_generated_cases.json",
+    "vlfm_g": {
+      "model_name": "Salesforce/blip2-itm-vit-g",
+      "model_revision": "d3788a04efa0f9e897305f5b9d9dedeaa3afb99d",
+      "device": "cpu",
+      "dtype": "float32",
+      "crop_count": 8,
+      "target_prompt_template": "Seems like the following target may be ahead: {description}.",
+      "alpha": 1.0,
+      "beta_selection_path": "mllm_debug_outputs_vlfmg_calibration/batch_test/vlfmg_beta_selection.json",
+      "beta_grid": [
+        0.0,
+        0.1,
+        0.25,
+        0.5,
+        1.0
+      ],
+      "calibration_case_count": 20,
+      "calibration_seed": 1,
+      "wait_utility": -2.0,
+      "unreachable_utility": -1000000.0,
+      "semantic_cache_dir": "vlfm_semantic_cache"
+    },
+    "mllm_direct": {
+      "action_model_label": "GPT54Medium",
+      "action_service_tier": "flex",
+      "include_one_step_distances": true,
+      "max_validation_retries": 1
+    }
+  },
   "batch_sweep": {
     "sample_count": 100,
     "sample_seed": 0,

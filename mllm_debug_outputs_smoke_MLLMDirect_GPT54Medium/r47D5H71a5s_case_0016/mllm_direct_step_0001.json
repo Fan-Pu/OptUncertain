@@ -1,0 +1,60 @@
+{
+  "active_targets": [
+    {
+      "description": "the white flowers in the vase between the two massage tables",
+      "target_id": "4"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "59"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "59",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "59": "1d80333e82b347e89884fffc9f4187e0"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [],
+      "reserved_before": [
+        "59"
+      ],
+      "selected": {
+        "next_viewpoint_id": "WAIT",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {}
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [],
+      "reserved_before": [
+        "59"
+      ],
+      "selected": {
+        "next_viewpoint_id": "WAIT",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {}
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "59"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

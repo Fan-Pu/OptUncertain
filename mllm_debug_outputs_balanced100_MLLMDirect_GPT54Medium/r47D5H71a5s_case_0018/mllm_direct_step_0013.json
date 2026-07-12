@@ -1,0 +1,105 @@
+{
+  "active_targets": [
+    {
+      "description": "the light blue cushion on the wicker chair",
+      "target_id": "2"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "34",
+        "50",
+        "2",
+        "54",
+        "46",
+        "42"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "34",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "bd624a2988bf4a94839472180cc1b3d5",
+        "34": "a5d7dd600de549a0a7c626f8c2c6c3e3",
+        "42": "d8f7db8824674725a8334d3554cda5bf",
+        "46": "d0f90601ac1b46fdb7258c230495f8a0",
+        "50": "a9aa7ad5b14e499082ed36083484cfa8",
+        "54": "ce525fada36b41c3a89a4e77e83e4e5f"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "28",
+        "12",
+        "60",
+        "46",
+        "42",
+        "14"
+      ],
+      "reserved_before": [
+        "34"
+      ],
+      "selected": {
+        "next_viewpoint_id": "60",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "afbf203a70f14a40b9bcd78001734083",
+        "14": "d950fc211fc745d9a8e2080f6ce747d2",
+        "28": "1a9eaf7e67c444ffbec01b999b40c5a2",
+        "42": "d8f7db8824674725a8334d3554cda5bf",
+        "46": "d0f90601ac1b46fdb7258c230495f8a0",
+        "60": "c72099534821414c956a08c899742eb8"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "28",
+        "12",
+        "46",
+        "25",
+        "18",
+        "37"
+      ],
+      "reserved_before": [
+        "34",
+        "60"
+      ],
+      "selected": {
+        "next_viewpoint_id": "25",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "afbf203a70f14a40b9bcd78001734083",
+        "18": "e2d51e6321224b5aae0a84c8a90c2dd2",
+        "25": "d60f3399b4d24c21a494ed4430f27ce9",
+        "28": "1a9eaf7e67c444ffbec01b999b40c5a2",
+        "37": "e396f6fa366b419ba059e65d728e20f1",
+        "46": "d0f90601ac1b46fdb7258c230495f8a0"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "25",
+    "34",
+    "60"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 13
+}

@@ -1,0 +1,96 @@
+{
+  "active_targets": [
+    {
+      "description": "the red coffee machine in the built-in kitchen appliance nook",
+      "target_id": "2"
+    },
+    {
+      "description": "the black keyboard on the office desk besides the monitor",
+      "target_id": "3"
+    },
+    {
+      "description": "the bowl of yellow lemons on the kitchen counter beside the stovetop",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "35",
+        "21",
+        "12",
+        "27",
+        "5"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "12",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "7dbbeb8448f94a0ca912bb73561fb1f7",
+        "21": "68f5cd251e4c457894ea04e8184286d0",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "5": "db0e4e7b77c04948b581a11f633df145"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42"
+      ],
+      "reserved_before": [
+        "12"
+      ],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": [
+          "2",
+          "3",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "8": "84055072c9154370bc2a76c86daf011c"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "28"
+      ],
+      "reserved_before": [
+        "12",
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "28",
+        "promising_target_ids": [
+          "2",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "8b29770bf446475b814d254d9b2670f6"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "12",
+    "28",
+    "42"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

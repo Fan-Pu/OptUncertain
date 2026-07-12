@@ -1,0 +1,150 @@
+{
+  "active_targets": [
+    {
+      "description": "the small toiletry bottles in the shower wall niche",
+      "target_id": "1"
+    },
+    {
+      "description": "the bottled water on the kitchen shelf",
+      "target_id": "3"
+    },
+    {
+      "description": "the toilet paper roll on top of the toilet tank",
+      "target_id": "4"
+    },
+    {
+      "description": "the green patterned throw pillow on the brown armchair",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "28",
+        "29",
+        "36",
+        "5"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "36",
+        "promising_target_ids": [
+          "1",
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "1a41339ece1846eda6a924cdb4c417dd",
+        "29": "701f7128272a4bb2acd9dbd89b5cdf6f",
+        "36": "b2e9278f9b8f4661abcb0446d2cbb98e",
+        "5": "da5fa65c13e643719a20cbb818c9a85d"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "24",
+        "8"
+      ],
+      "reserved_before": [
+        "36"
+      ],
+      "selected": {
+        "next_viewpoint_id": "24",
+        "promising_target_ids": [
+          "1",
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "24": "c341c46acf7044d1a712d622cbc94a27",
+        "8": "cb66d4266148455bbddf5d059a483711"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "39"
+      ],
+      "reserved_before": [
+        "24",
+        "36"
+      ],
+      "selected": {
+        "next_viewpoint_id": "39",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "39": "5b9b2794954e4694a45fc424a8643081"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "11",
+        "17"
+      ],
+      "reserved_before": [
+        "24",
+        "36",
+        "39"
+      ],
+      "selected": {
+        "next_viewpoint_id": "17",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "11": "6800f98e9e67463e9928a4253253bc2f",
+        "17": "df211c2c55f94b87a717ce1469577456"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "41",
+        "25",
+        "9"
+      ],
+      "reserved_before": [
+        "17",
+        "24",
+        "36",
+        "39"
+      ],
+      "selected": {
+        "next_viewpoint_id": "25",
+        "promising_target_ids": [
+          "1",
+          "4",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "25": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+        "41": "194bef4cbba641dc9860ba7f43a0c16a",
+        "9": "85c23efeaecd4d43a7dcd5b90137179e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "17",
+    "24",
+    "25",
+    "36",
+    "39"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

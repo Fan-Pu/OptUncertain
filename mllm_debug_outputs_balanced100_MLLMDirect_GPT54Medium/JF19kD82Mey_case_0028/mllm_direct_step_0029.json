@@ -1,0 +1,85 @@
+{
+  "active_targets": [
+    {
+      "description": "the black keyboard on the office desk besides the monitor",
+      "target_id": "3"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "8": "84055072c9154370bc2a76c86daf011c"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "7",
+        "22"
+      ],
+      "reserved_before": [
+        "42"
+      ],
+      "selected": {
+        "next_viewpoint_id": "7",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "22": "b5b07238f2f94494b5d16390855584cb",
+        "7": "0672a86275c14b148e8618ecde714e06"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "26",
+        "45",
+        "29",
+        "37"
+      ],
+      "reserved_before": [
+        "42",
+        "7"
+      ],
+      "selected": {
+        "next_viewpoint_id": "45",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "26": "16bcabb86c9546f89e60b1caf0fc0a13",
+        "29": "856a21dd20ce41c3ac1c2a160cec9a0f",
+        "37": "ff43ac7b797541b5a89ce2373de329a4",
+        "45": "219e774e6cf942a5af295147d7bf945e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "42",
+    "45",
+    "7"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 29
+}

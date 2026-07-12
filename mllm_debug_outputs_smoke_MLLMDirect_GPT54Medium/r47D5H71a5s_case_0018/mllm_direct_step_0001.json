@@ -1,0 +1,75 @@
+{
+  "active_targets": [
+    {
+      "description": "the black hair dryer beside the bathroom sink",
+      "target_id": "0"
+    },
+    {
+      "description": "the light blue cushion on the wicker chair",
+      "target_id": "2"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "26",
+        "24"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "24",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "24": "4ed50a2f86384de599f06df862d17b10",
+        "26": "2b67ab047ee949538c9d5d89046d985f"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [],
+      "reserved_before": [
+        "24"
+      ],
+      "selected": {
+        "next_viewpoint_id": "WAIT",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {}
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "46",
+        "42"
+      ],
+      "reserved_before": [
+        "24"
+      ],
+      "selected": {
+        "next_viewpoint_id": "46",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "d8f7db8824674725a8334d3554cda5bf",
+        "46": "d0f90601ac1b46fdb7258c230495f8a0"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "24",
+    "46"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

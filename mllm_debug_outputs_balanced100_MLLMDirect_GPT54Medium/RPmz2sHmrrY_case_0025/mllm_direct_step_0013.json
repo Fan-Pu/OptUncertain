@@ -1,0 +1,97 @@
+{
+  "active_targets": [
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "45",
+        "55",
+        "47",
+        "32",
+        "17"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "32",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "32": "a652a49834244fe18c84a617bf2fedbd",
+        "45": "3d401cc04c8f4bbeb175defee2a64006",
+        "47": "7471dc409d314c818e34f6799b654af7",
+        "55": "5663953a83614d9b98093f65a7ae9804"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "47",
+        "48"
+      ],
+      "reserved_before": [
+        "32"
+      ],
+      "selected": {
+        "next_viewpoint_id": "48",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "47": "7471dc409d314c818e34f6799b654af7",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "45",
+        "33",
+        "2",
+        "52",
+        "23",
+        "17",
+        "58"
+      ],
+      "reserved_before": [
+        "32",
+        "48"
+      ],
+      "selected": {
+        "next_viewpoint_id": "45",
+        "promising_target_ids": [
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "2": "7108351fe9ce4e5d94cb61fc609203bc",
+        "23": "a98242f074ce428cb9c28aa4c92d610c",
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "45": "3d401cc04c8f4bbeb175defee2a64006",
+        "52": "9203bc8c7d2648adac338ddfd854589c",
+        "58": "f65d4fa347954fa0ba90f535f6b9bda3"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "32",
+    "45",
+    "48"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 13
+}

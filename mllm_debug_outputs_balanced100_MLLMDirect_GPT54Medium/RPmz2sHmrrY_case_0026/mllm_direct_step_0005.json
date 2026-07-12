@@ -1,0 +1,93 @@
+{
+  "active_targets": [
+    {
+      "description": "the black coffee maker on the kitchen stove",
+      "target_id": "2"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "6",
+        "36",
+        "51",
+        "29",
+        "9"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "36",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "36": "4a9dca1a243c4c03b8f1016cbf8dd369",
+        "51": "662a6b43a43b47eca87d91c09afd2ad6",
+        "6": "46502cfe06804adeafc0782798dedaa8",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "10",
+        "1",
+        "8",
+        "42",
+        "54",
+        "6",
+        "44"
+      ],
+      "reserved_before": [
+        "36"
+      ],
+      "selected": {
+        "next_viewpoint_id": "54",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "0470d39378714812bef259ea6cd22978",
+        "10": "03415d3735154bd3bf7074fd7b343992",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "54": "3f3121206d654a95bb6c198291adbfcf",
+        "6": "46502cfe06804adeafc0782798dedaa8",
+        "8": "056a847fc47746c797b4d5868466193c"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "40"
+      ],
+      "reserved_before": [
+        "36",
+        "54"
+      ],
+      "selected": {
+        "next_viewpoint_id": "40",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "40": "fde84ed437a748d28c11023eea0d8416"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "36",
+    "40",
+    "54"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 5
+}

@@ -1,0 +1,154 @@
+{
+  "active_targets": [
+    {
+      "description": "the black hair dryer beside the bathroom sink",
+      "target_id": "0"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "46",
+        "25",
+        "9"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "25",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "25": "d60f3399b4d24c21a494ed4430f27ce9",
+        "46": "d0f90601ac1b46fdb7258c230495f8a0",
+        "8": "b470d552bb6149059743c6aaca2b3705",
+        "9": "dddeccce9b044629a9ffd5c61e8ea1cf"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "38",
+        "32",
+        "52",
+        "13",
+        "30"
+      ],
+      "reserved_before": [
+        "25"
+      ],
+      "selected": {
+        "next_viewpoint_id": "52",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "6d4e6b71271949e7b3f9cf8120bce54a",
+        "30": "6ea742331ac84fb9ae24a1b8d76bcf8a",
+        "32": "2cb036ad9c594172abd2a9bc9d3d9159",
+        "38": "021e6fb21e5c47b587fabb26689ff55f",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "19",
+        "1",
+        "22",
+        "20",
+        "54",
+        "18"
+      ],
+      "reserved_before": [
+        "25",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "22",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "4eb2befc7e974e45a1956695ca4342e2",
+        "18": "e2d51e6321224b5aae0a84c8a90c2dd2",
+        "19": "458b288354be4060a2e6cf582d959d0f",
+        "20": "954fc1d65dba428eb808fb9dce1b8a97",
+        "22": "77c8ac324e6e422faac5ffb32bd62c86",
+        "54": "ce525fada36b41c3a89a4e77e83e4e5f"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "38",
+        "5",
+        "7",
+        "56",
+        "33"
+      ],
+      "reserved_before": [
+        "22",
+        "25",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "38",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "33": "e6e19fd376c544b58035a32bd44ed8d4",
+        "38": "021e6fb21e5c47b587fabb26689ff55f",
+        "5": "7dcc99131ec74b968cb9d728c49220e0",
+        "56": "e14074a6c7e0450492bf4c0a6c431357",
+        "7": "96d3ea8a25b347e4b097f070a1cba15e"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "6",
+        "40"
+      ],
+      "reserved_before": [
+        "22",
+        "25",
+        "38",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "3",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "3": "04dba6ce40274f9b80f8e18eb201d33b",
+        "40": "7798eee8ae4a4fc483da87e8e04b659c",
+        "6": "32ddd1485c98480f9a6ecd24ace5d49f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "22",
+    "25",
+    "3",
+    "38",
+    "52"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

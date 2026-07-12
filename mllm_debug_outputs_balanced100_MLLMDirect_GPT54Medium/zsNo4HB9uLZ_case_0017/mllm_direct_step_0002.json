@@ -1,0 +1,93 @@
+{
+  "active_targets": [
+    {
+      "description": "the white candle on the black holder by the dining room window",
+      "target_id": "4"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "2",
+        "33",
+        "36"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "2",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "2": "b8c7c025564d4c8391833236f4f782c0",
+        "33": "c74a7da1a0e04e7b8b14e1cdab613653",
+        "36": "ead481533f834704bd489d3d44b6a03a"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "50",
+        "43",
+        "25",
+        "46",
+        "45"
+      ],
+      "reserved_before": [
+        "2"
+      ],
+      "selected": {
+        "next_viewpoint_id": "46",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "25": "76c7a665d2b242bfa203e7f394b1353e",
+        "43": "3493ecf114864afc99d568421c0b42f6",
+        "45": "d48feeed33774f64adb093679b9fcebf",
+        "46": "84f05044aa1542a18b082255100f2c39",
+        "50": "0753202108e24c0094f09c60b8f36127"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "27",
+        "28",
+        "51",
+        "9"
+      ],
+      "reserved_before": [
+        "2",
+        "46"
+      ],
+      "selected": {
+        "next_viewpoint_id": "9",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "27": "2c687aab96b7498b92023a4888c6e7ab",
+        "28": "2e349b06dd94494ea4b887458e4ab4a3",
+        "51": "38260e04f02546a6af3dcaf8689546a2",
+        "9": "faad06c7cb2b4a6f9220e7f6f87c800b"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "2",
+    "46",
+    "9"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 2
+}

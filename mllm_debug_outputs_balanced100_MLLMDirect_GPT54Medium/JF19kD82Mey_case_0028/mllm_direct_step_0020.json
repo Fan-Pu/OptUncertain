@@ -1,0 +1,93 @@
+{
+  "active_targets": [
+    {
+      "description": "the small white bust with black hair on the wooden cabinet near the patio window",
+      "target_id": "1"
+    },
+    {
+      "description": "the black keyboard on the office desk besides the monitor",
+      "target_id": "3"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "9",
+        "31"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "31",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "31": "6ca981e907be49749ed4aead19864515",
+        "9": "3e8f012538474392bf311dcec2e2153a"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "20",
+        "10"
+      ],
+      "reserved_before": [
+        "31"
+      ],
+      "selected": {
+        "next_viewpoint_id": "20",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "837b0a58fa8b4820a3c07e0c89ccfc60",
+        "20": "27b904430e4e48acb818e2ab80f183e3"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "45",
+        "35",
+        "29",
+        "27",
+        "25",
+        "37"
+      ],
+      "reserved_before": [
+        "20",
+        "31"
+      ],
+      "selected": {
+        "next_viewpoint_id": "27",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "25": "d512f07e48aa4fe9a559a1a708ab3c02",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "29": "856a21dd20ce41c3ac1c2a160cec9a0f",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "37": "ff43ac7b797541b5a89ce2373de329a4",
+        "45": "219e774e6cf942a5af295147d7bf945e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "20",
+    "27",
+    "31"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 20
+}

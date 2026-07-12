@@ -1,0 +1,164 @@
+{
+  "active_targets": [
+    {
+      "description": "the framed airplane picture beside the Christmas tree",
+      "target_id": "0"
+    },
+    {
+      "description": "the snowman Christmas countdown decoration beside the Christmas tree",
+      "target_id": "1"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "33",
+        "47",
+        "22"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "22",
+        "promising_target_ids": [
+          "0",
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "22": "eed1d184bb7d4b9eb6b18f0755937e24",
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "47": "7471dc409d314c818e34f6799b654af7"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "11",
+        "27",
+        "41"
+      ],
+      "reserved_before": [
+        "22"
+      ],
+      "selected": {
+        "next_viewpoint_id": "11",
+        "promising_target_ids": [
+          "0",
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "11": "15925c05373d4af785ecb3d5d62fe2e9",
+        "27": "d9f19697d1524359a371bc0435213f43",
+        "41": "fee317d652db45a2a78137ada8912dd6"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "47",
+        "23",
+        "18",
+        "17"
+      ],
+      "reserved_before": [
+        "11",
+        "22"
+      ],
+      "selected": {
+        "next_viewpoint_id": "47",
+        "promising_target_ids": [
+          "0",
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "18": "aabfafee82d0432e91b92338032c1f3f",
+        "23": "a98242f074ce428cb9c28aa4c92d610c",
+        "47": "7471dc409d314c818e34f6799b654af7"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42",
+        "20",
+        "49",
+        "31",
+        "29",
+        "44",
+        "9",
+        "15"
+      ],
+      "reserved_before": [
+        "11",
+        "22",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "15",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "dfb6bfa10a1b49c989d10277a7f2dd46",
+        "20": "15fe7aadc86f4b77a6ca637e5edb559a",
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "31": "6138d958efc44eab810630671597637f",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "49": "2731de0b62e14fcb8d742205fcf2948f",
+        "8": "056a847fc47746c797b4d5868466193c",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "46",
+        "37",
+        "32",
+        "53",
+        "26"
+      ],
+      "reserved_before": [
+        "11",
+        "15",
+        "22",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "37",
+        "promising_target_ids": [
+          "0",
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "32": "a652a49834244fe18c84a617bf2fedbd",
+        "37": "2bafa1c7dfc84001beaddf532feb612f",
+        "46": "12300fc342ab4d54b9a19ff57889ce14",
+        "53": "af020019b43e4ab883dcae79d24fe47f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "11",
+    "15",
+    "22",
+    "37",
+    "47"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

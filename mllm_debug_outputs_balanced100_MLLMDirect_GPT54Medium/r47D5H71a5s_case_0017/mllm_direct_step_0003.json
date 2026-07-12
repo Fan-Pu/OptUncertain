@@ -1,0 +1,91 @@
+{
+  "active_targets": [
+    {
+      "description": "the white seated statue beside the indoor pool",
+      "target_id": "6"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "27",
+        "53",
+        "26",
+        "24",
+        "29"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "24",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "24": "4ed50a2f86384de599f06df862d17b10",
+        "26": "2b67ab047ee949538c9d5d89046d985f",
+        "27": "01c9d419c8fa4879a362aad71ea7000c",
+        "29": "f41c2851f4b241fcad3f8f15378da53b",
+        "53": "0beedadd4d2c4b4ab488cf246c533988"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "52",
+        "47",
+        "55"
+      ],
+      "reserved_before": [
+        "24"
+      ],
+      "selected": {
+        "next_viewpoint_id": "52",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "47": "656ab180c21645e0a4cef70b95341e0a",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa",
+        "55": "a0fbf9972e79491bbcbf4a6e7cf38d8a"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "6",
+        "40"
+      ],
+      "reserved_before": [
+        "24",
+        "52"
+      ],
+      "selected": {
+        "next_viewpoint_id": "6",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "3": "04dba6ce40274f9b80f8e18eb201d33b",
+        "40": "7798eee8ae4a4fc483da87e8e04b659c",
+        "6": "32ddd1485c98480f9a6ecd24ace5d49f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "24",
+    "52",
+    "6"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

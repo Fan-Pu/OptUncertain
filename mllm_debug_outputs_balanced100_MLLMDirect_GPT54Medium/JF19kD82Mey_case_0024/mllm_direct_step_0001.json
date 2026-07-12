@@ -1,0 +1,83 @@
+{
+  "active_targets": [
+    {
+      "description": "the pink and white flowers in the white vase on the glass dining table",
+      "target_id": "0"
+    },
+    {
+      "description": "the black keyboard on the office desk besides the monitor",
+      "target_id": "3"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "8",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "8": "84055072c9154370bc2a76c86daf011c"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "28"
+      ],
+      "reserved_before": [
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "28",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "8b29770bf446475b814d254d9b2670f6"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "39",
+        "37"
+      ],
+      "reserved_before": [
+        "28",
+        "8"
+      ],
+      "selected": {
+        "next_viewpoint_id": "37",
+        "promising_target_ids": [
+          "0"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "37": "ff43ac7b797541b5a89ce2373de329a4",
+        "39": "a0e680c2599e473c9d64183b65dac6b3"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "28",
+    "37",
+    "8"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}

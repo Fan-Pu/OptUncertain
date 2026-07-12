@@ -1,0 +1,89 @@
+{
+  "active_targets": [
+    {
+      "description": "the small white bust with black hair on the wooden cabinet near the patio window",
+      "target_id": "1"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "20",
+        "10"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "20",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "837b0a58fa8b4820a3c07e0c89ccfc60",
+        "20": "27b904430e4e48acb818e2ab80f183e3"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "45",
+        "35",
+        "29",
+        "27",
+        "25",
+        "37"
+      ],
+      "reserved_before": [
+        "20"
+      ],
+      "selected": {
+        "next_viewpoint_id": "27",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "25": "d512f07e48aa4fe9a559a1a708ab3c02",
+        "27": "a34ec23dd5284d8fbca553acefd49c03",
+        "29": "856a21dd20ce41c3ac1c2a160cec9a0f",
+        "35": "2dd65c204fd64835b8cd417df5aa4149",
+        "37": "ff43ac7b797541b5a89ce2373de329a4",
+        "45": "219e774e6cf942a5af295147d7bf945e"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42"
+      ],
+      "reserved_before": [
+        "20",
+        "27"
+      ],
+      "selected": {
+        "next_viewpoint_id": "8",
+        "promising_target_ids": [
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "42": "e3cf525579a04ab4b6a5cf3ea40f58f9",
+        "8": "84055072c9154370bc2a76c86daf011c"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "20",
+    "27",
+    "8"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 15
+}

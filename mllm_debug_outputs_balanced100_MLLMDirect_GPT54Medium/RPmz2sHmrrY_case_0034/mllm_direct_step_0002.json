@@ -1,0 +1,160 @@
+{
+  "active_targets": [
+    {
+      "description": "the black coffee maker on the kitchen stove",
+      "target_id": "2"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "51",
+        "29",
+        "44",
+        "9",
+        "15"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "15",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "dfb6bfa10a1b49c989d10277a7f2dd46",
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "51": "662a6b43a43b47eca87d91c09afd2ad6",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "56",
+        "12"
+      ],
+      "reserved_before": [
+        "15"
+      ],
+      "selected": {
+        "next_viewpoint_id": "12",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "d53b33e89133452899d757c2eebc5f18",
+        "3": "02aa36d91ebf4d3b987d54c601bd785a",
+        "56": "53db5931a8864b769bf57ddea79a812e"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "45",
+        "33",
+        "2",
+        "48",
+        "52",
+        "23",
+        "17",
+        "58"
+      ],
+      "reserved_before": [
+        "12",
+        "15"
+      ],
+      "selected": {
+        "next_viewpoint_id": "17",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "17": "da60f1431aef4ad0bcf9c0de77b5e446",
+        "2": "7108351fe9ce4e5d94cb61fc609203bc",
+        "23": "a98242f074ce428cb9c28aa4c92d610c",
+        "33": "60ac8d87f9a34151baff06d5372ddf45",
+        "45": "3d401cc04c8f4bbeb175defee2a64006",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59",
+        "52": "9203bc8c7d2648adac338ddfd854589c",
+        "58": "f65d4fa347954fa0ba90f535f6b9bda3"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "14",
+        "43",
+        "39",
+        "27"
+      ],
+      "reserved_before": [
+        "12",
+        "15",
+        "17"
+      ],
+      "selected": {
+        "next_viewpoint_id": "14",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "3979408b43774bd183c3926a810b8465",
+        "27": "d9f19697d1524359a371bc0435213f43",
+        "39": "92c05af082744395aa9434119ca0cde3",
+        "43": "3d6caff50ab34398ab27fd8cf87ddf9c"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "46",
+        "37",
+        "32",
+        "53",
+        "26"
+      ],
+      "reserved_before": [
+        "12",
+        "14",
+        "15",
+        "17"
+      ],
+      "selected": {
+        "next_viewpoint_id": "32",
+        "promising_target_ids": [
+          "2"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "32": "a652a49834244fe18c84a617bf2fedbd",
+        "37": "2bafa1c7dfc84001beaddf532feb612f",
+        "46": "12300fc342ab4d54b9a19ff57889ce14",
+        "53": "af020019b43e4ab883dcae79d24fe47f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "12",
+    "14",
+    "15",
+    "17",
+    "32"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4",
+    "agent0"
+  ],
+  "step_index": 2
+}

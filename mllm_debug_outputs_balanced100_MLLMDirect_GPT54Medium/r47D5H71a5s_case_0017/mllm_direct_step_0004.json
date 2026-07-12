@@ -1,0 +1,101 @@
+{
+  "active_targets": [
+    {
+      "description": "the white seated statue beside the indoor pool",
+      "target_id": "6"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "38",
+        "32",
+        "13",
+        "49",
+        "55",
+        "44",
+        "56"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "56",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "6d4e6b71271949e7b3f9cf8120bce54a",
+        "32": "2cb036ad9c594172abd2a9bc9d3d9159",
+        "38": "021e6fb21e5c47b587fabb26689ff55f",
+        "44": "cc94b5dda437408a9a166fcdbafa2a48",
+        "49": "841296be493a4195892a1cb14c95ffc2",
+        "55": "a0fbf9972e79491bbcbf4a6e7cf38d8a",
+        "56": "e14074a6c7e0450492bf4c0a6c431357"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "35",
+        "21",
+        "37"
+      ],
+      "reserved_before": [
+        "56"
+      ],
+      "selected": {
+        "next_viewpoint_id": "3",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "21": "95903e1adf7e4ce9a87b9df4e9ec63e6",
+        "3": "04dba6ce40274f9b80f8e18eb201d33b",
+        "35": "869e52d579cc4c9a85979d3e20eb2455",
+        "37": "e396f6fa366b419ba059e65d728e20f1"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "26",
+        "22",
+        "20",
+        "57",
+        "33"
+      ],
+      "reserved_before": [
+        "3",
+        "56"
+      ],
+      "selected": {
+        "next_viewpoint_id": "57",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "20": "954fc1d65dba428eb808fb9dce1b8a97",
+        "22": "77c8ac324e6e422faac5ffb32bd62c86",
+        "26": "2b67ab047ee949538c9d5d89046d985f",
+        "33": "e6e19fd376c544b58035a32bd44ed8d4",
+        "57": "c5fe339f452f4eddb9659f812c38c748"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "3",
+    "56",
+    "57"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 4
+}

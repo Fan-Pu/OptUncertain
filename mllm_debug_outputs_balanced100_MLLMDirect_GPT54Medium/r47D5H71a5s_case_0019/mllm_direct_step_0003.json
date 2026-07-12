@@ -1,0 +1,99 @@
+{
+  "active_targets": [
+    {
+      "description": "the small decorative vase with green plant stems in the glass display cabinet",
+      "target_id": "1"
+    },
+    {
+      "description": "the white kettle on the counter beside the water dispenser",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "27",
+        "31",
+        "26",
+        "57"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "26",
+        "promising_target_ids": [
+          "1",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "26": "2b67ab047ee949538c9d5d89046d985f",
+        "27": "01c9d419c8fa4879a362aad71ea7000c",
+        "31": "22ed7ff5428841c4809cd3ef0ed4874b",
+        "57": "c5fe339f452f4eddb9659f812c38c748"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "28",
+        "6",
+        "50",
+        "42"
+      ],
+      "reserved_before": [
+        "26"
+      ],
+      "selected": {
+        "next_viewpoint_id": "28",
+        "promising_target_ids": [
+          "5",
+          "1"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "28": "1a9eaf7e67c444ffbec01b999b40c5a2",
+        "42": "d8f7db8824674725a8334d3554cda5bf",
+        "50": "a9aa7ad5b14e499082ed36083484cfa8",
+        "6": "32ddd1485c98480f9a6ecd24ace5d49f"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "38",
+        "52",
+        "39",
+        "49",
+        "56"
+      ],
+      "reserved_before": [
+        "26",
+        "28"
+      ],
+      "selected": {
+        "next_viewpoint_id": "56",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "38": "021e6fb21e5c47b587fabb26689ff55f",
+        "39": "614cf5a627f54b61ac40f4fb3251349c",
+        "49": "841296be493a4195892a1cb14c95ffc2",
+        "52": "49d8e71cc67d45f9863ca6d25a61a2fa",
+        "56": "e14074a6c7e0450492bf4c0a6c431357"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "26",
+    "28",
+    "56"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 3
+}

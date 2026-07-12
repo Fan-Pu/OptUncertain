@@ -1,0 +1,140 @@
+{
+  "active_targets": [
+    {
+      "description": "the toilet paper roll on top of the toilet tank",
+      "target_id": "4"
+    },
+    {
+      "description": "the black floor lamp with a folded black shade beside the tufted wall",
+      "target_id": "6"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "1",
+        "13",
+        "37",
+        "5",
+        "19"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "19",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "0e92a69a50414253a23043758f111cec",
+        "13": "c429b363fd3145fe8a7631bbe9644066",
+        "19": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+        "37": "c8112f69d34d476fbb29e6b3909deba2",
+        "5": "da5fa65c13e643719a20cbb818c9a85d"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "24"
+      ],
+      "reserved_before": [
+        "19"
+      ],
+      "selected": {
+        "next_viewpoint_id": "24",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "24": "c341c46acf7044d1a712d622cbc94a27"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "4",
+        "32"
+      ],
+      "reserved_before": [
+        "19",
+        "24"
+      ],
+      "selected": {
+        "next_viewpoint_id": "4",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "32": "e34dcf54d26a4a95869cc8a0c01cd2be",
+        "4": "3577de361e1a46b1be544d37731bfde6"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "39"
+      ],
+      "reserved_before": [
+        "19",
+        "24",
+        "4"
+      ],
+      "selected": {
+        "next_viewpoint_id": "39",
+        "promising_target_ids": [
+          "6"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "39": "5b9b2794954e4694a45fc424a8643081"
+      }
+    },
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "14",
+        "26",
+        "20",
+        "34"
+      ],
+      "reserved_before": [
+        "19",
+        "24",
+        "39",
+        "4"
+      ],
+      "selected": {
+        "next_viewpoint_id": "34",
+        "promising_target_ids": [
+          "4"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "14": "1e86968849944444b66d9537efb5da9e",
+        "20": "3a6d2322867f40d9a3d2758ab88df288",
+        "26": "23ec8bbec8eb40478411cba2e55b732e",
+        "34": "8a0f2f1a8ea441658501561e5dc34a3e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "19",
+    "24",
+    "34",
+    "39",
+    "4"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "step_index": 1
+}

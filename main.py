@@ -22,6 +22,8 @@ from route_plotter import (
 from optimizer_route_logger import write_optimizer_route_log
 
 CENTRAL_CONFIG_SECTIONS = ("mllm", "bayes", "optimizer")
+OPTIONAL_CONFIG_SECTIONS = ("benchmark",)
+SCENARIO_CONFIG_SECTIONS = CENTRAL_CONFIG_SECTIONS + OPTIONAL_CONFIG_SECTIONS
 BATCH_GENERATION_KEYS = (
     "scans",
     "agent_num_selections",
@@ -94,6 +96,13 @@ def merge_batch_config_overrides(
         if not isinstance(batch_config[section], dict):
             raise TypeError("Batch config section %s must be an object." % section)
         config[section].update(copy.deepcopy(batch_config[section]))
+    for section in OPTIONAL_CONFIG_SECTIONS:
+        if section not in batch_config:
+            continue
+        if not isinstance(batch_config[section], dict):
+            raise TypeError("Batch config section %s must be an object." % section)
+        config.setdefault(section, {})
+        config[section].update(copy.deepcopy(batch_config[section]))
     return config
 
 
@@ -114,12 +123,15 @@ def _merge_single_scenario_config(
         if key not in scenario:
             raise KeyError("Scenario %s is missing %s." % (case_id, key))
 
-    for section in CENTRAL_CONFIG_SECTIONS:
+    for section in SCENARIO_CONFIG_SECTIONS:
         scenario.pop(section, None)
 
     scenario["test_case"] = str(case_id)
     for section in CENTRAL_CONFIG_SECTIONS:
         scenario[section] = copy.deepcopy(default_config[section])
+    for section in OPTIONAL_CONFIG_SECTIONS:
+        if section in default_config:
+            scenario[section] = copy.deepcopy(default_config[section])
 
     scenario["mllm"]["raw_output_dir"] = (
         Path("mllm_raw_outputs") / str(case_id)
@@ -2253,7 +2265,444 @@ def _wait_for_debugger() -> None:
     print("debugger attached, continuing...")
 
 
+class _BaselineTargetState:
+    def __init__(self, targets: List[Dict[str, object]]) -> None:
+        self.target_found = {
+            str(target["target_id"]): False for target in targets
+        }
+
+    def mark_target_found(self, target_id: str) -> None:
+        target_id = str(target_id)
+        if target_id not in self.target_found:
+            raise KeyError("Unknown target id %s." % target_id)
+        self.target_found[target_id] = True
+
+
+def _normalized_run_scenario_input(
+    config_or_scenario: str | Path | Dict[str, object],
+    default_config: Dict[str, object] | None,
+) -> Dict[str, object]:
+    if isinstance(config_or_scenario, dict):
+        if "mllm" in config_or_scenario:
+            return copy.deepcopy(config_or_scenario)
+        return _normalize_scenario_record(
+            scenario=config_or_scenario,
+            case_id=str(config_or_scenario.get("test_case", "default")),
+            default_config=default_config or load_default_config(),
+        )
+    return load_scenario_config(
+        config_or_scenario,
+        default_config=default_config,
+    )
+
+
 def run_scenario(
+    config_or_scenario: str | Path | Dict[str, object],
+    show_agent_views: bool = True,
+    default_config: Dict[str, object] | None = None,
+) -> Dict[str, object]:
+    scenario = _normalized_run_scenario_input(
+        config_or_scenario=config_or_scenario,
+        default_config=default_config,
+    )
+    benchmark = scenario.get("benchmark", {})
+    method = str(
+        benchmark.get("method", "proposed")
+        if isinstance(benchmark, dict)
+        else "proposed"
+    ).strip().lower()
+    if method == "proposed":
+        return _run_proposed_scenario(
+            scenario,
+            show_agent_views=show_agent_views,
+            default_config=default_config,
+        )
+    if method not in {"vlfm_g", "mllm_direct"}:
+        raise ValueError(
+            "benchmark.method must be proposed, vlfm_g, or mllm_direct."
+        )
+    return _run_baseline_scenario(
+        scenario=scenario,
+        method=method,
+        show_agent_views=show_agent_views,
+    )
+
+
+def _provider_defaults(api_type: str) -> Tuple[str, str]:
+    if api_type == "google_genai":
+        return "", "GEMINI_API_KEY"
+    if api_type == "openai_responses":
+        return "", "OPENAI_API_KEY"
+    return "https://router.huggingface.co/v1", "HF_TOKEN"
+
+
+def _baseline_mllm_client(
+    scenario: Dict[str, object],
+    scan_id: str,
+    test_case: str,
+):
+    from semantic_persistence import MLLMClient
+
+    config = scenario["mllm"]
+    detection_api_type = MLLMClient._normalize_api_type(
+        config.get("detection_api_type", "chat_completions"),
+        "detection_api_type",
+    )
+    graph_api_type = MLLMClient._normalize_api_type(
+        config.get("graph_api_type", "chat_completions"),
+        "graph_api_type",
+    )
+    detection_default_url, detection_default_key = _provider_defaults(
+        detection_api_type
+    )
+    graph_default_url, graph_default_key = _provider_defaults(graph_api_type)
+    return MLLMClient(
+        graph_model_name=str(config["graph_model_name"]),
+        detection_model_name=str(config["detection_model_name"]),
+        graph_base_url=str(config.get("graph_base_url", graph_default_url)),
+        detection_base_url=str(
+            config.get("detection_base_url", detection_default_url)
+        ),
+        graph_api_key_env=str(
+            config.get("graph_api_key_env", graph_default_key)
+        ),
+        detection_api_key_env=str(
+            config.get("detection_api_key_env", detection_default_key)
+        ),
+        graph_api_type=graph_api_type,
+        detection_api_type=detection_api_type,
+        read_saved_raw_outputs=bool(config.get("read_saved_raw_outputs", False)),
+        raw_output_dir=str(config["raw_output_dir"]),
+        raw_debug_dir=str(config["debug_output_dir"]),
+        request_timeout=float(config.get("request_timeout", 120.0)),
+        max_validation_retries=int(config.get("max_validation_retries", 2)),
+        max_request_timeout_retries=int(
+            config.get("max_request_timeout_retries", 1)
+        ),
+        graph_thinking=config.get("graph_thinking"),
+        graph_thinking_format=config.get("graph_thinking_format"),
+        graph_reasoning_split=config.get("graph_reasoning_split", False),
+        graph_extra_body_enabled=config.get("graph_extra_body_enabled", True),
+        graph_presence_penalty_enabled=config.get(
+            "graph_presence_penalty_enabled", True
+        ),
+        detection_reasoning_effort=config.get("detection_reasoning_effort"),
+        graph_reasoning_effort=config.get("graph_reasoning_effort"),
+        detection_service_tier=config.get("detection_service_tier"),
+        graph_service_tier=config.get("graph_service_tier"),
+        scan_id=scan_id,
+        case_id=test_case,
+        batch_id=str(scenario.get("batch_id", "default")),
+        detection_cache_enabled=config.get("detection_cache_enabled", False),
+        detection_cache_dir=config.get(
+            "detection_cache_dir", "mllm_detection_cache"
+        ),
+        detection_cache_read=config.get("detection_cache_read", True),
+        detection_cache_write=config.get("detection_cache_write", True),
+        detection_cache_conflict_policy=config.get(
+            "detection_cache_conflict_policy", "raise"
+        ),
+    )
+
+
+def _write_episode_state(
+    output_dir: str,
+    step_index: int,
+    observations: List[Dict[str, object]],
+    active_targets: List[Dict[str, object]],
+) -> Path:
+    path = Path(output_dir) / (
+        "episode_state_step_%04d.json" % int(step_index)
+    )
+    payload = {
+        "step_index": int(step_index),
+        "agent_current_vp_ids": {
+            str(observation["agent_id"]): int(
+                observation["current_viewpoint_index"]
+            )
+            for observation in observations
+        },
+        "agent_current_viewpoint_ids": {
+            str(observation["agent_id"]): str(
+                observation["current_viewpoint_id"]
+            )
+            for observation in observations
+        },
+        "active_targets": copy.deepcopy(active_targets),
+        "local_actions": {
+            str(observation["agent_id"]): copy.deepcopy(
+                observation["local_actions"]
+            )
+            for observation in observations
+        },
+    }
+    _write_json(path, payload)
+    return path
+
+
+def _baseline_result(
+    *,
+    test_case: str,
+    scan_id: str,
+    debug_output_dir: str,
+    executed_routes_by_agent: Dict[str, List[int]],
+    completed_target_node_ids: Dict[str, int],
+    target_found: Dict[str, bool],
+    status: str,
+    stop_reason: str,
+    steps_completed: int,
+    max_steps: int | None,
+    extra_metadata: Dict[str, object] | None = None,
+) -> Dict[str, object]:
+    route_summary = _write_mllm_route_summary(
+        test_case=test_case,
+        scan_id=scan_id,
+        debug_output_dir=debug_output_dir,
+        executed_routes_by_agent=executed_routes_by_agent,
+        completed_target_node_ids=completed_target_node_ids,
+        target_found=target_found,
+        status=status,
+        stop_reason=stop_reason,
+        steps_completed=steps_completed,
+        max_steps=max_steps,
+        extra_metadata=extra_metadata,
+    )
+    return {
+        "target_found": dict(target_found),
+        "status": status,
+        "stop_reason": stop_reason,
+        "steps_completed": int(steps_completed),
+        "max_steps": max_steps,
+        "route_summary": route_summary,
+        **dict(extra_metadata or {}),
+    }
+
+
+def _run_baseline_scenario(
+    scenario: Dict[str, object],
+    method: str,
+    show_agent_views: bool,
+) -> Dict[str, object]:
+    from benchmark_methods import MLLMDirectPolicy, VLFMGPolicy
+    from semantic_persistence import MLLMProviderCreditError, MLLMRetryExhaustedError
+
+    _wait_for_debugger()
+    Helper = _helper_module()
+    scan_id = str(scenario["scan_id"])
+    test_case = str(scenario["test_case"])
+    max_steps = int(scenario["max_steps"]) if "max_steps" in scenario else None
+    agent_ids = [str(agent["id"]) for agent in scenario["agents"]]
+    raw_output_dir = str(scenario["mllm"]["raw_output_dir"])
+    debug_output_dir = str(scenario["mllm"]["debug_output_dir"])
+    benchmark_config = scenario["benchmark"]
+
+    Helper.build_viewpoint_index(scan_id)
+    agent_sims = _init_agent_sims(scenario=scenario, scan_id=scan_id)
+    executed_routes_by_agent = _initialize_executed_routes(scenario)
+    completed_target_node_ids: Dict[str, int] = {}
+    targets = _normalize_targets(scenario["targets"])
+    target_state = _BaselineTargetState(targets)
+    client = _baseline_mllm_client(scenario, scan_id, test_case)
+
+    if method == "vlfm_g":
+        policy_config = dict(benchmark_config["vlfm_g"])
+        policy = VLFMGPolicy(
+            config=policy_config,
+            debug_output_dir=debug_output_dir,
+        )
+        semantic_crop_count = int(policy_config["crop_count"])
+    else:
+        policy = MLLMDirectPolicy(
+            client=client,
+            config=benchmark_config["mllm_direct"],
+            raw_output_dir=raw_output_dir,
+            debug_output_dir=debug_output_dir,
+        )
+        semantic_crop_count = 0
+
+    while True:
+        if all(target_state.target_found.values()):
+            return _baseline_result(
+                test_case=test_case,
+                scan_id=scan_id,
+                debug_output_dir=debug_output_dir,
+                executed_routes_by_agent=executed_routes_by_agent,
+                completed_target_node_ids=completed_target_node_ids,
+                target_found=target_state.target_found,
+                status="completed",
+                stop_reason="all_targets_found",
+                steps_completed=max(0, client.semantic_raw_output_index - 1),
+                max_steps=max_steps,
+            )
+
+        observations = Helper.horizon_scan_individual_sims_return(
+            sims=agent_sims,
+            agent_ids=agent_ids,
+            viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
+            semantic_crop_count=semantic_crop_count,
+        )
+        if show_agent_views:
+            Helper.render_sim_state(
+                _current_agent_states(agent_sims),
+                viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
+            )
+        step_index = int(client.semantic_raw_output_index)
+        active_targets = [
+            target
+            for target in targets
+            if not target_state.target_found[str(target["target_id"])]
+        ]
+        _write_episode_state(
+            output_dir=debug_output_dir,
+            step_index=step_index,
+            observations=observations,
+            active_targets=active_targets,
+        )
+
+        try:
+            detections = client.detect_targets(
+                agent_observations=observations,
+                targets=targets,
+                target_found=target_state.target_found,
+            )
+            completed_targets = _collect_completed_targets(
+                mllm_output={"detections": detections},
+                agent_observations=observations,
+                targets=targets,
+                hypothesis_graph=target_state,
+            )
+            _record_completed_target_nodes(
+                completed_targets=completed_targets,
+                agent_observations=observations,
+                completed_target_node_ids=completed_target_node_ids,
+            )
+            _center_completed_targets(
+                agent_sims=agent_sims,
+                agent_ids=agent_ids,
+                completed_targets=completed_targets,
+                show_agent_views=show_agent_views,
+            )
+            if all(target_state.target_found.values()):
+                return _baseline_result(
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=target_state.target_found,
+                    status="completed",
+                    stop_reason="all_targets_found",
+                    steps_completed=step_index,
+                    max_steps=max_steps,
+                )
+
+            active_targets = [
+                target
+                for target in targets
+                if not target_state.target_found[str(target["target_id"])]
+            ]
+            policy_result = policy.select_actions(
+                step_index=step_index,
+                agent_observations=observations,
+                active_targets=active_targets,
+            )
+        except MLLMRetryExhaustedError as exc:
+            return _baseline_result(
+                test_case=test_case,
+                scan_id=scan_id,
+                debug_output_dir=debug_output_dir,
+                executed_routes_by_agent=executed_routes_by_agent,
+                completed_target_node_ids=completed_target_node_ids,
+                target_found=target_state.target_found,
+                status="incomplete",
+                stop_reason="mllm_retry_exhausted",
+                steps_completed=max(0, int(exc.step_index) - 1),
+                max_steps=max_steps,
+                extra_metadata={
+                    "failed_step_index": int(exc.step_index),
+                    "mllm_stage": str(exc.stage),
+                    "mllm_attempts": int(exc.attempts),
+                    "error": str(exc.last_error),
+                },
+            )
+        except MLLMProviderCreditError as exc:
+            return _baseline_result(
+                test_case=test_case,
+                scan_id=scan_id,
+                debug_output_dir=debug_output_dir,
+                executed_routes_by_agent=executed_routes_by_agent,
+                completed_target_node_ids=completed_target_node_ids,
+                target_found=target_state.target_found,
+                status="terminated",
+                stop_reason="provider_credit_exhausted",
+                steps_completed=max(0, step_index - 1),
+                max_steps=max_steps,
+                extra_metadata={
+                    "failed_step_index": step_index,
+                    "mllm_stage": str(exc.stage),
+                    "mllm_router": str(exc.router),
+                    "mllm_model": str(exc.model),
+                    "error": str(exc.message),
+                },
+            )
+
+        if bool(policy_result["terminal"]):
+            return _baseline_result(
+                test_case=test_case,
+                scan_id=scan_id,
+                debug_output_dir=debug_output_dir,
+                executed_routes_by_agent=executed_routes_by_agent,
+                completed_target_node_ids=completed_target_node_ids,
+                target_found=target_state.target_found,
+                status="incomplete",
+                stop_reason=str(policy_result["stop_reason"]),
+                steps_completed=step_index,
+                max_steps=max_steps,
+            )
+
+        actions_by_agent = {
+            str(action["agent_id"]): action
+            for action in policy_result["actions"]
+        }
+        move_specs = []
+        next_nodes = {}
+        for agent_id in agent_ids:
+            action = actions_by_agent[agent_id]
+            move_specs.append(
+                {
+                    "wait": bool(action["wait"]),
+                    "target_heading": float(action["target_heading"]),
+                    "target_viewpoint_id": str(action["next_viewpoint_id"]),
+                }
+            )
+            next_nodes[agent_id] = int(action["next_viewpoint_index"])
+        Helper.execute_individual_first_hops(
+            sims=agent_sims,
+            move_specs=move_specs,
+            render=show_agent_views,
+        )
+        _append_executed_route_nodes(
+            executed_routes_by_agent=executed_routes_by_agent,
+            next_route_node_ids_by_agent=next_nodes,
+            agent_ids=agent_ids,
+        )
+
+        if _max_steps_reached(step_index, max_steps):
+            return _baseline_result(
+                test_case=test_case,
+                scan_id=scan_id,
+                debug_output_dir=debug_output_dir,
+                executed_routes_by_agent=executed_routes_by_agent,
+                completed_target_node_ids=completed_target_node_ids,
+                target_found=target_state.target_found,
+                status="incomplete",
+                stop_reason="max_steps",
+                steps_completed=step_index,
+                max_steps=max_steps,
+            )
+
+
+def _run_proposed_scenario(
     config_or_scenario: str | Path | Dict[str, object],
     show_agent_views: bool = True,
     default_config: Dict[str, object] | None = None,
@@ -2992,12 +3441,20 @@ def run_batch_config(
     sample_balance: str = "marginal",
     run_id: str | None = None,
     batch_case_id: str | None = None,
+    sampled_case_ids: List[str] | None = None,
     project_root: str | Path | None = None,
 ) -> Dict[str, object]:
     sample_balance = _normalize_sample_balance(sample_balance)
 
-    if sample_count is not None and batch_case_id is not None:
-        raise ValueError("--sample-count and --batch-case-id are mutually exclusive.")
+    selection_count = sum(
+        value is not None
+        for value in (sample_count, batch_case_id, sampled_case_ids)
+    )
+    if selection_count > 1:
+        raise ValueError(
+            "sample_count, batch_case_id, and sampled_case_ids are mutually "
+            "exclusive."
+        )
     if sample_count is not None and run_id is None:
         raise ValueError(
             "--sample-count requires --run-id so sampled outputs are isolated."
@@ -3005,6 +3462,10 @@ def run_batch_config(
     if batch_case_id is not None and run_id is None:
         raise ValueError(
             "--batch-case-id requires --run-id so single-case outputs are isolated."
+        )
+    if sampled_case_ids is not None and run_id is None:
+        raise ValueError(
+            "sampled_case_ids requires run_id so sampled outputs are isolated."
         )
 
     path = Path(batch_config_path)
@@ -3030,7 +3491,39 @@ def run_batch_config(
     case_order = _case_order_from_batch_summary(summary)
     sampled_cases_path = None
     sampled_generated_cases_path = None
-    if batch_case_id is not None:
+    if sampled_case_ids is not None:
+        selected_ids = [str(case_id) for case_id in sampled_case_ids]
+        if not selected_ids:
+            raise ValueError("sampled_case_ids must not be empty.")
+        if len(selected_ids) != len(set(selected_ids)):
+            raise ValueError("sampled_case_ids must not contain duplicates.")
+        unknown = sorted(set(selected_ids) - set(summary["cases"]))
+        if unknown:
+            raise KeyError("Unknown sampled batch case ids: %s." % unknown)
+        sampled_cases_path, sampled_generated_cases_path = (
+            write_sampled_batch_manifests(
+                batch_id=batch_id,
+                summary=summary,
+                sampled_case_ids=selected_ids,
+                sample_count=len(selected_ids),
+                sample_seed=int(sample_seed),
+                project_root=project_root,
+                run_id=run_id,
+                sample_balance=sample_balance,
+            )
+        )
+        selected_id_set = set(selected_ids)
+        scenarios = [
+            scenario
+            for scenario in scenarios
+            if str(scenario["test_case"]) in selected_id_set
+        ]
+        scenario_by_id = {
+            str(scenario["test_case"]): scenario for scenario in scenarios
+        }
+        scenarios = [scenario_by_id[case_id] for case_id in selected_ids]
+        case_order = selected_ids
+    elif batch_case_id is not None:
         selected_case_id = str(batch_case_id)
         if selected_case_id not in summary["cases"]:
             raise KeyError(

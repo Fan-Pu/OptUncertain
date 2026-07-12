@@ -1,0 +1,109 @@
+{
+  "active_targets": [
+    {
+      "description": "the pink and white flowers in the white vase on the glass dining table",
+      "target_id": "0"
+    },
+    {
+      "description": "the small white bust with black hair on the wooden cabinet near the patio window",
+      "target_id": "1"
+    },
+    {
+      "description": "the black keyboard on the office desk besides the monitor",
+      "target_id": "3"
+    },
+    {
+      "description": "the white fist-print skateboard above the bed in the upstairs bedroom",
+      "target_id": "5"
+    },
+    {
+      "description": "the bowl of yellow lemons on the kitchen counter beside the stovetop",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "1",
+        "20",
+        "41"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "41",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "17d80d20c75b45e89949666e40f8df7e",
+        "20": "27b904430e4e48acb818e2ab80f183e3",
+        "41": "c4ce11a276904bf38fe049e67b6c5f7a"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "16",
+        "29",
+        "39",
+        "25"
+      ],
+      "reserved_before": [
+        "41"
+      ],
+      "selected": {
+        "next_viewpoint_id": "39",
+        "promising_target_ids": [
+          "0",
+          "1",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "16": "6be9623980e245ce80ced0bdb70db93c",
+        "25": "d512f07e48aa4fe9a559a1a708ab3c02",
+        "29": "856a21dd20ce41c3ac1c2a160cec9a0f",
+        "39": "a0e680c2599e473c9d64183b65dac6b3"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "13",
+        "4",
+        "32",
+        "47"
+      ],
+      "reserved_before": [
+        "39",
+        "41"
+      ],
+      "selected": {
+        "next_viewpoint_id": "4",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "4ea1cfa67ec145b39f90056a02a43d9f",
+        "32": "75d7eb848ea84a6dbb717dc231cf2dab",
+        "4": "66cb91d800e74042bf34287a76fd36ab",
+        "47": "b98717151b7b49f59af95a9b7111a658"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "39",
+    "4",
+    "41"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent1",
+    "agent2",
+    "agent0"
+  ],
+  "step_index": 2
+}

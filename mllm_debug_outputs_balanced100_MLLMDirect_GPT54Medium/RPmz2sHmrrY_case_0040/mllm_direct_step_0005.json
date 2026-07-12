@@ -1,0 +1,182 @@
+{
+  "active_targets": [
+    {
+      "description": "the EIX 6488 license plate above the bedroom doorway",
+      "target_id": "5"
+    },
+    {
+      "description": "the white stuffed bear below the window blinds in the bedroom",
+      "target_id": "6"
+    },
+    {
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent4",
+      "allowed_short_viewpoint_ids": [
+        "47",
+        "48",
+        "52",
+        "22",
+        "58"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "47",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "22": "eed1d184bb7d4b9eb6b18f0755937e24",
+        "47": "7471dc409d314c818e34f6799b654af7",
+        "48": "7532e47e80ee41cdb6a0caf6191aae59",
+        "52": "9203bc8c7d2648adac338ddfd854589c",
+        "58": "f65d4fa347954fa0ba90f535f6b9bda3"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "37",
+        "32",
+        "26",
+        "35"
+      ],
+      "reserved_before": [
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "37",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "26": "c021c70e20cb4cc3aa954482ded1c24a",
+        "32": "a652a49834244fe18c84a617bf2fedbd",
+        "35": "f2ebe400037746b7aea07343fb529e0a",
+        "37": "2bafa1c7dfc84001beaddf532feb612f"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "8",
+        "42",
+        "20",
+        "49",
+        "31",
+        "29",
+        "44",
+        "9",
+        "15"
+      ],
+      "reserved_before": [
+        "37",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "29",
+        "promising_target_ids": [
+          "5",
+          "6",
+          "7"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "15": "dfb6bfa10a1b49c989d10277a7f2dd46",
+        "20": "15fe7aadc86f4b77a6ca637e5edb559a",
+        "29": "8eb93f74874f4081b27dc47758aba48e",
+        "31": "6138d958efc44eab810630671597637f",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "49": "2731de0b62e14fcb8d742205fcf2948f",
+        "8": "056a847fc47746c797b4d5868466193c",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "3",
+        "10",
+        "21",
+        "4",
+        "28",
+        "25",
+        "16",
+        "50"
+      ],
+      "reserved_before": [
+        "29",
+        "37",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "16",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "10": "03415d3735154bd3bf7074fd7b343992",
+        "16": "d1d78bc07d8a409bbdb3235f00d13046",
+        "21": "0a91f5605f7c45509aa530b85bf51407",
+        "25": "a4cb33ffee054744ad6f6a43ae894b3e",
+        "28": "425035102a614ca993245a6f2207b4d8",
+        "3": "02aa36d91ebf4d3b987d54c601bd785a",
+        "4": "299fc72374a2439fa5f668c48f2482e1",
+        "50": "f2746351955f4214aacbf50dd12673ba"
+      }
+    },
+    {
+      "agent_id": "agent3",
+      "allowed_short_viewpoint_ids": [
+        "42",
+        "20",
+        "54",
+        "6",
+        "31",
+        "34",
+        "13",
+        "44",
+        "9"
+      ],
+      "reserved_before": [
+        "16",
+        "29",
+        "37",
+        "47"
+      ],
+      "selected": {
+        "next_viewpoint_id": "42",
+        "promising_target_ids": []
+      },
+      "short_to_stable_viewpoint_ids": {
+        "13": "96066e55b9c94b23a956ffeaa7e0ad17",
+        "20": "15fe7aadc86f4b77a6ca637e5edb559a",
+        "31": "6138d958efc44eab810630671597637f",
+        "34": "9512857da0d140a881a306870b2596d5",
+        "42": "0e319c291d6e43c5a3acf48b4dd5c2be",
+        "44": "96b8f2fea8f44ab294014b99c845e2d4",
+        "54": "3f3121206d654a95bb6c198291adbfcf",
+        "6": "46502cfe06804adeafc0782798dedaa8",
+        "9": "d13a3f03aaac49f7ab2b5e549c840b3f"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "16",
+    "29",
+    "37",
+    "42",
+    "47"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent4",
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3"
+  ],
+  "step_index": 5
+}

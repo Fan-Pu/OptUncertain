@@ -1,0 +1,109 @@
+{
+  "active_targets": [
+    {
+      "description": "the white kettle on the counter beside the water dispenser",
+      "target_id": "5"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "34",
+        "12",
+        "60",
+        "25",
+        "42",
+        "14",
+        "18"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "60",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "12": "afbf203a70f14a40b9bcd78001734083",
+        "14": "d950fc211fc745d9a8e2080f6ce747d2",
+        "18": "e2d51e6321224b5aae0a84c8a90c2dd2",
+        "25": "d60f3399b4d24c21a494ed4430f27ce9",
+        "34": "a5d7dd600de549a0a7c626f8c2c6c3e3",
+        "42": "d8f7db8824674725a8334d3554cda5bf",
+        "60": "c72099534821414c956a08c899742eb8"
+      }
+    },
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "26",
+        "24",
+        "30",
+        "5",
+        "20",
+        "4"
+      ],
+      "reserved_before": [
+        "60"
+      ],
+      "selected": {
+        "next_viewpoint_id": "24",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "20": "954fc1d65dba428eb808fb9dce1b8a97",
+        "24": "4ed50a2f86384de599f06df862d17b10",
+        "26": "2b67ab047ee949538c9d5d89046d985f",
+        "30": "6ea742331ac84fb9ae24a1b8d76bcf8a",
+        "4": "ae2a7dc3c3e545b98e2fcb374de658d1",
+        "5": "7dcc99131ec74b968cb9d728c49220e0"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "30",
+        "22",
+        "20",
+        "7",
+        "4",
+        "33",
+        "29"
+      ],
+      "reserved_before": [
+        "24",
+        "60"
+      ],
+      "selected": {
+        "next_viewpoint_id": "33",
+        "promising_target_ids": [
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "20": "954fc1d65dba428eb808fb9dce1b8a97",
+        "22": "77c8ac324e6e422faac5ffb32bd62c86",
+        "29": "f41c2851f4b241fcad3f8f15378da53b",
+        "30": "6ea742331ac84fb9ae24a1b8d76bcf8a",
+        "33": "e6e19fd376c544b58035a32bd44ed8d4",
+        "4": "ae2a7dc3c3e545b98e2fcb374de658d1",
+        "7": "96d3ea8a25b347e4b097f070a1cba15e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "24",
+    "33",
+    "60"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent2",
+    "agent0",
+    "agent1"
+  ],
+  "step_index": 9
+}

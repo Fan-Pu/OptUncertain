@@ -1,0 +1,92 @@
+{
+  "active_targets": [
+    {
+      "description": "the black framed eye chart on the hallway wall",
+      "target_id": "3"
+    },
+    {
+      "description": "the white candle on the black holder by the dining room window",
+      "target_id": "4"
+    },
+    {
+      "description": "the open cookbook on the kitchen counter beside the stove",
+      "target_id": "5"
+    },
+    {
+      "description": "the glass vase with tall green reeds on the console table near the entrance",
+      "target_id": "7"
+    }
+  ],
+  "agent_decisions": [
+    {
+      "agent_id": "agent0",
+      "allowed_short_viewpoint_ids": [
+        "51",
+        "9"
+      ],
+      "reserved_before": [],
+      "selected": {
+        "next_viewpoint_id": "51",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "51": "38260e04f02546a6af3dcaf8689546a2",
+        "9": "faad06c7cb2b4a6f9220e7f6f87c800b"
+      }
+    },
+    {
+      "agent_id": "agent1",
+      "allowed_short_viewpoint_ids": [
+        "1"
+      ],
+      "reserved_before": [
+        "51"
+      ],
+      "selected": {
+        "next_viewpoint_id": "1",
+        "promising_target_ids": [
+          "3"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "1": "997b813443c64de5b38312642e937223"
+      }
+    },
+    {
+      "agent_id": "agent2",
+      "allowed_short_viewpoint_ids": [
+        "25",
+        "18"
+      ],
+      "reserved_before": [
+        "1",
+        "51"
+      ],
+      "selected": {
+        "next_viewpoint_id": "18",
+        "promising_target_ids": [
+          "4",
+          "5"
+        ]
+      },
+      "short_to_stable_viewpoint_ids": {
+        "18": "f04ae8ebf8254168814bc669635b3775",
+        "25": "76c7a665d2b242bfa203e7f394b1353e"
+      }
+    }
+  ],
+  "final_reserved_short_viewpoint_ids": [
+    "1",
+    "18",
+    "51"
+  ],
+  "method": "mllm_direct",
+  "rotating_order": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "step_index": 1
+}
