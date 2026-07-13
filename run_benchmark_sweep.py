@@ -16,7 +16,11 @@ from main import (
     run_batch_config,
     sample_batch_case_ids,
 )
-from oracle_runner import run_oracle
+from oracle_runner import (
+    _batch_scan_targets_by_id,
+    _scenario_from_generated_batch_case,
+    run_oracle,
+)
 from run_batch_sweep import build_sweep_batch_config, selected_graph_model
 
 
@@ -180,9 +184,11 @@ def _calibration_manifest(
 
 def _run_calibration_oracles(
     calibration_manifest: Dict[str, object],
+    batch_config: Dict[str, object],
     output_root: Path,
 ) -> Path:
     cases = calibration_manifest["cases"]
+    scan_targets = _batch_scan_targets_by_id(batch_config)
     summaries = {}
     for case_id in _case_order(calibration_manifest):
         case_output = output_root / "oracles" / case_id
@@ -191,8 +197,12 @@ def _run_calibration_oracles(
         if summary_path.exists() and route_path.exists():
             summaries[case_id] = _read_object(summary_path, "oracle summary")
             continue
+        scenario = _scenario_from_generated_batch_case(
+            generated_case=cases[case_id],
+            scan_targets=scan_targets,
+        )
         summaries[case_id] = run_oracle(
-            test_case=cases[case_id],
+            test_case=scenario,
             project_root=PROJECT_ROOT,
             connectivity_dir=PROJECT_ROOT / "connectivity",
             output_dir=case_output,
@@ -266,7 +276,11 @@ def calibrate_vlfm_g(
     manifest_path = output_root / "calibration_generated_cases.json"
     _write_json(manifest_path, calibration_manifest)
     manifest_digest = _manifest_hash(calibration_manifest)
-    oracle_path = _run_calibration_oracles(calibration_manifest, output_root)
+    oracle_path = _run_calibration_oracles(
+        calibration_manifest,
+        batch_config,
+        output_root,
+    )
 
     method_specs = []
     beta_by_method = {}

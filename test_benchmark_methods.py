@@ -23,6 +23,7 @@ from benchmark_methods.vlfm_g import (
 )
 from run_benchmark_sweep import (
     _configured_batch,
+    _run_calibration_oracles,
     _select_beta,
     _validate_sample_manifest,
 )
@@ -71,6 +72,60 @@ def _vlfm_config(tmp_path: Path):
 
 
 class BenchmarkMethodTests(unittest.TestCase):
+    def test_calibration_oracles_use_batch_detectable_viewpoints(self):
+        calibration_manifest = {
+            "batch_id": "batch_test",
+            "case_order": ["scan_a_case_0001"],
+            "cases": {
+                "scan_a_case_0001": {
+                    "test_case": "scan_a_case_0001",
+                    "scan_id": "scan_a",
+                    "agents": [
+                        {
+                            "id": "agent0",
+                            "start_viewpoint_id": "start",
+                            "heading": 0.0,
+                            "elevation": 0.0,
+                        }
+                    ],
+                    "targets": [
+                        {"target_id": "target_a", "description": "target"}
+                    ],
+                }
+            },
+        }
+        batch_config = {
+            "scans": [
+                {
+                    "scan_id": "scan_a",
+                    "targets": [
+                        {
+                            "target_id": "target_a",
+                            "description": "target",
+                            "detectable_viewpoint_ids": ["vp1", "vp2"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as temp_dir:
+            with patch("run_benchmark_sweep.run_oracle") as run_oracle_mock:
+                run_oracle_mock.return_value = {"status": "completed"}
+                _run_calibration_oracles(
+                    calibration_manifest,
+                    batch_config,
+                    Path(temp_dir),
+                )
+
+        scenario = run_oracle_mock.call_args.kwargs["test_case"]
+        self.assertEqual(
+            scenario["targets"][0]["detectable_viewpoint_ids"],
+            ["vp1", "vp2"],
+        )
+
     def test_full_panorama_local_actions_use_deduplicated_markers(self):
         marker_candidates = [
             {

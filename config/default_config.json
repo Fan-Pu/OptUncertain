@@ -16,7 +16,7 @@
     "graph_base_url": "https://router.huggingface.co/v1",
     "graph_api_key_env": "HF_TOKEN",
     "detection_reasoning_effort": "medium",
-    "detection_service_tier": "flex",
+    "detection_service_tier": null,
     "graph_service_tier": null,
     "graph_thinking": "enabled",
     "request_timeout": 900,
@@ -51,7 +51,7 @@
     "vlfm_g": {
       "model_name": "Salesforce/blip2-itm-vit-g",
       "model_revision": "d3788a04efa0f9e897305f5b9d9dedeaa3afb99d",
-      "device": "cpu",
+      "device": "cuda",
       "dtype": "float32",
       "crop_count": 8,
       "target_prompt_template": "Seems like the following target may be ahead: {description}.",
