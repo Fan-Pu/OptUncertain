@@ -1,0 +1,113 @@
+{
+  "current_viewpoints_reassignment": [
+    {
+      "new_assigned_region_id": 64,
+      "viewpoint_id": 8
+    }
+  ],
+  "visible_region_nodes": [],
+  "viewpoint_target_scores": [
+    {
+      "id": 6,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.46,
+          "evidence_strength": "medium",
+          "basis": "Marker lies in the white-counter kitchen workspace with small appliances, matching the target's kitchen and stove support-surface cues better than the dining or sitting viewpoints."
+        }
+      }
+    },
+    {
+      "id": 9,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.29,
+          "evidence_strength": "medium",
+          "basis": "Marker sits in the right-side white-cabinet kitchen area; the kitchen cue matches, though the stove itself is not directly visible from the current panorama."
+        }
+      }
+    },
+    {
+      "id": 20,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.009,
+          "evidence_strength": "low",
+          "basis": "Marker is deeper on the sitting-room side beyond the dining opening, which contradicts the target's explicit kitchen-stove location cue."
+        }
+      }
+    },
+    {
+      "id": 31,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.021,
+          "evidence_strength": "low",
+          "basis": "Marker is in the dining nook by the tree and window, adjacent to but not inside the kitchen workspace named in the target text."
+        }
+      }
+    },
+    {
+      "id": 42,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.014,
+          "evidence_strength": "low",
+          "basis": "Marker is at the dining-to-living boundary near the TV side rather than at a kitchen stove or counter workspace."
+        }
+      }
+    },
+    {
+      "id": 54,
+      "target_scores": {
+        "2": {
+          "raw_score": 0.005,
+          "evidence_strength": "low",
+          "basis": "Marker lies on the sitting-area side by the column, not in the kitchen and not near a visible stove support surface."
+        }
+      }
+    }
+  ],
+  "viewpoint_node_assigns": [
+    {
+      "region_node_id": 67,
+      "assigned_viewpoint_node_indices": [
+        6,
+        9
+      ]
+    },
+    {
+      "region_node_id": 64,
+      "assigned_viewpoint_node_indices": [
+        34,
+        44
+      ]
+    },
+    {
+      "region_node_id": 66,
+      "assigned_viewpoint_node_indices": [
+        27,
+        41
+      ]
+    }
+  ],
+  "new_edges": [
+    {
+      "i": 6,
+      "j": 9,
+      "type": "vv",
+      "exist_prob": 0.78,
+      "distance_mean": 0.667
+    },
+    {
+      "i": 27,
+      "j": 41,
+      "type": "vv",
+      "exist_prob": 0.68,
+      "distance_mean": 1.523
+    }
+  ],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 0.25
+  }
+}
