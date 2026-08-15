@@ -20,6 +20,8 @@
     "graph_service_tier": null,
     "graph_thinking": "enabled",
     "request_timeout": 900,
+    "max_transient_provider_retries": 1,
+    "transient_provider_cooldown_seconds": 300,
     "read_saved_raw_outputs": true,
     "detection_cache_enabled": true,
     "detection_cache_dir": "mllm_detection_cache",
@@ -75,6 +77,9 @@
       "action_service_tier": "flex",
       "include_one_step_distances": true,
       "max_validation_retries": 1
+    },
+    "dec_graph": {
+      "graph_model_label": "Gemma431BThinking"
     }
   },
   "batch_sweep": {
@@ -101,7 +106,8 @@
         "graph_base_url": "https://router.huggingface.co/v1",
         "graph_api_key_env": "HF_TOKEN",
         "graph_extra_body_enabled": false,
-        "graph_presence_penalty_enabled": false
+        "graph_presence_penalty_enabled": false,
+        "graph_max_tokens": 16384
       },
       {
         "label": "Qwen36_35BA3BThinking",

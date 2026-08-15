@@ -1,0 +1,108 @@
+{
+  "agent_current_vp_ids": {
+    "agent2": 58
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 22,
+      "j": 58,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 33,
+      "j": 58,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 47,
+      "j": 58,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        58
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 22,
+      "label": "eed1d184bb7d4b9eb6b18f0755937e24",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        58
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "60ac8d87f9a34151baff06d5372ddf45",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        58
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 47,
+      "label": "7471dc409d314c818e34f6799b654af7",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        22,
+        33,
+        47
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 58,
+      "label": "f65d4fa347954fa0ba90f535f6b9bda3",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        22,
+        33,
+        47,
+        58
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 59,
+      "label": "brown striped corridor area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "59": [
+      22,
+      33,
+      47,
+      58
+    ]
+  },
+  "viewpoint_to_region": {
+    "22": 59,
+    "33": 59,
+    "47": 59,
+    "58": 59
+  }
+}

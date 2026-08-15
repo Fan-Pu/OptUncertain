@@ -1,0 +1,134 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.013,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.06,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 30,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.829,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 39,
+      "j": 43,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "51857544c192476faebf212acb1b3d90",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "5": 0.6
+      },
+      "target_probs": {
+        "5": 0.5454545454545454
+      },
+      "target_score_basis": {
+        "5": "Viewpoint is located in the bedroom area near the bed and sitting area, which is a plausible location for an armchair with a throw pillow."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 30,
+      "label": "902e65564f81489687878425d9b3cb55",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "5": 0.5
+      },
+      "target_probs": {
+        "5": 0.45454545454545453
+      },
+      "target_score_basis": {
+        "5": "Viewpoint is in the bedroom area near a TV and potential seating, matching the room type for the target armchair."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 39,
+      "label": "5b9b2794954e4694a45fc424a8643081",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "5": 0.0
+      },
+      "target_probs": {
+        "5": 0.0
+      },
+      "target_score_basis": {
+        "5": "The viewpoint is in a bedroom area with a bed and seating, which is a plausible location for a throw pillow on an armchair."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 43,
+      "label": "db145474a5fa476d95c2cc7f09e7c83a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "5": 0.0
+      },
+      "target_probs": {
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        30,
+        39,
+        43
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern bedroom area with decorative screen and large windows",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "5": false
+  }
+}

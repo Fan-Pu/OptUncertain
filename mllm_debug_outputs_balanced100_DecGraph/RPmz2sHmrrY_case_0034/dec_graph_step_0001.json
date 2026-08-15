@@ -1,0 +1,100 @@
+{
+  "benchmark_method": "dec_graph",
+  "step_index": 1,
+  "active_agent_ids_at_start": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "stopped_agents": {},
+  "active_target_ids_before_detection": [
+    "1",
+    "2",
+    "4",
+    "7"
+  ],
+  "completed_targets": [
+    {
+      "target_id": "4",
+      "description": "the Santa snow globe on top of the TV in the bedroom",
+      "agent_id": "agent3",
+      "target_center_x": 0.88,
+      "target_heading": 5.512840608580607
+    },
+    {
+      "target_id": "7",
+      "description": "the red No Trespassing sign above the workbench closet in the bedroom",
+      "agent_id": "agent4",
+      "target_center_x": 0.21,
+      "target_heading": 1.3031064527702654
+    }
+  ],
+  "active_target_ids_after_detection": [
+    "1",
+    "2"
+  ],
+  "graph_calls": {
+    "agent1": {
+      "started_at_unix": 1784617968.5581312,
+      "ended_at_unix": 1784618010.5160031,
+      "duration_seconds": 41.95787191390991
+    },
+    "agent3": {
+      "started_at_unix": 1784617968.5618284,
+      "ended_at_unix": 1784618013.0774555,
+      "duration_seconds": 44.51562714576721
+    },
+    "agent4": {
+      "started_at_unix": 1784617968.564092,
+      "ended_at_unix": 1784618138.8348284,
+      "duration_seconds": 170.27073645591736
+    },
+    "agent2": {
+      "started_at_unix": 1784617968.560021,
+      "ended_at_unix": 1784618141.839395,
+      "duration_seconds": 173.27937412261963
+    },
+    "agent0": {
+      "started_at_unix": 1784617968.557721,
+      "ended_at_unix": 1784618706.5720913,
+      "duration_seconds": 738.0143704414368
+    }
+  },
+  "optimizer_calls": {
+    "agent1": {
+      "started_at_unix": 1784618706.7242084,
+      "ended_at_unix": 1784618706.7417161,
+      "duration_seconds": 0.01750779151916504
+    },
+    "agent0": {
+      "started_at_unix": 1784618706.7196708,
+      "ended_at_unix": 1784618706.742429,
+      "duration_seconds": 0.02275824546813965
+    },
+    "agent2": {
+      "started_at_unix": 1784618706.7264225,
+      "ended_at_unix": 1784618706.74391,
+      "duration_seconds": 0.017487525939941406
+    },
+    "agent3": {
+      "started_at_unix": 1784618706.7290344,
+      "ended_at_unix": 1784618706.7449403,
+      "duration_seconds": 0.01590585708618164
+    },
+    "agent4": {
+      "started_at_unix": 1784618706.731545,
+      "ended_at_unix": 1784618706.7459562,
+      "duration_seconds": 0.014411211013793945
+    }
+  },
+  "selected_first_hops": {
+    "agent0": 35,
+    "agent1": 36,
+    "agent2": 56,
+    "agent3": 47,
+    "agent4": 27
+  },
+  "overlapping_first_hops": {}
+}

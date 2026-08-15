@@ -1,0 +1,100 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 7
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 7,
+      "j": 10,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 7,
+      "j": 20,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        10,
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 7,
+      "label": "0672a86275c14b148e8618ecde714e06",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        7
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "837b0a58fa8b4820a3c07e0c89ccfc60",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        7
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "27b904430e4e48acb818e2ab80f183e3",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        7,
+        20
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "modern bedroom with large windows and wooden wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "bright white corridor with art on wall",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "50": [
+      7,
+      20
+    ],
+    "51": [
+      10
+    ]
+  },
+  "viewpoint_to_region": {
+    "7": 50,
+    "10": 51,
+    "20": 50
+  }
+}

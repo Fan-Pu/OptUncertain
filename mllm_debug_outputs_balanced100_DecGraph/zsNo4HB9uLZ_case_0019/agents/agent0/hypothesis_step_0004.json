@@ -1,0 +1,244 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.452,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 7,
+      "j": 9,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.805,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 7,
+      "j": 51,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.065,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.254,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 51,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.44,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 13,
+      "j": 48,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.354,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 35,
+      "j": 48,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.139,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 42,
+      "j": 51,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.07,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 48,
+      "j": 51,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 7,
+      "label": "38342af67f5d4b73ad4cff4402f52d83",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "5": 0.0
+      },
+      "target_probs": {
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 9,
+      "label": "faad06c7cb2b4a6f9220e7f6f87c800b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "5": 0.0
+      },
+      "target_probs": {
+        "5": 0.0
+      },
+      "target_score_basis": {
+        "5": "Located in a bedroom area, which contradicts the kitchen counter constraint for the cookbook."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 13,
+      "label": "38e0c09ac7a748dbadea6471861b30c3",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "5": 0.01
+      },
+      "target_probs": {
+        "5": 0.33333333333333337
+      },
+      "target_score_basis": {
+        "5": "Viewpoint 13 is located in a hallway area outside the bedroom; no evidence of a kitchen counter or stove."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "d1ef235f79dd480da8b1f320bf073701",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "5": 0.01
+      },
+      "target_probs": {
+        "5": 0.33333333333333337
+      },
+      "target_score_basis": {
+        "5": "Viewpoint 35 is inside a bedroom closet; contradicts the kitchen counter and stove location required for the cookbook."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 42,
+      "label": "aabf649f606a48a1b16d5bdcd5970602",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "5": 0.01
+      },
+      "target_probs": {
+        "5": 0.33333333333333337
+      },
+      "target_score_basis": {
+        "5": "Viewpoint 42 is in the bedroom region; contradicts the kitchen counter and stove location required for the cookbook."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 48,
+      "label": "61c98135870e449a846737f610d0e969",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "5": 0.0
+      },
+      "target_probs": {
+        "5": 0.0
+      },
+      "target_score_basis": {
+        "5": "Located in a bedroom area, contradicting the kitchen requirement."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 51,
+      "label": "38260e04f02546a6af3dcaf8689546a2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "5": 0.0
+      },
+      "target_probs": {
+        "5": 0.0
+      },
+      "target_score_basis": {
+        "5": "Viewpoint is in a bedroom area, contradicting the kitchen counter constraint."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        7,
+        9,
+        13,
+        35,
+        42,
+        48,
+        51
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "modern bedroom with grey walls and large window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 4,
+  "target_found": {
+    "3": true,
+    "4": true,
+    "5": false,
+    "7": true
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.829,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 39,
+      "j": 43,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "5b9b2794954e4694a45fc424a8643081",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "4": 0.1,
+        "6": 0.9
+      },
+      "target_probs": {
+        "4": 1.0,
+        "6": 1.0
+      },
+      "target_score_basis": {
+        "4": "The area is a bedroom with a bed and curtains, which contradicts the target location of a toilet tank in a bathroom.",
+        "6": "The bedroom contains a tufted wall and a floor lamp, matching the target description of a black floor lamp beside a tufted wall."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 43,
+      "label": "db145474a5fa476d95c2cc7f09e7c83a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "4": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        39,
+        43
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern bedroom with tufted wall and large window",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "2": true,
+    "3": true,
+    "4": false,
+    "6": false
+  }
+}

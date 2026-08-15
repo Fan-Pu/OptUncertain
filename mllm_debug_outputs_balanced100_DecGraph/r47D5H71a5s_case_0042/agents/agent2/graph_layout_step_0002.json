@@ -1,0 +1,116 @@
+{
+  "agent_current_vp_ids": {
+    "agent2": 47
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 44,
+      "j": 47,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 44,
+      "j": 55,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 47,
+      "j": 55,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 52,
+      "j": 55,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        47,
+        55
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 44,
+      "label": "cc94b5dda437408a9a166fcdbafa2a48",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        44,
+        55
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 47,
+      "label": "656ab180c21645e0a4cef70b95341e0a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        55
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 52,
+      "label": "49d8e71cc67d45f9863ca6d25a61a2fa",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        44,
+        47,
+        52
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 55,
+      "label": "a0fbf9972e79491bbcbf4a6e7cf38d8a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        44,
+        47,
+        52,
+        55
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "white marble decorative room with central platform",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "region_to_viewpoints": {
+    "61": [
+      44,
+      47,
+      52,
+      55
+    ]
+  },
+  "viewpoint_to_region": {
+    "44": 61,
+    "47": 61,
+    "52": 61,
+    "55": 61
+  }
+}

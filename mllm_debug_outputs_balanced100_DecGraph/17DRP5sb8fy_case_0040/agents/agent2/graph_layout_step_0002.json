@@ -1,0 +1,108 @@
+{
+  "agent_current_vp_ids": {
+    "agent2": 39
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 2,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 30,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 39,
+      "j": 43,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "51857544c192476faebf212acb1b3d90",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 30,
+      "label": "902e65564f81489687878425d9b3cb55",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        2,
+        30,
+        43
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 39,
+      "label": "5b9b2794954e4694a45fc424a8643081",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 43,
+      "label": "db145474a5fa476d95c2cc7f09e7c83a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        30,
+        39,
+        43
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern bedroom with decorative lattice screen and large windows",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "region_to_viewpoints": {
+    "44": [
+      2,
+      30,
+      39,
+      43
+    ]
+  },
+  "viewpoint_to_region": {
+    "2": 44,
+    "30": 44,
+    "39": 44,
+    "43": 44
+  }
+}

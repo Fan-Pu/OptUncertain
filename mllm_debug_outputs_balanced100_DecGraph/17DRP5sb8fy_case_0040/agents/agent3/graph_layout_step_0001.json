@@ -1,0 +1,100 @@
+{
+  "agent_current_vp_ids": {
+    "agent3": 17
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 4,
+      "j": 17,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 17,
+      "j": 32,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        17
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 4,
+      "label": "3577de361e1a46b1be544d37731bfde6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        4,
+        32
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 17,
+      "label": "df211c2c55f94b87a717ce1469577456",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        17
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 32,
+      "label": "e34dcf54d26a4a95869cc8a0c01cd2be",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        4,
+        17
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "living room area with curved beige sofa and blue rug",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        32
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "entry hallway area near living room",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "44": [
+      4,
+      17
+    ],
+    "45": [
+      32
+    ]
+  },
+  "viewpoint_to_region": {
+    "4": 44,
+    "17": 44,
+    "32": 45
+  }
+}

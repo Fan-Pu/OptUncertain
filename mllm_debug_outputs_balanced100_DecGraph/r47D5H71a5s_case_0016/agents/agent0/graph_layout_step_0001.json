@@ -1,0 +1,144 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 21
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 3,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 6,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 16,
+      "j": 21,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 21,
+      "j": 59,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 3,
+      "label": "04dba6ce40274f9b80f8e18eb201d33b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "32ddd1485c98480f9a6ecd24ace5d49f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 16,
+      "label": "9d5a333a21004d1cb17692e2f9b8aff0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        3,
+        6,
+        16,
+        59
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 21,
+      "label": "95903e1adf7e4ce9a87b9df4e9ec63e6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 59,
+      "label": "1d80333e82b347e89884fffc9f4187e0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        16,
+        21
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "warmly lit spa room with massage tables",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3,
+        59
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "adjacent inner room seen through doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "61": [
+      6,
+      16,
+      21
+    ],
+    "62": [
+      3,
+      59
+    ]
+  },
+  "viewpoint_to_region": {
+    "3": 62,
+    "6": 61,
+    "16": 61,
+    "21": 61,
+    "59": 62
+  }
+}

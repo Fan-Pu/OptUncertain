@@ -1,0 +1,76 @@
+{
+  "benchmark_method": "dec_graph",
+  "step_index": 1,
+  "active_agent_ids_at_start": [
+    "agent0",
+    "agent1",
+    "agent2"
+  ],
+  "stopped_agents": {},
+  "active_target_ids_before_detection": [
+    "0",
+    "2",
+    "6",
+    "7"
+  ],
+  "completed_targets": [
+    {
+      "target_id": "6",
+      "description": "the white seated statue beside the indoor pool",
+      "agent_id": "agent2",
+      "target_center_x": 0.04,
+      "target_heading": 0.23496495054973657
+    },
+    {
+      "target_id": "7",
+      "description": "the yellow wet floor sign next to the treadmill",
+      "agent_id": "agent2",
+      "target_center_x": 0.98,
+      "target_heading": 6.141159139298569
+    }
+  ],
+  "active_target_ids_after_detection": [
+    "0",
+    "2"
+  ],
+  "graph_calls": {
+    "agent1": {
+      "started_at_unix": 1784500609.0304453,
+      "ended_at_unix": 1784500617.9060326,
+      "duration_seconds": 8.875587224960327
+    },
+    "agent2": {
+      "started_at_unix": 1784500609.0319767,
+      "ended_at_unix": 1784500634.2107735,
+      "duration_seconds": 25.178796768188477
+    },
+    "agent0": {
+      "started_at_unix": 1784500609.0290513,
+      "ended_at_unix": 1784500642.8067517,
+      "duration_seconds": 33.777700424194336
+    }
+  },
+  "optimizer_calls": {
+    "agent1": {
+      "started_at_unix": 1784500642.8928852,
+      "ended_at_unix": 1784500642.902825,
+      "duration_seconds": 0.009939908981323242
+    },
+    "agent0": {
+      "started_at_unix": 1784500642.8899007,
+      "ended_at_unix": 1784500642.903437,
+      "duration_seconds": 0.013536214828491211
+    },
+    "agent2": {
+      "started_at_unix": 1784500642.894825,
+      "ended_at_unix": 1784500642.9041183,
+      "duration_seconds": 0.009293317794799805
+    }
+  },
+  "selected_first_hops": {
+    "agent0": 4,
+    "agent1": 40,
+    "agent2": 25
+  },
+  "overlapping_first_hops": {}
+}

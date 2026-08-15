@@ -1,0 +1,105 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.133,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 4,
+      "j": 44,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.569,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 4,
+      "j": 47,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 4,
+      "label": "66cb91d800e74042bf34287a76fd36ab",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "6": 0.0
+      },
+      "target_probs": {
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 44,
+      "label": "8844f8fdc366462587b70fb7ede46242",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "6": 0.8
+      },
+      "target_probs": {
+        "6": 0.6666666666666666
+      },
+      "target_score_basis": {
+        "6": "Located in the upstairs bedroom area near the bed and nightstand, matching target location constraints."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 47,
+      "label": "b98717151b7b49f59af95a9b7111a658",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "6": 0.4
+      },
+      "target_probs": {
+        "6": 0.3333333333333333
+      },
+      "target_score_basis": {
+        "6": "Located in the upstairs bedroom area, but further from the bed/nightstand than viewpoint 44."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        4,
+        44,
+        47
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "modern upstairs bedroom with white bedding and grey carpet",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "6": false
+  }
+}

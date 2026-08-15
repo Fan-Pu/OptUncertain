@@ -1,0 +1,86 @@
+{
+  "agent_current_vp_ids": {
+    "agent4": 12
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 6,
+      "j": 12,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 12,
+      "j": 22,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        12
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "00ebbf3782c64d74aaf7dd39cd561175",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        6,
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 12,
+      "label": "e693b5de8ad84d4cb61a79ece2e66d11",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        12
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 22,
+      "label": "28db29e8c72c4a68bfdf5bb2b454443d",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        12,
+        22
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern bathroom with grey stone wall and white toilet",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "44": [
+      6,
+      12,
+      22
+    ]
+  },
+  "viewpoint_to_region": {
+    "6": 44,
+    "12": 44,
+    "22": 44
+  }
+}

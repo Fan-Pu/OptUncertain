@@ -1,0 +1,148 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.964,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 48,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.893,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 15,
+      "j": 48,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.082,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 23,
+      "j": 48,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 9,
+      "label": "dddeccce9b044629a9ffd5c61e8ea1cf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.1
+      },
+      "target_probs": {
+        "3": 0.1
+      },
+      "target_score_basis": {
+        "3": "Viewpoint 9 is located in a transit area near the stairs, which is not the target location described as beside a door on the floor."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "6be3b190af924e26916685a57f46b775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.1
+      },
+      "target_probs": {
+        "3": 0.1
+      },
+      "target_score_basis": {
+        "3": "Viewpoint 15 is in a transit area near the stairs, not matching the specific 'beside the door' floor location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 23,
+      "label": "498ad4add3424a4eaf28355ded64c622",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "3": 0.8
+      },
+      "target_probs": {
+        "3": 0.8
+      },
+      "target_score_basis": {
+        "3": "Viewpoint 23 is in the main room area near a doorway, which better matches the 'beside the door' constraint than the stair area."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 48,
+      "label": "4e528d58657147978ac5c28a9168a870",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "3": 0.0
+      },
+      "target_probs": {
+        "3": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        23,
+        48
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "brown-walled living area with furniture",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        15
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "white staircase and landing area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "3": false
+  }
+}

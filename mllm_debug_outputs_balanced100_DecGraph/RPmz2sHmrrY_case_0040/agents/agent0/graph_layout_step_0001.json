@@ -1,0 +1,144 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 53
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 26,
+      "j": 53,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 32,
+      "j": 53,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 35,
+      "j": 53,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 37,
+      "j": 53,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        53
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "c021c70e20cb4cc3aa954482ded1c24a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        53
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 32,
+      "label": "a652a49834244fe18c84a617bf2fedbd",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        53
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "f2ebe400037746b7aea07343fb529e0a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        53
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 37,
+      "label": "2bafa1c7dfc84001beaddf532feb612f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        26,
+        32,
+        35,
+        37
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "af020019b43e4ab883dcae79d24fe47f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        32,
+        35,
+        37,
+        53
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 59,
+      "label": "blue-walled bedroom with Christmas tree and whiteboard",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        26
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 60,
+      "label": "light-colored hallway outside bedroom",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "59": [
+      32,
+      35,
+      37,
+      53
+    ],
+    "60": [
+      26
+    ]
+  },
+  "viewpoint_to_region": {
+    "26": 60,
+    "32": 59,
+    "35": 59,
+    "37": 59,
+    "53": 59
+  }
+}

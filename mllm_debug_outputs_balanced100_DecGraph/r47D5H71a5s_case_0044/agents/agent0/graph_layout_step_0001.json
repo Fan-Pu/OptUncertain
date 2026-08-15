@@ -1,0 +1,122 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 54
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 54,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 2,
+      "j": 54,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 18,
+      "j": 54,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        54
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 1,
+      "label": "4eb2befc7e974e45a1956695ca4342e2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        54
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "bd624a2988bf4a94839472180cc1b3d5",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        54
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "e2d51e6321224b5aae0a84c8a90c2dd2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1,
+        2,
+        18
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "ce525fada36b41c3a89a4e77e83e4e5f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        18,
+        54
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "indoor home gym area with exercise machines",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "adjacent room seen through doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "61": [
+      1,
+      18,
+      54
+    ],
+    "62": [
+      2
+    ]
+  },
+  "viewpoint_to_region": {
+    "1": 61,
+    "2": 62,
+    "18": 61,
+    "54": 61
+  }
+}

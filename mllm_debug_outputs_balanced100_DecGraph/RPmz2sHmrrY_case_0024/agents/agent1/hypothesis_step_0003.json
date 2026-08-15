@@ -1,0 +1,219 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.704,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 0,
+      "j": 46,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.314,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.235,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.749,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 19,
+      "j": 46,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.67,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 46,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.418,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 35,
+      "j": 46,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 0,
+      "label": "f4fb96ce8e874f609dab60c35534d9d9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "7": 0.0
+      },
+      "target_probs": {
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 19,
+      "label": "6abe3777358941b59001f6ec84bb530b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "7": 0.0
+      },
+      "target_probs": {
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "7": "located in the bedroom, matching the target's explicit room cue"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "c021c70e20cb4cc3aa954482ded1c24a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "7": 0.02
+      },
+      "target_probs": {
+        "7": 0.33333333333333337
+      },
+      "target_score_basis": {
+        "7": "located in hallway, which contradicts the explicit bedroom target location"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "f2ebe400037746b7aea07343fb529e0a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "7": 0.02
+      },
+      "target_probs": {
+        "7": 0.33333333333333337
+      },
+      "target_score_basis": {
+        "7": "located in hallway, which contradicts the explicit bedroom target location"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 37,
+      "label": "2bafa1c7dfc84001beaddf532feb612f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "7": 0.02
+      },
+      "target_probs": {
+        "7": 0.33333333333333337
+      },
+      "target_score_basis": {
+        "7": "located in hallway, which contradicts the explicit bedroom target location"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 46,
+      "label": "12300fc342ab4d54b9a19ff57889ce14",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "7": 0.0
+      },
+      "target_probs": {
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "7": "located in a bedroom, matching the target's room constraint"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        19,
+        46
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 59,
+      "label": "bedroom with blue star bedding and computer desk",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        26,
+        35,
+        37
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 60,
+      "label": "hallway with light-colored walls and wooden floor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "target_found": {
+    "0": true,
+    "2": true,
+    "4": true,
+    "7": false
+  }
+}

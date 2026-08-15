@@ -1,0 +1,64 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 16
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 16,
+      "j": 21,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 16,
+      "label": "9d5a333a21004d1cb17692e2f9b8aff0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        16
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "95903e1adf7e4ce9a87b9df4e9ec63e6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        16,
+        21
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "patterned wallpaper bathroom area with sink",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "61": [
+      16,
+      21
+    ]
+  },
+  "viewpoint_to_region": {
+    "16": 61,
+    "21": 61
+  }
+}

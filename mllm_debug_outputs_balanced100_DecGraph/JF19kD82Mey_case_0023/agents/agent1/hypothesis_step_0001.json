@@ -1,0 +1,132 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.334,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 7,
+      "j": 10,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.058,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 7,
+      "j": 20,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 7,
+      "label": "0672a86275c14b148e8618ecde714e06",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0
+      },
+      "target_probs": {
+        "2": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "837b0a58fa8b4820a3c07e0c89ccfc60",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "6": 0.1
+      },
+      "target_probs": {
+        "2": 0.5,
+        "4": 0.5,
+        "5": 0.5,
+        "6": 0.5
+      },
+      "target_score_basis": {
+        "2": "No visual evidence of kitchen appliance nook at this location.",
+        "4": "No visual evidence of upstairs bedroom or blue chair.",
+        "5": "No visual evidence of upstairs bedroom or skateboard.",
+        "6": "No visual evidence of upstairs bedroom or horse-shaped lamp."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "27b904430e4e48acb818e2ab80f183e3",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "2": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "6": 0.1
+      },
+      "target_probs": {
+        "2": 0.5,
+        "4": 0.5,
+        "5": 0.5,
+        "6": 0.5
+      },
+      "target_score_basis": {
+        "2": "No visual evidence of kitchen appliance nook at this location.",
+        "4": "No visual evidence of upstairs bedroom or blue chair.",
+        "5": "No visual evidence of upstairs bedroom or skateboard.",
+        "6": "No visual evidence of upstairs bedroom or horse-shaped lamp."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        7,
+        10,
+        20
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "gray neutral indoor area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "2": false,
+    "4": false,
+    "5": false,
+    "6": false
+  }
+}

@@ -1,0 +1,322 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.991,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 20,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.944,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.851,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 39,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.933,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.061,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 31,
+      "j": 39,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 10,
+      "label": "d9d0b72a2929495cb1fc8df42c84b18a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "6": 0.1,
+        "7": 0.8
+      },
+      "target_probs": {
+        "0": 0.058479532163742694,
+        "1": 0.32258064516129026,
+        "4": 0.1098901098901099,
+        "5": 0.07092198581560283,
+        "6": 0.32258064516129026,
+        "7": 0.7920792079207921
+      },
+      "target_score_basis": {
+        "0": "Hallway area, unlikely to have a desk with a radio",
+        "1": "Hallway area, unlikely to have a bed and bathrobe",
+        "4": "Hallway area, not a dining room",
+        "5": "Hallway area, not a kitchen",
+        "6": "Hallway area, no television visible",
+        "7": "Hallway near entrance, possible location for console table with vase"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "9b1e2472265c46989eb1c3911aa5971b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "4": 0.7,
+        "5": 1.2,
+        "6": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.058479532163742694,
+        "1": 0.32258064516129026,
+        "4": 0.7692307692307693,
+        "5": 0.8510638297872339,
+        "6": 0.32258064516129026,
+        "7": 0.09900990099009901
+      },
+      "target_score_basis": {
+        "0": "Kitchen/dining area, unlikely to have a vintage radio on a desk",
+        "1": "Kitchen/dining area, not a bedroom",
+        "4": "Kitchen/dining area, possible location for dining room window candle",
+        "5": "Kitchen area with counters, high likelihood for cookbook beside stove",
+        "6": "Kitchen area, no television visible",
+        "7": "Kitchen area, not the entrance console table"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 26,
+      "label": "81dab76afc424a5b9ab7c7d2432c633f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 26 is in a hallway leading to other rooms, potentially containing a desk area.",
+        "1": "Hallway access may lead to a bedroom area where a bathrobe would be hanging.",
+        "4": "Hallway access may lead to a dining room.",
+        "5": "Hallway access may lead to a kitchen area.",
+        "6": "Hallway access may lead to a living area with a television.",
+        "7": "Viewpoint 26 is located in a hallway/entrance area, which matches the 'near the entrance' cue for the vase."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "320c0ec6c0a343fea6227a2699d0eb7a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "5340c12f388446b589bf2c082c39bd5e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.01,
+        "1": 0.01,
+        "4": 0.01,
+        "5": 0.01,
+        "6": 0.01,
+        "7": 0.01
+      },
+      "target_probs": {
+        "0": 0.0058479532163742695,
+        "1": 0.032258064516129024,
+        "4": 0.01098901098901099,
+        "5": 0.0070921985815602835,
+        "6": 0.032258064516129024,
+        "7": 0.009900990099009901
+      },
+      "target_score_basis": {
+        "0": "Bathroom area, contradicts desk/radio location",
+        "1": "Bathroom area, contradicts bed/bathrobe location",
+        "4": "Bathroom area, not a dining room",
+        "5": "Bathroom area, not a kitchen",
+        "6": "Bathroom area, no television",
+        "7": "Bathroom area, not the entrance"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "e1f88263b98d46909c3e00e9250b6a4b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 1.5,
+        "1": 0.1,
+        "4": 0.1,
+        "5": 0.1,
+        "6": 0.1,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.8771929824561404,
+        "1": 0.32258064516129026,
+        "4": 0.1098901098901099,
+        "5": 0.07092198581560283,
+        "6": 0.32258064516129026,
+        "7": 0.09900990099009901
+      },
+      "target_score_basis": {
+        "0": "Office/study area with desk, high likelihood for vintage radio",
+        "1": "Study area, not a bedroom",
+        "4": "Study area, not a dining room",
+        "5": "Study area, not a kitchen",
+        "6": "Study area, no television visible",
+        "7": "Study area, not the entrance"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        31,
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "modern bathroom with newspaper-print tiles",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "white tiled hallway with dark door frames",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        20,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 55,
+      "label": "open plan kitchen and study area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": true,
+    "3": true,
+    "4": false,
+    "5": false,
+    "6": false,
+    "7": false
+  }
+}

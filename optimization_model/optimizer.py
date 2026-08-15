@@ -9,8 +9,13 @@ from Helper import TYPE_REGION, TYPE_VP
 
 
 class RollingHorizonOptimizer:
-    def __init__(self, optimizer_config: dict | None = None):
+    def __init__(
+        self,
+        optimizer_config: dict | None = None,
+        gurobi_env=None,
+    ):
         optimizer_config = optimizer_config or {}
+        self.gurobi_env = gurobi_env
         self.goal_weight = float(optimizer_config.get("goal_weight"))
         self.dist_weight = float(optimizer_config.get("dist_weight"))
         self.arc_weight = float(optimizer_config.get("arc_weight"))
@@ -216,7 +221,13 @@ class RollingHorizonOptimizer:
                     % (agent_id, start_node_id)
                 )
 
-        model = Model("multi_agent_many_to_many")
+        if self.gurobi_env is None:
+            model = Model("multi_agent_many_to_many")
+        else:
+            model = Model(
+                "multi_agent_many_to_many",
+                env=self.gurobi_env,
+            )
         model.Params.OutputFlag = 0
         model.Params.TimeLimit = 30.0
 

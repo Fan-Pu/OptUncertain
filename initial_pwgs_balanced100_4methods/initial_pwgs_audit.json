@@ -1,0 +1,618 @@
+{
+  "empty_distribution_rule": "An empty or zero-mass model-generated location distribution receives Initial-PWGS=0 and is not omitted.",
+  "formula": "For each shared active case-target query, sum over eligible viewpoints p(v) * (1 - d(v, oracle)/D_max). Average targets within each case, then cases within each agent group.",
+  "frozen_manifest_hash": "ec14c3efdcc190d8a3872e0f22cd89a9481485498a7fa1794610f043dd02a7e5",
+  "manifest_file_sha256": {
+    "GPT-Medium": "dcfca0c050fb7f2d2b2b3376ed91475233d7fd7c381394a97fa5aafed6b61ac4",
+    "Gemma-Instant": "dcbf14640758d67512d2c9782ef7e943b7bb1987146febfb0bffff19ebe115c0",
+    "Qwen-Instant": "7d7cb119d2f41508581272cbe1b9bb4f0c384dab4d574c3d1dbbd47e625a683f",
+    "Qwen-Thinking": "88f326c3b995acc2b2842431afcb440449a23c1163f3b568334c158e2456744d",
+    "frozen": "dcfca0c050fb7f2d2b2b3376ed91475233d7fd7c381394a97fa5aafed6b61ac4"
+  },
+  "metric": "Initial-PWGS",
+  "not_applicable_case_count_by_group": {
+    "multi": 13,
+    "single": 1
+  },
+  "not_applicable_cases": [
+    {
+      "agent_group": "multi",
+      "case_id": "r47D5H71a5s_case_0041",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "r47D5H71a5s"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "r47D5H71a5s_case_0042",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "r47D5H71a5s"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0016",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "JF19kD82Mey"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0026",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "JF19kD82Mey"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0027",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "JF19kD82Mey"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0032",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "JF19kD82Mey"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0027",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "RPmz2sHmrrY"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0031",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "RPmz2sHmrrY"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0032",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "RPmz2sHmrrY"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0037",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "RPmz2sHmrrY"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "17DRP5sb8fy_case_0007",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "17DRP5sb8fy"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0036",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "17DRP5sb8fy"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0037",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "17DRP5sb8fy"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0042",
+      "reason": "no_target_active_in_all_methods_at_step_1",
+      "scan_id": "17DRP5sb8fy"
+    }
+  ],
+  "step_index": 1,
+  "support_rule": "A target is evaluated only when target_found=false in all four saved step-1 snapshots. All methods are scored on the identical case-target support.",
+  "target_found_disagreement_count": 42,
+  "target_found_disagreements": [
+    {
+      "agent_group": "single",
+      "case_id": "r47D5H71a5s_case_0008",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "0"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "r47D5H71a5s_case_0010",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "7"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "r47D5H71a5s_case_0014",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "1"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "r47D5H71a5s_case_0015",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "7"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "r47D5H71a5s_case_0018",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "7"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "r47D5H71a5s_case_0020",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "4"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "r47D5H71a5s_case_0042",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "1"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "r47D5H71a5s_case_0043",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "4"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "r47D5H71a5s_case_0045",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": true,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "4"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "r47D5H71a5s_case_0045",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "r47D5H71a5s",
+      "target_id": "6"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "zsNo4HB9uLZ_case_0003",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "zsNo4HB9uLZ",
+      "target_id": "3"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "zsNo4HB9uLZ_case_0014",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": true,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "zsNo4HB9uLZ",
+      "target_id": "2"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "zsNo4HB9uLZ_case_0015",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "zsNo4HB9uLZ",
+      "target_id": "3"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "zsNo4HB9uLZ_case_0019",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "zsNo4HB9uLZ",
+      "target_id": "3"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "zsNo4HB9uLZ_case_0045",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "zsNo4HB9uLZ",
+      "target_id": "7"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0018",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "JF19kD82Mey",
+      "target_id": "5"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0020",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "JF19kD82Mey",
+      "target_id": "5"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0025",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "JF19kD82Mey",
+      "target_id": "1"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0029",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "JF19kD82Mey",
+      "target_id": "2"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0029",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "JF19kD82Mey",
+      "target_id": "6"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0030",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "JF19kD82Mey",
+      "target_id": "0"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0030",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": true,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "JF19kD82Mey",
+      "target_id": "6"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "JF19kD82Mey_case_0033",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "JF19kD82Mey",
+      "target_id": "2"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0025",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "RPmz2sHmrrY",
+      "target_id": "0"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0028",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "RPmz2sHmrrY",
+      "target_id": "0"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0030",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "RPmz2sHmrrY",
+      "target_id": "0"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0035",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "RPmz2sHmrrY",
+      "target_id": "0"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0035",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "RPmz2sHmrrY",
+      "target_id": "6"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0040",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "RPmz2sHmrrY",
+      "target_id": "1"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0040",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "RPmz2sHmrrY",
+      "target_id": "3"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "RPmz2sHmrrY_case_0040",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "RPmz2sHmrrY",
+      "target_id": "6"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "17DRP5sb8fy_case_0005",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": true,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "0"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "17DRP5sb8fy_case_0005",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": true,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "6"
+    },
+    {
+      "agent_group": "single",
+      "case_id": "17DRP5sb8fy_case_0007",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "2"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0033",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "6"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0033",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "7"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0035",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": true
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "2"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0035",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "3"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0035",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "4"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0036",
+      "found_by_method": {
+        "GPT-Medium": true,
+        "Gemma-Instant": false,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "3"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0040",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": false,
+        "Qwen-Instant": true,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "0"
+    },
+    {
+      "agent_group": "multi",
+      "case_id": "17DRP5sb8fy_case_0042",
+      "found_by_method": {
+        "GPT-Medium": false,
+        "Gemma-Instant": true,
+        "Qwen-Instant": false,
+        "Qwen-Thinking": false
+      },
+      "scan_id": "17DRP5sb8fy",
+      "target_id": "3"
+    }
+  ],
+  "zero_scored_query_count_by_method": {
+    "GPT-Medium": 0,
+    "Gemma-Instant": 3,
+    "Qwen-Instant": 0,
+    "Qwen-Thinking": 0
+  }
+}

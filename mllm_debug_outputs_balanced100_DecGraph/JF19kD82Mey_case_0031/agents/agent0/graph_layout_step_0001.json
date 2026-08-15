@@ -1,0 +1,86 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 26
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 16,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 26,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 16,
+      "label": "6be9623980e245ce80ced0bdb70db93c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        16,
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 26,
+      "label": "16bcabb86c9546f89e60b1caf0fc0a13",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        26
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "219e774e6cf942a5af295147d7bf945e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        16,
+        26,
+        45
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "modern open-plan kitchen and dining area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "50": [
+      16,
+      26,
+      45
+    ]
+  },
+  "viewpoint_to_region": {
+    "16": 50,
+    "26": 50,
+    "45": 50
+  }
+}

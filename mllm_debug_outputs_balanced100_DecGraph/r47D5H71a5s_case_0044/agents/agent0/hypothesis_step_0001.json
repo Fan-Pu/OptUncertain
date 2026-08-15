@@ -1,0 +1,162 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.361,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 54,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.715,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 2,
+      "j": 54,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.489,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 54,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 1,
+      "label": "4eb2befc7e974e45a1956695ca4342e2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "1": 0.2,
+        "5": 0.2
+      },
+      "target_score_basis": {
+        "1": "Located in a home gym area; no glass display cabinets visible here.",
+        "5": "Located in a home gym area; no kitchen counters or water dispensers visible."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "bd624a2988bf4a94839472180cc1b3d5",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.3,
+        "5": 0.3
+      },
+      "target_probs": {
+        "1": 0.6,
+        "5": 0.6
+      },
+      "target_score_basis": {
+        "1": "Marker is inside a separate room; potential for storage or display cabinets.",
+        "5": "Marker is inside a separate room; potential for kitchen area."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "e2d51e6321224b5aae0a84c8a90c2dd2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "5": 0.1
+      },
+      "target_probs": {
+        "1": 0.2,
+        "5": 0.2
+      },
+      "target_score_basis": {
+        "1": "Located in the gym area near exercise equipment; unlikely to have a decorative vase cabinet.",
+        "5": "Located in the gym area; unlikely to have a kitchen kettle."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 54,
+      "label": "ce525fada36b41c3a89a4e77e83e4e5f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        18,
+        54
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "indoor home gym area with exercise machines",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "adjacent room seen through doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": true,
+    "1": false,
+    "2": true,
+    "5": false
+  }
+}

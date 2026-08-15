@@ -1,0 +1,198 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.475,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 3,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.508,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 12,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.69,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 6,
+      "j": 22,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.107,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 12,
+      "j": 22,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 3,
+      "label": "558ba0761bf24428b9cf91e60333ea25",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "1": 0.1,
+        "3": 0.4,
+        "5": 0.3
+      },
+      "target_probs": {
+        "0": 0.6666666666666666,
+        "1": 0.11111111111111112,
+        "3": 0.888888888888889,
+        "5": 0.8571428571428572
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 3 is located in a hallway/transition area outside the bathroom, which is unlikely to contain a bedroom pillow.",
+        "1": "Viewpoint 3 is outside the bathroom; the shower niche is inside the bathroom where the agent currently is.",
+        "3": "Viewpoint 3 leads away from the bathroom toward other rooms, potentially toward a kitchen.",
+        "5": "Viewpoint 3 is in a transition area; it may lead to a living room with an armchair."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "00ebbf3782c64d74aaf7dd39cd561175",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.05,
+        "1": 0.8,
+        "3": 0.05,
+        "5": 0.05
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "1": 0.888888888888889,
+        "3": 0.11111111111111112,
+        "5": 0.14285714285714288
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 6 is inside the bathroom, which contradicts the bedroom location of the pillow.",
+        "1": "Viewpoint 6 is inside the bathroom and close to the shower area where toiletry bottles would be.",
+        "3": "Viewpoint 6 is in the bathroom, contradicting the kitchen location of bottled water.",
+        "5": "Viewpoint 6 is in the bathroom, contradicting the living room location of an armchair."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 12,
+      "label": "e693b5de8ad84d4cb61a79ece2e66d11",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 22,
+      "label": "28db29e8c72c4a68bfdf5bb2b454443d",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint is in a bathroom; contradicts bedroom headboard location.",
+        "1": "Viewpoint is in a bathroom, but no shower niche is visible at this specific marker location.",
+        "3": "Viewpoint is in a bathroom; contradicts kitchen shelf location.",
+        "5": "Viewpoint is in a bathroom; contradicts brown armchair location."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        12,
+        22
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern bathroom with white toilet and vanity",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        3
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "dark grey hallway outside bathroom",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": true,
+    "3": false,
+    "4": true,
+    "5": false,
+    "6": true,
+    "7": true
+  }
+}

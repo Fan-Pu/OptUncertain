@@ -1,0 +1,180 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 36
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 5,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 13,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 19,
+      "j": 36,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 36,
+      "j": 37,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 1,
+      "label": "0e92a69a50414253a23043758f111cec",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 5,
+      "label": "da5fa65c13e643719a20cbb818c9a85d",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 13,
+      "label": "c429b363fd3145fe8a7631bbe9644066",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        1,
+        5,
+        13,
+        19,
+        37
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 36,
+      "label": "b2e9278f9b8f4661abcb0446d2cbb98e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 37,
+      "label": "c8112f69d34d476fbb29e6b3909deba2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        5,
+        36,
+        37
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern white kitchen and entryway area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        13
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "living room area with wall art",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "small bathroom area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "44": [
+      1,
+      5,
+      36,
+      37
+    ],
+    "45": [
+      13
+    ],
+    "46": [
+      19
+    ]
+  },
+  "viewpoint_to_region": {
+    "1": 44,
+    "5": 44,
+    "13": 45,
+    "19": 46,
+    "36": 44,
+    "37": 44
+  }
+}

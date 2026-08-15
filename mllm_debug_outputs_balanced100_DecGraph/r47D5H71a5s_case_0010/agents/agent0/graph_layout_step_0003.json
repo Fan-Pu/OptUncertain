@@ -1,0 +1,242 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 34
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 18,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 18,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 25,
+      "j": 28,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 28,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 28,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 28,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 28,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 34,
+      "j": 42,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 34,
+      "j": 46,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 34,
+      "j": 50,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 37,
+      "j": 50,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        34,
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "e2d51e6321224b5aae0a84c8a90c2dd2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        28
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "d60f3399b4d24c21a494ed4430f27ce9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        25,
+        34,
+        37,
+        42,
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 28,
+      "label": "1a9eaf7e67c444ffbec01b999b40c5a2",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        18,
+        28,
+        42,
+        46,
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 34,
+      "label": "a5d7dd600de549a0a7c626f8c2c6c3e3",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        28,
+        50
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 37,
+      "label": "e396f6fa366b419ba059e65d728e20f1",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        28,
+        34
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 42,
+      "label": "d8f7db8824674725a8334d3554cda5bf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        34
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "d0f90601ac1b46fdb7258c230495f8a0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        18,
+        28,
+        34,
+        37
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "a9aa7ad5b14e499082ed36083484cfa8",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25,
+        28,
+        34,
+        42,
+        46,
+        50
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "indoor pool and lounge area with tiled floor",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18,
+        37
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "tiled transition hallway adjacent to pool",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "region_to_viewpoints": {
+    "61": [
+      25,
+      28,
+      34,
+      42,
+      46,
+      50
+    ],
+    "62": [
+      18,
+      37
+    ]
+  },
+  "viewpoint_to_region": {
+    "18": 62,
+    "25": 61,
+    "28": 61,
+    "34": 61,
+    "37": 62,
+    "42": 61,
+    "46": 61,
+    "50": 61
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.549,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 24,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 10,
+      "label": "d160d2229e4148839ef3a43dbc0ecdc4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 24,
+      "label": "c341c46acf7044d1a712d622cbc94a27",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.01,
+        "5": 0.01
+      },
+      "target_probs": {
+        "0": 1.0,
+        "5": 1.0
+      },
+      "target_score_basis": {
+        "0": "The viewpoint is in a bathroom area, which contradicts the target description of a pillow near a headboard (bedroom).",
+        "5": "The viewpoint is in a bathroom area, which contradicts the target description of a pillow on an armchair (living room/bedroom)."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        24
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern bathroom with toilet and vanity",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "2": true,
+    "5": false,
+    "7": true
+  }
+}

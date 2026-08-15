@@ -1,0 +1,64 @@
+{
+  "agent_current_vp_ids": {
+    "agent3": 0
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 0,
+      "j": 46,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        46
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 0,
+      "label": "f4fb96ce8e874f609dab60c35534d9d9",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        0
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "12300fc342ab4d54b9a19ff57889ce14",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        0,
+        46
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 59,
+      "label": "blue-walled bedroom with large bed and dresser",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "59": [
+      0,
+      46
+    ]
+  },
+  "viewpoint_to_region": {
+    "0": 59,
+    "46": 59
+  }
+}

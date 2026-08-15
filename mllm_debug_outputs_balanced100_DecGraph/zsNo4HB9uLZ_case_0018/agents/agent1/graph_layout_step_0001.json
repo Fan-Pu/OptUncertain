@@ -1,0 +1,64 @@
+{
+  "agent_current_vp_ids": {
+    "agent1": 17
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 17,
+      "j": 27,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 17,
+      "label": "4c0aab63a4434cf4878e6f5b3ce9a70b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        17
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "2c687aab96b7498b92023a4888c6e7ab",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        17,
+        27
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "neutral interior corridor area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "53": [
+      17,
+      27
+    ]
+  },
+  "viewpoint_to_region": {
+    "17": 53,
+    "27": 53
+  }
+}

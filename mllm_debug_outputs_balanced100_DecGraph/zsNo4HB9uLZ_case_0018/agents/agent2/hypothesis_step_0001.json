@@ -1,0 +1,146 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.712,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 18,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.531,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 18,
+      "label": "f04ae8ebf8254168814bc669635b3775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.2,
+        "2": 0.1,
+        "4": 0.1,
+        "7": 0.3
+      },
+      "target_probs": {
+        "0": 0.6666666666666666,
+        "2": 0.5,
+        "4": 0.5,
+        "7": 0.6
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 18 is located in a separate area from the current viewpoint, potentially leading to a study or office where a wooden desk might be found.",
+        "2": "No visual evidence of a kitchen or shelving at this location.",
+        "4": "No visual evidence of a dining room window or candle holder.",
+        "7": "Viewpoint 18 is further from the current location and may be near an entrance or console table."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "76c7a665d2b242bfa203e7f394b1353e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "4": 0.1,
+        "7": 0.2
+      },
+      "target_probs": {
+        "0": 0.3333333333333333,
+        "2": 0.5,
+        "4": 0.5,
+        "7": 0.4
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 25 is very close to the current location in the same open area; no desk visible.",
+        "2": "No visual evidence of a kitchen or shelving at this location.",
+        "4": "No visual evidence of a dining room window or candle holder.",
+        "7": "Viewpoint 25 is close to the current location, which may be near the entrance area."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "d48feeed33774f64adb093679b9fcebf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25,
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "gray open corridor area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        18
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "adjacent gray room area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "4": false,
+    "7": false
+  }
+}

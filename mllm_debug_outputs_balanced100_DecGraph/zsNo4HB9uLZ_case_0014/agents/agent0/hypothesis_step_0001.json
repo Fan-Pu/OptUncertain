@@ -1,0 +1,184 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.128,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 2,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 2.523,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.093,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 1,
+      "j": 36,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 1,
+      "label": "997b813443c64de5b38312642e937223",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "b8c7c025564d4c8391833236f4f782c0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "6": 0.1,
+        "7": 0.5
+      },
+      "target_probs": {
+        "0": 0.25,
+        "2": 0.25,
+        "6": 0.25,
+        "7": 0.5
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 2 is in a hallway, not a room with a wooden desk and map.",
+        "2": "Viewpoint 2 is in a hallway, not a kitchen with shelves.",
+        "6": "Viewpoint 2 is in a hallway, not a room with a television and wall shelf.",
+        "7": "Viewpoint 2 is in a hallway, which may be near an entrance console table."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "c74a7da1a0e04e7b8b14e1cdab613653",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.2,
+        "2": 0.2,
+        "6": 0.2,
+        "7": 0.1
+      },
+      "target_probs": {
+        "0": 0.5,
+        "2": 0.5,
+        "6": 0.5,
+        "7": 0.1
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 33 is in a different area, potential for a desk/radio setup.",
+        "2": "Viewpoint 33 is in a different area, potential for a kitchen.",
+        "6": "Viewpoint 33 is in a different area, potential for a TV area.",
+        "7": "Viewpoint 33 is far from the current entrance area."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 36,
+      "label": "ead481533f834704bd489d3d44b6a03a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.1,
+        "6": 0.1,
+        "7": 0.4
+      },
+      "target_probs": {
+        "0": 0.25,
+        "2": 0.25,
+        "6": 0.25,
+        "7": 0.4
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 36 is in the bedroom/hallway transition, not a desk area.",
+        "2": "Viewpoint 36 is in the bedroom/hallway transition, not a kitchen.",
+        "6": "Viewpoint 36 is in the bedroom/hallway transition, not a TV area.",
+        "7": "Viewpoint 36 is near the hallway leading to the entrance."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        1,
+        2,
+        36
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "grey-walled bedroom and adjacent hallway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        33
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 54,
+      "label": "distant hallway area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "6": false,
+    "7": false
+  }
+}

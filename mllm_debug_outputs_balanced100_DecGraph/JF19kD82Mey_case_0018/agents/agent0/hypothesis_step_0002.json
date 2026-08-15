@@ -1,0 +1,204 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.981,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.807,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 29,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 4.009,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.007,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 16,
+      "j": 45,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.176,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 26,
+      "j": 45,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 16,
+      "label": "6be9623980e245ce80ced0bdb70db93c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 26,
+      "label": "16bcabb86c9546f89e60b1caf0fc0a13",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint is in the modern kitchen/dining area where a glass dining table is likely to be located.",
+        "4": "This is a ground floor kitchen area, contradicting the upstairs bedroom requirement."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 29,
+      "label": "856a21dd20ce41c3ac1c2a160cec9a0f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.2,
+        "4": 0.01
+      },
+      "target_probs": {
+        "0": 0.15384615384615385,
+        "4": 0.33333333333333337
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 29 is in the kitchen/dining area but lacks direct evidence of the glass table compared to 45.",
+        "4": "Viewpoint 29 is on the ground floor, contradicting the upstairs bedroom requirement."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 37,
+      "label": "ff43ac7b797541b5a89ce2373de329a4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.3,
+        "4": 0.01
+      },
+      "target_probs": {
+        "0": 0.23076923076923075,
+        "4": 0.33333333333333337
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 37 is in a transition zone to the patio, further from the dining table than viewpoint 45.",
+        "4": "Viewpoint 37 is on the ground floor, contradicting the upstairs bedroom requirement."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "219e774e6cf942a5af295147d7bf945e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.8,
+        "4": 0.01
+      },
+      "target_probs": {
+        "0": 0.6153846153846154,
+        "4": 0.33333333333333337
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 45 is located near the glass dining table area, which matches the support surface for the flowers in the vase.",
+        "4": "Viewpoint 45 is on the ground floor, contradicting the upstairs bedroom requirement for the blue chair."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        16,
+        26,
+        29,
+        45
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "modern open-plan kitchen and dining area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        37
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "transition zone between kitchen and outdoor patio",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "4": false,
+    "5": true,
+    "6": true
+  }
+}

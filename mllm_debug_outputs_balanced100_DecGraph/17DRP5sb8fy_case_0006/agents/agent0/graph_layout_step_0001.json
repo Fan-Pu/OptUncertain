@@ -1,0 +1,100 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 27
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 27,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 21,
+      "j": 27,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "5e9f4f8654574e699480e90ecdd150c8",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        27
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "77a1a11978b04e9cbf74914c98578ab8",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        15,
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 27,
+      "label": "b185432bf33645aca813ac2a961b4140",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        15,
+        27
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern open plan kitchen and living area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        21
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "private interior room behind living area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "44": [
+      15,
+      27
+    ],
+    "45": [
+      21
+    ]
+  },
+  "viewpoint_to_region": {
+    "15": 44,
+    "21": 45,
+    "27": 44
+  }
+}

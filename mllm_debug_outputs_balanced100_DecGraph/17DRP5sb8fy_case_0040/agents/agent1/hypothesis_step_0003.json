@@ -1,0 +1,163 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.552,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 8,
+      "j": 38,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.549,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 10,
+      "j": 24,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.297,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 24,
+      "j": 38,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "cb66d4266148455bbddf5d059a483711",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.5,
+        "4": 0.5,
+        "5": 0.01
+      },
+      "target_probs": {
+        "1": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 8 is located in the bathroom area, which is the correct room for shower wall niche items.",
+        "4": "Viewpoint 8 is in the bathroom area, which is the correct room for a toilet tank item.",
+        "5": "Target is a throw pillow on an armchair, which is highly unlikely to be in a bathroom."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 10,
+      "label": "d160d2229e4148839ef3a43dbc0ecdc4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 24,
+      "label": "c341c46acf7044d1a712d622cbc94a27",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint is located in a bathroom with a visible shower area",
+        "4": "Viewpoint is located in a bathroom with a visible toilet",
+        "5": "Bathroom environment contradicts armchair target"
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 38,
+      "label": "8ccf449f599a4cd88648e1d0ff39fdd0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 38 is located further into the bathroom area where a shower enclosure is likely present, matching the target location.",
+        "4": "Viewpoint 38 is in the same bathroom region as the toilet, making it a candidate for the toilet paper roll target.",
+        "5": "Viewpoint 38 is in a bathroom, which contradicts the target description of a throw pillow on an armchair, typically found in a living room."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        10,
+        24,
+        38
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "bathroom with toilet and vanity",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "target_found": {
+    "0": true,
+    "1": false,
+    "2": true,
+    "3": true,
+    "4": false,
+    "5": false,
+    "6": true,
+    "7": true
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "agent_current_vp_ids": {
+    "agent4": 23
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 2,
+      "j": 14,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 8,
+      "j": 14,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 14,
+      "j": 23,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 14,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 14,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 14,
+      "j": 34,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 20,
+      "j": 23,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 23,
+      "j": 26,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 23,
+      "j": 34,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        14
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 2,
+      "label": "51857544c192476faebf212acb1b3d90",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        14
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 8,
+      "label": "cb66d4266148455bbddf5d059a483711",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        2,
+        8,
+        23,
+        26,
+        33,
+        34
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 14,
+      "label": "1e86968849944444b66d9537efb5da9e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        23
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 20,
+      "label": "3a6d2322867f40d9a3d2758ab88df288",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        14,
+        20,
+        26,
+        34
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 23,
+      "label": "30c97842da204e6290ac32904c924e17",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 2,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        14,
+        23
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 26,
+      "label": "23ec8bbec8eb40478411cba2e55b732e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        14
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "e0ce09f0178c48e2bbe649d2bf659702",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        14,
+        23
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 34,
+      "label": "8a0f2f1a8ea441658501561e5dc34a3e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        20,
+        23,
+        26,
+        33,
+        34
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern bedroom with tufted wall and large art",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        2,
+        8,
+        14
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "small adjacent bathroom area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "region_to_viewpoints": {
+    "44": [
+      20,
+      23,
+      26,
+      33,
+      34
+    ],
+    "45": [
+      2,
+      8,
+      14
+    ]
+  },
+  "viewpoint_to_region": {
+    "2": 45,
+    "8": 45,
+    "14": 45,
+    "20": 44,
+    "23": 44,
+    "26": 44,
+    "33": 44,
+    "34": 44
+  }
+}

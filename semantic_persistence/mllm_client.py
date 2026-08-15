@@ -12,7 +12,13 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Dict, List, Optional
 import debugpy
 import numpy as np
-from openai import APITimeoutError, BadRequestError, OpenAI, RateLimitError
+from openai import (
+    APITimeoutError,
+    BadRequestError,
+    InternalServerError,
+    OpenAI,
+    RateLimitError,
+)
 from PIL import Image
 
 import Helper
@@ -58,6 +64,7 @@ API_TYPES = {"chat_completions", "openai_responses", "google_genai"}
 RATE_LIMIT_DEFAULT_COOLDOWN_SECONDS = 300.0
 RATE_LIMIT_MIN_COOLDOWN_SECONDS = 10.0
 RATE_LIMIT_MAX_COOLDOWN_SECONDS = 3600.0
+TRANSIENT_PROVIDER_DEFAULT_COOLDOWN_SECONDS = 300.0
 
 if TYPE_CHECKING:
     from semantic_persistence import HypothesisGraph
@@ -153,11 +160,16 @@ class MLLMClient:
         raw_debug_dir: str = "mllm_debug_outputs",
         max_validation_retries: int = 2,
         max_request_timeout_retries: int = 1,
+        max_transient_provider_retries: int = 1,
+        transient_provider_cooldown_seconds: float = (
+            TRANSIENT_PROVIDER_DEFAULT_COOLDOWN_SECONDS
+        ),
         graph_thinking: str | None = None,
         graph_thinking_format: str | None = None,
         graph_reasoning_split: bool = False,
         graph_extra_body_enabled: bool = True,
         graph_presence_penalty_enabled: bool = True,
+        graph_max_tokens: int = GRAPH_MAX_NEW_TOKENS,
         detection_reasoning_effort: str | None = None,
         graph_reasoning_effort: str | None = None,
         detection_service_tier: str | None = None,
@@ -170,6 +182,7 @@ class MLLMClient:
         detection_cache_read: bool = True,
         detection_cache_write: bool = True,
         detection_cache_conflict_policy: str = "raise",
+        graph_prompt_variant_path: str = "",
     ):
         self.graph_model_name = graph_model_name
         self.detection_model_name = detection_model_name
@@ -185,6 +198,16 @@ class MLLMClient:
         self.batch_id = str(batch_id or "default")
         self.max_validation_retries = max(0, int(max_validation_retries))
         self.max_request_timeout_retries = max(0, int(max_request_timeout_retries))
+        self.max_transient_provider_retries = max(
+            0, int(max_transient_provider_retries)
+        )
+        self.transient_provider_cooldown_seconds = float(
+            transient_provider_cooldown_seconds
+        )
+        if self.transient_provider_cooldown_seconds < 0.0:
+            raise ValueError(
+                "transient_provider_cooldown_seconds must be nonnegative."
+            )
         self.semantic_raw_output_index = 1
         self.found_target_trace = []
         self.last_direct_detections = []
@@ -218,6 +241,47 @@ class MLLMClient:
             graph_presence_penalty_enabled,
             "graph_presence_penalty_enabled",
         )
+        self.graph_max_tokens = int(graph_max_tokens)
+        if self.graph_max_tokens <= 0:
+            raise ValueError("graph_max_tokens must be positive.")
+        self.graph_prompt_variant_path = str(graph_prompt_variant_path).strip()
+        self.graph_prompt_variant_id = ""
+        self.graph_prompt_variant_text = ""
+        self.graph_allow_newly_observed_edge_endpoints = False
+        if self.graph_prompt_variant_path:
+            with open(
+                self.graph_prompt_variant_path,
+                "r",
+                encoding="utf-8",
+            ) as file_handle:
+                graph_prompt_variant = json.load(file_handle)
+            expected_variant_keys = {
+                "variant_id",
+                "allow_newly_observed_edge_endpoints",
+                "system_appendix",
+            }
+            if set(graph_prompt_variant) != expected_variant_keys:
+                raise KeyError(
+                    "Graph prompt variant keys %s do not match expected keys %s."
+                    % (
+                        sorted(graph_prompt_variant),
+                        sorted(expected_variant_keys),
+                    )
+                )
+            self.graph_prompt_variant_id = str(
+                graph_prompt_variant["variant_id"]
+            ).strip()
+            self.graph_prompt_variant_text = str(
+                graph_prompt_variant["system_appendix"]
+            ).strip()
+            if not self.graph_prompt_variant_id:
+                raise ValueError("Graph prompt variant_id must be non-empty.")
+            if not self.graph_prompt_variant_text:
+                raise ValueError("Graph prompt system_appendix must be non-empty.")
+            self.graph_allow_newly_observed_edge_endpoints = self._normalize_bool(
+                graph_prompt_variant["allow_newly_observed_edge_endpoints"],
+                "allow_newly_observed_edge_endpoints",
+            )
         self.detection_reasoning_effort = self._normalize_reasoning_effort(
             detection_reasoning_effort,
             "detection_reasoning_effort",
@@ -701,7 +765,7 @@ class MLLMClient:
             top_p = GRAPH_TOP_P
             top_k = GRAPH_TOP_K
             presence_penalty = GRAPH_PRESENCE_PENALTY
-            max_tokens = GRAPH_MAX_NEW_TOKENS
+            max_tokens = self.graph_max_tokens
 
         request_kwargs = {
             "model": model_name,
@@ -1008,6 +1072,7 @@ class MLLMClient:
         model_name: str,
     ):
         rate_limit_attempt = 1
+        transient_provider_retries = 0
         while True:
             try:
                 return request_call()
@@ -1035,6 +1100,27 @@ class MLLMClient:
                 print()
                 time.sleep(cooldown_seconds)
                 rate_limit_attempt += 1
+            except InternalServerError as exc:
+                if (
+                    transient_provider_retries
+                    >= self.max_transient_provider_retries
+                ):
+                    raise
+                transient_provider_retries += 1
+                print(
+                    "%s %s request hit a transient provider error; cooling "
+                    "down for %.1f seconds before retry %s of %s."
+                    % (
+                        router_name,
+                        request_type,
+                        self.transient_provider_cooldown_seconds,
+                        transient_provider_retries,
+                        self.max_transient_provider_retries,
+                    )
+                )
+                print(str(exc))
+                print()
+                time.sleep(self.transient_provider_cooldown_seconds)
 
     def _request_responses_completion(
         self,
@@ -3368,6 +3454,14 @@ class MLLMClient:
             - A visible adjacent room seen through a doorway should not be merged with the current room. If needed, create or reuse a separate visible_region_node for that adjacent room.
             - Region labels must not use mixed labels such as "living and bedroom area", "kitchen and hallway area", or "bedroom/living area".
             """).strip()
+        if self.graph_prompt_variant_text:
+            system_message = (
+                system_message
+                + "\n\nSelected graph-prompt variant "
+                + self.graph_prompt_variant_id
+                + ":\n"
+                + self.graph_prompt_variant_text
+            )
 
         user_message = (
             dedent("""
@@ -3542,11 +3636,58 @@ class MLLMClient:
 
         return system_message, user_message
 
+    def _augment_edge_endpoint_statuses_from_current_observations(
+        self,
+        graph_viewpoint_status_by_id: Dict[int, Dict[str, object]],
+        agent_observations: List[Dict[str, object]],
+    ) -> None:
+        if not self.graph_allow_newly_observed_edge_endpoints:
+            return
+        for observation in agent_observations:
+            for visible_viewpoint in observation["visible_viewpoints"]:
+                viewpoint_id = int(visible_viewpoint["viewpoint_index"])
+                if viewpoint_id in graph_viewpoint_status_by_id:
+                    continue
+                graph_viewpoint_status_by_id[viewpoint_id] = {
+                    "prior_grounded": False,
+                    "prior_visit_times": 0,
+                    "prior_raw_target_probs": {},
+                }
+
     def propose_semantic_nodes(
         self,
         agent_observations: List[Dict[str, object]],
         targets: List[Dict[str, object]],
         graph: HypothesisGraph,
+    ) -> Optional[Dict[str, object]]:
+        return self._propose_semantic_nodes_impl(
+            agent_observations=agent_observations,
+            targets=targets,
+            graph=graph,
+            run_detection=True,
+        )
+
+    def propose_graph_hypotheses(
+        self,
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph: HypothesisGraph,
+    ) -> Optional[Dict[str, object]]:
+        """Generate graph hypotheses without making a target-detection call."""
+
+        return self._propose_semantic_nodes_impl(
+            agent_observations=agent_observations,
+            targets=targets,
+            graph=graph,
+            run_detection=False,
+        )
+
+    def _propose_semantic_nodes_impl(
+        self,
+        agent_observations: List[Dict[str, object]],
+        targets: List[Dict[str, object]],
+        graph: HypothesisGraph,
+        run_detection: bool,
     ) -> Optional[Dict[str, object]]:
         graph_summary = graph.get_mllm_summary()
         active_detection_targets = self._filter_targets_by_found_state(
@@ -3559,12 +3700,15 @@ class MLLMClient:
 
         step_index = getattr(self, "semantic_raw_output_index", 1)
 
-        detection_image_content, detection_image_records = (
-            self._build_detection_image_content(
-                agent_observations=agent_observations,
-                step_index=step_index,
+        detection_image_content = []
+        detection_image_records = []
+        if run_detection:
+            detection_image_content, detection_image_records = (
+                self._build_detection_image_content(
+                    agent_observations=agent_observations,
+                    step_index=step_index,
+                )
             )
-        )
         graph_image_content = self._build_graph_image_content(
             agent_observations=agent_observations,
             step_index=step_index,
@@ -3576,22 +3720,25 @@ class MLLMClient:
                 % (observation["agent_id"], observation["current_viewpoint_index"])
             )
 
-        # Run detection before graph generation so found targets can be completed
-        # and removed from the graph MLLM request.
-        localized_detections = self._detect_targets(
-            agent_observations=agent_observations,
-            targets=active_detection_targets,
-            image_content=detection_image_content,
-            detection_image_records=detection_image_records,
-            step_index=step_index,
-        )
-        # print the detect model name
-        print("Detection model used: %s" % self.detection_model_name)
-        self.last_direct_detections = localized_detections
-        newly_found_targets_by_id = self._found_targets_from_detections(
-            localized_detections,
-            agent_observations,
-        )
+        newly_found_targets_by_id = {}
+        if run_detection:
+            # Run detection before graph generation so found targets can be
+            # completed and removed from the graph MLLM request.
+            localized_detections = self._detect_targets(
+                agent_observations=agent_observations,
+                targets=active_detection_targets,
+                image_content=detection_image_content,
+                detection_image_records=detection_image_records,
+                step_index=step_index,
+            )
+            print("Detection model used: %s" % self.detection_model_name)
+            self.last_direct_detections = localized_detections
+            newly_found_targets_by_id = self._found_targets_from_detections(
+                localized_detections,
+                agent_observations,
+            )
+        else:
+            self.last_direct_detections = []
 
         if len(newly_found_targets_by_id) > 0:
             print()
@@ -4101,6 +4248,11 @@ class MLLMClient:
                         graph_viewpoint_to_region.setdefault(
                             int(viewpoint_id_raw), node_id
                         )
+
+        self._augment_edge_endpoint_statuses_from_current_observations(
+            graph_viewpoint_status_by_id=graph_viewpoint_status_by_id,
+            agent_observations=agent_observations,
+        )
 
         current_viewpoint_ids_without_prior_region = {
             viewpoint_id
@@ -4638,6 +4790,11 @@ class MLLMClient:
                             node.get("raw_target_probs", {}) or {}
                         ),
                     }
+
+        self._augment_edge_endpoint_statuses_from_current_observations(
+            graph_viewpoint_status_by_id=graph_viewpoint_status_by_id,
+            agent_observations=agent_observations,
+        )
 
         new_visible_neighbor_assignment_viewpoint_ids = (
             visible_viewpoint_ids - current_viewpoint_ids - graph_viewpoint_node_ids

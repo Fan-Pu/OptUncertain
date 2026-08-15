@@ -1,0 +1,86 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        19
+      ],
+      "region_node_id": 59
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        26,
+        35
+      ],
+      "region_node_id": 60
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 19,
+      "raw_target_probs": {
+        "2": 0.1,
+        "5": 0.6
+      },
+      "target_probs": {
+        "2": 0.16666666666666666,
+        "5": 0.33333333333333337
+      }
+    },
+    {
+      "id": 26,
+      "raw_target_probs": {
+        "2": 0.2,
+        "5": 0.8
+      },
+      "target_probs": {
+        "2": 0.3333333333333333,
+        "5": 0.44444444444444453
+      }
+    },
+    {
+      "id": 35,
+      "raw_target_probs": {
+        "2": 0.3,
+        "5": 0.4
+      },
+      "target_probs": {
+        "2": 0.4999999999999999,
+        "5": 0.22222222222222227
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 19,
+      "score_basis": {
+        "2": "Viewpoint is in a bedroom area, which contradicts the kitchen stove location for the coffee maker.",
+        "5": "Viewpoint is within the blue-walled bedroom; target is a license plate above the bedroom doorway."
+      }
+    },
+    {
+      "id": 26,
+      "score_basis": {
+        "2": "Viewpoint is located in the hallway/transition area outside the bedroom, providing route access to the kitchen.",
+        "5": "Viewpoint is located in the hallway near the bedroom doorway where the license plate is expected."
+      }
+    },
+    {
+      "id": 35,
+      "score_basis": {
+        "2": "Viewpoint is further down the hallway, potentially leading toward the kitchen area.",
+        "5": "Viewpoint is in the hallway, but further from the bedroom doorway than viewpoint 26."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 60,
+      "label": "wood-floored hallway outside the blue bedroom"
+    }
+  ]
+}

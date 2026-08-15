@@ -1,0 +1,86 @@
+{
+  "agent_current_vp_ids": {
+    "agent1": 24
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 10,
+      "j": 24,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 24,
+      "j": 38,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        24
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 10,
+      "label": "d160d2229e4148839ef3a43dbc0ecdc4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        10,
+        38
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 24,
+      "label": "c341c46acf7044d1a712d622cbc94a27",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        24
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 38,
+      "label": "8ccf449f599a4cd88648e1d0ff39fdd0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        24,
+        38
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern bathroom with beige textured walls and white toilet",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "region_to_viewpoints": {
+    "44": [
+      10,
+      24,
+      38
+    ]
+  },
+  "viewpoint_to_region": {
+    "10": 44,
+    "24": 44,
+    "38": 44
+  }
+}

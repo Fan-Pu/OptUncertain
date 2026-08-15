@@ -1,0 +1,150 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.163,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 4,
+      "j": 17,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 3.729,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 17,
+      "j": 32,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 4,
+      "label": "3577de361e1a46b1be544d37731bfde6",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.01,
+        "1": 0.01,
+        "4": 0.01,
+        "5": 0.4
+      },
+      "target_probs": {
+        "0": 0.5,
+        "1": 0.5,
+        "4": 0.5,
+        "5": 0.8
+      },
+      "target_score_basis": {
+        "0": "Viewpoint is in a living room, which contradicts the bedroom location implied by a headboard.",
+        "1": "Viewpoint is in a living room, which contradicts the bathroom location implied by a shower niche.",
+        "4": "Viewpoint is in a living room, which contradicts the bathroom location implied by a toilet tank.",
+        "5": "Viewpoint is in a living room area, which is a plausible location for a brown armchair and throw pillow."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 17,
+      "label": "df211c2c55f94b87a717ce1469577456",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "1": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 32,
+      "label": "e34dcf54d26a4a95869cc8a0c01cd2be",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.01,
+        "1": 0.01,
+        "4": 0.01,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.5,
+        "1": 0.5,
+        "4": 0.5,
+        "5": 0.2
+      },
+      "target_score_basis": {
+        "0": "Viewpoint is in a hallway/entry area, which contradicts the bedroom location implied by a headboard.",
+        "1": "Viewpoint is in a hallway/entry area, which contradicts the bathroom location implied by a shower niche.",
+        "4": "Viewpoint is in a hallway/entry area, which contradicts the bathroom location implied by a toilet tank.",
+        "5": "Viewpoint is in a transition area; less likely to have a large armchair than the main living room."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        4,
+        17
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "living room area with curved beige sofa and blue rug",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        32
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "entry hallway area near living room",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "1": false,
+    "2": true,
+    "3": true,
+    "4": false,
+    "5": false,
+    "6": true,
+    "7": true
+  }
+}

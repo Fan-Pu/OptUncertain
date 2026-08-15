@@ -1,0 +1,180 @@
+{
+  "agent_current_vp_ids": {
+    "agent3": 8
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 8,
+      "j": 14,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 8,
+      "j": 33,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 8,
+      "j": 38,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 10,
+      "j": 24,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 24,
+      "j": 38,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        14,
+        33,
+        38
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 8,
+      "label": "cb66d4266148455bbddf5d059a483711",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        24
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 10,
+      "label": "d160d2229e4148839ef3a43dbc0ecdc4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        8
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 14,
+      "label": "1e86968849944444b66d9537efb5da9e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        10,
+        38
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 24,
+      "label": "c341c46acf7044d1a712d622cbc94a27",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        8
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 33,
+      "label": "e0ce09f0178c48e2bbe649d2bf659702",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        8,
+        24
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 38,
+      "label": "8ccf449f599a4cd88648e1d0ff39fdd0",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        10,
+        24,
+        38
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "neutral beige indoor corridor area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        8,
+        33
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 45,
+      "label": "modern white marble bathroom area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        14
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "blue themed bedroom or living area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 4,
+  "region_to_viewpoints": {
+    "44": [
+      10,
+      24,
+      38
+    ],
+    "45": [
+      8,
+      33
+    ],
+    "46": [
+      14
+    ]
+  },
+  "viewpoint_to_region": {
+    "8": 45,
+    "10": 44,
+    "14": 46,
+    "24": 44,
+    "33": 45,
+    "38": 44
+  }
+}

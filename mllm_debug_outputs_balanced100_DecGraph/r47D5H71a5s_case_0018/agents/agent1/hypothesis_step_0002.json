@@ -1,0 +1,130 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.56,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 11,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.852,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 35,
+      "j": 40,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 11,
+      "label": "b889bb15538844beb074db42bd8d9ed4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "869e52d579cc4c9a85979d3e20eb2455",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.8
+      },
+      "target_probs": {
+        "0": 1.0,
+        "2": 1.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 35 is located in a separate room beyond the bathroom doorway, contradicting the bathroom sink location for the hair dryer.",
+        "2": "Viewpoint 35 is in an adjacent room where a wicker chair with a cushion could plausibly be located, unlike the current bathroom area."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 40,
+      "label": "7798eee8ae4a4fc483da87e8e04b659c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 40 is located within a tiled bathroom area containing a sink, matching the target description of a hair dryer beside the bathroom sink.",
+        "2": "Viewpoint 40 is in a bathroom; a wicker chair with a light blue cushion is highly unlikely in this semantic region."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        11,
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "tiled bathroom area with sink and patterned wallpaper",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        35
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "adjacent room with neutral walls beyond bathroom doorway",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "6": true,
+    "7": true
+  }
+}

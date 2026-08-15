@@ -1,0 +1,174 @@
+{
+  "agent_current_vp_ids": {
+    "agent1": 41
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 9,
+      "j": 18,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 9,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 9,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 19,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 25,
+      "j": 41,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        18,
+        40,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 9,
+      "label": "85c23efeaecd4d43a7dcd5b90137179e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 18,
+      "label": "f4d03f729dfc49068db327584455e975",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 19,
+      "label": "ee59d6b5e5da4def9fe85a8ba94ecf25",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 40,
+      "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9,
+        19,
+        25,
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 41,
+      "label": "194bef4cbba641dc9860ba7f43a0c16a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        18,
+        25,
+        40,
+        41
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "gold tufted luxury living room area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        19
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 46,
+      "label": "white minimalist corridor area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 3,
+  "region_to_viewpoints": {
+    "44": [
+      9,
+      18,
+      25,
+      40,
+      41
+    ],
+    "46": [
+      19
+    ]
+  },
+  "viewpoint_to_region": {
+    "9": 44,
+    "18": 44,
+    "19": 46,
+    "25": 44,
+    "40": 44,
+    "41": 44
+  }
+}

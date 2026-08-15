@@ -1,0 +1,122 @@
+{
+  "agent_current_vp_ids": {
+    "agent4": 48
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 9,
+      "j": 48,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 15,
+      "j": 48,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 23,
+      "j": 48,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        48
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 9,
+      "label": "dddeccce9b044629a9ffd5c61e8ea1cf",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        48
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 15,
+      "label": "6be3b190af924e26916685a57f46b775",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        48
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 23,
+      "label": "498ad4add3424a4eaf28355ded64c622",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        9,
+        15,
+        23
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 48,
+      "label": "4e528d58657147978ac5c28a9168a870",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        23,
+        48
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "modern living area with wooden floors and lounge seating",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        15
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "white staircase and landing transition zone",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "61": [
+      23,
+      48
+    ],
+    "62": [
+      9,
+      15
+    ]
+  },
+  "viewpoint_to_region": {
+    "9": 62,
+    "15": 62,
+    "23": 61,
+    "48": 61
+  }
+}

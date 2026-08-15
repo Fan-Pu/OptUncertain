@@ -9,6 +9,7 @@ import math
 from pathlib import Path
 import random
 import sys
+import tempfile
 import time
 from typing import Dict, List, Tuple
 import debugpy
@@ -46,9 +47,18 @@ def _read_json(path: str | Path) -> object:
 def _write_json(path: str | Path, payload: object) -> None:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as file_handle:
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=output_path.parent,
+        prefix=f".{output_path.name}.",
+        suffix=".tmp",
+        delete=False,
+    ) as file_handle:
         json.dump(payload, file_handle, indent=2)
         file_handle.write("\n")
+        temporary_path = Path(file_handle.name)
+    temporary_path.replace(output_path)
 
 
 def _read_json_if_exists(path: str | Path) -> object | None:
@@ -2317,9 +2327,15 @@ def run_scenario(
             show_agent_views=show_agent_views,
             default_config=default_config,
         )
+    if method == "dec_graph":
+        return _run_dec_graph_scenario(
+            scenario=scenario,
+            show_agent_views=show_agent_views,
+        )
     if method not in {"vlfm_g", "mllm_direct"}:
         raise ValueError(
-            "benchmark.method must be proposed, vlfm_g, or mllm_direct."
+            "benchmark.method must be proposed, dec_graph, vlfm_g, or "
+            "mllm_direct."
         )
     return _run_baseline_scenario(
         scenario=scenario,
@@ -2379,6 +2395,12 @@ def _baseline_mllm_client(
         max_request_timeout_retries=int(
             config.get("max_request_timeout_retries", 1)
         ),
+        max_transient_provider_retries=int(
+            config.get("max_transient_provider_retries", 1)
+        ),
+        transient_provider_cooldown_seconds=float(
+            config.get("transient_provider_cooldown_seconds", 300.0)
+        ),
         graph_thinking=config.get("graph_thinking"),
         graph_thinking_format=config.get("graph_thinking_format"),
         graph_reasoning_split=config.get("graph_reasoning_split", False),
@@ -2386,6 +2408,7 @@ def _baseline_mllm_client(
         graph_presence_penalty_enabled=config.get(
             "graph_presence_penalty_enabled", True
         ),
+        graph_max_tokens=int(config.get("graph_max_tokens", 32768)),
         detection_reasoning_effort=config.get("detection_reasoning_effort"),
         graph_reasoning_effort=config.get("graph_reasoning_effort"),
         detection_service_tier=config.get("detection_service_tier"),
@@ -2402,6 +2425,7 @@ def _baseline_mllm_client(
         detection_cache_conflict_policy=config.get(
             "detection_cache_conflict_policy", "raise"
         ),
+        graph_prompt_variant_path=config.get("graph_prompt_variant_path", ""),
     )
 
 
@@ -2702,6 +2726,533 @@ def _run_baseline_scenario(
             )
 
 
+def _dec_graph_timing_payload(timings) -> Dict[str, Dict[str, float]]:
+    return {
+        str(agent_id): {
+            "started_at_unix": float(timing.started_at),
+            "ended_at_unix": float(timing.ended_at),
+            "duration_seconds": float(timing.ended_at - timing.started_at),
+        }
+        for agent_id, timing in timings.items()
+    }
+
+
+def _dec_graph_failure_result(
+    *,
+    exc: BaseException,
+    phase: str,
+    agent_id: str | None,
+    step_index: int,
+    test_case: str,
+    scan_id: str,
+    debug_output_dir: str,
+    executed_routes_by_agent: Dict[str, List[int]],
+    completed_target_node_ids: Dict[str, int],
+    target_found: Dict[str, bool],
+    max_steps: int | None,
+    stopped_agents: Dict[str, Dict[str, object]],
+) -> Dict[str, object]:
+    from semantic_persistence import MLLMProviderCreditError, MLLMRetryExhaustedError
+
+    metadata: Dict[str, object] = {
+        "benchmark_method": "dec_graph",
+        "failed_step_index": int(step_index),
+        "dec_graph_phase": str(phase),
+        "dec_graph_agent_id": None if agent_id is None else str(agent_id),
+        "stopped_agents": copy.deepcopy(stopped_agents),
+        "error": str(exc),
+    }
+    status = "incomplete"
+    stop_reason = "dec_graph_agent_phase_error"
+    if isinstance(exc, MLLMRetryExhaustedError):
+        stop_reason = "mllm_retry_exhausted"
+        metadata.update(
+            {
+                "mllm_stage": str(exc.stage),
+                "mllm_attempts": int(exc.attempts),
+                "error": str(exc.last_error),
+            }
+        )
+    elif isinstance(exc, MLLMProviderCreditError):
+        status = "terminated"
+        stop_reason = "provider_credit_exhausted"
+        metadata.update(
+            {
+                "mllm_stage": str(exc.stage),
+                "mllm_router": str(exc.router),
+                "mllm_model": str(exc.model),
+                "provider_status_code": exc.status_code,
+                "provider_code": exc.provider_code,
+                "provider_type": exc.provider_type,
+                "error": str(exc.message),
+            }
+        )
+
+    return _baseline_result(
+        test_case=test_case,
+        scan_id=scan_id,
+        debug_output_dir=debug_output_dir,
+        executed_routes_by_agent=executed_routes_by_agent,
+        completed_target_node_ids=completed_target_node_ids,
+        target_found=target_found,
+        status=status,
+        stop_reason=stop_reason,
+        steps_completed=max(0, int(step_index) - 1),
+        max_steps=max_steps,
+        extra_metadata=metadata,
+    )
+
+
+def _run_dec_graph_scenario(
+    scenario: Dict[str, object],
+    show_agent_views: bool,
+) -> Dict[str, object]:
+    from benchmark_methods import (
+        DecGraphAgentPhaseError,
+        create_started_gurobi_environments,
+        dispose_gurobi_environments,
+        run_parallel_agent_phase,
+    )
+    from optimization_model import RollingHorizonOptimizer
+    from semantic_persistence import HypothesisGraph
+
+    _wait_for_debugger()
+    Helper = _helper_module()
+    scan_id = str(scenario["scan_id"])
+    test_case = str(scenario["test_case"])
+    max_steps = int(scenario["max_steps"]) if "max_steps" in scenario else None
+    agent_ids = [str(agent["id"]) for agent in scenario["agents"]]
+    raw_output_dir = str(scenario["mllm"]["raw_output_dir"])
+    debug_output_dir = str(scenario["mllm"]["debug_output_dir"])
+
+    Helper.build_viewpoint_index(scan_id)
+    agent_sims = _init_agent_sims(scenario=scenario, scan_id=scan_id)
+    sims_by_agent = dict(zip(agent_ids, agent_sims))
+    executed_routes_by_agent = _initialize_executed_routes(scenario)
+    completed_target_node_ids: Dict[str, int] = {}
+    targets = _normalize_targets(scenario["targets"])
+    graph_targets = _target_records_for_graph(targets)
+    target_state = _BaselineTargetState(targets)
+
+    detector_client = _baseline_mllm_client(scenario, scan_id, test_case)
+    graphs = {
+        agent_id: HypothesisGraph(
+            targets=graph_targets,
+            bayes_config=scenario["bayes"],
+        )
+        for agent_id in agent_ids
+    }
+    graph_clients = {}
+    for agent_id in agent_ids:
+        agent_scenario = copy.deepcopy(scenario)
+        agent_scenario["mllm"]["raw_output_dir"] = str(
+            Path(raw_output_dir) / "agents" / agent_id
+        )
+        agent_scenario["mllm"]["debug_output_dir"] = str(
+            Path(debug_output_dir) / "agents" / agent_id
+        )
+        graph_clients[agent_id] = _baseline_mllm_client(
+            agent_scenario,
+            scan_id,
+            test_case,
+        )
+
+    stopped_agents: Dict[str, Dict[str, object]] = {}
+    gurobi_environments = {}
+    try:
+        gurobi_environments = create_started_gurobi_environments(agent_ids)
+        optimizers = {
+            agent_id: RollingHorizonOptimizer(
+                scenario["optimizer"],
+                gurobi_env=gurobi_environments[agent_id],
+            )
+            for agent_id in agent_ids
+        }
+
+        while True:
+            if all(target_state.target_found.values()):
+                return _baseline_result(
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=target_state.target_found,
+                    status="completed",
+                    stop_reason="all_targets_found",
+                    steps_completed=max(
+                        0, int(detector_client.semantic_raw_output_index) - 1
+                    ),
+                    max_steps=max_steps,
+                    extra_metadata={
+                        "benchmark_method": "dec_graph",
+                        "stopped_agents": copy.deepcopy(stopped_agents),
+                    },
+                )
+
+            observations = Helper.horizon_scan_individual_sims_return(
+                sims=agent_sims,
+                agent_ids=agent_ids,
+                viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
+            )
+            observations_by_agent = {
+                str(observation["agent_id"]): observation
+                for observation in observations
+            }
+            if show_agent_views:
+                Helper.render_sim_state(
+                    _current_agent_states(agent_sims),
+                    viewpoint_index_by_vp=Helper.viewpoint_index_by_vp_label,
+                )
+
+            step_index = int(detector_client.semantic_raw_output_index)
+            active_targets_before_detection = [
+                target
+                for target in targets
+                if not target_state.target_found[str(target["target_id"])]
+            ]
+            _write_episode_state(
+                output_dir=debug_output_dir,
+                step_index=step_index,
+                observations=observations,
+                active_targets=active_targets_before_detection,
+            )
+
+            try:
+                detections = detector_client.detect_targets(
+                    agent_observations=observations,
+                    targets=targets,
+                    target_found=target_state.target_found,
+                )
+            except Exception as exc:
+                return _dec_graph_failure_result(
+                    exc=exc,
+                    phase="detection",
+                    agent_id=None,
+                    step_index=step_index,
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=target_state.target_found,
+                    max_steps=max_steps,
+                    stopped_agents=stopped_agents,
+                )
+
+            completed_targets = _collect_completed_targets(
+                mllm_output={"detections": detections},
+                agent_observations=observations,
+                targets=targets,
+                hypothesis_graph=target_state,
+            )
+            _record_completed_target_nodes(
+                completed_targets=completed_targets,
+                agent_observations=observations,
+                completed_target_node_ids=completed_target_node_ids,
+            )
+            for graph in graphs.values():
+                for target_id, found in target_state.target_found.items():
+                    if found and not graph.target_found[target_id]:
+                        graph.mark_target_found(target_id)
+            _center_completed_targets(
+                agent_sims=agent_sims,
+                agent_ids=agent_ids,
+                completed_targets=completed_targets,
+                show_agent_views=show_agent_views,
+            )
+
+            active_agent_ids = [
+                agent_id for agent_id in agent_ids if agent_id not in stopped_agents
+            ]
+            audit_payload: Dict[str, object] = {
+                "benchmark_method": "dec_graph",
+                "step_index": step_index,
+                "active_agent_ids_at_start": active_agent_ids,
+                "stopped_agents": copy.deepcopy(stopped_agents),
+                "active_target_ids_before_detection": [
+                    str(target["target_id"])
+                    for target in active_targets_before_detection
+                ],
+                "completed_targets": copy.deepcopy(completed_targets),
+                "active_target_ids_after_detection": [
+                    str(target_id)
+                    for target_id, found in target_state.target_found.items()
+                    if not found
+                ],
+                "graph_calls": {},
+                "optimizer_calls": {},
+                "selected_first_hops": {},
+                "overlapping_first_hops": {},
+            }
+
+            if all(target_state.target_found.values()):
+                for agent_id in active_agent_ids:
+                    graphs[agent_id].update_without_mllm(
+                        [observations_by_agent[agent_id]]
+                    )
+                    graphs[agent_id].export_debug_snapshot(
+                        output_dir=str(
+                            Path(debug_output_dir) / "agents" / agent_id
+                        ),
+                        step_index=step_index,
+                    )
+                _write_json(
+                    Path(debug_output_dir)
+                    / ("dec_graph_step_%04d.json" % step_index),
+                    audit_payload,
+                )
+                return _baseline_result(
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=target_state.target_found,
+                    status="completed",
+                    stop_reason="all_targets_found",
+                    steps_completed=step_index,
+                    max_steps=max_steps,
+                    extra_metadata={
+                        "benchmark_method": "dec_graph",
+                        "stopped_agents": copy.deepcopy(stopped_agents),
+                    },
+                )
+
+            for agent_id in active_agent_ids:
+                graphs[agent_id].sync_agent_current_viewpoints(
+                    [observations_by_agent[agent_id]]
+                )
+
+            try:
+                graph_outputs, graph_timings = run_parallel_agent_phase(
+                    stage="graph",
+                    agent_ids=active_agent_ids,
+                    call=lambda agent_id: graph_clients[
+                        agent_id
+                    ].propose_graph_hypotheses(
+                        agent_observations=[observations_by_agent[agent_id]],
+                        targets=graph_targets,
+                        graph=graphs[agent_id],
+                    ),
+                )
+            except DecGraphAgentPhaseError as exc:
+                audit_payload["phase_error"] = {
+                    "phase": exc.stage,
+                    "agent_id": exc.agent_id,
+                    "error": str(exc.cause),
+                }
+                _write_json(
+                    Path(debug_output_dir)
+                    / ("dec_graph_step_%04d.json" % step_index),
+                    audit_payload,
+                )
+                return _dec_graph_failure_result(
+                    exc=exc.cause,
+                    phase=exc.stage,
+                    agent_id=exc.agent_id,
+                    step_index=step_index,
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=target_state.target_found,
+                    max_steps=max_steps,
+                    stopped_agents=stopped_agents,
+                )
+            audit_payload["graph_calls"] = _dec_graph_timing_payload(
+                graph_timings
+            )
+
+            for agent_id in active_agent_ids:
+                graph_output = graph_outputs[agent_id]
+                if graph_output is None:
+                    graphs[agent_id].update_without_mllm(
+                        [observations_by_agent[agent_id]]
+                    )
+                else:
+                    graphs[agent_id].update_from_mllm(
+                        mllm_output=graph_output,
+                        agent_observations=[observations_by_agent[agent_id]],
+                    )
+                graphs[agent_id].export_debug_snapshot(
+                    output_dir=str(Path(debug_output_dir) / "agents" / agent_id),
+                    step_index=step_index,
+                )
+
+                optimizer = optimizers[agent_id]
+                exhaustion_info = None
+                exhaustion_reason = None
+                if bool(getattr(optimizer, "target_directed_mode", False)):
+                    exhaustion_info = _target_directed_search_exhaustion_info(
+                        hypothesis_graph=graphs[agent_id],
+                        target_found_flags=target_state.target_found,
+                    )
+                    if exhaustion_info is not None:
+                        exhaustion_reason = "target_directed_search_exhausted"
+                    else:
+                        exhaustion_info = _target_directed_no_positive_reward_info(
+                            hypothesis_graph=graphs[agent_id],
+                            target_found_flags=target_state.target_found,
+                            use_raw_target_probs=(
+                                optimizer.target_directed_use_raw_target_probs
+                            ),
+                        )
+                        if exhaustion_info is not None:
+                            exhaustion_reason = (
+                                "target_directed_no_positive_reward_endpoint"
+                            )
+                if exhaustion_reason is not None:
+                    stopped_agents[agent_id] = {
+                        "stopped_at_step": step_index,
+                        "stop_reason": exhaustion_reason,
+                        **copy.deepcopy(exhaustion_info),
+                    }
+
+            planning_agent_ids = [
+                agent_id for agent_id in active_agent_ids if agent_id not in stopped_agents
+            ]
+            audit_payload["stopped_agents"] = copy.deepcopy(stopped_agents)
+            if not planning_agent_ids:
+                _write_json(
+                    Path(debug_output_dir)
+                    / ("dec_graph_step_%04d.json" % step_index),
+                    audit_payload,
+                )
+                return _baseline_result(
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=target_state.target_found,
+                    status="incomplete",
+                    stop_reason="dec_graph_all_agents_exhausted",
+                    steps_completed=step_index,
+                    max_steps=max_steps,
+                    extra_metadata={
+                        "benchmark_method": "dec_graph",
+                        "stopped_agents": copy.deepcopy(stopped_agents),
+                    },
+                )
+
+            try:
+                optimization_results, optimizer_timings = run_parallel_agent_phase(
+                    stage="optimization",
+                    agent_ids=planning_agent_ids,
+                    call=lambda agent_id: optimizers[agent_id].solve(
+                        hypothesis_graph=graphs[agent_id],
+                        agent_current_vp_ids=graphs[
+                            agent_id
+                        ].agent_current_vp_ids,
+                        target_found_flags=target_state.target_found,
+                    ),
+                )
+            except DecGraphAgentPhaseError as exc:
+                audit_payload["phase_error"] = {
+                    "phase": exc.stage,
+                    "agent_id": exc.agent_id,
+                    "error": str(exc.cause),
+                }
+                _write_json(
+                    Path(debug_output_dir)
+                    / ("dec_graph_step_%04d.json" % step_index),
+                    audit_payload,
+                )
+                return _dec_graph_failure_result(
+                    exc=exc.cause,
+                    phase=exc.stage,
+                    agent_id=exc.agent_id,
+                    step_index=step_index,
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=target_state.target_found,
+                    max_steps=max_steps,
+                    stopped_agents=stopped_agents,
+                )
+            audit_payload["optimizer_calls"] = _dec_graph_timing_payload(
+                optimizer_timings
+            )
+
+            selected_first_hops: Dict[str, int] = {}
+            move_specs = []
+            moving_sims = []
+            for agent_id in planning_agent_ids:
+                optimization_result = optimization_results[agent_id]
+                write_optimizer_route_log(
+                    output_dir=Path(debug_output_dir) / "agents" / agent_id,
+                    test_case=test_case,
+                    optimization_result=optimization_result,
+                    agent_ids=[agent_id],
+                    step_index=step_index,
+                )
+                agent_path = optimization_result["agent_paths"][agent_id]
+                next_node_id = int(agent_path["next_vp_node_id"])
+                selected_first_hops[agent_id] = next_node_id
+                next_viewpoint_id = Helper.viewpoint_vp_label_by_index[
+                    next_node_id
+                ]
+                move_specs.append(
+                    {
+                        "target_heading": float(
+                            observations_by_agent[agent_id][
+                                "best_heading_for_vp"
+                            ][next_viewpoint_id]
+                        ),
+                        "target_viewpoint_id": next_viewpoint_id,
+                    }
+                )
+                moving_sims.append(sims_by_agent[agent_id])
+                graphs[agent_id].nodes[next_node_id].grounded = True
+
+            Helper.execute_individual_first_hops(
+                sims=moving_sims,
+                move_specs=move_specs,
+                render=show_agent_views,
+            )
+            for agent_id, next_node_id in selected_first_hops.items():
+                executed_routes_by_agent[agent_id].append(int(next_node_id))
+
+            agents_by_first_hop: Dict[str, List[str]] = {}
+            for agent_id, node_id in selected_first_hops.items():
+                agents_by_first_hop.setdefault(str(node_id), []).append(agent_id)
+            audit_payload["selected_first_hops"] = selected_first_hops
+            audit_payload["overlapping_first_hops"] = {
+                node_id: sharing_agents
+                for node_id, sharing_agents in agents_by_first_hop.items()
+                if len(sharing_agents) > 1
+            }
+            _write_json(
+                Path(debug_output_dir)
+                / ("dec_graph_step_%04d.json" % step_index),
+                audit_payload,
+            )
+
+            if _max_steps_reached(step_index - 1, max_steps):
+                return _baseline_result(
+                    test_case=test_case,
+                    scan_id=scan_id,
+                    debug_output_dir=debug_output_dir,
+                    executed_routes_by_agent=executed_routes_by_agent,
+                    completed_target_node_ids=completed_target_node_ids,
+                    target_found=target_state.target_found,
+                    status="incomplete",
+                    stop_reason="max_steps",
+                    steps_completed=step_index,
+                    max_steps=max_steps,
+                    extra_metadata={
+                        "benchmark_method": "dec_graph",
+                        "stopped_agents": copy.deepcopy(stopped_agents),
+                    },
+                )
+    finally:
+        dispose_gurobi_environments(gurobi_environments)
+
+
 def _run_proposed_scenario(
     config_or_scenario: str | Path | Dict[str, object],
     show_agent_views: bool = True,
@@ -2842,6 +3393,12 @@ def _run_proposed_scenario(
         max_request_timeout_retries=int(
             mllm_config.get("max_request_timeout_retries", 1)
         ),
+        max_transient_provider_retries=int(
+            mllm_config.get("max_transient_provider_retries", 1)
+        ),
+        transient_provider_cooldown_seconds=float(
+            mllm_config.get("transient_provider_cooldown_seconds", 300.0)
+        ),
         graph_thinking=mllm_config.get("graph_thinking"),
         graph_thinking_format=mllm_config.get("graph_thinking_format"),
         graph_reasoning_split=mllm_config.get("graph_reasoning_split", False),
@@ -2849,6 +3406,7 @@ def _run_proposed_scenario(
         graph_presence_penalty_enabled=mllm_config.get(
             "graph_presence_penalty_enabled", True
         ),
+        graph_max_tokens=int(mllm_config.get("graph_max_tokens", 32768)),
         detection_reasoning_effort=mllm_config.get("detection_reasoning_effort"),
         graph_reasoning_effort=mllm_config.get("graph_reasoning_effort"),
         detection_service_tier=mllm_config.get("detection_service_tier"),
@@ -2866,6 +3424,10 @@ def _run_proposed_scenario(
         detection_cache_conflict_policy=mllm_config.get(
             "detection_cache_conflict_policy",
             "raise",
+        ),
+        graph_prompt_variant_path=mllm_config.get(
+            "graph_prompt_variant_path",
+            "",
         ),
     )
 

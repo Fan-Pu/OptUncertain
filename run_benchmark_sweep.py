@@ -26,7 +26,7 @@ from run_batch_sweep import build_sweep_batch_config, selected_graph_model
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "default_config.json"
-METHODS = {"vlfm_g", "mllm_direct"}
+METHODS = {"dec_graph", "vlfm_g", "mllm_direct"}
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -78,6 +78,8 @@ def _source_manifest_path(batch_config_path: Path) -> Path:
 def _method_run_id(method: str, action_model_label: str) -> str:
     if method == "vlfm_g":
         return "balanced100_VLFMG"
+    if method == "dec_graph":
+        return "balanced100_DecGraph"
     return "balanced100_MLLMDirect_%s" % str(action_model_label)
 
 
@@ -100,17 +102,21 @@ def _configured_batch(
     benchmark = copy.deepcopy(default_config["benchmark"])
     benchmark["method"] = method
 
-    if method == "mllm_direct":
-        label = str(benchmark["mllm_direct"]["action_model_label"])
+    if method in {"dec_graph", "mllm_direct"}:
+        if method == "dec_graph":
+            label = str(benchmark["dec_graph"]["graph_model_label"])
+        else:
+            label = str(benchmark["mllm_direct"]["action_model_label"])
         graph_model = selected_graph_model(default_config, selected_label=label)
         configured = build_sweep_batch_config(
             batch_config=configured,
             default_config=merged_defaults,
             graph_model=graph_model,
         )
-        configured["mllm"]["graph_service_tier"] = benchmark[
-            "mllm_direct"
-        ]["action_service_tier"]
+        if method == "mllm_direct":
+            configured["mllm"]["graph_service_tier"] = benchmark[
+                "mllm_direct"
+            ]["action_service_tier"]
     else:
         if beta is None:
             raise ValueError("VLFM-G requires a frozen beta value.")
@@ -375,7 +381,7 @@ def run_benchmark_sweep(
 ) -> Dict[str, object]:
     method = str(method).strip().lower()
     if method not in METHODS:
-        raise ValueError("method must be vlfm_g or mllm_direct.")
+        raise ValueError("method must be dec_graph, vlfm_g, or mllm_direct.")
     if calibrate and method != "vlfm_g":
         raise ValueError("--calibrate is available only for vlfm_g.")
 
@@ -418,7 +424,10 @@ def run_benchmark_sweep(
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run VLFM-G or MLLM-Direct on an exact saved batch sample."
+        description=(
+            "Run Dec-Graph, VLFM-G, or MLLM-Direct on an exact saved batch "
+            "sample."
+        )
     )
     parser.add_argument("--batch-config", required=True)
     parser.add_argument("--method", required=True, choices=sorted(METHODS))

@@ -40,7 +40,12 @@ def build_smoke_scenario(
         default_config=default_config,
         beta=float(beta) if method == "vlfm_g" else None,
     )
-    label = "VLFMG" if method == "vlfm_g" else "MLLMDirect_GPT54Medium"
+    if method == "vlfm_g":
+        label = "VLFMG"
+    elif method == "dec_graph":
+        label = "DecGraph"
+    else:
+        label = "MLLMDirect_GPT54Medium"
     scenario = {
         "test_case": str(case_id),
         "scan_id": str(case["scan_id"]),
@@ -64,9 +69,16 @@ def build_smoke_scenario(
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run one isolated one-case VLFM-G or MLLM-Direct smoke test."
+        description=(
+            "Run one isolated one-case Dec-Graph, VLFM-G, or MLLM-Direct "
+            "smoke test."
+        )
     )
-    parser.add_argument("--method", required=True, choices=["vlfm_g", "mllm_direct"])
+    parser.add_argument(
+        "--method",
+        required=True,
+        choices=["dec_graph", "vlfm_g", "mllm_direct"],
+    )
     parser.add_argument("--case-id", default="JF19kD82Mey_case_0006")
     parser.add_argument("--max-steps", type=int, default=1)
     parser.add_argument("--beta", type=float, default=0.25)

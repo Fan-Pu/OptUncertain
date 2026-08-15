@@ -1,0 +1,100 @@
+{
+  "agent_current_vp_ids": {
+    "agent2": 25
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 25,
+      "j": 37,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 25,
+      "j": 39,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        37,
+        39
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 25,
+      "label": "d512f07e48aa4fe9a559a1a708ab3c02",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 37,
+      "label": "ff43ac7b797541b5a89ce2373de329a4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 39,
+      "label": "a0e680c2599e473c9d64183b65dac6b3",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25,
+        39
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 50,
+      "label": "modern indoor living and dining area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        37
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 51,
+      "label": "outdoor stone patio area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "50": [
+      25,
+      39
+    ],
+    "51": [
+      37
+    ]
+  },
+  "viewpoint_to_region": {
+    "25": 50,
+    "37": 51,
+    "39": 50
+  }
+}

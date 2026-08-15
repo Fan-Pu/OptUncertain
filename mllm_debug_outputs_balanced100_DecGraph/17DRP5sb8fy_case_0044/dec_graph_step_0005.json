@@ -1,0 +1,99 @@
+{
+  "benchmark_method": "dec_graph",
+  "step_index": 5,
+  "active_agent_ids_at_start": [
+    "agent0",
+    "agent1",
+    "agent2",
+    "agent3",
+    "agent4"
+  ],
+  "stopped_agents": {},
+  "active_target_ids_before_detection": [
+    "4",
+    "5"
+  ],
+  "completed_targets": [
+    {
+      "target_id": "4",
+      "description": "the toilet paper roll on top of the toilet tank",
+      "agent_id": "agent1",
+      "target_center_x": 0.84,
+      "target_heading": 2.3162700835532415
+    }
+  ],
+  "active_target_ids_after_detection": [
+    "5"
+  ],
+  "graph_calls": {
+    "agent1": {
+      "started_at_unix": 1784671572.337729,
+      "ended_at_unix": 1784671606.5308783,
+      "duration_seconds": 34.19314932823181
+    },
+    "agent4": {
+      "started_at_unix": 1784671572.3440075,
+      "ended_at_unix": 1784671614.2160022,
+      "duration_seconds": 41.871994733810425
+    },
+    "agent3": {
+      "started_at_unix": 1784671572.3417547,
+      "ended_at_unix": 1784671617.8111665,
+      "duration_seconds": 45.469411849975586
+    },
+    "agent0": {
+      "started_at_unix": 1784671572.3360348,
+      "ended_at_unix": 1784671618.846575,
+      "duration_seconds": 46.5105402469635
+    },
+    "agent2": {
+      "started_at_unix": 1784671572.3397117,
+      "ended_at_unix": 1784671641.6642344,
+      "duration_seconds": 69.32452273368835
+    }
+  },
+  "optimizer_calls": {
+    "agent1": {
+      "started_at_unix": 1784671641.8941512,
+      "ended_at_unix": 1784671641.918081,
+      "duration_seconds": 0.023929834365844727
+    },
+    "agent0": {
+      "started_at_unix": 1784671641.889161,
+      "ended_at_unix": 1784671641.9194634,
+      "duration_seconds": 0.03030228614807129
+    },
+    "agent3": {
+      "started_at_unix": 1784671641.9035687,
+      "ended_at_unix": 1784671641.9201815,
+      "duration_seconds": 0.016612768173217773
+    },
+    "agent2": {
+      "started_at_unix": 1784671641.8976328,
+      "ended_at_unix": 1784671641.921531,
+      "duration_seconds": 0.02389812469482422
+    },
+    "agent4": {
+      "started_at_unix": 1784671641.9069383,
+      "ended_at_unix": 1784671641.923451,
+      "duration_seconds": 0.016512632369995117
+    }
+  },
+  "selected_first_hops": {
+    "agent0": 23,
+    "agent1": 5,
+    "agent2": 5,
+    "agent3": 23,
+    "agent4": 21
+  },
+  "overlapping_first_hops": {
+    "23": [
+      "agent0",
+      "agent3"
+    ],
+    "5": [
+      "agent1",
+      "agent2"
+    ]
+  }
+}

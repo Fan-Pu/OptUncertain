@@ -1,0 +1,86 @@
+{
+  "agent_current_vp_ids": {
+    "agent2": 31
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 27,
+      "j": 31,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 31,
+      "j": 53,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 27,
+      "label": "01c9d419c8fa4879a362aad71ea7000c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        27,
+        53
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "22ed7ff5428841c4809cd3ef0ed4874b",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 53,
+      "label": "0beedadd4d2c4b4ab488cf246c533988",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        27,
+        31,
+        53
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "neutral indoor transition area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "region_to_viewpoints": {
+    "61": [
+      27,
+      31,
+      53
+    ]
+  },
+  "viewpoint_to_region": {
+    "27": 61,
+    "31": 61,
+    "53": 61
+  }
+}

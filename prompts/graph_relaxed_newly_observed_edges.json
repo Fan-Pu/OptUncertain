@@ -1,0 +1,5 @@
+{
+  "variant_id": "relaxed_newly_observed_edge_endpoints_v1",
+  "allow_newly_observed_edge_endpoints": true,
+  "system_appendix": "This variant changes only the eligibility timing for new_edges. A non-current viewpoint first observed in the current step may immediately be used as a VV-edge endpoint even though it is not yet present in the compact shared graph summary. For such a viewpoint, the current per-agent observation context is the authoritative visit-state record: it is eligible only when prior_grounded is false and prior_visit_times is 0. Therefore, do not reject an otherwise valid edge solely because one or both endpoints are newly observed in this step or lack a prior graph-summary node record. All other new_edges rules remain unchanged: both endpoints must be non-current viewpoint markers visible in the current step, both must be ungrounded and unvisited, and the panorama plus spatial context must support a plausible direct traversable connection that does not cross an obstacle or boundary. Co-visibility or membership in the same semantic region alone remains insufficient."
+}

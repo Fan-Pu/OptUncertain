@@ -1,0 +1,84 @@
+{
+  "current_viewpoints_reassignment": [],
+  "edge_distance_variances": {
+    "viewpoint_viewpoint": 1.0
+  },
+  "new_edges": [],
+  "viewpoint_node_assigns": [
+    {
+      "assigned_viewpoint_node_indices": [
+        4,
+        17
+      ],
+      "region_node_id": 44
+    },
+    {
+      "assigned_viewpoint_node_indices": [
+        32
+      ],
+      "region_node_id": 45
+    }
+  ],
+  "viewpoint_target_probs": [
+    {
+      "id": 4,
+      "raw_target_probs": {
+        "0": 0.01,
+        "1": 0.01,
+        "4": 0.01,
+        "5": 0.4
+      },
+      "target_probs": {
+        "0": 0.5,
+        "1": 0.5,
+        "4": 0.5,
+        "5": 0.8
+      }
+    },
+    {
+      "id": 32,
+      "raw_target_probs": {
+        "0": 0.01,
+        "1": 0.01,
+        "4": 0.01,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.5,
+        "1": 0.5,
+        "4": 0.5,
+        "5": 0.2
+      }
+    }
+  ],
+  "viewpoint_target_score_basis": [
+    {
+      "id": 4,
+      "score_basis": {
+        "0": "Viewpoint is in a living room, which contradicts the bedroom location implied by a headboard.",
+        "1": "Viewpoint is in a living room, which contradicts the bathroom location implied by a shower niche.",
+        "4": "Viewpoint is in a living room, which contradicts the bathroom location implied by a toilet tank.",
+        "5": "Viewpoint is in a living room area, which is a plausible location for a brown armchair and throw pillow."
+      }
+    },
+    {
+      "id": 32,
+      "score_basis": {
+        "0": "Viewpoint is in a hallway/entry area, which contradicts the bedroom location implied by a headboard.",
+        "1": "Viewpoint is in a hallway/entry area, which contradicts the bathroom location implied by a shower niche.",
+        "4": "Viewpoint is in a hallway/entry area, which contradicts the bathroom location implied by a toilet tank.",
+        "5": "Viewpoint is in a transition area; less likely to have a large armchair than the main living room."
+      }
+    }
+  ],
+  "visible_region_nodes": [
+    {
+      "id": 44,
+      "label": "living room area with curved beige sofa and blue rug"
+    },
+    {
+      "id": 45,
+      "label": "entry hallway area near living room"
+    }
+  ]
+}

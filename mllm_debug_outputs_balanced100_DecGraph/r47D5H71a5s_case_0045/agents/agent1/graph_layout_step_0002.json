@@ -1,0 +1,100 @@
+{
+  "agent_current_vp_ids": {
+    "agent1": 40
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 11,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 35,
+      "j": 40,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 11,
+      "label": "b889bb15538844beb074db42bd8d9ed4",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        40
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 35,
+      "label": "869e52d579cc4c9a85979d3e20eb2455",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        11,
+        35
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 40,
+      "label": "7798eee8ae4a4fc483da87e8e04b659c",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        11,
+        40
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 61,
+      "label": "tiled bathroom area with patterned wallpaper",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        35
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 62,
+      "label": "dimly lit room with dark flooring beyond bathroom",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "region_to_viewpoints": {
+    "61": [
+      11,
+      40
+    ],
+    "62": [
+      35
+    ]
+  },
+  "viewpoint_to_region": {
+    "11": 61,
+    "35": 62,
+    "40": 61
+  }
+}

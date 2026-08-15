@@ -1,0 +1,173 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.87,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 9,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.767,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 25,
+      "j": 40,
+      "type": "vv"
+    },
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 0.666,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 40,
+      "j": 41,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 9,
+      "label": "85c23efeaecd4d43a7dcd5b90137179e",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.8,
+        "2": 0.1,
+        "5": 0.2
+      },
+      "target_probs": {
+        "0": 0.47058823529411764,
+        "2": 0.16666666666666669,
+        "5": 0.4
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 9 is in the bedroom area with a large tufted bed, matching the location for a pillow near the headboard.",
+        "2": "Viewpoint 9 is in a bedroom, which contradicts the bathroom wall requirement for the bathrobe.",
+        "5": "Viewpoint 9 is in a bedroom area; while there is seating, it is a bed, not a brown armchair."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 25,
+      "label": "7ad0b4e15c4f4cf38f56efbbcadfbf6a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.1,
+        "2": 0.4,
+        "5": 0.1
+      },
+      "target_probs": {
+        "0": 0.058823529411764705,
+        "2": 0.6666666666666667,
+        "5": 0.2
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 25 is in a transition hallway/entry area, not a bedroom with a headboard.",
+        "2": "Viewpoint 25 is in a hallway near a door that may lead to a bathroom, but no bathroom wall is visible.",
+        "5": "Viewpoint 25 is in a narrow hallway, unlikely to contain a brown armchair."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 40,
+      "label": "5efaa5e4a30e481f9dadc1bac5e56a21",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0
+      },
+      "target_probs": {
+        "0": 0.0,
+        "2": 0.0,
+        "5": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 41,
+      "label": "194bef4cbba641dc9860ba7f43a0c16a",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "0": 0.8,
+        "2": 0.1,
+        "5": 0.2
+      },
+      "target_probs": {
+        "0": 0.47058823529411764,
+        "2": 0.16666666666666669,
+        "5": 0.4
+      },
+      "target_score_basis": {
+        "0": "Viewpoint 41 is located within the bedroom area near the tufted bed, matching the target location.",
+        "2": "Viewpoint 41 is in the bedroom, contradicting the bathroom requirement.",
+        "5": "Viewpoint 41 is in the bedroom; no brown armchair is visible here."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        9,
+        40,
+        41
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "luxurious bedroom with gold tufted walls",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        25
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 45,
+      "label": "dark wood paneled hallway area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "0": false,
+    "2": false,
+    "5": false,
+    "6": true
+  }
+}

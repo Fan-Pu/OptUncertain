@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import semantic_persistence.mllm_client as mllm_module
 from semantic_persistence.mllm_client import MLLMClient
 
 
@@ -95,3 +96,54 @@ def test_direct_action_uses_explicit_flex_and_small_output_budget():
     assert fake_client.responses.kwargs["max_output_tokens"] == 1024
     assert fake_client.responses.kwargs["reasoning"] == {"effort": "medium"}
     assert fake_client.responses.kwargs["service_tier"] == "flex"
+
+
+def test_graph_output_budget_uses_model_configuration():
+    client = MLLMClient(graph_max_tokens=16384)
+
+    request = client._build_completion_request_kwargs(
+        messages=[],
+        model_name="google/gemma-4-31B-it",
+        request_type="graph",
+        thinking_mode=None,
+        extra_body_enabled=False,
+        presence_penalty_enabled=False,
+    )
+
+    assert request["max_tokens"] == 16384
+
+
+def test_transient_provider_error_cools_down_and_retries_once(monkeypatch):
+    class _TransientProviderError(Exception):
+        pass
+
+    calls = []
+    sleeps = []
+
+    def request_call():
+        calls.append(object())
+        if len(calls) == 1:
+            raise _TransientProviderError("504 Gateway Timeout")
+        return "accepted"
+
+    monkeypatch.setattr(
+        mllm_module,
+        "InternalServerError",
+        _TransientProviderError,
+    )
+    monkeypatch.setattr(mllm_module.time, "sleep", sleeps.append)
+    client = MLLMClient(
+        max_transient_provider_retries=1,
+        transient_provider_cooldown_seconds=300,
+    )
+
+    result = client._request_with_rate_limit_cooldown(
+        request_call=request_call,
+        request_type="graph",
+        router_name="graph",
+        model_name="google/gemma-4-31B-it",
+    )
+
+    assert result == "accepted"
+    assert len(calls) == 2
+    assert sleeps == [300.0]

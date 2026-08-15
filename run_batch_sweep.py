@@ -30,6 +30,8 @@ GRAPH_MODEL_FIELDS = {
     "graph_reasoning_split",
     "graph_extra_body_enabled",
     "graph_presence_penalty_enabled",
+    "graph_max_tokens",
+    "graph_prompt_variant_path",
 }
 GRAPH_MODEL_OPTIONAL_CONTROL_FIELDS = {
     "graph_reasoning_effort",

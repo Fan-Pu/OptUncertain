@@ -1,0 +1,130 @@
+{
+  "agent_current_vp_ids": {
+    "agent0": 13
+  },
+  "edges": [
+    {
+      "grounded": true,
+      "i": 6,
+      "j": 23,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 13,
+      "j": 23,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 13,
+      "j": 48,
+      "type": "vv"
+    },
+    {
+      "grounded": true,
+      "i": 21,
+      "j": 23,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "connected_node_ids": [
+        23
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 6,
+      "label": "7d1391357299496cbb82840960d05a66",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        23,
+        48
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 13,
+      "label": "38e0c09ac7a748dbadea6471861b30c3",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        23
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 21,
+      "label": "487a4cc75db94e56aa4d1d35866736fc",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        6,
+        13,
+        21
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 23,
+      "label": "b5f873817a0b4b60b8447e96b0b4e955",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "type": "viewpoint"
+    },
+    {
+      "connected_node_ids": [
+        13
+      ],
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 48,
+      "label": "61c98135870e449a846737f610d0e969",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        6,
+        13,
+        21,
+        23,
+        48
+      ],
+      "connected_node_ids": [],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 53,
+      "label": "plain white hallway area",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "type": "region"
+    }
+  ],
+  "observation_step": 2,
+  "region_to_viewpoints": {
+    "53": [
+      6,
+      13,
+      21,
+      23,
+      48
+    ]
+  },
+  "viewpoint_to_region": {
+    "6": 53,
+    "13": 53,
+    "21": 53,
+    "23": 53,
+    "48": 53
+  }
+}

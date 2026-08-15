@@ -1,0 +1,84 @@
+{
+  "bayes_config": {
+    "epsilon": 1e-06,
+    "kappa_vv": 1.0,
+    "sigma_vv2": 4.0,
+    "varrho": 0.7
+  },
+  "edges": [
+    {
+      "cond_exist_prob": 1.0,
+      "distance_mean": 1.401,
+      "distance_var": 0.0,
+      "exist_prob": 1.0,
+      "grounded": true,
+      "i": 29,
+      "j": 31,
+      "type": "vv"
+    }
+  ],
+  "nodes": [
+    {
+      "exist_prob": 1.0,
+      "grounded": false,
+      "id": 29,
+      "label": "701f7128272a4bb2acd9dbd89b5cdf6f",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {
+        "1": 0.1,
+        "4": 0.1
+      },
+      "target_probs": {
+        "1": 1.0,
+        "4": 1.0
+      },
+      "target_score_basis": {
+        "1": "Viewpoint 29 is in a modern living/dining area, which contradicts the shower wall niche location for toiletry bottles.",
+        "4": "Viewpoint 29 is in a modern living/dining area, which contradicts the toilet tank location for toilet paper."
+      },
+      "type": "viewpoint"
+    },
+    {
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 31,
+      "label": "d65b6505904448d1940e679c9a098047",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 1,
+      "raw_target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_probs": {
+        "1": 0.0,
+        "4": 0.0
+      },
+      "target_score_basis": {},
+      "type": "viewpoint"
+    },
+    {
+      "assigned_viewpoint_ids": [
+        29,
+        31
+      ],
+      "exist_prob": 1.0,
+      "grounded": true,
+      "id": 44,
+      "label": "modern living area with white chairs and large windows",
+      "latent_exist_prob": 1.0,
+      "node_visit_times": 0,
+      "raw_target_probs": {},
+      "target_probs": {},
+      "target_score_basis": {},
+      "type": "region"
+    }
+  ],
+  "observation_step": 1,
+  "target_found": {
+    "1": false,
+    "4": false,
+    "6": true,
+    "7": true
+  }
+}
